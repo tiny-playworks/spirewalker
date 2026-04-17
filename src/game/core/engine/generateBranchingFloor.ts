@@ -105,7 +105,7 @@ function connectLayersStS(
 /**
  * 生成单层「类尖塔」DAG：层宽随机起伏、岔路行号带抖动；出边受限并保证连通。
  * 首节点为营地（event、无脚本），末层 Boss；倒数第二层精英。
- * 中间房间类型由 seed 洗牌，并保证至少一场游荡商人事件（`eventScriptId`）。
+ * 中间房间类型由 seed 洗牌，含至少一处宝箱（`treasure`），并保证至少一场游荡商人事件（`eventScriptId`）。
  */
 export function generateBranchingFloorMap(floor: number, seed: number): Record<string, MapNode> {
   const rnd = mulberry32((seed ^ floor * 0x9e3779b1) >>> 0);
@@ -164,19 +164,44 @@ export function generateBranchingFloorMap(floor: number, seed: number): Record<s
   const pushN = (t: MapNodeType, n: number) => {
     for (let i = 0; i < n; i++) pool.push(t);
   };
+  const treasureN = 1;
   if (floor === 2) {
-    pushN('battle', Math.max(2, Math.floor(midCount * 0.45)));
+    pushN('battle', Math.max(2, Math.floor(midCount * 0.45) - treasureN));
     pushN('shop', 1);
     pushN('rest', 1);
+    pushN('treasure', treasureN);
     pushN('event', Math.max(2, midCount - pool.length));
   } else {
-    pushN('battle', Math.max(4, Math.floor(midCount * 0.38)));
+    pushN('battle', Math.max(4, Math.floor(midCount * 0.38) - treasureN));
     pushN('shop', 2);
     pushN('rest', 2);
+    pushN('treasure', treasureN);
     pushN('event', Math.max(2, midCount - pool.length));
   }
   while (pool.length < midCount) pool.push('battle');
-  pool.length = midCount;
+  while (pool.length > midCount) {
+    const bi = pool.lastIndexOf('battle');
+    if (bi !== -1) pool.splice(bi, 1);
+    else {
+      const ei = pool.lastIndexOf('event');
+      if (ei !== -1) pool.splice(ei, 1);
+      else break;
+    }
+  }
+  if (!pool.includes('treasure')) {
+    const bi = pool.lastIndexOf('battle');
+    if (bi !== -1) pool[bi] = 'treasure';
+    else {
+      const ei = pool.lastIndexOf('event');
+      if (ei !== -1) pool[ei] = 'treasure';
+    }
+  }
+  while (pool.length < midCount) pool.push('battle');
+  while (pool.length > midCount) {
+    const bi = pool.lastIndexOf('battle');
+    if (bi !== -1) pool.splice(bi, 1);
+    else break;
+  }
   shuffleInPlace(pool, rnd);
 
   for (let i = 0; i < midCount; i++) {
@@ -199,10 +224,33 @@ export function generateBranchingFloorMap(floor: number, seed: number): Record<s
   const firstStepIds = nodes[startId]!.nextNodeIds;
   if (firstStepIds.length > 0 && !firstStepIds.some((id) => nodes[id]!.type === 'battle')) {
     const candidates = firstStepIds.filter((id) => id !== merchantHost);
-    const poolPick = candidates.length > 0 ? candidates : firstStepIds;
+    const preferNonTreasure = candidates.filter((id) => nodes[id]!.type !== 'treasure');
+    const poolPick =
+      preferNonTreasure.length > 0 ? preferNonTreasure : candidates.length > 0 ? candidates : firstStepIds;
     const pick = poolPick[Math.floor(rnd() * poolPick.length)]!;
     nodes[pick]!.type = 'battle';
     delete nodes[pick]!.eventScriptId;
+  }
+
+  /** 首步强转战斗可能吃掉唯一的宝箱，这里保证中间层仍至少有一处 treasure。 */
+  if (midCount > 0 && !middleIds.some((id) => nodes[id]!.type === 'treasure')) {
+    const battleIds = middleIds
+      .filter((id) => id !== merchantHost && nodes[id]!.type === 'battle')
+      .sort((a, b) => nodes[b]!.x - nodes[a]!.x);
+    const fromBattle = battleIds[0];
+    if (fromBattle) {
+      nodes[fromBattle]!.type = 'treasure';
+      delete nodes[fromBattle]!.eventScriptId;
+    } else {
+      const eventIds = middleIds
+        .filter((id) => id !== merchantHost && nodes[id]!.type === 'event')
+        .sort((a, b) => nodes[b]!.x - nodes[a]!.x);
+      const fromEvent = eventIds[0];
+      if (fromEvent) {
+        nodes[fromEvent]!.type = 'treasure';
+        delete nodes[fromEvent]!.eventScriptId;
+      }
+    }
   }
 
   return nodes;

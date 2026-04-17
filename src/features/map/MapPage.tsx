@@ -14,6 +14,7 @@ const MAP_LEGEND: { glyph: string; label: string }[] = [
   { glyph: '店', label: '商店' },
   { glyph: '息', label: '休息' },
   { glyph: '事', label: '事件' },
+  { glyph: '箱', label: '宝箱' },
 ];
 
 function nodeTitle(n: MapNode): string {
@@ -31,6 +32,8 @@ function nodeTitle(n: MapNode): string {
       return '篝火休息';
     case 'event':
       return n.eventScriptId === WANDERING_MERCHANT_EVENT_ID ? '游荡商人' : '路过事件';
+    case 'treasure':
+      return '宝箱';
     default:
       return n.id;
   }
@@ -205,6 +208,8 @@ function typeLabel(t: string): string {
       return '休息';
     case 'event':
       return '事件';
+    case 'treasure':
+      return '宝箱';
     default:
       return t;
   }

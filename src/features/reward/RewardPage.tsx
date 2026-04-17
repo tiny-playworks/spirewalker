@@ -8,6 +8,7 @@ import { useGameStore } from '@/game/store/gameStore';
 function rewardTierLabel(t: ReturnType<typeof rewardEncounterTierFromRun>): string {
   if (t === 'boss') return 'Boss';
   if (t === 'elite') return '精英';
+  if (t === 'treasure') return '宝箱';
   return '普通';
 }
 
@@ -37,7 +38,9 @@ export function RewardPage() {
 
   return (
     <div className="boot reward-page">
-      <h2 className="subscreen-title">战后奖励</h2>
+      <h2 className="subscreen-title">
+        {encounterTier === 'treasure' ? '宝箱' : '战后奖励'}
+      </h2>
       {relicItems.length > 0 ? (
         <div className="reward-relic-banner">
           {relicItems.map((r) => {
@@ -68,8 +71,13 @@ export function RewardPage() {
         </div>
       ) : null}
       <p className="subscreen-tip">
-        当前节点：<strong>{rewardTierLabel(encounterTier)}战</strong>。选一张加入牌组，领取时金币{' '}
-        <strong>+{totalGoldOnPick}</strong>
+        当前节点：
+        <strong>
+          {encounterTier === 'treasure'
+            ? '宝箱'
+            : `${rewardTierLabel(encounterTier)}战`}
+        </strong>
+        。选一张加入牌组，领取时金币 <strong>+{totalGoldOnPick}</strong>
         {bonusGold > 0 ? (
           <>
             {' '}
@@ -83,6 +91,8 @@ export function RewardPage() {
           <> 若有药水，会与卡牌奖励同时结算。</>
         ) : encounterTier === 'normal' ? (
           <> 普通战有 <strong>25%</strong> 概率额外掉落一瓶药水（本局未触发则下方不显示药水栏）。</>
+        ) : encounterTier === 'treasure' ? (
+          <> 宝箱有约 <strong>55%</strong> 概率额外掉落一瓶药水（栏位未满时）。</>
         ) : null}
       </p>
       <ul className="reward-choices">

@@ -2,6 +2,7 @@ import { describe, expect, test } from '@rstest/core';
 import { addStatusStacks } from '@/game/core/combat/statusCombat';
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { buildFloor2Nodes, createMapRun } from '@/game/core/engine/createMapRun';
+import { generateBranchingFloorMap } from '@/game/core/engine/generateBranchingFloor';
 import { rollPostBattlePotionOffer } from '@/game/core/engine/postBattleExtras';
 import { createMvpRun, ENEMY_UNIT_ID, PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
 import { CLEAVE } from '@/game/core/definitions/cards/starter';
@@ -177,6 +178,38 @@ describe('药水与全体攻击牌', () => {
 });
 
 describe('GameEngine 地图', () => {
+  test('每层生成至少一个宝箱节点', () => {
+    for (const seed of [0, 1, 2, 99, 12_345]) {
+      const n1 = generateBranchingFloorMap(1, seed >>> 0);
+      expect(Object.values(n1).some((n) => n.type === 'treasure')).toBe(true);
+      const n2 = generateBranchingFloorMap(2, seed >>> 0);
+      expect(Object.values(n2).some((n) => n.type === 'treasure')).toBe(true);
+    }
+  });
+
+  test('宝箱节点进入奖励屏（卡牌+金币，无战斗）', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(3);
+    const treasureId = findNodeId(run, (n) => n.type === 'treasure' && n.floor === 1);
+    jumpToBeforeNode(run, treasureId);
+    const { nextRun, events } = engine.dispatch(run, {
+      type: 'CHOOSE_MAP_NODE',
+      nodeId: treasureId,
+    });
+    run = nextRun;
+    expect(
+      events.some((e) => e.type === 'ENTERED_REWARD_FROM_TREASURE' && e.nodeId === treasureId),
+    ).toBe(true);
+    expect(run.screen.type).toBe('reward');
+    expect(run.battle).toBeUndefined();
+    expect(run.reward?.items.some((i) => i.type === 'card_choice')).toBe(true);
+    expect(run.reward?.items.some((i) => i.type === 'gold' && i.amount >= 20 && i.amount <= 30)).toBe(
+      true,
+    );
+    const choice = run.reward!.items.find((i) => i.type === 'card_choice');
+    expect(choice && choice.type === 'card_choice' ? choice.cards.length : 0).toBe(3);
+  });
+
   test('走过岔路后剪枝：营地只保留已选首步，未选首层节点出边清空', () => {
     const engine = new GameEngine();
     let run = createMapRun(88);

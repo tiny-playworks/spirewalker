@@ -44,17 +44,17 @@ const POOL_BOSS = [
   'defend',
 ] as const;
 
-export type RewardEncounterTier = 'normal' | 'elite' | 'boss';
+export type RewardEncounterTier = 'normal' | 'elite' | 'boss' | 'treasure';
 
 function pickPool(tier: RewardEncounterTier): readonly string[] {
   if (tier === 'boss') return POOL_BOSS;
-  if (tier === 'elite') return POOL_ELITE;
+  if (tier === 'elite' || tier === 'treasure') return POOL_ELITE;
   return POOL_NORMAL;
 }
 
 /**
  * 战后三选一：从池随机（可重复，保证总有选项）。
- * 精英/Boss 使用加权池，与地图节点类型一致。
+ * 精英 / 宝箱 / Boss 使用加权池，与地图节点类型一致。
  */
 export function generateCardRewardChoices(
   seed: number,

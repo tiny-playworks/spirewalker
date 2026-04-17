@@ -18,8 +18,8 @@ function shortLabelForNode(n: MapNode): string {
       return '精';
     case 'boss':
       return '王';
-    default:
-      return n.type.slice(0, 1);
+    case 'treasure':
+      return '箱';
   }
 }
 

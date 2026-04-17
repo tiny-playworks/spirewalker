@@ -7,5 +7,6 @@ export function rewardEncounterTierFromRun(run: RunState): RewardEncounterTier {
   const node = id ? run.map.nodes[id] : undefined;
   if (node?.type === 'boss') return 'boss';
   if (node?.type === 'elite') return 'elite';
+  if (node?.type === 'treasure') return 'treasure';
   return 'normal';
 }

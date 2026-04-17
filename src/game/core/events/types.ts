@@ -14,6 +14,7 @@ export type GameEvent =
   | { type: 'RETURNED_TO_MAP_FROM_BATTLE' }
   | { type: 'ENTERED_GAME_OVER' }
   | { type: 'ENTERED_REWARD_FROM_BATTLE' }
+  | { type: 'ENTERED_REWARD_FROM_TREASURE'; nodeId: string }
   | { type: 'ENTERED_SHOP_FROM_MAP'; nodeId: string }
   | { type: 'ENTERED_REST_FROM_MAP'; nodeId: string }
   | { type: 'EVENT_RESOLVED'; eventId: string; optionId: string }

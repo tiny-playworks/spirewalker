@@ -464,6 +464,28 @@ export class GameEngine {
     if (node.type === 'rest') {
       run.screen = { type: 'rest' };
       events.push({ type: 'ENTERED_REST_FROM_MAP', nodeId });
+      return;
+    }
+    if (node.type === 'treasure') {
+      const salt = (run.seed ^ run.meta.gold ^ 0x7e5afe ^ hashMapNodeId(nodeId)) >>> 0;
+      const tier = 'treasure' as const;
+      const cards = generateCardRewardChoices(run.seed, salt, tier);
+      const tr = mulberry32((salt ^ 0xc4e123) >>> 0);
+      const bonusChestGold = 20 + Math.floor(tr() * 11);
+      const items: RewardItem[] = [
+        { type: 'card_choice', cards },
+        { type: 'gold', amount: bonusChestGold },
+      ];
+      const potionId = rollPostBattlePotionOffer(
+        run.seed,
+        salt,
+        tier,
+        run.meta.potions.length,
+      );
+      if (potionId) items.push({ type: 'potion', potionId });
+      run.reward = { items, claimed: false };
+      run.screen = { type: 'reward' };
+      events.push({ type: 'ENTERED_REWARD_FROM_TREASURE', nodeId });
     }
   }
 
