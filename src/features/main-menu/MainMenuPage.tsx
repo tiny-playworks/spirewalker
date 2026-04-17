@@ -1,6 +1,10 @@
-import { createMapRun } from '@/game/core/engine/createMapRun';
-import { clearSavedRun, hasSavedRun, loadRunFromLocalStorage } from '@/game/core/persistence/saveRun';
-import { useGameStore } from '@/game/store/gameStore';
+import { createMapRun } from "@/game/core/engine/createMapRun";
+import {
+  clearSavedRun,
+  hasSavedRun,
+  loadRunFromLocalStorage,
+} from "@/game/core/persistence/saveRun";
+import { useGameStore } from "@/game/store/gameStore";
 
 export function MainMenuPage() {
   const initRun = useGameStore((s) => s.initRun);
@@ -16,7 +20,7 @@ export function MainMenuPage() {
         <header className="main-menu-header">
           <p className="main-menu-kicker">肉鸽卡牌 · 试玩</p>
           <h1 className="main-menu-title">
-            <span className="main-menu-title-main">黏液尖塔</span>
+            <span className="main-menu-title-main">尖塔行者</span>
           </h1>
           <p className="main-menu-lead">
             命令驱动战斗与地图，进度自动保存在本机浏览器。
@@ -38,7 +42,9 @@ export function MainMenuPage() {
               <span className="main-menu-btn-hint">读取上次的存档</span>
             </button>
             {!canContinue ? (
-              <p className="main-menu-inline-hint">暂无存档，可从下方开始新一局。</p>
+              <p className="main-menu-inline-hint">
+                暂无存档，可从下方开始新一局。
+              </p>
             ) : null}
             <button
               type="button"
