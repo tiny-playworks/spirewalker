@@ -1,0 +1,35 @@
+{
+  "name": "sljt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "preview": "rsbuild preview",
+    "test": "rstest run",
+    "test:watch": "rstest --watch",
+    "lint": "rslint"
+  },
+  "dependencies": {
+    "phaser": "^4.0.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "2.0.0-rc.3",
+    "@rsbuild/plugin-react": "2.0.0-rc.3",
+    "@rslint/core": "^0.4.2",
+    "@rstest/adapter-rsbuild": "^0.2.6",
+    "@rstest/core": "^0.9.7",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
+  },
+  "npmClient": "pnpm",
+  "pnpm": {
+    "overrides": {
+      "@rsbuild/core": "2.0.0-rc.3"
+    }
+  }
+}
