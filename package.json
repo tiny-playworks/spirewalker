@@ -2,6 +2,19 @@
   "name": "spirewalker",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ILoveChy/spirewalker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ILoveChy/spirewalker/issues"
+  },
+  "homepage": "https://github.com/ILoveChy/spirewalker#readme",
   "type": "module",
   "scripts": {
     "dev": "rsbuild dev",
