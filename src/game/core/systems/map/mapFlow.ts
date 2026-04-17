@@ -4,12 +4,12 @@ import type { RewardItem } from '../../model/reward';
 import { isLegalMapStep, pruneMapEdgesToAlive } from '../../model/mapGraph';
 import type { RunState } from '../../model/run';
 import { mulberry32 } from '../../utils/rng';
-import { buildInitialBattle, DEFAULT_ENEMY_LINEUP, lineupBoss, lineupElite } from '../createMvpRun';
-import { WANDERING_MERCHANT_EVENT_ID } from '../generateBranchingFloor';
-import { generateCardRewardChoices } from '../generateRewardChoices';
-import { generateShop } from '../generateShop';
-import { rollPostBattlePotionOffer } from '../postBattleExtras';
-import { hashMapNodeId } from './shared';
+import { buildInitialBattle, DEFAULT_ENEMY_LINEUP, lineupBoss, lineupElite } from '../../engine/createMvpRun';
+import { WANDERING_MERCHANT_EVENT_ID } from '../../engine/generateBranchingFloor';
+import { generateCardRewardChoices } from '../../engine/generateRewardChoices';
+import { generateShop } from '../../engine/generateShop';
+import { rollPostBattlePotionOffer } from '../../engine/postBattleExtras';
+import { hashMapNodeId } from '../common/runGuards';
 
 export function chooseMapNodeFlow(
   run: RunState,
@@ -53,10 +53,7 @@ export function chooseMapNodeFlow(
     run.screen = { type: 'event', eventId: WANDERING_MERCHANT_EVENT_ID };
     return;
   }
-  /** 其它 event 节点（含层首营地）：仅占点，不进入子屏 */
-  if (node.type === 'event') {
-    return;
-  }
+  if (node.type === 'event') return;
   if (node.type === 'shop') {
     run.shop = generateShop(run.seed, run.meta.floor, run.meta.relics);
     run.screen = { type: 'shop' };

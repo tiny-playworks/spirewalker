@@ -1,5 +1,6 @@
 import { BattlePage } from '@/features/battle/BattlePage';
 import { EventPage } from '@/features/event/EventPage';
+import { DebugPanel } from '@/features/debug/DebugPanel';
 import { MainMenuPage } from '@/features/main-menu/MainMenuPage';
 import { MapPage } from '@/features/map/MapPage';
 import { RestPage } from '@/features/rest/RestPage';
@@ -10,35 +11,39 @@ import { useGameStore } from '@/game/store/gameStore';
 
 export function App() {
   const run = useGameStore((s) => s.run);
-
-  if (!run) {
-    return <MainMenuPage />;
-  }
-
-  switch (run.screen.type) {
-    case 'map':
-      return <MapPage />;
-    case 'battle':
-      return <BattlePage />;
-    case 'reward':
-      return <RewardPage />;
-    case 'shop':
-      return <ShopPage />;
-    case 'rest':
-      return <RestPage />;
-    case 'event':
-      return <EventPage />;
-    case 'game_over':
-      return <GameOverScreen />;
-    case 'victory':
-      return <VictoryScreen />;
-    default:
-      return (
-        <div className="boot">
-          未实现的界面：{(run.screen as { type: string }).type}
-        </div>
-      );
-  }
+  const page = (() => {
+    if (!run) return <MainMenuPage />;
+    switch (run.screen.type) {
+      case 'map':
+        return <MapPage />;
+      case 'battle':
+        return <BattlePage />;
+      case 'reward':
+        return <RewardPage />;
+      case 'shop':
+        return <ShopPage />;
+      case 'rest':
+        return <RestPage />;
+      case 'event':
+        return <EventPage />;
+      case 'game_over':
+        return <GameOverScreen />;
+      case 'victory':
+        return <VictoryScreen />;
+      default:
+        return (
+          <div className="boot">
+            未实现的界面：{(run.screen as { type: string }).type}
+          </div>
+        );
+    }
+  })();
+  return (
+    <>
+      {page}
+      <DebugPanel />
+    </>
+  );
 }
 
 function GameOverScreen() {

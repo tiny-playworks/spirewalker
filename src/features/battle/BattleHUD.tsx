@@ -1,5 +1,6 @@
 import type { MonsterIntent } from '@/game/core/model/battle';
 import { useGameStore } from '@/game/store/gameStore';
+import { selectBattle, selectCurrentEnemyIntents, selectPlayerBattleStats } from '@/game/store/selectors/battleSelectors';
 import { PotionBar } from './PotionBar';
 
 function formatHudIntent(intent: MonsterIntent): string {
@@ -21,13 +22,14 @@ function formatHudIntent(intent: MonsterIntent): string {
 
 export function BattleHUD() {
   const run = useGameStore((s) => s.run);
-  const battle = run?.battle;
+  const battle = selectBattle(run);
+  const playerStats = selectPlayerBattleStats(run);
+  const enemyIntents = selectCurrentEnemyIntents(run);
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
 
   if (!battle) return null;
 
   const player = battle.units[battle.playerUnitId];
-
   const canAct = battle.phase === 'player_action';
   const handCount = battle.player.hand.length;
   const outOfEnergy = canAct && battle.player.energy === 0 && handCount > 0;
@@ -37,10 +39,11 @@ export function BattleHUD() {
       <div className="battle-hud-inner">
         <div className="battle-hud-row battle-hud-row--stats">
           <span className="battle-chip">
-            回合 <strong>{battle.turn}</strong>
+            回合 <strong>{playerStats?.turn ?? battle.turn}</strong>
           </span>
           <span className="battle-chip">
-            能量 <strong>{battle.player.energy}</strong> / {battle.player.maxEnergy}
+            能量 <strong>{playerStats?.energy ?? battle.player.energy}</strong> /{' '}
+            {playerStats?.maxEnergy ?? battle.player.maxEnergy}
             {outOfEnergy ? (
               <span className="energy-hint">（已用尽，请结束回合）</span>
             ) : null}
@@ -51,13 +54,10 @@ export function BattleHUD() {
               <strong>{player.block}</strong>
             </span>
           ) : null}
-          {battle.enemyUnitIds.map((eid) => {
-            const enemy = battle.units[eid];
-            const monster = battle.monsters[eid];
-            if (!enemy) return null;
-            const intentLabel = monster?.intent ? formatHudIntent(monster.intent) : '—';
+          {enemyIntents.map((enemy) => {
+            const intentLabel = enemy.intent ? formatHudIntent(enemy.intent) : '—';
             return (
-              <span key={eid} className="battle-chip battle-chip--accent">
+              <span key={enemy.unitId} className="battle-chip battle-chip--accent">
                 {enemy.name} HP <strong>{enemy.hp}</strong> / {enemy.maxHp} · 意图{' '}
                 <strong>{intentLabel}</strong>
               </span>

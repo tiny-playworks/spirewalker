@@ -19,7 +19,6 @@ export function syncRunPlayerFromBattle(run: RunState): void {
   }
 }
 
-/** 同步 HP 后：失败则切到全局结算屏并卸下战斗状态（供 App 显示 game_over）。 */
 export function applyGameOverIfDefeat(run: RunState, events: GameEvent[]): void {
   if (run.battle?.phase !== 'defeat') return;
   run.battle = undefined;

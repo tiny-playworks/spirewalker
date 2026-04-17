@@ -6,7 +6,12 @@ import { generateBranchingFloorMap } from '@/game/core/engine/generateBranchingF
 import { rollPostBattlePotionOffer } from '@/game/core/engine/postBattleExtras';
 import { createMvpRun, ENEMY_UNIT_ID, PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
 import { CLEAVE } from '@/game/core/definitions/cards/starter';
-import { STATUS_STRENGTH } from '@/game/core/definitions/statuses';
+import {
+  STATUS_MOMENTUM,
+  STATUS_STRENGTH,
+  STATUS_VULNERABLE,
+  STATUS_WEAK,
+} from '@/game/core/definitions/statuses';
 import type { MapNode } from '@/game/core/model/map';
 import { isLegalMapStep, markVisitedFromCampTo, pickPredecessorId } from '@/game/core/model/mapGraph';
 import type { RunState } from '@/game/core/model/run';
@@ -62,6 +67,11 @@ describe('GameEngine MVP', () => {
     expect(run.battle!.inputMode).toBe('animation_lock');
     expect(run.battle!.pendingAction).toBeNull();
     expect(run.battle!.lastResolvedEvents.length).toBeGreaterThan(0);
+    expect(
+      run.battle!.lastResolvedEvents.some(
+        (e) => e.type === 'CARD_PLAYED' && e.cardInstanceId === strikeId,
+      ),
+    ).toBe(true);
   });
 
   test('RESOLVE_ANIMATION_DONE 会清空事件缓存并恢复 idle', () => {
@@ -126,6 +136,66 @@ describe('GameEngine MVP', () => {
     expect(run.battle!.player.hand.includes(defendId!)).toBe(false);
   });
 
+  test('连势（momentum）在出牌后触发：加格挡并衰减 1 层', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(4);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
+    const defendId = run.battle!.player.hand.find(
+      (id) => run.battle!.player.cards[id].definitionId === 'defend',
+    )!;
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: defendId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+    const p = run.battle!.units[PLAYER_UNIT_ID];
+    const momentum = p.statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0;
+    expect(p.block).toBe(7);
+    expect(momentum).toBe(1);
+  });
+
+  test('蓄势牌可赋予连势，随后下一张牌触发额外格挡', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(42);
+    const momentumCardId = 'test_momentum';
+    run.battle!.player.cards[momentumCardId] = {
+      instanceId: momentumCardId,
+      definitionId: 'momentum',
+      baseCost: 1,
+      costForTurn: 1,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift(momentumCardId);
+    run.battle!.player.energy = 3;
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: momentumCardId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+    run = engine.dispatch(run, { type: 'RESOLVE_ANIMATION_DONE' }).nextRun;
+    const p = run.battle!.units[PLAYER_UNIT_ID];
+    expect(p.statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
+
+    const defendId = run.battle!.player.hand.find(
+      (id) => run.battle!.player.cards[id].definitionId === 'defend',
+    )!;
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: defendId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+    const p2 = run.battle!.units[PLAYER_UNIT_ID];
+    expect(p2.block).toBe(7);
+    expect(p2.statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
+  });
+
   test('结束回合后敌人攻击并进入下一玩家回合', () => {
     const engine = new GameEngine();
     let run = createMvpRun(2);
@@ -138,6 +208,20 @@ describe('GameEngine MVP', () => {
     expect(run.battle!.turn).toBe(t1 + 1);
     expect(run.battle!.phase).toBe('player_action');
     expect(run.battle!.player.hand.length).toBe(5);
+  });
+
+  test('结束回合触发状态钩子：玩家虚弱与敌人易伤衰减', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(12);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_WEAK, 2);
+    addStatusStacks(run.battle!.units[ENEMY_UNIT_ID], STATUS_VULNERABLE, 1);
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+    const pWeak =
+      run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_WEAK)?.stacks ?? 0;
+    const eVul =
+      run.battle!.units[ENEMY_UNIT_ID].statuses.find((s) => s.id === STATUS_VULNERABLE)?.stacks ?? 0;
+    expect(pWeak).toBe(1);
+    expect(eVul).toBe(0);
   });
 });
 

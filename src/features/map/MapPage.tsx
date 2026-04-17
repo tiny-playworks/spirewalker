@@ -4,6 +4,7 @@ import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import type { MapNode } from '@/game/core/model/map';
 import { clearSavedRun } from '@/game/core/persistence/saveRun';
 import { useGameStore } from '@/game/store/gameStore';
+import { selectMapRunState } from '@/game/store/selectors/mapSelectors';
 import { MapRoute } from './MapRoute';
 
 const MAP_LEGEND: { glyph: string; label: string }[] = [
@@ -44,13 +45,10 @@ export function MapPage() {
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
   const initRun = useGameStore((s) => s.initRun);
   const returnToMainMenu = useGameStore((s) => s.returnToMainMenu);
-
-  if (!run || run.screen.type !== 'map') return null;
-
-  const { map, meta, player, masterDeck } = run;
+  const mapState = selectMapRunState(run);
+  if (!mapState) return null;
+  const { map, meta, player, masterDeckSize, currentNode: cur, nextNodeIds: nextIds } = mapState;
   const curId = map.currentNodeId;
-  const cur = curId ? map.nodes[curId] : undefined;
-  const nextIds = cur?.nextNodeIds ?? [];
   const locationName = cur && curId ? nodeTitle(cur) : '—';
 
   return (
@@ -72,7 +70,7 @@ export function MapPage() {
               </strong>
             </div>
             <div className="map-chip">
-              牌组 <strong>{masterDeck.length}</strong> 张
+              牌组 <strong>{masterDeckSize}</strong> 张
             </div>
           </div>
           <div className="map-hud-current">

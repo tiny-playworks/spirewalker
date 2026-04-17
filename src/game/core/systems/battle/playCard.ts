@@ -1,0 +1,178 @@
+import { addStatusStacks, getStatusStacks } from '../../combat/statusCombat';
+import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import type { GameCommand } from '../../commands/types';
+import type { GameEvent } from '../../events/types';
+import type { BattleState } from '../../model/battle';
+import type { EffectDefinition } from '../../model/card';
+import type { RunState } from '../../model/run';
+import type { CombatUnit } from '../../model/unit';
+import { runOnAfterPlayCard, runOnBeforeDealDamage, runOnBeforeTakeDamage } from '../status/statusHooks';
+import { mulberry32 } from '../../utils/rng';
+import { shuffleInPlace } from '../../utils/shuffle';
+
+function drawAdditionalCards(
+  battle: BattleState,
+  n: number,
+  events: GameEvent[],
+  random: () => number,
+): void {
+  for (let i = 0; i < n; i++) {
+    if (battle.player.drawPile.length === 0) {
+      if (battle.player.discardPile.length === 0) break;
+      battle.player.drawPile = [...battle.player.discardPile];
+      battle.player.discardPile = [];
+      shuffleInPlace(battle.player.drawPile, random);
+    }
+    const id = battle.player.drawPile.shift();
+    if (!id) break;
+    battle.player.hand.push(id);
+    events.push({ type: 'CARD_DRAWN', unitId: battle.playerUnitId, cardInstanceId: id });
+  }
+}
+
+function dealDamageTo(
+  battle: BattleState,
+  sourceId: string,
+  target: CombatUnit,
+  baseAmount: number,
+  events: GameEvent[],
+): void {
+  if (!target.alive) return;
+  const source = battle.units[sourceId];
+  let remaining = source ? runOnBeforeDealDamage(source, baseAmount) : baseAmount;
+  remaining = runOnBeforeTakeDamage(target, remaining);
+  const blockAbsorb = Math.min(target.block, remaining);
+  if (blockAbsorb > 0) {
+    target.block -= blockAbsorb;
+    remaining -= blockAbsorb;
+  }
+  const hpLoss = Math.min(target.hp, remaining);
+  target.hp -= hpLoss;
+  if (hpLoss > 0) events.push({ type: 'DAMAGE_DEALT', sourceUnitId: sourceId, targetUnitId: target.id, value: hpLoss });
+  target.alive = target.hp > 0;
+  if (!target.alive) events.push({ type: 'UNIT_DIED', unitId: target.id });
+}
+
+function applyEffects(
+  battle: BattleState,
+  effects: EffectDefinition[],
+  sourceUnitId: string,
+  targetUnitId: string | undefined,
+  events: GameEvent[],
+  random: () => number,
+): void {
+  const playerUnit = battle.units[battle.playerUnitId];
+  for (const e of effects) {
+    if (e.type === 'damage') {
+      if (e.target === 'all_enemies') {
+        for (const eid of battle.enemyUnitIds) {
+          const t = battle.units[eid];
+          if (t?.alive) dealDamageTo(battle, sourceUnitId, t, e.value, events);
+        }
+      } else {
+        const tid = e.target === 'selected' ? targetUnitId : e.target === 'self' ? sourceUnitId : battle.enemyUnitIds[0];
+        if (!tid) continue;
+        const t = battle.units[tid];
+        if (!t) continue;
+        dealDamageTo(battle, sourceUnitId, t, e.value, events);
+      }
+    } else if (e.type === 'block') {
+      const tid = e.target === 'self' ? sourceUnitId : targetUnitId;
+      if (!tid) continue;
+      const t = battle.units[tid];
+      if (!t) continue;
+      t.block += e.value;
+      events.push({ type: 'BLOCK_GAINED', unitId: tid, value: e.value });
+    } else if (e.type === 'apply_status') {
+      if (e.target === 'all_enemies') {
+        for (const eid of battle.enemyUnitIds) {
+          const t = battle.units[eid];
+          if (!t?.alive) continue;
+          addStatusStacks(t, e.statusId, e.stacks);
+          events.push({ type: 'STATUS_APPLIED', unitId: eid, statusId: e.statusId, value: getStatusStacks(t, e.statusId) });
+        }
+      } else {
+        const tid = e.target === 'self' ? battle.playerUnitId : targetUnitId;
+        if (!tid) continue;
+        const t = battle.units[tid];
+        if (!t) continue;
+        addStatusStacks(t, e.statusId, e.stacks);
+        events.push({ type: 'STATUS_APPLIED', unitId: tid, statusId: e.statusId, value: getStatusStacks(t, e.statusId) });
+      }
+    } else if (e.type === 'draw') drawAdditionalCards(battle, e.value, events, random);
+    else if (e.type === 'gain_energy') {
+      battle.player.energy += e.value;
+      events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
+    } else if (e.type === 'discard') {
+      for (let i = 0; i < e.value; i++) {
+        const hand = battle.player.hand;
+        if (hand.length === 0) break;
+        const idx = Math.floor(random() * hand.length);
+        const [picked] = hand.splice(idx, 1);
+        if (picked) battle.player.discardPile.push(picked);
+      }
+    } else if (e.type === 'heal') {
+      const tid = e.target === 'self' ? sourceUnitId : targetUnitId;
+      if (!tid) continue;
+      const t = battle.units[tid];
+      if (!t) continue;
+      t.hp = Math.min(t.maxHp, t.hp + e.value);
+    } else if (e.type === 'repeat') {
+      const times = Math.max(0, e.times | 0);
+      for (let i = 0; i < times; i++) applyEffects(battle, e.effects, sourceUnitId, targetUnitId, events, random);
+    } else if (e.type === 'custom') void e;
+  }
+  if (playerUnit && !playerUnit.alive) events.push({ type: 'BATTLE_LOST' });
+  const allDead = battle.enemyUnitIds.every((id) => !battle.units[id]?.alive);
+  if (allDead) events.push({ type: 'BATTLE_WON' });
+}
+
+export function playCardFlow(
+  run: RunState,
+  command: Extract<GameCommand, { type: 'PLAY_CARD' }>,
+  events: GameEvent[],
+): void {
+  const battle = run.battle;
+  if (!battle || battle.phase !== 'player_action') return;
+  if (battle.inputMode === 'animation_lock') return;
+  const { cardInstanceId, sourceUnitId, targetUnitId } = command;
+  if (sourceUnitId !== battle.playerUnitId) return;
+  if (battle.inputMode === 'selecting_target') {
+    const pending = battle.pendingAction;
+    if (!pending) return;
+    if (pending.cardInstanceId !== cardInstanceId || pending.sourceUnitId !== sourceUnitId) return;
+  }
+  if (!battle.player.hand.includes(cardInstanceId)) return;
+  const card = battle.player.cards[cardInstanceId];
+  if (!card) return;
+  const def = CARD_DEFINITIONS[card.definitionId];
+  if (!def) return;
+  if (battle.player.energy < card.costForTurn) return;
+  if (def.target === 'single_enemy') {
+    if (!targetUnitId) {
+      battle.pendingAction = { type: 'play_card', cardInstanceId, sourceUnitId };
+      battle.inputMode = 'selecting_target';
+      return;
+    }
+    const t = battle.units[targetUnitId];
+    if (!t || t.side !== 'enemy' || !t.alive) return;
+    if (!battle.enemyUnitIds.includes(targetUnitId)) return;
+  } else if (battle.inputMode === 'selecting_target') return;
+  if (def.target === 'all_enemies' && targetUnitId) return;
+
+  const eventStart = events.length;
+  battle.player.energy -= card.costForTurn;
+  events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
+  battle.player.hand = battle.player.hand.filter((id) => id !== cardInstanceId);
+  battle.player.discardPile.push(cardInstanceId);
+  events.push({ type: 'CARD_PLAYED', unitId: sourceUnitId, cardInstanceId, targetUnitId });
+  const effectRng = mulberry32((run.seed ^ battle.turn * 0xc001d ^ cardInstanceId.length * 0x9e37) >>> 0);
+  applyEffects(battle, def.effects, sourceUnitId, targetUnitId, events, () => effectRng());
+  runOnAfterPlayCard(battle, { card, sourceUnitId, events });
+  if (events.some((e) => e.type === 'BATTLE_WON')) battle.phase = 'victory';
+  if (events.some((e) => e.type === 'BATTLE_LOST')) battle.phase = 'defeat';
+  battle.pendingAction = null;
+  const resolved = events.slice(eventStart);
+  battle.lastResolvedEvents = resolved;
+  battle.inputMode = resolved.length > 0 ? 'animation_lock' : 'idle';
+}

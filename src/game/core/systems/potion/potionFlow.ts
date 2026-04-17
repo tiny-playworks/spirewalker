@@ -10,16 +10,13 @@ export function usePotionFlow(
 ): void {
   const battle = run.battle;
   if (!battle || battle.phase !== 'player_action') return;
-
   const { slotIndex } = command;
   if (slotIndex < 0 || slotIndex >= run.meta.potions.length) return;
   const potionId = run.meta.potions[slotIndex];
   const def = POTION_DEFINITIONS[potionId];
   if (!def) return;
-
   const playerUnit = battle.units[battle.playerUnitId];
   if (!playerUnit) return;
-
   const heal = def.healAmount;
   playerUnit.hp = Math.min(playerUnit.maxHp, playerUnit.hp + heal);
   run.player.currentHp = playerUnit.hp;

@@ -3,6 +3,7 @@ import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { SHOP_MIN_MASTER_DECK_SIZE } from '@/game/core/engine/generateShop';
 import { MAX_POTIONS, POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { useGameStore } from '@/game/store/gameStore';
+import { selectShopRunState } from '@/game/store/selectors/shopSelectors';
 
 function deckUniqueCounts(deck: string[]): { definitionId: string; count: number }[] {
   const m = new Map<string, number>();
@@ -15,11 +16,9 @@ function deckUniqueCounts(deck: string[]): { definitionId: string; count: number
 export function ShopPage() {
   const run = useGameStore((s) => s.run);
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
-
-  if (!run || run.screen.type !== 'shop' || !run.shop) return null;
-
-  const { meta, shop, masterDeck } = run;
-  const canRemove = masterDeck.length > SHOP_MIN_MASTER_DECK_SIZE;
+  const shopState = selectShopRunState(run);
+  if (!shopState) return null;
+  const { meta, shop, masterDeck, canRemove } = shopState;
   const deckRows = deckUniqueCounts(masterDeck);
 
   return (

@@ -4,6 +4,13 @@ import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
 import type { BattleState, MonsterIntent } from '@/game/core/model/battle';
 import { PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
 import { useGameStore } from '@/game/store/gameStore';
+import { decidePlayCardCommand } from '../controllers/DragController';
+import {
+  consumePendingEvents,
+  dispatchGameCommand,
+  getBattleSnapshot,
+  isFastModeEnabled,
+} from '../controllers/SceneBridge';
 import { getBattleCanvasTextResolution } from '../gameFactory';
 
 /** 手牌区与敌人 AABB 分离，避免第 4～5 张默认就压在敌人命中盒上导致误判 / 输入抢优先级。 */
@@ -187,9 +194,8 @@ export class BattleScene extends Scene {
 
   update(): void {
     if (!this.canUseDisplay()) return;
-    const battle = useGameStore.getState().run?.battle;
-    const dispatch = useGameStore.getState().dispatchCommand;
-    const events = useGameStore.getState().consumeEvents();
+    const battle = getBattleSnapshot();
+    const events = consumePendingEvents();
     for (const e of events) {
       if (e.type === 'DAMAGE_DEALT') {
         const x = this.unitCenterX(battle, e.targetUnitId);
@@ -206,7 +212,7 @@ export class BattleScene extends Scene {
       }
     }
     if (battle?.inputMode === 'animation_lock' && this.floatGroup.getLength() === 0) {
-      dispatch({ type: 'RESOLVE_ANIMATION_DONE' });
+      dispatchGameCommand({ type: 'RESOLVE_ANIMATION_DONE' });
     }
   }
 
@@ -294,7 +300,7 @@ export class BattleScene extends Scene {
 
   private spawnFloater(x: number, y: number, text: string, color: string): void {
     if (!this.canUseDisplay()) return;
-    const fast = useGameStore.getState().fastMode;
+    const fast = isFastModeEnabled();
     const duration = fast ? 220 : 900;
     const t = this.txt(x, y, text, {
       fontSize: '20px',
@@ -390,59 +396,18 @@ export class BattleScene extends Scene {
       });
       container.on('dragend', () => {
         container.setDepth(HAND_DEPTH_BASE + slot);
-        const bounds = container.getBounds();
-        const dispatch = useGameStore.getState().dispatchCommand;
-        const battleNow = useGameStore.getState().run?.battle;
-        if (!battleNow || battleNow.phase !== 'player_action') {
+        const command = decidePlayCardCommand(
+          getBattleSnapshot(),
+          id,
+          container.getBounds(),
+          this.enemyHitRects,
+          this.aoePlayRect,
+        );
+        if (!command) {
           container.setPosition(dragOriginX, dragOriginY);
           return;
         }
-
-        const cardInst = battleNow.player.cards[id];
-        if (cardInst && battleNow.player.energy < cardInst.costForTurn) {
-          this.spawnFloater(container.x, container.y - 72, '能量不足', '#ff8a7a');
-          container.setPosition(dragOriginX, dragOriginY);
-          return;
-        }
-
-        let hitEnemyId: string | undefined;
-        for (const { unitId, rect } of this.enemyHitRects) {
-          if (Geom.Rectangle.Overlaps(bounds, rect)) {
-            hitEnemyId = unitId;
-            break;
-          }
-        }
-
-        if (def.target === 'single_enemy') {
-          if (hitEnemyId) {
-            dispatch({
-              type: 'PLAY_CARD',
-              cardInstanceId: id,
-              sourceUnitId: PLAYER_UNIT_ID,
-              targetUnitId: hitEnemyId,
-            });
-          } else {
-            container.setPosition(dragOriginX, dragOriginY);
-          }
-        } else if (def.target === 'all_enemies') {
-          const inAoe =
-            Geom.Rectangle.Overlaps(bounds, this.aoePlayRect) || Boolean(hitEnemyId);
-          if (inAoe) {
-            dispatch({
-              type: 'PLAY_CARD',
-              cardInstanceId: id,
-              sourceUnitId: PLAYER_UNIT_ID,
-            });
-          } else {
-            container.setPosition(dragOriginX, dragOriginY);
-          }
-        } else {
-          dispatch({
-            type: 'PLAY_CARD',
-            cardInstanceId: id,
-            sourceUnitId: PLAYER_UNIT_ID,
-          });
-        }
+        dispatchGameCommand(command);
       });
 
       i += 1;

@@ -1292,6 +1292,48 @@ body {
   cursor: not-allowed;
 }
 
+.debug-panel {
+  position: fixed;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 9999;
+  width: min(20rem, calc(100vw - 1.5rem));
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #4a4336;
+  background: rgba(20, 18, 16, 0.92);
+  color: #c9c2b6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-size: 0.78rem;
+}
+
+.debug-panel h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.82rem;
+  color: #f4d58d;
+}
+
+.debug-panel p {
+  margin: 0.2rem 0;
+}
+
+.debug-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.debug-panel-actions button {
+  border: 1px solid #5c5345;
+  background: #2a261f;
+  color: #d7d1c6;
+  border-radius: 6px;
+  padding: 0.24rem 0.45rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
 .potion-bar {
   flex: 1;
   min-width: 0;

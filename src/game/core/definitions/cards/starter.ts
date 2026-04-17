@@ -1,4 +1,4 @@
-import { STATUS_STRENGTH, STATUS_VULNERABLE } from '../statuses';
+import { STATUS_MOMENTUM, STATUS_STRENGTH, STATUS_VULNERABLE } from '../statuses';
 import type { CardDefinition } from '../../model/card';
 
 export const STRIKE: CardDefinition = {
@@ -85,6 +85,18 @@ export const SKIM: CardDefinition = {
   effects: [{ type: 'draw', value: 2 }],
 };
 
+/** 连势：后续每出一牌获格挡并衰减一层（由 statusHooks onAfterPlayCard 处理） */
+export const MOMENTUM: CardDefinition = {
+  id: 'momentum',
+  name: '蓄势',
+  description: '获得 2 层连势（每次出牌后获得等同层数的格挡，并衰减 1 层）。',
+  type: 'skill',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'none',
+  effects: [{ type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 2, target: 'self' }],
+};
+
 export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [STRIKE.id]: STRIKE,
   [DEFEND.id]: DEFEND,
@@ -93,4 +105,5 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [CLEAVE.id]: CLEAVE,
   [SURGE.id]: SURGE,
   [SKIM.id]: SKIM,
+  [MOMENTUM.id]: MOMENTUM,
 };
