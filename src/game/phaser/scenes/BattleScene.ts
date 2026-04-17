@@ -188,6 +188,7 @@ export class BattleScene extends Scene {
   update(): void {
     if (!this.canUseDisplay()) return;
     const battle = useGameStore.getState().run?.battle;
+    const dispatch = useGameStore.getState().dispatchCommand;
     const events = useGameStore.getState().consumeEvents();
     for (const e of events) {
       if (e.type === 'DAMAGE_DEALT') {
@@ -203,6 +204,9 @@ export class BattleScene extends Scene {
       } else if (e.type === 'POTION_USED') {
         this.spawnFloater(110, 180, `+${e.value} 生命`, '#7dffb3');
       }
+    }
+    if (battle?.inputMode === 'animation_lock' && this.floatGroup.getLength() === 0) {
+      dispatch({ type: 'RESOLVE_ANIMATION_DONE' });
     }
   }
 

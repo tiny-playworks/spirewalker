@@ -32,6 +32,60 @@ function findNodeId(run: RunState, pred: (n: MapNode) => boolean): string {
 }
 
 describe('GameEngine MVP', () => {
+  test('单体牌无目标先进入 selecting_target，再命中目标后结算并进入动画锁', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(10);
+    const strikeId = run.battle!.player.hand.find(
+      (id) => run.battle!.player.cards[id].definitionId === 'strike',
+    )!;
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: strikeId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+
+    expect(run.battle!.inputMode).toBe('selecting_target');
+    expect(run.battle!.pendingAction?.cardInstanceId).toBe(strikeId);
+    expect(run.battle!.player.hand.includes(strikeId)).toBe(true);
+
+    const { nextRun, events } = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: strikeId,
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: ENEMY_UNIT_ID,
+    });
+    run = nextRun;
+    expect(events.some((e) => e.type === 'DAMAGE_DEALT')).toBe(true);
+    expect(run.battle!.inputMode).toBe('animation_lock');
+    expect(run.battle!.pendingAction).toBeNull();
+    expect(run.battle!.lastResolvedEvents.length).toBeGreaterThan(0);
+  });
+
+  test('RESOLVE_ANIMATION_DONE 会清空事件缓存并恢复 idle', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(11);
+    const strikeId = run.battle!.player.hand.find(
+      (id) => run.battle!.player.cards[id].definitionId === 'strike',
+    )!;
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: strikeId,
+        sourceUnitId: PLAYER_UNIT_ID,
+        targetUnitId: ENEMY_UNIT_ID,
+      })
+      .nextRun;
+    expect(run.battle!.inputMode).toBe('animation_lock');
+    expect(run.battle!.lastResolvedEvents.length).toBeGreaterThan(0);
+
+    run = engine.dispatch(run, { type: 'RESOLVE_ANIMATION_DONE' }).nextRun;
+    expect(run.battle!.inputMode).toBe('idle');
+    expect(run.battle!.lastResolvedEvents).toEqual([]);
+  });
+
   test('打击对敌人造成伤害', () => {
     const engine = new GameEngine();
     let run = createMvpRun(1);
