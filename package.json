@@ -22,7 +22,8 @@
     "preview": "rsbuild preview",
     "test": "rstest run",
     "test:watch": "rstest --watch",
-    "lint": "rslint"
+    "lint": "rslint",
+    "check": "pnpm lint && pnpm test"
   },
   "dependencies": {
     "phaser": "^4.0.0",
