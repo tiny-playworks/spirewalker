@@ -11,21 +11,57 @@ export function DebugPanel() {
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
   if (!isDev() || !run) return null;
   const battle = run.battle;
+  const enemyIntentSummary = battle
+    ? battle.enemyUnitIds
+        .map((id) => {
+          const m = battle.monsters[id];
+          const u = battle.units[id];
+          const intent = m?.intent;
+          if (!u) return null;
+          const intentText =
+            !intent
+              ? '-'
+              : intent.type === 'attack'
+                ? `atk ${intent.value}`
+                : intent.type === 'block'
+                  ? `blk ${intent.value}`
+                  : intent.type === 'buff'
+                    ? `buff ${intent.statusId}:${intent.value}`
+                    : intent.type === 'debuff'
+                      ? `debuff ${intent.statusId}:${intent.value}`
+                      : `atk+ ${intent.attack} ${intent.statusId}:${intent.value}`;
+          return `${u.name}:${intentText}`;
+        })
+        .filter(Boolean)
+        .join(' | ')
+    : '';
 
   return (
     <aside className="debug-panel">
       <h3>Debug</h3>
       <p>
-        screen: <strong>{run.screen.type}</strong> · floor: <strong>{run.meta.floor}</strong> · gold:{' '}
+        screen: <strong>{run.screen.type}</strong> · floor: <strong>{run.meta.floor}</strong> · seed:{' '}
+        <strong>{run.seed}</strong> · gold:{' '}
         <strong>{run.meta.gold}</strong>
       </p>
       {battle ? (
-        <p>
-          phase: <strong>{battle.phase}</strong> · input: <strong>{battle.inputMode}</strong> · pending:{' '}
-          <strong>{battle.pendingAction ? 'yes' : 'no'}</strong>
-        </p>
+        <>
+          <p>
+            phase: <strong>{battle.phase}</strong> · input: <strong>{battle.inputMode}</strong> · pending:{' '}
+            <strong>{battle.pendingAction ? 'yes' : 'no'}</strong>
+          </p>
+          <p>
+            enemy intents: <strong>{enemyIntentSummary || '-'}</strong>
+          </p>
+          <p>
+            last events: <strong>{battle.lastResolvedEvents.map((e) => e.type).join(', ') || '-'}</strong>
+          </p>
+        </>
       ) : null}
       <div className="debug-panel-actions">
+        <button type="button" onClick={() => dispatchCommand({ type: 'END_TURN' })}>
+          下一回合
+        </button>
         <button type="button" onClick={() => dispatchCommand({ type: 'DEBUG_SET_PLAYER_HP', hp: 5 })}>
           残血(5)
         </button>

@@ -4,3 +4,5 @@ export const STATUS_WEAK = 'weak';
 export const STATUS_VULNERABLE = 'vulnerable';
 /** 连势：每次出牌后获得等同层数的格挡，并衰减 1 层。 */
 export const STATUS_MOMENTUM = 'momentum';
+/** 金属化：回合结束时获得等同层数的格挡。 */
+export const STATUS_METALLICIZE = 'metallicize';

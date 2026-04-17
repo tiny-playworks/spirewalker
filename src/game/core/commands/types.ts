@@ -24,6 +24,10 @@ export type GameCommand =
   | { type: 'BUY_SHOP_POTION'; potionId: string }
   /** 战斗内使用背包中药水（按栏位下标） */
   | { type: 'USE_POTION'; slotIndex: number }
+  /** 进入手牌拖拽态（仅输入状态，不做业务结算） */
+  | { type: 'BEGIN_DRAG_CARD'; cardInstanceId: string; sourceUnitId: string }
+  /** 取消拖拽并回到 idle（仅输入状态，不做业务结算） */
+  | { type: 'CANCEL_DRAG_CARD' }
   | { type: 'DEBUG_SET_PLAYER_HP'; hp: number }
   | { type: 'DEBUG_ADD_STATUS'; statusId: string; stacks: number; unitId?: string }
   | { type: 'DEBUG_ADD_HAND_CARD'; definitionId: string }

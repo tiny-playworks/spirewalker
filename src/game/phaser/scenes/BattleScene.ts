@@ -390,6 +390,7 @@ export class BattleScene extends Scene {
         dragOriginX = container.x;
         dragOriginY = container.y;
         container.setDepth(120);
+        dispatchGameCommand({ type: 'BEGIN_DRAG_CARD', cardInstanceId: id, sourceUnitId: PLAYER_UNIT_ID });
       });
       container.on('drag', (_p: Input.Pointer, dragX: number, dragY: number) => {
         container.setPosition(dragX, dragY);
@@ -405,6 +406,7 @@ export class BattleScene extends Scene {
         );
         if (!command) {
           container.setPosition(dragOriginX, dragOriginY);
+          dispatchGameCommand({ type: 'CANCEL_DRAG_CARD' });
           return;
         }
         dispatchGameCommand(command);
