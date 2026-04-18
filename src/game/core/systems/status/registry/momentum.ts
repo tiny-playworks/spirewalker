@@ -4,6 +4,7 @@ import type { StatusBehavior } from './types';
 
 export const momentumBehavior: StatusBehavior = {
   onAfterPlayCard: (battle, payload) => {
+    if (payload.skipMomentumAutoConsume) return;
     if (payload.card.definitionId === 'momentum') return;
     const source = battle.units[payload.sourceUnitId];
     if (!source) return;

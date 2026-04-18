@@ -1,3 +1,4 @@
+import { DEFAULT_CHARACTER_ID } from '../definitions/characters';
 import type { MapNode } from '../model/map';
 import type { RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
@@ -25,6 +26,6 @@ export function createMapRun(seed: number): RunState {
       currentNodeId: startId,
     },
     screen: { type: 'map' },
-    meta: { floor: 1, gold: 0, relics: [], potions: ['healing_dew'] },
+    meta: { floor: 1, gold: 0, characterId: DEFAULT_CHARACTER_ID, relics: [], potions: ['healing_dew'] },
   };
 }

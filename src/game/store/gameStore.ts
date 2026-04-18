@@ -46,7 +46,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     if (!run) return;
 
     const result = engine.dispatch(run, command);
-    const lines = result.events.map(formatBattleLogLine);
+    const lines = result.events.map((event) => formatBattleLogLine(run, event));
 
     set({
       run: result.nextRun,

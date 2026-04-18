@@ -23,7 +23,7 @@ import {
 import { applyGameOverIfDefeat, syncRunPlayerFromBattle } from '../systems/common/runGuards';
 import { playCardFlow } from '../systems/battle/playCard';
 import { endTurnFlow, resolveAnimationDoneFlow } from '../systems/battle/turnFlow';
-import { beginDragCardFlow, cancelDragCardFlow } from '../systems/battle/inputFlow';
+import { beginDragCardFlow, cancelDragCardFlow, cancelTargetSelectionFlow } from '../systems/battle/inputFlow';
 
 export interface EngineResult {
   nextRun: RunState;
@@ -50,6 +50,9 @@ export class GameEngine {
         break;
       case 'CANCEL_DRAG_CARD':
         cancelDragCardFlow(nextRun);
+        break;
+      case 'CANCEL_TARGET_SELECTION':
+        cancelTargetSelectionFlow(nextRun);
         break;
       case 'CHOOSE_MAP_NODE':
         chooseMapNodeFlow(nextRun, command, events);

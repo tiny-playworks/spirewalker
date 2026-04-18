@@ -19,3 +19,11 @@ export function cancelDragCardFlow(run: RunState): void {
   if (battle.inputMode !== 'dragging_card') return;
   battle.inputMode = 'idle';
 }
+
+export function cancelTargetSelectionFlow(run: RunState): void {
+  const battle = run.battle;
+  if (!battle || battle.phase !== 'player_action') return;
+  if (battle.inputMode !== 'selecting_target') return;
+  battle.pendingAction = null;
+  battle.inputMode = 'idle';
+}

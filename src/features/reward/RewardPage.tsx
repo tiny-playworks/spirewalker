@@ -1,3 +1,4 @@
+import { buildCardTooltipText } from '@/game/core/battleUiText';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
 import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
@@ -104,9 +105,13 @@ export function RewardPage() {
               <button
                 type="button"
                 className="reward-card-btn"
+                title={buildCardTooltipText(def)}
                 onClick={() => dispatchCommand({ type: 'SELECT_REWARD_CARD', definitionId: defId })}
               >
                 <strong>{def.name}</strong>
+                <span className="reward-card-desc">
+                  {def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · {def.cost} 费
+                </span>
                 <span className="reward-card-desc">{def.description}</span>
               </button>
             </li>

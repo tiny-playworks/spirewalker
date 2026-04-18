@@ -2,6 +2,35 @@ export type CardType = 'attack' | 'skill' | 'power';
 export type CardRarity = 'common' | 'uncommon' | 'rare';
 export type CardTarget = 'none' | 'self' | 'single_enemy' | 'all_enemies';
 
+export type MomentumConsumeMode = 'fixed' | 'all';
+
+export interface MomentumBurstDamageParams {
+  consumeMode: MomentumConsumeMode;
+  consumeValue?: number;
+  baseDamage: number;
+  damagePerStack: number;
+}
+
+export interface MomentumBurstDrawParams {
+  consumeMode: MomentumConsumeMode;
+  consumeValue?: number;
+  baseDraw: number;
+  drawPerStack: number;
+}
+
+export type CustomEffectDefinition =
+  | {
+      type: 'custom';
+      scriptId: 'momentum_burst_damage';
+      params: MomentumBurstDamageParams;
+    }
+  | {
+      type: 'custom';
+      scriptId: 'momentum_burst_draw';
+      params: MomentumBurstDrawParams;
+    }
+  | { type: 'custom'; scriptId: string; params?: Record<string, unknown> };
+
 export type EffectDefinition =
   | { type: 'damage'; value: number; target: 'selected' | 'all_enemies' | 'self' }
   | { type: 'block'; value: number; target: 'self' | 'selected' }
@@ -16,7 +45,7 @@ export type EffectDefinition =
       target: 'self' | 'selected' | 'all_enemies';
     }
   | { type: 'repeat'; times: number; effects: EffectDefinition[] }
-  | { type: 'custom'; scriptId: string; params?: Record<string, unknown> };
+  | CustomEffectDefinition;
 
 export interface CardModifier {
   id: string;
