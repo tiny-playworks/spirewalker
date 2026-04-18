@@ -15,6 +15,15 @@ export interface EnemyHitRect {
   rect: RectLike;
 }
 
+function expandRect(rect: RectLike, padding: number): RectLike {
+  return {
+    x: rect.x - padding,
+    y: rect.y - padding,
+    width: rect.width + padding * 2,
+    height: rect.height + padding * 2,
+  };
+}
+
 function overlaps(a: RectLike, b: RectLike): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
@@ -34,7 +43,7 @@ export function decidePlayCardCommand(
 
   let hitEnemyId: string | undefined;
   for (const { unitId, rect } of enemyHitRects) {
-    if (overlaps(cardBounds, rect)) {
+    if (overlaps(cardBounds, expandRect(rect, 18))) {
       hitEnemyId = unitId;
       break;
     }
@@ -50,7 +59,7 @@ export function decidePlayCardCommand(
     };
   }
   if (def.target === 'all_enemies') {
-    const inAoe = overlaps(cardBounds, aoePlayRect) || Boolean(hitEnemyId);
+    const inAoe = overlaps(cardBounds, expandRect(aoePlayRect, 18)) || Boolean(hitEnemyId);
     if (!inAoe) return null;
     return {
       type: 'PLAY_CARD',

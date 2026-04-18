@@ -20,7 +20,7 @@ export function PotionBar() {
               <button
                 type="button"
                 className="potion-btn"
-                title={def?.description ?? potionId}
+                title={def ? `${def.name}\n${def.description}\n点击后会立即在当前战斗中使用。` : potionId}
                 onClick={() => dispatchCommand({ type: 'USE_POTION', slotIndex })}
               >
                 {def?.name ?? potionId}

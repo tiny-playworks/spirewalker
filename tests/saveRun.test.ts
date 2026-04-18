@@ -38,7 +38,7 @@ describe('normalizeRunState / 存档迁移', () => {
         currentNodeId: 'battle_a',
       },
       screen: { type: 'map' },
-      meta: { floor: 1, gold: 7, relics: [], potions: [] },
+      meta: { floor: 1, gold: 7, characterId: 'walker', relics: [], potions: [] },
     };
 
     const run = normalizeRunState(raw);
@@ -81,7 +81,7 @@ describe('normalizeRunState / 存档迁移', () => {
       },
       screen: { type: 'battle' },
       battle: { stub: true },
-      meta: { floor: 1, gold: 0, relics: [], potions: [] },
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     } as unknown;
 
     const run = normalizeRunState(raw);
@@ -103,5 +103,19 @@ describe('normalizeRunState / 存档迁移', () => {
       new Set(Object.keys(fresh.map.nodes)),
     );
     expect(run!.map.currentNodeId).toBe(fresh.map.currentNodeId);
+  });
+
+  test('旧存档缺少 characterId 时补默认角色', () => {
+    const fresh = createMapRun(0x22334455);
+    const raw = JSON.parse(JSON.stringify(fresh)) as RunState & {
+      meta: RunState['meta'] & { characterId?: string };
+    };
+    delete (raw.meta as { characterId?: string }).characterId;
+    raw.saveVersion = 2;
+
+    const run = normalizeRunState(raw);
+    expect(run).not.toBeNull();
+    expect(run!.meta.characterId).toBe('walker');
+    expect(run!.saveVersion).toBe(RUN_SAVE_VERSION);
   });
 });

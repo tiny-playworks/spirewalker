@@ -208,8 +208,19 @@ export function generateBranchingFloorMap(floor: number, seed: number): Record<s
     nodes[middleIds[i]!]!.type = pool[i]!;
   }
 
-  const eventNodes = middleIds.filter((id) => nodes[id]!.type === 'event');
-  const merchantHost = eventNodes[0] ?? middleIds.find((id) => nodes[id]!.type === 'battle');
+  const firstStepIds = nodes[startId]!.nextNodeIds;
+  for (const id of firstStepIds) {
+    nodes[id]!.type = 'battle';
+    delete nodes[id]!.eventScriptId;
+  }
+
+  const nonFirstStepIds = middleIds.filter((id) => !firstStepIds.includes(id));
+  const eventNodes = nonFirstStepIds.filter((id) => nodes[id]!.type === 'event');
+  const merchantHost =
+    eventNodes[0]
+    ?? nonFirstStepIds.find((id) => nodes[id]!.type === 'battle')
+    ?? middleIds.find((id) => nodes[id]!.type === 'battle')
+    ?? middleIds[0];
   if (merchantHost) {
     nodes[merchantHost]!.type = 'event';
     nodes[merchantHost]!.eventScriptId = WANDERING_MERCHANT_EVENT_ID;
@@ -219,17 +230,6 @@ export function generateBranchingFloorMap(floor: number, seed: number): Record<s
     if (nodes[id]!.type === 'event' && id !== merchantHost) {
       delete nodes[id]!.eventScriptId;
     }
-  }
-
-  const firstStepIds = nodes[startId]!.nextNodeIds;
-  if (firstStepIds.length > 0 && !firstStepIds.some((id) => nodes[id]!.type === 'battle')) {
-    const candidates = firstStepIds.filter((id) => id !== merchantHost);
-    const preferNonTreasure = candidates.filter((id) => nodes[id]!.type !== 'treasure');
-    const poolPick =
-      preferNonTreasure.length > 0 ? preferNonTreasure : candidates.length > 0 ? candidates : firstStepIds;
-    const pick = poolPick[Math.floor(rnd() * poolPick.length)]!;
-    nodes[pick]!.type = 'battle';
-    delete nodes[pick]!.eventScriptId;
   }
 
   /** 首步强转战斗可能吃掉唯一的宝箱，这里保证中间层仍至少有一处 treasure。 */

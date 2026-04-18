@@ -1,10 +1,13 @@
 import { addStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
-import { STATUS_STRENGTH } from '../definitions/statuses';
+import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
+import { STATUS_MOMENTUM, STATUS_STRENGTH } from '../definitions/statuses';
 import type { BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
+import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
 import type { RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
+import { setInitialEnemyIntent } from '../systems/enemy/enemyAi';
 import { createInstanceId, resetIdCounter } from '../utils/id';
 import { mulberry32 } from '../utils/rng';
 import { shuffleInPlace } from '../utils/shuffle';
@@ -14,12 +17,7 @@ export const PLAYER_UNIT_ID = 'u_player';
 /** 兼容单敌与测试：多敌时指第一个敌人 */
 export const ENEMY_UNIT_ID = 'u_enemy_0';
 
-export interface BattleEnemySlot {
-  unitId: string;
-  name: string;
-  maxHp: number;
-  monsterId: string;
-}
+export type { BattleEnemySlot } from '../model/monster';
 
 export const DEFAULT_ENEMY_LINEUP: BattleEnemySlot[] = [
   { unitId: 'u_enemy_0', name: '黏液怪', maxHp: 40, monsterId: 'slime' },
@@ -41,8 +39,19 @@ export function lineupElite(): BattleEnemySlot[] {
   return [{ unitId: 'u_enemy_0', name: '黏液精英', maxHp: 48, monsterId: 'slime_elite' }];
 }
 
-function nextEnemyDamage(moveCount: number): number {
-  return moveCount % 2 === 0 ? 6 : 9;
+/** 干扰型样板敌人：交替攻击与削减 momentum。 */
+export function lineupSapper(): BattleEnemySlot[] {
+  return [{ unitId: 'u_enemy_0', name: '渗蚀黏液', maxHp: 34, monsterId: 'slime_sapper' }];
+}
+
+/** 多打惩罚样板敌人：交替攻击与多次出牌惩罚。 */
+export function lineupGuard(): BattleEnemySlot[] {
+  return [{ unitId: 'u_enemy_0', name: '戒备黏液', maxHp: 38, monsterId: 'slime_guard' }];
+}
+
+/** 拖延型样板敌人：交替攻击与加格挡。 */
+export function lineupShell(): BattleEnemySlot[] {
+  return [{ unitId: 'u_enemy_0', name: '壳甲黏液', maxHp: 42, monsterId: 'slime_shell' }];
 }
 
 function buildCardInstance(definitionId: string): CardInstance {
@@ -76,7 +85,9 @@ export function buildInitialBattle(
   deckDefinitionIds: string[] = createStarterMasterDeck(),
   enemySlots: BattleEnemySlot[] = DEFAULT_ENEMY_LINEUP,
   relicIds: string[] = [],
+  characterId?: string,
 ): BattleState {
+  assertMonsterSlotsResolved(enemySlots);
   const maxHp = playerHp?.maxHp ?? 50;
   const currentHp = playerHp?.currentHp ?? maxHp;
   const rng = mulberry32((seed ^ hashBattleKey(battleKey) ^ 0x9e3779b9) >>> 0);
@@ -92,7 +103,8 @@ export function buildInitialBattle(
   shuffleInPlace(pile, random);
 
   const hand: string[] = [];
-  for (let i = 0; i < 5; i++) {
+  const openingHandSize = relicIds.includes('tactical_gloves') ? 6 : 5;
+  for (let i = 0; i < openingHandSize; i++) {
     const id = pile.shift();
     if (id) hand.push(id);
   }
@@ -125,21 +137,33 @@ export function buildInitialBattle(
       stats: { strength: 0, dexterity: 0 },
       statuses: [],
     };
-    monsters[slot.unitId] = {
+    const monsterState: BattleState['monsters'][string] = {
       unitId: slot.unitId,
       monsterId: slot.monsterId,
-      intent: { type: 'attack', value: nextEnemyDamage(0) },
+      intent: null,
       moveHistory: [],
     };
+    setInitialEnemyIntent(monsterState);
+    monsters[slot.unitId] = monsterState;
   }
 
   if (relicIds.includes('vajra')) {
     addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STRENGTH, 1);
   }
+  if (relicIds.includes('wind_chime')) {
+    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
+  }
+  if (characterId) {
+    const character = getCharacterDefinition(characterId);
+    if (character.passive.type === 'battle_start_status') {
+      addStatusStacks(units[PLAYER_UNIT_ID], character.passive.statusId, character.passive.stacks);
+    }
+  }
 
   const battle: BattleState = {
     id: battleKey,
     turn: 1,
+    playerCardsPlayedThisTurn: 0,
     phase: 'player_action',
     inputMode: 'idle',
     playerUnitId: PLAYER_UNIT_ID,
@@ -176,6 +200,6 @@ export function createMvpRun(seed: number): RunState {
     map: { nodes: {}, currentNodeId: null },
     screen: { type: 'battle' },
     battle,
-    meta: { floor: 1, gold: 0, relics: [], potions: [] },
+    meta: { floor: 1, gold: 0, characterId: DEFAULT_CHARACTER_ID, relics: [], potions: [] },
   };
 }

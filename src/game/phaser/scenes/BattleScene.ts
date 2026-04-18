@@ -1,7 +1,9 @@
 import type { GameObjects, Input } from 'phaser';
 import { Geom, Scene, Scenes } from 'phaser';
+import { buildCardKeywordHints, cardTargetLabel, cardTypeLabel, formatMonsterIntentText } from '@/game/core/battleUiText';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
-import type { BattleState, MonsterIntent } from '@/game/core/model/battle';
+import type { BattleState } from '@/game/core/model/battle';
+import type { CardTarget } from '@/game/core/model/card';
 import { PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
 import { useGameStore } from '@/game/store/gameStore';
 import { decidePlayCardCommand } from '../controllers/DragController';
@@ -28,24 +30,6 @@ const PANEL_W = 150;
 const PANEL_H = 200;
 const PANEL_R = 14;
 
-function formatIntentLine(intent: MonsterIntent | null | undefined): string {
-  if (!intent) return '意图 · —';
-  switch (intent.type) {
-    case 'attack':
-      return `意图 · 攻击 ${intent.value}`;
-    case 'block':
-      return `意图 · 防御 ${intent.value}`;
-    case 'buff':
-      return `意图 · 增益 ${intent.value}`;
-    case 'debuff':
-      return `意图 · 减益 ${intent.value}`;
-    case 'attack_buff':
-      return `意图 · 攻 ${intent.attack} +状态`;
-    default:
-      return '意图 · —';
-  }
-}
-
 export class BattleScene extends Scene {
   /** 全体攻击牌松手判定区（与敌人区重叠也算命中） */
   private aoePlayRect!: Geom.Rectangle;
@@ -55,6 +39,12 @@ export class BattleScene extends Scene {
   private floatGroup!: GameObjects.Group;
   private enemyLayer!: GameObjects.Container;
   private playerLayer!: GameObjects.Container;
+  private enemyTargetZones: GameObjects.Zone[] = [];
+  private previewLayer!: GameObjects.Container;
+  private hoverOverlay!: GameObjects.Graphics;
+  private dragHintText!: GameObjects.Text;
+  private hoveredEnemyId: string | null = null;
+  private aoeHover = false;
   private textRes = 1;
 
   constructor() {
@@ -148,6 +138,144 @@ export class BattleScene extends Scene {
     return g;
   }
 
+  private clearPreview(): void {
+    this.previewLayer.removeAll(true);
+    this.previewLayer.setVisible(false);
+  }
+
+  private showCardPreview(defId: string): void {
+    const def = CARD_DEFINITIONS[defId];
+    if (!def) {
+      this.clearPreview();
+      return;
+    }
+
+    this.previewLayer.removeAll(true);
+    this.previewLayer.setVisible(true);
+
+    const x = 304;
+    const y = 124;
+    const bg = this.add.graphics();
+    bg.fillStyle(0x171511, 0.96);
+    bg.lineStyle(2, 0xc08457, 0.85);
+    bg.fillRoundedRect(x - 94, y - 92, 188, 184, 16);
+    bg.strokeRoundedRect(x - 94, y - 92, 188, 184, 16);
+
+    const title = this.txt(x, y - 66, def.name, {
+      fontSize: '15px',
+      color: '#f4e8d4',
+      fontStyle: 'bold',
+      align: 'center',
+      wordWrap: { width: 160 },
+    }).setOrigin(0.5, 0.5);
+    const meta = this.txt(x, y - 36, `${cardTypeLabel(def.type)} · ${cardTargetLabel(def.target)} · ${def.cost} 费`, {
+      fontSize: '10px',
+      color: '#d6b48c',
+      align: 'center',
+      wordWrap: { width: 160 },
+    }).setOrigin(0.5, 0.5);
+    const desc = this.txt(x - 76, y - 10, def.description, {
+      fontSize: '11px',
+      color: '#e8e1d6',
+      wordWrap: { width: 152 },
+      lineSpacing: 2,
+    });
+
+    const hintLines = buildCardKeywordHints(def);
+    const nodes: GameObjects.GameObject[] = [bg, title, meta, desc];
+    if (hintLines.length > 0) {
+      nodes.push(
+        this.txt(
+          x - 76,
+          y + 44,
+          hintLines.join('\n'),
+          {
+            fontSize: '9px',
+            color: '#a9c8b9',
+            wordWrap: { width: 152 },
+            lineSpacing: 1,
+          },
+        ),
+      );
+    }
+
+    this.previewLayer.add(nodes);
+  }
+
+  private renderHoverOverlay(): void {
+    this.hoverOverlay.clear();
+    if (this.hoveredEnemyId) {
+      const hit = this.enemyHitRects.find((item) => item.unitId === this.hoveredEnemyId);
+      if (hit) {
+        this.hoverOverlay.lineStyle(3, 0xf4d58d, 0.95);
+        this.hoverOverlay.fillStyle(0xf4d58d, 0.08);
+        this.hoverOverlay.fillRoundedRect(hit.rect.x, hit.rect.y, hit.rect.width, hit.rect.height, 16);
+        this.hoverOverlay.strokeRoundedRect(hit.rect.x, hit.rect.y, hit.rect.width, hit.rect.height, 16);
+      }
+    }
+    if (this.aoeHover) {
+      this.hoverOverlay.lineStyle(2, 0x8ad4ff, 0.85);
+      this.hoverOverlay.fillStyle(0x8ad4ff, 0.05);
+      this.hoverOverlay.fillRoundedRect(
+        this.aoePlayRect.x,
+        this.aoePlayRect.y,
+        this.aoePlayRect.width,
+        this.aoePlayRect.height,
+        20,
+      );
+      this.hoverOverlay.strokeRoundedRect(
+        this.aoePlayRect.x,
+        this.aoePlayRect.y,
+        this.aoePlayRect.width,
+        this.aoePlayRect.height,
+        20,
+      );
+    }
+  }
+
+  private setDragHint(text: string, color = '#d6cbb9'): void {
+    this.dragHintText.setText(text);
+    this.dragHintText.setColor(color);
+    this.dragHintText.setVisible(Boolean(text));
+  }
+
+  private dragHintForTarget(target: CardTarget): string {
+    if (target === 'single_enemy') return '拖到敌人身上释放';
+    if (target === 'all_enemies') return '拖到战区或敌人身上释放';
+    return '松手即可打出';
+  }
+
+  private updateDragHintForCard(defId: string): void {
+    const def = CARD_DEFINITIONS[defId];
+    if (!def) return;
+    if (this.hoveredEnemyId) {
+      const battle = getBattleSnapshot();
+      const enemyName = battle?.units[this.hoveredEnemyId]?.name ?? '目标';
+      this.setDragHint(`当前目标：${enemyName}`, '#f4d58d');
+      return;
+    }
+    if (this.aoeHover) {
+      this.setDragHint('当前目标：全体敌人', '#8ad4ff');
+      return;
+    }
+    this.setDragHint(this.dragHintForTarget(def.target));
+  }
+
+  private updateDropHint(cardBounds: Geom.Rectangle): void {
+    this.hoveredEnemyId = null;
+    this.aoeHover = false;
+    for (const { unitId, rect } of this.enemyHitRects) {
+      if (Geom.Rectangle.Overlaps(cardBounds, rect)) {
+        this.hoveredEnemyId = unitId;
+        break;
+      }
+    }
+    if (Geom.Rectangle.Overlaps(cardBounds, this.aoePlayRect)) {
+      this.aoeHover = true;
+    }
+    this.renderHoverOverlay();
+  }
+
   create(): void {
     this.textRes = getBattleCanvasTextResolution();
     this.drawStageBackdrop();
@@ -165,6 +293,20 @@ export class BattleScene extends Scene {
 
     this.floatGroup = this.add.group();
     this.floatGroup.setDepth(35);
+
+    this.previewLayer = this.add.container(0, 0);
+    this.previewLayer.setDepth(37);
+    this.previewLayer.setVisible(false);
+
+    this.hoverOverlay = this.add.graphics().setDepth(34);
+    this.dragHintText = this.txt(460, 26, '', {
+      fontSize: '12px',
+      color: '#d6cbb9',
+      fontStyle: 'bold',
+      align: 'center',
+      backgroundColor: 'rgba(20,18,16,0.55)',
+      padding: { x: 8, y: 4 },
+    }).setOrigin(0.5, 0.5).setDepth(38).setVisible(false);
 
     this.aoePlayRect = new Geom.Rectangle(380, 72, 520, 320);
 
@@ -262,7 +404,7 @@ export class BattleScene extends Scene {
       const cx = ENEMY_SLOT_X0 - i * ENEMY_SLOT_DX;
       const cy = 220;
       const ratio = u && u.maxHp > 0 ? u.hp / u.maxHp : 0;
-      const intentLine = formatIntentLine(monster?.intent);
+      const intentLine = `意图 · ${formatMonsterIntentText(monster?.intent)}`;
       this.enemyLayer.add([
         this.roundedPanel(cx, cy, 0x3a2e28, 0.96, 0xa07858),
         this.hpBar(cx, cy + 58, ratio, 0xd4846a, 0x2a1e1c),
@@ -288,13 +430,45 @@ export class BattleScene extends Scene {
   }
 
   private rebuildEnemyHitRects(battle: BattleState | null): void {
+    this.enemyTargetZones.forEach((zone) => zone.destroy());
+    this.enemyTargetZones = [];
     if (!battle) {
       this.enemyHitRects = [];
       return;
     }
     this.enemyHitRects = battle.enemyUnitIds.map((unitId, i) => {
       const cx = ENEMY_SLOT_X0 - i * ENEMY_SLOT_DX;
-      return { unitId, rect: new Geom.Rectangle(cx - 75, 120, 150, 200) };
+      const rect = new Geom.Rectangle(cx - 88, 108, 176, 228);
+      const zone = this.add.zone(rect.centerX, rect.centerY, rect.width, rect.height);
+      zone.setDepth(33);
+      zone.setInteractive({ useHandCursor: true });
+      zone.on('pointerover', () => {
+        const battleSnapshot = getBattleSnapshot();
+        if (battleSnapshot?.inputMode !== 'selecting_target') return;
+        this.hoveredEnemyId = unitId;
+        this.renderHoverOverlay();
+        const enemyName = battleSnapshot.units[unitId]?.name ?? '目标';
+        this.setDragHint(`点击确认目标：${enemyName}`, '#f4d58d');
+      });
+      zone.on('pointerout', () => {
+        const battleSnapshot = getBattleSnapshot();
+        if (battleSnapshot?.inputMode !== 'selecting_target') return;
+        this.hoveredEnemyId = null;
+        this.renderHoverOverlay();
+        this.setDragHint('请选择一个敌人作为目标', '#d6cbb9');
+      });
+      zone.on('pointerup', () => {
+        const battleSnapshot = getBattleSnapshot();
+        if (battleSnapshot?.inputMode !== 'selecting_target' || !battleSnapshot.pendingAction) return;
+        dispatchGameCommand({
+          type: 'PLAY_CARD',
+          cardInstanceId: battleSnapshot.pendingAction.cardInstanceId,
+          sourceUnitId: battleSnapshot.pendingAction.sourceUnitId,
+          targetUnitId: unitId,
+        });
+      });
+      this.enemyTargetZones.push(zone);
+      return { unitId, rect };
     });
   }
 
@@ -332,6 +506,11 @@ export class BattleScene extends Scene {
 
   private renderHand(battle: BattleState | null): void {
     if (!this.canUseDisplay()) return;
+    this.clearPreview();
+    this.hoveredEnemyId = null;
+    this.aoeHover = false;
+    this.renderHoverOverlay();
+    this.setDragHint('');
     this.children.list
       .filter((c) => c.getData('isHandCard'))
       .forEach((c) => c.destroy());
@@ -384,19 +563,56 @@ export class BattleScene extends Scene {
       container.setInteractive({ draggable: true });
       this.input.setDraggable(container);
 
+      container.on('pointerover', () => {
+        container.setScale(1.06);
+        this.showCardPreview(inst.definitionId);
+      });
+      container.on('pointerout', () => {
+        if (!container.getData('dragging')) {
+          container.setScale(1);
+        }
+        this.clearPreview();
+        this.setDragHint('');
+      });
+      container.on('pointerup', () => {
+        const battleSnapshot = getBattleSnapshot();
+        if (!battleSnapshot || container.getData('dragging')) return;
+        if (battleSnapshot.inputMode === 'animation_lock') return;
+        if (battleSnapshot.inputMode === 'selecting_target') {
+          const pending = battleSnapshot.pendingAction;
+          if (pending?.cardInstanceId === id) {
+            dispatchGameCommand({ type: 'CANCEL_TARGET_SELECTION' });
+            this.setDragHint('');
+          }
+          return;
+        }
+        dispatchGameCommand({ type: 'PLAY_CARD', cardInstanceId: id, sourceUnitId: PLAYER_UNIT_ID });
+      });
+
       let dragOriginX = x;
       let dragOriginY = y;
       container.on('dragstart', () => {
         dragOriginX = container.x;
         dragOriginY = container.y;
+        container.setData('dragging', true);
         container.setDepth(120);
+        container.setScale(1.08);
+        this.showCardPreview(inst.definitionId);
+        this.setDragHint(this.dragHintForTarget(def.target));
         dispatchGameCommand({ type: 'BEGIN_DRAG_CARD', cardInstanceId: id, sourceUnitId: PLAYER_UNIT_ID });
       });
       container.on('drag', (_p: Input.Pointer, dragX: number, dragY: number) => {
         container.setPosition(dragX, dragY);
+        this.updateDropHint(container.getBounds());
+        this.updateDragHintForCard(inst.definitionId);
       });
       container.on('dragend', () => {
+        container.setData('dragging', false);
         container.setDepth(HAND_DEPTH_BASE + slot);
+        container.setScale(1);
+        this.hoveredEnemyId = null;
+        this.aoeHover = false;
+        this.renderHoverOverlay();
         const command = decidePlayCardCommand(
           getBattleSnapshot(),
           id,
@@ -405,10 +621,21 @@ export class BattleScene extends Scene {
           this.aoePlayRect,
         );
         if (!command) {
-          container.setPosition(dragOriginX, dragOriginY);
+          this.setDragHint('当前释放无效', '#ff8a7a');
+          this.tweens.add({
+            targets: container,
+            x: dragOriginX,
+            y: dragOriginY,
+            duration: 120,
+            ease: 'Cubic.easeOut',
+          });
+          this.showCardPreview(inst.definitionId);
+          this.spawnFloater(dragOriginX, dragOriginY - 80, '未命中目标', '#ff8a7a');
           dispatchGameCommand({ type: 'CANCEL_DRAG_CARD' });
           return;
         }
+        this.setDragHint('');
+        this.clearPreview();
         dispatchGameCommand(command);
       });
 

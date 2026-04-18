@@ -1,4 +1,5 @@
 import { createStarterMasterDeck } from '../engine/starterDeck';
+import { DEFAULT_CHARACTER_ID } from '../definitions/characters';
 import type { RunState } from '../model/run';
 import { isLegacyLinearMap, migrateLegacyLinearMapInPlace } from './migrateLegacyMap';
 import { RUN_SAVE_VERSION } from './saveVersion';
@@ -28,6 +29,9 @@ export function normalizeRunState(raw: unknown): RunState | null {
   }
   if (!Array.isArray(r.meta.potions)) {
     r.meta.potions = [];
+  }
+  if (typeof r.meta.characterId !== 'string' || r.meta.characterId.length === 0) {
+    r.meta.characterId = DEFAULT_CHARACTER_ID;
   }
 
   const run = r as RunState;

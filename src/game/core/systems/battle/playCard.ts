@@ -1,9 +1,14 @@
-import { addStatusStacks, getStatusStacks } from '../../combat/statusCombat';
+import { addStatusStacks, decayStatus, getStatusStacks } from '../../combat/statusCombat';
 import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { STATUS_MOMENTUM } from '../../definitions/statuses';
 import type { GameCommand } from '../../commands/types';
 import type { GameEvent } from '../../events/types';
 import type { BattleState } from '../../model/battle';
-import type { EffectDefinition } from '../../model/card';
+import type {
+  EffectDefinition,
+  MomentumBurstDamageParams,
+  MomentumBurstDrawParams,
+} from '../../model/card';
 import type { RunState } from '../../model/run';
 import type { CombatUnit } from '../../model/unit';
 import { runOnAfterPlayCard, runOnBeforeDealDamage, runOnBeforeTakeDamage } from '../status/statusHooks';
@@ -53,9 +58,80 @@ function dealDamageTo(
   if (!target.alive) events.push({ type: 'UNIT_DIED', unitId: target.id });
 }
 
+function readMomentumBurstParams(params: unknown): MomentumBurstDamageParams | null {
+  if (!params || typeof params !== 'object') return null;
+  const raw = params as Partial<MomentumBurstDamageParams>;
+  if (raw.consumeMode !== 'all' && raw.consumeMode !== 'fixed') return null;
+  if (typeof raw.baseDamage !== 'number' || typeof raw.damagePerStack !== 'number') return null;
+  if (raw.consumeMode === 'fixed' && typeof raw.consumeValue !== 'number') return null;
+  return raw as MomentumBurstDamageParams;
+}
+
+function readMomentumBurstDrawParams(params: unknown): MomentumBurstDrawParams | null {
+  if (!params || typeof params !== 'object') return null;
+  const raw = params as Partial<MomentumBurstDrawParams>;
+  if (raw.consumeMode !== 'all' && raw.consumeMode !== 'fixed') return null;
+  if (typeof raw.baseDraw !== 'number' || typeof raw.drawPerStack !== 'number') return null;
+  if (raw.consumeMode === 'fixed' && typeof raw.consumeValue !== 'number') return null;
+  return raw as MomentumBurstDrawParams;
+}
+
+function applyMomentumBurstDamage(
+  battle: BattleState,
+  sourceUnitId: string,
+  targetUnitId: string | undefined,
+  params: MomentumBurstDamageParams,
+  relicIds: string[],
+  events: GameEvent[],
+): void {
+  if (!targetUnitId) return;
+  const source = battle.units[sourceUnitId];
+  const target = battle.units[targetUnitId];
+  if (!source || !target) return;
+
+  const currentStacks = getStatusStacks(source, STATUS_MOMENTUM);
+  const requestedConsume =
+    params.consumeMode === 'all' ? currentStacks : Math.max(0, params.consumeValue ?? 0);
+  const consumedStacks = Math.min(currentStacks, requestedConsume);
+
+  if (consumedStacks > 0) {
+    decayStatus(source, STATUS_MOMENTUM, consumedStacks);
+  }
+
+  const relicBonus = relicIds.includes('burst_emblem') ? 2 : 0;
+  const damage = params.baseDamage + consumedStacks * params.damagePerStack + relicBonus;
+  dealDamageTo(battle, sourceUnitId, target, damage, events);
+}
+
+function applyMomentumBurstDraw(
+  battle: BattleState,
+  sourceUnitId: string,
+  params: MomentumBurstDrawParams,
+  relicIds: string[],
+  events: GameEvent[],
+  random: () => number,
+): void {
+  const source = battle.units[sourceUnitId];
+  if (!source) return;
+
+  const currentStacks = getStatusStacks(source, STATUS_MOMENTUM);
+  const requestedConsume =
+    params.consumeMode === 'all' ? currentStacks : Math.max(0, params.consumeValue ?? 0);
+  const consumedStacks = Math.min(currentStacks, requestedConsume);
+
+  if (consumedStacks > 0) {
+    decayStatus(source, STATUS_MOMENTUM, consumedStacks);
+  }
+
+  const relicBonus = relicIds.includes('insight_lens') ? 1 : 0;
+  const drawCount = params.baseDraw + consumedStacks * params.drawPerStack + relicBonus;
+  drawAdditionalCards(battle, drawCount, events, random);
+}
+
 function applyEffects(
   battle: BattleState,
   effects: EffectDefinition[],
+  relicIds: string[],
   sourceUnitId: string,
   targetUnitId: string | undefined,
   events: GameEvent[],
@@ -119,12 +195,30 @@ function applyEffects(
       t.hp = Math.min(t.maxHp, t.hp + e.value);
     } else if (e.type === 'repeat') {
       const times = Math.max(0, e.times | 0);
-      for (let i = 0; i < times; i++) applyEffects(battle, e.effects, sourceUnitId, targetUnitId, events, random);
-    } else if (e.type === 'custom') void e;
+      for (let i = 0; i < times; i++) applyEffects(battle, e.effects, relicIds, sourceUnitId, targetUnitId, events, random);
+    } else if (e.type === 'custom') {
+      if (e.scriptId === 'momentum_burst_damage') {
+        const params = readMomentumBurstParams(e.params);
+        if (!params) continue;
+        applyMomentumBurstDamage(battle, sourceUnitId, targetUnitId, params, relicIds, events);
+      } else if (e.scriptId === 'momentum_burst_draw') {
+        const params = readMomentumBurstDrawParams(e.params);
+        if (!params) continue;
+        applyMomentumBurstDraw(battle, sourceUnitId, params, relicIds, events, random);
+      }
+    }
   }
   if (playerUnit && !playerUnit.alive) events.push({ type: 'BATTLE_LOST' });
   const allDead = battle.enemyUnitIds.every((id) => !battle.units[id]?.alive);
   if (allDead) events.push({ type: 'BATTLE_WON' });
+}
+
+function shouldSkipMomentumAutoConsume(effects: EffectDefinition[]): boolean {
+  return effects.some(
+    (effect) =>
+      effect.type === 'custom' &&
+      (effect.scriptId === 'momentum_burst_damage' || effect.scriptId === 'momentum_burst_draw'),
+  );
 }
 
 export function playCardFlow(
@@ -165,10 +259,17 @@ export function playCardFlow(
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
   battle.player.hand = battle.player.hand.filter((id) => id !== cardInstanceId);
   battle.player.discardPile.push(cardInstanceId);
+  battle.playerCardsPlayedThisTurn += 1;
   events.push({ type: 'CARD_PLAYED', unitId: sourceUnitId, cardInstanceId, targetUnitId });
   const effectRng = mulberry32((run.seed ^ battle.turn * 0xc001d ^ cardInstanceId.length * 0x9e37) >>> 0);
-  applyEffects(battle, def.effects, sourceUnitId, targetUnitId, events, () => effectRng());
-  runOnAfterPlayCard(battle, { card, sourceUnitId, events });
+  applyEffects(battle, def.effects, run.meta.relics, sourceUnitId, targetUnitId, events, () => effectRng());
+  // 规则固定：卡牌主效果全部结算完成后，再执行 after-play hook。
+  runOnAfterPlayCard(battle, {
+    card,
+    sourceUnitId,
+    events,
+    skipMomentumAutoConsume: shouldSkipMomentumAutoConsume(def.effects),
+  });
   if (events.some((e) => e.type === 'BATTLE_WON')) battle.phase = 'victory';
   if (events.some((e) => e.type === 'BATTLE_LOST')) battle.phase = 'defeat';
   battle.pendingAction = null;

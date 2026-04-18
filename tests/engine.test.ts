@@ -4,8 +4,22 @@ import { GameEngine } from '@/game/core/engine/GameEngine';
 import { buildFloor2Nodes, createMapRun } from '@/game/core/engine/createMapRun';
 import { generateBranchingFloorMap } from '@/game/core/engine/generateBranchingFloor';
 import { rollPostBattlePotionOffer } from '@/game/core/engine/postBattleExtras';
-import { createMvpRun, ENEMY_UNIT_ID, PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
-import { CLEAVE } from '@/game/core/definitions/cards/starter';
+import { buildInitialBattle, createMvpRun, ENEMY_UNIT_ID, PLAYER_UNIT_ID, lineupGuard, lineupSapper, lineupShell } from '@/game/core/engine/createMvpRun';
+import {
+  BRACE_RHYTHM,
+  BURST_STRIKE,
+  CASH_FLOW,
+  CLEAVE,
+  PATCH_BREATH,
+  PRIME_RHYTHM,
+  RECENTER,
+  RELEASE_FLOW,
+  SECOND_WIND,
+  SNAP_STRIKE,
+  STEADY_STEP,
+  TEMPO_GUARD,
+} from '@/game/core/definitions/cards/starter';
+import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import {
   STATUS_MOMENTUM,
   STATUS_STRENGTH,
@@ -15,6 +29,7 @@ import {
 import type { MapNode } from '@/game/core/model/map';
 import { isLegalMapStep, markVisitedFromCampTo, pickPredecessorId } from '@/game/core/model/mapGraph';
 import type { RunState } from '@/game/core/model/run';
+import { RUN_SAVE_VERSION } from '@/game/core/persistence/saveVersion';
 
 function jumpToBeforeNode(run: RunState, targetId: string): void {
   const p = pickPredecessorId(run.map, targetId);
@@ -72,6 +87,31 @@ describe('GameEngine MVP', () => {
         (e) => e.type === 'CARD_PLAYED' && e.cardInstanceId === strikeId,
       ),
     ).toBe(true);
+  });
+
+  test('选目标阶段可以取消，并恢复 idle 且不消耗卡牌', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(1010);
+    const strikeId = run.battle!.player.hand.find(
+      (id) => run.battle!.player.cards[id].definitionId === 'strike',
+    )!;
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: strikeId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+
+    expect(run.battle!.inputMode).toBe('selecting_target');
+    expect(run.battle!.pendingAction?.cardInstanceId).toBe(strikeId);
+
+    run = engine.dispatch(run, { type: 'CANCEL_TARGET_SELECTION' }).nextRun;
+
+    expect(run.battle!.inputMode).toBe('idle');
+    expect(run.battle!.pendingAction).toBeNull();
+    expect(run.battle!.player.hand.includes(strikeId)).toBe(true);
   });
 
   test('RESOLVE_ANIMATION_DONE 会清空事件缓存并恢复 idle', () => {
@@ -196,6 +236,102 @@ describe('GameEngine MVP', () => {
     expect(p2.statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
   });
 
+  test('守势在主效果后再触发 momentum：先获得格挡和连势，再按新层数结算 after-play', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(77);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 1);
+
+    const tempoGuardId = 'test_tempo_guard';
+    run.battle!.player.cards[tempoGuardId] = {
+      instanceId: tempoGuardId,
+      definitionId: TEMPO_GUARD.id,
+      baseCost: TEMPO_GUARD.cost,
+      costForTurn: TEMPO_GUARD.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift(tempoGuardId);
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: tempoGuardId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+
+    const player = run.battle!.units[PLAYER_UNIT_ID];
+    expect(player.block).toBe(6);
+    expect(player.statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
+  });
+
+  test('破势击主动消耗全部 momentum，并且 after-play 不再额外转格挡', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(78);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
+
+    const burstStrikeId = 'test_burst_strike';
+    run.battle!.player.cards[burstStrikeId] = {
+      instanceId: burstStrikeId,
+      definitionId: BURST_STRIKE.id,
+      baseCost: BURST_STRIKE.cost,
+      costForTurn: BURST_STRIKE.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift(burstStrikeId);
+
+    const enemyHpBefore = run.battle!.units[ENEMY_UNIT_ID].hp;
+    const { nextRun, events } = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: burstStrikeId,
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: ENEMY_UNIT_ID,
+    });
+    run = nextRun;
+
+    expect(events.some((e) => e.type === 'DAMAGE_DEALT' && e.value === 13)).toBe(true);
+    expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(0);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)).toBeUndefined();
+    expect(run.battle!.units[ENEMY_UNIT_ID].hp).toBe(enemyHpBefore - 13);
+  });
+
+  test('同一回合连续两张牌时，第 2 张牌读取第 1 张结算后的 momentum', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(79);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
+
+    const firstDefendId = run.battle!.player.hand.find(
+      (id) => run.battle!.player.cards[id].definitionId === 'defend',
+    )!;
+    const secondDefendId = run.battle!.player.hand.find(
+      (id) => id !== firstDefendId && run.battle!.player.cards[id].definitionId === 'defend',
+    )!;
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: firstDefendId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+
+    let player = run.battle!.units[PLAYER_UNIT_ID];
+    expect(player.block).toBe(8);
+    expect(player.statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
+
+    run = engine.dispatch(run, { type: 'RESOLVE_ANIMATION_DONE' }).nextRun;
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: secondDefendId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+
+    player = run.battle!.units[PLAYER_UNIT_ID];
+    expect(player.block).toBe(15);
+    expect(player.statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
+  });
+
   test('结束回合后敌人攻击并进入下一玩家回合', () => {
     const engine = new GameEngine();
     let run = createMvpRun(2);
@@ -208,6 +344,382 @@ describe('GameEngine MVP', () => {
     expect(run.battle!.turn).toBe(t1 + 1);
     expect(run.battle!.phase).toBe('player_action');
     expect(run.battle!.player.hand.length).toBe(5);
+  });
+
+  test('干扰型敌人在敌方回合会削减玩家 momentum', () => {
+    const engine = new GameEngine();
+    const masterDeck = ['strike', 'defend', 'defend', 'strike', 'strike'];
+    const battle = buildInitialBattle(302, undefined, 'sapper_reduce', masterDeck, lineupSapper(), []);
+    let run: RunState = {
+      seed: 302,
+      saveVersion: RUN_SAVE_VERSION,
+      player: { maxHp: 50, currentHp: 50 },
+      masterDeck,
+      map: { nodes: {}, currentNodeId: null },
+      screen: { type: 'battle' },
+      battle,
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+    };
+
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
+
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
+    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 5 });
+  });
+
+  test('多打惩罚敌人在玩家本回合出牌达到阈值时获得格挡', () => {
+    const engine = new GameEngine();
+    const masterDeck = ['strike', 'defend', 'defend', 'strike', 'strike'];
+    const battle = buildInitialBattle(304, undefined, 'guard_punish', masterDeck, lineupGuard(), []);
+    let run: RunState = {
+      seed: 304,
+      saveVersion: RUN_SAVE_VERSION,
+      player: { maxHp: 50, currentHp: 50 },
+      masterDeck,
+      map: { nodes: {}, currentNodeId: null },
+      screen: { type: 'battle' },
+      battle,
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+    };
+
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+
+    for (let i = 0; i < 3; i++) {
+      const surgeId = `test_surge_${i}`;
+      run.battle!.player.cards[surgeId] = {
+        instanceId: surgeId,
+        definitionId: 'surge',
+        baseCost: 0,
+        costForTurn: 0,
+        upgraded: false,
+      };
+      run.battle!.player.hand.unshift(surgeId);
+    }
+
+    for (let i = 0; i < 3; i++) {
+      const surgeId = `test_surge_${i}`;
+      run = engine
+        .dispatch(run, {
+          type: 'PLAY_CARD',
+          cardInstanceId: surgeId,
+          sourceUnitId: PLAYER_UNIT_ID,
+        })
+        .nextRun;
+      run = engine.dispatch(run, { type: 'RESOLVE_ANIMATION_DONE' }).nextRun;
+    }
+
+    expect(run.battle!.playerCardsPlayedThisTurn).toBe(3);
+
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+
+    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(8);
+    expect(run.battle!.playerCardsPlayedThisTurn).toBe(0);
+    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 5 });
+  });
+
+  test('拖延型敌人在敌方回合会获得格挡', () => {
+    const engine = new GameEngine();
+    const masterDeck = ['strike', 'defend', 'defend', 'strike', 'strike'];
+    const battle = buildInitialBattle(309, undefined, 'shell_block', masterDeck, lineupShell(), []);
+    let run: RunState = {
+      seed: 309,
+      saveVersion: RUN_SAVE_VERSION,
+      player: { maxHp: 50, currentHp: 50 },
+      masterDeck,
+      map: { nodes: {}, currentNodeId: null },
+      screen: { type: 'battle' },
+      battle,
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+    };
+
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+
+    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(10);
+    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 4 });
+  });
+
+  test('整步作为节奏修复牌：获得格挡并抽 1 张牌', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(305);
+    const steadyStepId = 'test_steady_step';
+    const drawCardId = 'test_draw_card';
+
+    run.battle!.player.cards[steadyStepId] = {
+      instanceId: steadyStepId,
+      definitionId: STEADY_STEP.id,
+      baseCost: STEADY_STEP.cost,
+      costForTurn: STEADY_STEP.cost,
+      upgraded: false,
+    };
+    run.battle!.player.cards[drawCardId] = {
+      instanceId: drawCardId,
+      definitionId: 'strike',
+      baseCost: 1,
+      costForTurn: 1,
+      upgraded: false,
+    };
+
+    run.battle!.player.hand.unshift(steadyStepId);
+    run.battle!.player.drawPile.unshift(drawCardId);
+
+    const handBefore = run.battle!.player.hand.length;
+    const { nextRun, events } = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: steadyStepId,
+      sourceUnitId: PLAYER_UNIT_ID,
+    });
+    run = nextRun;
+
+    expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(6);
+    expect(events.some((e) => e.type === 'CARD_DRAWN' && e.cardInstanceId === drawCardId)).toBe(true);
+    expect(run.battle!.player.hand.includes(drawCardId)).toBe(true);
+    expect(run.battle!.player.hand.length).toBe(handBefore);
+  });
+
+  test('起手式与稳架补齐蓄势牌：分别验证抽牌起势和防守起势', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(310);
+    const primeRhythmId = 'test_prime_rhythm';
+    const braceRhythmId = 'test_brace_rhythm';
+    const drawCardId = 'test_prime_draw';
+
+    run.battle!.player.cards[primeRhythmId] = {
+      instanceId: primeRhythmId,
+      definitionId: PRIME_RHYTHM.id,
+      baseCost: PRIME_RHYTHM.cost,
+      costForTurn: PRIME_RHYTHM.cost,
+      upgraded: false,
+    };
+    run.battle!.player.cards[braceRhythmId] = {
+      instanceId: braceRhythmId,
+      definitionId: BRACE_RHYTHM.id,
+      baseCost: BRACE_RHYTHM.cost,
+      costForTurn: BRACE_RHYTHM.cost,
+      upgraded: false,
+    };
+    run.battle!.player.cards[drawCardId] = {
+      instanceId: drawCardId,
+      definitionId: 'strike',
+      baseCost: 1,
+      costForTurn: 1,
+      upgraded: false,
+    };
+
+    run.battle!.player.hand.unshift(primeRhythmId, braceRhythmId);
+    run.battle!.player.drawPile.unshift(drawCardId);
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: primeRhythmId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+    expect(run.battle!.player.hand.includes(drawCardId)).toBe(true);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
+
+    run = engine.dispatch(run, { type: 'RESOLVE_ANIMATION_DONE' }).nextRun;
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: braceRhythmId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+    expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(10);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
+  });
+
+  test('断势击只消耗固定 2 层 momentum，并保留剩余层数', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(306);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 4);
+
+    const snapStrikeId = 'test_snap_strike';
+    run.battle!.player.cards[snapStrikeId] = {
+      instanceId: snapStrikeId,
+      definitionId: SNAP_STRIKE.id,
+      baseCost: SNAP_STRIKE.cost,
+      costForTurn: SNAP_STRIKE.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift(snapStrikeId);
+
+    const enemyHpBefore = run.battle!.units[ENEMY_UNIT_ID].hp;
+    const { nextRun, events } = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: snapStrikeId,
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: ENEMY_UNIT_ID,
+    });
+    run = nextRun;
+
+    expect(events.some((e) => e.type === 'DAMAGE_DEALT' && e.value === 13)).toBe(true);
+    expect(run.battle!.units[ENEMY_UNIT_ID].hp).toBe(enemyHpBefore - 13);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
+  });
+
+  test('转势会消耗全部 momentum 并转成抽牌', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(307);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
+
+    const cashFlowId = 'test_cash_flow';
+    const drawIds = ['draw_a', 'draw_b', 'draw_c', 'draw_d'].map((id) => `test_${id}`);
+    run.battle!.player.cards[cashFlowId] = {
+      instanceId: cashFlowId,
+      definitionId: CASH_FLOW.id,
+      baseCost: CASH_FLOW.cost,
+      costForTurn: CASH_FLOW.cost,
+      upgraded: false,
+    };
+    for (const drawId of drawIds) {
+      run.battle!.player.cards[drawId] = {
+        instanceId: drawId,
+        definitionId: 'strike',
+        baseCost: 1,
+        costForTurn: 1,
+        upgraded: false,
+      };
+    }
+
+    run.battle!.player.hand.unshift(cashFlowId);
+    run.battle!.player.drawPile = [...drawIds, ...run.battle!.player.drawPile];
+
+    const { nextRun, events } = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: cashFlowId,
+      sourceUnitId: PLAYER_UNIT_ID,
+    });
+    run = nextRun;
+
+    expect(events.filter((e) => e.type === 'CARD_DRAWN').length).toBe(4);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)).toBeUndefined();
+    for (const drawId of drawIds) {
+      expect(run.battle!.player.hand.includes(drawId)).toBe(true);
+    }
+  });
+
+  test('放势只消耗固定 2 层 momentum 并转成固定过牌', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(311);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 4);
+
+    const releaseFlowId = 'test_release_flow';
+    const drawIds = ['rf_a', 'rf_b', 'rf_c'].map((id) => `test_${id}`);
+    run.battle!.player.cards[releaseFlowId] = {
+      instanceId: releaseFlowId,
+      definitionId: RELEASE_FLOW.id,
+      baseCost: RELEASE_FLOW.cost,
+      costForTurn: RELEASE_FLOW.cost,
+      upgraded: false,
+    };
+    for (const drawId of drawIds) {
+      run.battle!.player.cards[drawId] = {
+        instanceId: drawId,
+        definitionId: 'strike',
+        baseCost: 1,
+        costForTurn: 1,
+        upgraded: false,
+      };
+    }
+    run.battle!.player.hand.unshift(releaseFlowId);
+    run.battle!.player.drawPile = [...drawIds, ...run.battle!.player.drawPile];
+
+    const { nextRun, events } = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: releaseFlowId,
+      sourceUnitId: PLAYER_UNIT_ID,
+    });
+    run = nextRun;
+
+    expect(events.filter((e) => e.type === 'CARD_DRAWN').length).toBe(3);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
+  });
+
+  test('回气与调息分别补资源和补生存', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(308);
+    run.battle!.units[PLAYER_UNIT_ID].hp = 30;
+
+    const recenterId = 'test_recenter';
+    const patchBreathId = 'test_patch_breath';
+    const drawCardId = 'test_recenter_draw';
+    run.battle!.player.cards[recenterId] = {
+      instanceId: recenterId,
+      definitionId: RECENTER.id,
+      baseCost: RECENTER.cost,
+      costForTurn: RECENTER.cost,
+      upgraded: false,
+    };
+    run.battle!.player.cards[patchBreathId] = {
+      instanceId: patchBreathId,
+      definitionId: PATCH_BREATH.id,
+      baseCost: PATCH_BREATH.cost,
+      costForTurn: PATCH_BREATH.cost,
+      upgraded: false,
+    };
+    run.battle!.player.cards[drawCardId] = {
+      instanceId: drawCardId,
+      definitionId: 'strike',
+      baseCost: 1,
+      costForTurn: 1,
+      upgraded: false,
+    };
+
+    run.battle!.player.hand.unshift(recenterId, patchBreathId);
+    run.battle!.player.drawPile.unshift(drawCardId);
+    run.battle!.player.energy = 1;
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: recenterId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+    expect(run.battle!.player.energy).toBe(2);
+    expect(run.battle!.player.hand.includes(drawCardId)).toBe(true);
+
+    run = engine.dispatch(run, { type: 'RESOLVE_ANIMATION_DONE' }).nextRun;
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: patchBreathId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+    expect(run.battle!.units[PLAYER_UNIT_ID].hp).toBe(34);
+    expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(4);
+  });
+
+  test('续拍作为第 4 张节奏修复牌：获得格挡并返还 1 点能量', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(312);
+    const secondWindId = 'test_second_wind';
+    run.battle!.player.cards[secondWindId] = {
+      instanceId: secondWindId,
+      definitionId: SECOND_WIND.id,
+      baseCost: SECOND_WIND.cost,
+      costForTurn: SECOND_WIND.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift(secondWindId);
+    run.battle!.player.energy = 1;
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: secondWindId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+    expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(5);
+    expect(run.battle!.player.energy).toBe(1);
   });
 
   test('结束回合触发状态钩子：玩家虚弱与敌人易伤衰减', () => {
@@ -255,7 +767,125 @@ describe('GameEngine 战斗修正', () => {
     expect(stacks).toBe(1);
   });
 
-  test('精英节点为精英单敌', () => {
+  test('遗物风铃：开场 +2 momentum', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(51);
+    run.meta.relics.push('wind_chime');
+    const battleId = firstBattleFromCamp(run);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: battleId }).nextRun;
+    const stacks =
+      run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0;
+    expect(stacks).toBe(3);
+  });
+
+  test('当前角色被动：从地图进入战斗时开场 +1 momentum', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(91);
+    const battleId = firstBattleFromCamp(run);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: battleId }).nextRun;
+    const stacks =
+      run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0;
+    expect(run.meta.characterId).toBe('walker');
+    expect(stacks).toBe(1);
+  });
+
+  test('遗物战术手套：战斗开始时额外抽 1 张牌', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(52);
+    run.meta.relics.push('tactical_gloves');
+    const battleId = firstBattleFromCamp(run);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: battleId }).nextRun;
+    expect(run.battle!.player.hand.length).toBe(6);
+  });
+
+  test('遗物裂响纹章：主动消耗 momentum 的伤害牌额外 +2 伤害', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(53);
+    run.meta.relics.push('burst_emblem');
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
+
+    const burstStrikeId = 'test_relic_burst_strike';
+    run.battle!.player.cards[burstStrikeId] = {
+      instanceId: burstStrikeId,
+      definitionId: BURST_STRIKE.id,
+      baseCost: BURST_STRIKE.cost,
+      costForTurn: BURST_STRIKE.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift(burstStrikeId);
+
+    const enemyHpBefore = run.battle!.units[ENEMY_UNIT_ID].hp;
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: burstStrikeId,
+        sourceUnitId: PLAYER_UNIT_ID,
+        targetUnitId: ENEMY_UNIT_ID,
+      })
+      .nextRun;
+    expect(run.battle!.units[ENEMY_UNIT_ID].hp).toBe(enemyHpBefore - 12);
+  });
+
+  test('遗物观势镜：主动消耗 momentum 的过牌牌额外抽 1 张牌', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(54);
+    run.meta.relics.push('insight_lens');
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
+
+    const cashFlowId = 'test_relic_cash_flow';
+    const drawIds = ['lens_a', 'lens_b', 'lens_c', 'lens_d'].map((id) => `test_${id}`);
+    run.battle!.player.cards[cashFlowId] = {
+      instanceId: cashFlowId,
+      definitionId: CASH_FLOW.id,
+      baseCost: CASH_FLOW.cost,
+      costForTurn: CASH_FLOW.cost,
+      upgraded: false,
+    };
+    for (const drawId of drawIds) {
+      run.battle!.player.cards[drawId] = {
+        instanceId: drawId,
+        definitionId: 'strike',
+        baseCost: 1,
+        costForTurn: 1,
+        upgraded: false,
+      };
+    }
+    run.battle!.player.hand.unshift(cashFlowId);
+    run.battle!.player.drawPile = [...drawIds, ...run.battle!.player.drawPile];
+
+    const { nextRun, events } = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: cashFlowId,
+      sourceUnitId: PLAYER_UNIT_ID,
+    });
+    run = nextRun;
+    expect(events.filter((e) => e.type === 'CARD_DRAWN').length).toBe(4);
+    for (const drawId of drawIds) {
+      expect(run.battle!.player.hand.includes(drawId)).toBe(true);
+    }
+  });
+
+  test('遗物稳势结：敌方削减 momentum 时少失去 1 层', () => {
+    const engine = new GameEngine();
+    const masterDeck = ['strike', 'defend', 'defend', 'strike', 'strike'];
+    const battle = buildInitialBattle(55, undefined, 'guard_knot_reduce', masterDeck, lineupSapper(), ['guard_knot']);
+    let run: RunState = {
+      seed: 55,
+      saveVersion: RUN_SAVE_VERSION,
+      player: { maxHp: 50, currentHp: 50 },
+      masterDeck,
+      map: { nodes: {}, currentNodeId: null },
+      screen: { type: 'battle' },
+      battle,
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: ['guard_knot'], potions: [] },
+    };
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
+  });
+
+  test('精英节点为精英单敌，且具备反制 momentum 的意图', () => {
     const engine = new GameEngine();
     let run = createMapRun(8);
     const eliteId = findNodeId(run, (n) => n.type === 'elite' && n.floor === 1);
@@ -264,6 +894,13 @@ describe('GameEngine 战斗修正', () => {
     expect(run.map.nodes[eliteId].type).toBe('elite');
     expect(run.battle?.enemyUnitIds.length).toBe(1);
     expect(run.battle?.units[ENEMY_UNIT_ID].maxHp).toBe(48);
+    expect(run.battle?.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 8 });
+    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
+    expect(run.battle?.monsters[ENEMY_UNIT_ID]?.intent).toEqual({
+      type: 'reduce_status',
+      statusId: STATUS_MOMENTUM,
+      value: 3,
+    });
   });
 
   test('商店金币不足无法购买', () => {
@@ -494,7 +1131,7 @@ describe('GameEngine 地图', () => {
     const relicEntry = run.reward!.items.find((i) => i.type === 'relic');
     expect(relicEntry?.type).toBe('relic');
     const relicId = relicEntry && relicEntry.type === 'relic' ? relicEntry.relicId : '';
-    expect(relicId === 'vajra' || relicId === 'anchor').toBe(true);
+    expect(Boolean(RELIC_DEFINITIONS[relicId])).toBe(true);
     const cardChoice = run.reward!.items.find((i) => i.type === 'card_choice');
     if (!cardChoice || cardChoice.type !== 'card_choice') throw new Error('expected card_choice');
     const bossPotionsBefore = run.meta.potions.length;
@@ -543,7 +1180,7 @@ describe('GameEngine 地图', () => {
     let run = createMapRun(14);
     const bossId = findNodeId(run, (n) => n.type === 'boss' && n.floor === 1);
     jumpToBeforeNode(run, bossId);
-    run.meta.relics = ['vajra', 'anchor'];
+    run.meta.relics = Object.keys(RELIC_DEFINITIONS);
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: bossId }).nextRun;
     run.battle!.phase = 'victory';
     run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;

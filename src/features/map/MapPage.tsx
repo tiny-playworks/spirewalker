@@ -1,4 +1,5 @@
 import { createMapRun } from '@/game/core/engine/createMapRun';
+import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import type { MapNode } from '@/game/core/model/map';
@@ -50,6 +51,7 @@ export function MapPage() {
   const { map, meta, player, masterDeckSize, currentNode: cur, nextNodeIds: nextIds } = mapState;
   const curId = map.currentNodeId;
   const locationName = cur && curId ? nodeTitle(cur) : '—';
+  const character = getCharacterDefinition(meta.characterId);
 
   return (
     <div className="map-page">
@@ -71,6 +73,9 @@ export function MapPage() {
             </div>
             <div className="map-chip">
               牌组 <strong>{masterDeckSize}</strong> 张
+            </div>
+            <div className="map-chip" title={`${character.description}\n被动：${character.passiveDescription}`}>
+              角色 <strong>{character.name}</strong>
             </div>
           </div>
           <div className="map-hud-current">

@@ -28,6 +28,8 @@ export type GameCommand =
   | { type: 'BEGIN_DRAG_CARD'; cardInstanceId: string; sourceUnitId: string }
   /** 取消拖拽并回到 idle（仅输入状态，不做业务结算） */
   | { type: 'CANCEL_DRAG_CARD' }
+  /** 取消当前选目标态 */
+  | { type: 'CANCEL_TARGET_SELECTION' }
   | { type: 'DEBUG_SET_PLAYER_HP'; hp: number }
   | { type: 'DEBUG_ADD_STATUS'; statusId: string; stacks: number; unitId?: string }
   | { type: 'DEBUG_ADD_HAND_CARD'; definitionId: string }

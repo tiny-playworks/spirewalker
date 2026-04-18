@@ -44,6 +44,7 @@ export function chooseMapNodeFlow(
       run.masterDeck,
       enemySlots,
       run.meta.relics,
+      run.meta.characterId,
     );
     run.screen = { type: 'battle' };
     events.push({ type: 'ENTERED_BATTLE_FROM_MAP', nodeId });
