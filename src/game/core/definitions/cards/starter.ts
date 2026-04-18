@@ -97,6 +97,232 @@ export const MOMENTUM: CardDefinition = {
   effects: [{ type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 2, target: 'self' }],
 };
 
+/** 规则样板：主效果结算完成后，再触发 momentum 的 onAfterPlayCard。 */
+export const TEMPO_GUARD: CardDefinition = {
+  id: 'tempo_guard',
+  name: '守势',
+  description: '获得 3 点格挡，并获得 2 层连势。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 3, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 2, target: 'self' },
+  ],
+};
+
+/** 低成本起势样板：小额起势并修正手牌。 */
+export const PRIME_RHYTHM: CardDefinition = {
+  id: 'prime_rhythm',
+  name: '起手式',
+  description: '获得 2 层连势，抽 1 张牌。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 0,
+  target: 'none',
+  effects: [
+    { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 2, target: 'self' },
+    { type: 'draw', value: 1 },
+  ],
+};
+
+/** 防守起势样板：在承压回合建立少量 momentum。 */
+export const BRACE_RHYTHM: CardDefinition = {
+  id: 'brace_rhythm',
+  name: '稳架',
+  description: '获得 5 点格挡，并获得 2 层连势。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 5, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 2, target: 'self' },
+  ],
+};
+
+/** 主动消耗样板：把当前连势全部转成伤害。 */
+export const BURST_STRIKE: CardDefinition = {
+  id: 'burst_strike',
+  name: '破势击',
+  description: '造成 4 点伤害，并消耗全部连势，每层额外造成 3 点伤害。',
+  type: 'attack',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    {
+      type: 'custom',
+      scriptId: 'momentum_burst_damage',
+      params: {
+        consumeMode: 'all',
+        baseDamage: 4,
+        damagePerStack: 3,
+      },
+    },
+  ],
+};
+
+/** 固定消耗样板：吃固定层数 momentum，保留剩余层数。 */
+export const SNAP_STRIKE: CardDefinition = {
+  id: 'snap_strike',
+  name: '断势击',
+  description: '造成 5 点伤害，并消耗至多 2 层连势，每层额外造成 4 点伤害。',
+  type: 'attack',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    {
+      type: 'custom',
+      scriptId: 'momentum_burst_damage',
+      params: {
+        consumeMode: 'fixed',
+        consumeValue: 2,
+        baseDamage: 5,
+        damagePerStack: 4,
+      },
+    },
+  ],
+};
+
+/** 转化样板：把 momentum 兑现成过牌，而不是伤害。 */
+export const CASH_FLOW: CardDefinition = {
+  id: 'cash_flow',
+  name: '转势',
+  description: '抽 1 张牌，并消耗全部连势，每层额外抽 1 张牌。',
+  type: 'skill',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'none',
+  effects: [
+    {
+      type: 'custom',
+      scriptId: 'momentum_burst_draw',
+      params: {
+        consumeMode: 'all',
+        baseDraw: 1,
+        drawPerStack: 1,
+      },
+    },
+  ],
+};
+
+/** 固定转化样板：吃固定层数 momentum 换成过牌。 */
+export const RELEASE_FLOW: CardDefinition = {
+  id: 'release_flow',
+  name: '放势',
+  description: '抽 1 张牌，并消耗至多 2 层连势，每层额外抽 1 张牌。',
+  type: 'skill',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'none',
+  effects: [
+    {
+      type: 'custom',
+      scriptId: 'momentum_burst_draw',
+      params: {
+        consumeMode: 'fixed',
+        consumeValue: 2,
+        baseDraw: 1,
+        drawPerStack: 1,
+      },
+    },
+  ],
+};
+
+/** 节奏修复样板：低风险回稳，补一点防守和手牌效率。 */
+export const STEADY_STEP: CardDefinition = {
+  id: 'steady_step',
+  name: '整步',
+  description: '获得 6 点格挡，抽 1 张牌。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 6, target: 'self' },
+    { type: 'draw', value: 1 },
+  ],
+};
+
+/** 节奏修复样板：修复资源断档，适合过渡回合。 */
+export const RECENTER: CardDefinition = {
+  id: 'recenter',
+  name: '回气',
+  description: '抽 1 张牌，获得 1 点能量。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 0,
+  target: 'none',
+  effects: [
+    { type: 'draw', value: 1 },
+    { type: 'gain_energy', value: 1 },
+  ],
+};
+
+/** 节奏修复样板：同时补少量生存与续航。 */
+export const PATCH_BREATH: CardDefinition = {
+  id: 'patch_breath',
+  name: '调息',
+  description: '回复 4 点生命，获得 4 点格挡。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'heal', value: 4, target: 'self' },
+    { type: 'block', value: 4, target: 'self' },
+  ],
+};
+
+/** 节奏修复样板：稳住防守同时不丢下回合行动空间。 */
+export const SECOND_WIND: CardDefinition = {
+  id: 'second_wind',
+  name: '续拍',
+  description: '获得 5 点格挡，获得 1 点能量。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 5, target: 'self' },
+    { type: 'gain_energy', value: 1 },
+  ],
+};
+
+export const MOMENTUM_SETUP_CARD_IDS = [
+  MOMENTUM.id,
+  TEMPO_GUARD.id,
+  PRIME_RHYTHM.id,
+  BRACE_RHYTHM.id,
+] as const;
+
+export const MOMENTUM_PAYOFF_CARD_IDS = [
+  BURST_STRIKE.id,
+  SNAP_STRIKE.id,
+  CASH_FLOW.id,
+  RELEASE_FLOW.id,
+] as const;
+
+export const TEMPO_RECOVERY_CARD_IDS = [
+  STEADY_STEP.id,
+  RECENTER.id,
+  PATCH_BREATH.id,
+  SECOND_WIND.id,
+] as const;
+
+export const CORE_STAPLE_CARD_IDS = [
+  STRIKE.id,
+  DEFEND.id,
+  BASH.id,
+  FLEX.id,
+  CLEAVE.id,
+  SKIM.id,
+  SURGE.id,
+] as const;
+
 export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [STRIKE.id]: STRIKE,
   [DEFEND.id]: DEFEND,
@@ -106,4 +332,15 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [SURGE.id]: SURGE,
   [SKIM.id]: SKIM,
   [MOMENTUM.id]: MOMENTUM,
+  [TEMPO_GUARD.id]: TEMPO_GUARD,
+  [PRIME_RHYTHM.id]: PRIME_RHYTHM,
+  [BRACE_RHYTHM.id]: BRACE_RHYTHM,
+  [BURST_STRIKE.id]: BURST_STRIKE,
+  [SNAP_STRIKE.id]: SNAP_STRIKE,
+  [CASH_FLOW.id]: CASH_FLOW,
+  [RELEASE_FLOW.id]: RELEASE_FLOW,
+  [STEADY_STEP.id]: STEADY_STEP,
+  [RECENTER.id]: RECENTER,
+  [PATCH_BREATH.id]: PATCH_BREATH,
+  [SECOND_WIND.id]: SECOND_WIND,
 };

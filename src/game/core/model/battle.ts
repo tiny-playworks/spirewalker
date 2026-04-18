@@ -24,6 +24,8 @@ export type MonsterIntent =
   | { type: 'block'; value: number }
   | { type: 'buff'; statusId: string; value: number }
   | { type: 'debuff'; statusId: string; value: number }
+  | { type: 'reduce_status'; statusId: string; value: number }
+  | { type: 'punish_multi_play'; threshold: number; block: number }
   | {
       type: 'attack_buff';
       attack: number;
@@ -54,6 +56,7 @@ export interface MonsterBattleState {
 export interface BattleState {
   id: string;
   turn: number;
+  playerCardsPlayedThisTurn: number;
   phase: BattlePhase;
   inputMode: InputMode;
   playerUnitId: string;

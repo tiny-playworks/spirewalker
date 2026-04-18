@@ -4,4 +4,4 @@ dist
 coverage
 *.log
 .rslint-cache
-temp_book
+# temp_book

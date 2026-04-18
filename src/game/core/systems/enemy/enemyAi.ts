@@ -19,6 +19,65 @@ function alternatingAttackIntent(
   return { intent: { type: 'attack', value }, trace };
 }
 
+function alternatingAttackReduceStatusIntent(
+  defId: string,
+  moveHistoryLength: number,
+  attackDamage: number,
+  statusId: string,
+  reduceValue: number,
+): IntentComputation {
+  const useAttack = moveHistoryLength % 2 === 0;
+  if (useAttack) {
+    return {
+      intent: { type: 'attack', value: attackDamage },
+      trace: `alternating_attack_reduce_status[${defId}] len=${moveHistoryLength} → attack=${attackDamage}`,
+    };
+  }
+  return {
+    intent: { type: 'reduce_status', statusId, value: reduceValue },
+    trace: `alternating_attack_reduce_status[${defId}] len=${moveHistoryLength} → reduce ${statusId} by ${reduceValue}`,
+  };
+}
+
+function alternatingAttackPunishMultiPlayIntent(
+  defId: string,
+  moveHistoryLength: number,
+  attackDamage: number,
+  threshold: number,
+  blockValue: number,
+): IntentComputation {
+  const useAttack = moveHistoryLength % 2 === 0;
+  if (useAttack) {
+    return {
+      intent: { type: 'attack', value: attackDamage },
+      trace: `alternating_attack_punish_multi_play[${defId}] len=${moveHistoryLength} → attack=${attackDamage}`,
+    };
+  }
+  return {
+    intent: { type: 'punish_multi_play', threshold, block: blockValue },
+    trace: `alternating_attack_punish_multi_play[${defId}] len=${moveHistoryLength} → punish threshold=${threshold} block=${blockValue}`,
+  };
+}
+
+function alternatingAttackBlockIntent(
+  defId: string,
+  moveHistoryLength: number,
+  attackDamage: number,
+  blockValue: number,
+): IntentComputation {
+  const useAttack = moveHistoryLength % 2 === 0;
+  if (useAttack) {
+    return {
+      intent: { type: 'attack', value: attackDamage },
+      trace: `alternating_attack_block[${defId}] len=${moveHistoryLength} → attack=${attackDamage}`,
+    };
+  }
+  return {
+    intent: { type: 'block', value: blockValue },
+    trace: `alternating_attack_block[${defId}] len=${moveHistoryLength} → block=${blockValue}`,
+  };
+}
+
 /** 根据怪物定义与已结算行动次数，计算下一意图（含首轮展示） */
 export function computeIntentForMonster(monsterId: string, moveHistoryLength: number): IntentComputation {
   const def = getMonsterDefinition(monsterId);
@@ -29,6 +88,27 @@ export function computeIntentForMonster(monsterId: string, moveHistoryLength: nu
   if (ai.kind === 'alternating_attack') {
     const [low, high] = ai.damages;
     return alternatingAttackIntent(def.id, moveHistoryLength, low, high);
+  }
+  if (ai.kind === 'alternating_attack_reduce_status') {
+    return alternatingAttackReduceStatusIntent(
+      def.id,
+      moveHistoryLength,
+      ai.attackDamage,
+      ai.statusId,
+      ai.reduceValue,
+    );
+  }
+  if (ai.kind === 'alternating_attack_punish_multi_play') {
+    return alternatingAttackPunishMultiPlayIntent(
+      def.id,
+      moveHistoryLength,
+      ai.attackDamage,
+      ai.threshold,
+      ai.blockValue,
+    );
+  }
+  if (ai.kind === 'alternating_attack_block') {
+    return alternatingAttackBlockIntent(def.id, moveHistoryLength, ai.attackDamage, ai.blockValue);
   }
   throw new Error(`enemyAi: unhandled ai.kind for ${monsterId}`);
 }

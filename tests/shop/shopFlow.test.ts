@@ -1,4 +1,9 @@
 import { describe, expect, test } from '@rstest/core';
+import {
+  MOMENTUM_PAYOFF_CARD_IDS,
+  MOMENTUM_SETUP_CARD_IDS,
+  TEMPO_RECOVERY_CARD_IDS,
+} from '@/game/core/definitions/cards/starter';
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import type { MapNode } from '@/game/core/model/map';
@@ -29,5 +34,19 @@ describe('shop/shopFlow', () => {
     const beforeDeck = run.masterDeck.length;
     run = engine.dispatch(run, { type: 'BUY_SHOP_CARD', definitionId: offer.definitionId }).nextRun;
     expect(run.masterDeck.length).toBe(beforeDeck + 1);
+  });
+
+  test('商店会提供起势、兑现、修复三类卡入口', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(205);
+    const shopId = findNodeId(run, (n) => n.type === 'shop');
+    jumpToBeforeNode(run, shopId);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: shopId }).nextRun;
+
+    const offerIds = run.shop!.cards.map((offer) => offer.definitionId);
+    expect(offerIds).toContain('strike');
+    expect(offerIds.some((id) => MOMENTUM_SETUP_CARD_IDS.includes(id as never))).toBe(true);
+    expect(offerIds.some((id) => MOMENTUM_PAYOFF_CARD_IDS.includes(id as never))).toBe(true);
+    expect(offerIds.some((id) => TEMPO_RECOVERY_CARD_IDS.includes(id as never))).toBe(true);
   });
 });

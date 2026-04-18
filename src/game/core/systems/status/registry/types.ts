@@ -7,6 +7,7 @@ export interface AfterPlayCardPayload {
   card: CardInstance;
   sourceUnitId: string;
   events: GameEvent[];
+  skipMomentumAutoConsume?: boolean;
 }
 
 export interface StatusBehavior {

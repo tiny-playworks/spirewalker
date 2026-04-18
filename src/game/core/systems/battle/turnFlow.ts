@@ -2,6 +2,8 @@ import type { GameEvent } from '../../events/types';
 import type { BattleState } from '../../model/battle';
 import type { RunState } from '../../model/run';
 import type { CombatUnit } from '../../model/unit';
+import { addStatusStacks, decayStatus, getStatusStacks } from '../../combat/statusCombat';
+import { STATUS_MOMENTUM } from '../../definitions/statuses';
 import { runOnBeforeDealDamage, runOnBeforeTakeDamage, runOnTurnEnd, runOnTurnStart } from '../status/statusHooks';
 import { refreshEnemyIntent } from '../enemy/enemyAi';
 import { syncRunPlayerFromBattle } from '../common/runGuards';
@@ -61,6 +63,92 @@ function dealDamageTo(
   if (!target.alive) events.push({ type: 'UNIT_DIED', unitId: target.id });
 }
 
+function applyEnemyIntent(
+  relicIds: string[],
+  battle: BattleState,
+  enemyUnitId: string,
+  events: GameEvent[],
+): void {
+  const enemy = battle.units[enemyUnitId];
+  const monster = battle.monsters[enemyUnitId];
+  const player = battle.units[battle.playerUnitId];
+  if (!enemy?.alive || !monster?.intent || !player) return;
+
+  const intent = monster.intent;
+  if (intent.type === 'attack') {
+    dealDamageTo(battle, enemyUnitId, player, intent.value, events);
+    monster.moveHistory.push('attack');
+    return;
+  }
+
+  if (intent.type === 'block') {
+    enemy.block += intent.value;
+    events.push({ type: 'BLOCK_GAINED', unitId: enemyUnitId, value: intent.value });
+    monster.moveHistory.push('block');
+    return;
+  }
+
+  if (intent.type === 'buff') {
+    addStatusStacks(enemy, intent.statusId, intent.value);
+    events.push({
+      type: 'STATUS_APPLIED',
+      unitId: enemyUnitId,
+      statusId: intent.statusId,
+      value: getStatusStacks(enemy, intent.statusId),
+    });
+    monster.moveHistory.push('buff');
+    return;
+  }
+
+  if (intent.type === 'debuff') {
+    addStatusStacks(player, intent.statusId, intent.value);
+    events.push({
+      type: 'STATUS_APPLIED',
+      unitId: battle.playerUnitId,
+      statusId: intent.statusId,
+      value: getStatusStacks(player, intent.statusId),
+    });
+    monster.moveHistory.push('debuff');
+    return;
+  }
+
+  if (intent.type === 'reduce_status') {
+    const reduction = intent.statusId === STATUS_MOMENTUM && relicIds.includes('guard_knot')
+      ? Math.max(0, intent.value - 1)
+      : intent.value;
+    decayStatus(player, intent.statusId, reduction);
+    events.push({
+      type: 'STATUS_APPLIED',
+      unitId: battle.playerUnitId,
+      statusId: intent.statusId,
+      value: getStatusStacks(player, intent.statusId),
+    });
+    monster.moveHistory.push('reduce_status');
+    return;
+  }
+
+  if (intent.type === 'punish_multi_play') {
+    if (battle.playerCardsPlayedThisTurn >= intent.threshold) {
+      enemy.block += intent.block;
+      events.push({ type: 'BLOCK_GAINED', unitId: enemyUnitId, value: intent.block });
+    }
+    monster.moveHistory.push('punish_multi_play');
+    return;
+  }
+
+  if (intent.type === 'attack_buff') {
+    dealDamageTo(battle, enemyUnitId, player, intent.attack, events);
+    addStatusStacks(enemy, intent.statusId, intent.value);
+    events.push({
+      type: 'STATUS_APPLIED',
+      unitId: enemyUnitId,
+      statusId: intent.statusId,
+      value: getStatusStacks(enemy, intent.statusId),
+    });
+    monster.moveHistory.push('attack_buff');
+  }
+}
+
 export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   const battle = run.battle;
   if (!battle || battle.phase !== 'player_action') return;
@@ -78,13 +166,9 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   const player = battle.units[battle.playerUnitId];
   if (!player) return;
   for (const eid of battle.enemyUnitIds) {
-    const enemy = battle.units[eid];
-    const monster = battle.monsters[eid];
-    if (!enemy?.alive || !monster?.intent || monster.intent.type !== 'attack') continue;
-    dealDamageTo(battle, eid, player, monster.intent.value, events);
-    monster.moveHistory.push('attack');
-    refreshEnemyIntent(battle, eid);
+    applyEnemyIntent(run.meta.relics, battle, eid, events);
     if (!player.alive) break;
+    refreshEnemyIntent(battle, eid);
   }
 
   if (!player.alive) {
@@ -94,6 +178,7 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
     return;
   }
 
+  battle.playerCardsPlayedThisTurn = 0;
   battle.turn += 1;
   runOnTurnStart(battle);
   events.push({ type: 'TURN_STARTED', turn: battle.turn, unitId: battle.playerUnitId });
