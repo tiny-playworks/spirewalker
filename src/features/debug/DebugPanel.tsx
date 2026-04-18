@@ -1,5 +1,7 @@
 import { useGameStore } from '@/game/store/gameStore';
 
+type EnemyDebugRow = { label: string; defId: string; intentText: string; aiTrace: string };
+
 function isDev(): boolean {
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname;
@@ -11,30 +13,30 @@ export function DebugPanel() {
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
   if (!isDev() || !run) return null;
   const battle = run.battle;
-  const enemyIntentSummary = battle
-    ? battle.enemyUnitIds
-        .map((id) => {
-          const m = battle.monsters[id];
-          const u = battle.units[id];
-          const intent = m?.intent;
-          if (!u) return null;
-          const intentText =
-            !intent
-              ? '-'
-              : intent.type === 'attack'
-                ? `atk ${intent.value}`
-                : intent.type === 'block'
-                  ? `blk ${intent.value}`
-                  : intent.type === 'buff'
-                    ? `buff ${intent.statusId}:${intent.value}`
-                    : intent.type === 'debuff'
-                      ? `debuff ${intent.statusId}:${intent.value}`
-                      : `atk+ ${intent.attack} ${intent.statusId}:${intent.value}`;
-          return `${u.name}:${intentText}`;
-        })
-        .filter(Boolean)
-        .join(' | ')
-    : '';
+  const enemyDebugLines: EnemyDebugRow[] = battle
+    ? battle.enemyUnitIds.reduce<EnemyDebugRow[]>((acc, id) => {
+        const m = battle.monsters[id];
+        const u = battle.units[id];
+        const intent = m?.intent;
+        if (!u || !m) return acc;
+        const intentText =
+          !intent
+            ? '-'
+            : intent.type === 'attack'
+              ? `atk ${intent.value}`
+              : intent.type === 'block'
+                ? `blk ${intent.value}`
+                : intent.type === 'buff'
+                  ? `buff ${intent.statusId}:${intent.value}`
+                  : intent.type === 'debuff'
+                    ? `debuff ${intent.statusId}:${intent.value}`
+                    : `atk+ ${intent.attack} ${intent.statusId}:${intent.value}`;
+        const defId = m.monsterId;
+        const aiTrace = m.aiTrace ?? '-';
+        acc.push({ label: u.name, defId, intentText, aiTrace });
+        return acc;
+      }, [])
+    : [];
 
   return (
     <aside className="debug-panel">
@@ -50,9 +52,21 @@ export function DebugPanel() {
             phase: <strong>{battle.phase}</strong> · input: <strong>{battle.inputMode}</strong> · pending:{' '}
             <strong>{battle.pendingAction ? 'yes' : 'no'}</strong>
           </p>
-          <p>
-            enemy intents: <strong>{enemyIntentSummary || '-'}</strong>
-          </p>
+          {enemyDebugLines.length > 0 ? (
+            <ul className="debug-enemy-list">
+              {enemyDebugLines.map((row) => (
+                <li key={row.label}>
+                  <strong>{row.label}</strong> · def <code>{row.defId}</code> · {row.intentText}
+                  <br />
+                  <span className="debug-ai-trace">AI: {row.aiTrace}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>
+              enemies: <strong>-</strong>
+            </p>
+          )}
           <p>
             last events: <strong>{battle.lastResolvedEvents.map((e) => e.type).join(', ') || '-'}</strong>
           </p>

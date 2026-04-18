@@ -1137,7 +1137,13 @@ body {
 
 .reward-page,
 .shop-page,
-.rest-page {
+.rest-page,
+.event-page {
+  /* 与 .boot 同节点：必须纵向排列，否则标题/列表会被当成 flex 行内子项压成细条 */
+  flex-direction: column;
+  align-items: stretch;
+  align-self: center;
+  width: 100%;
   max-width: 28rem;
   padding: 1.25rem 1.5rem;
 }
@@ -1332,6 +1338,25 @@ body {
   padding: 0.24rem 0.45rem;
   font-size: 0.72rem;
   cursor: pointer;
+}
+
+.debug-enemy-list {
+  margin: 0.2rem 0 0;
+  padding-left: 1rem;
+  line-height: 1.35;
+  font-size: 0.72rem;
+}
+
+.debug-enemy-list code {
+  font-size: 0.68rem;
+  color: #c9b896;
+}
+
+.debug-ai-trace {
+  display: inline-block;
+  margin-top: 0.12rem;
+  color: #7a9088;
+  font-size: 0.68rem;
 }
 
 .potion-bar {

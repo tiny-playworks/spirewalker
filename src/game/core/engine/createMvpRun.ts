@@ -3,8 +3,10 @@ import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
 import { STATUS_STRENGTH } from '../definitions/statuses';
 import type { BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
+import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
 import type { RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
+import { setInitialEnemyIntent } from '../systems/enemy/enemyAi';
 import { createInstanceId, resetIdCounter } from '../utils/id';
 import { mulberry32 } from '../utils/rng';
 import { shuffleInPlace } from '../utils/shuffle';
@@ -14,12 +16,7 @@ export const PLAYER_UNIT_ID = 'u_player';
 /** 兼容单敌与测试：多敌时指第一个敌人 */
 export const ENEMY_UNIT_ID = 'u_enemy_0';
 
-export interface BattleEnemySlot {
-  unitId: string;
-  name: string;
-  maxHp: number;
-  monsterId: string;
-}
+export type { BattleEnemySlot } from '../model/monster';
 
 export const DEFAULT_ENEMY_LINEUP: BattleEnemySlot[] = [
   { unitId: 'u_enemy_0', name: '黏液怪', maxHp: 40, monsterId: 'slime' },
@@ -39,10 +36,6 @@ export function lineupBoss(): BattleEnemySlot[] {
 /** 精英战：单体高血量（地图 elite 节点） */
 export function lineupElite(): BattleEnemySlot[] {
   return [{ unitId: 'u_enemy_0', name: '黏液精英', maxHp: 48, monsterId: 'slime_elite' }];
-}
-
-function nextEnemyDamage(moveCount: number): number {
-  return moveCount % 2 === 0 ? 6 : 9;
 }
 
 function buildCardInstance(definitionId: string): CardInstance {
@@ -77,6 +70,7 @@ export function buildInitialBattle(
   enemySlots: BattleEnemySlot[] = DEFAULT_ENEMY_LINEUP,
   relicIds: string[] = [],
 ): BattleState {
+  assertMonsterSlotsResolved(enemySlots);
   const maxHp = playerHp?.maxHp ?? 50;
   const currentHp = playerHp?.currentHp ?? maxHp;
   const rng = mulberry32((seed ^ hashBattleKey(battleKey) ^ 0x9e3779b9) >>> 0);
@@ -125,12 +119,14 @@ export function buildInitialBattle(
       stats: { strength: 0, dexterity: 0 },
       statuses: [],
     };
-    monsters[slot.unitId] = {
+    const monsterState: BattleState['monsters'][string] = {
       unitId: slot.unitId,
       monsterId: slot.monsterId,
-      intent: { type: 'attack', value: nextEnemyDamage(0) },
+      intent: null,
       moveHistory: [],
     };
+    setInitialEnemyIntent(monsterState);
+    monsters[slot.unitId] = monsterState;
   }
 
   if (relicIds.includes('vajra')) {

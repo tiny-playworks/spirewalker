@@ -47,6 +47,8 @@ export interface MonsterBattleState {
   monsterId: string;
   intent: MonsterIntent | null;
   moveHistory: string[];
+  /** 开发态：最近一次意图计算说明（由 enemyAi 写入） */
+  aiTrace?: string;
 }
 
 export interface BattleState {

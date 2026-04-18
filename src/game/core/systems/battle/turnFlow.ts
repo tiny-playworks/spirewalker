@@ -3,18 +3,10 @@ import type { BattleState } from '../../model/battle';
 import type { RunState } from '../../model/run';
 import type { CombatUnit } from '../../model/unit';
 import { runOnBeforeDealDamage, runOnBeforeTakeDamage, runOnTurnEnd, runOnTurnStart } from '../status/statusHooks';
+import { refreshEnemyIntent } from '../enemy/enemyAi';
 import { syncRunPlayerFromBattle } from '../common/runGuards';
 import { mulberry32 } from '../../utils/rng';
 import { shuffleInPlace } from '../../utils/shuffle';
-
-function nextEnemyDamage(moveCount: number): number {
-  return moveCount % 2 === 0 ? 6 : 9;
-}
-
-function refreshEnemyIntent(battle: BattleState, enemyUnitId: string): void {
-  const m = battle.monsters[enemyUnitId];
-  if (m) m.intent = { type: 'attack', value: nextEnemyDamage(m.moveHistory.length) };
-}
 
 function drawUpTo(
   battle: BattleState,
