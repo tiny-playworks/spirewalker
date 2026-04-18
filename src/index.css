@@ -199,6 +199,11 @@ body {
   border-top: 1px solid rgba(61, 53, 40, 0.85);
 }
 
+.battle-hud-row--meta {
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
 .battle-hud-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -240,6 +245,83 @@ body {
   background: rgba(90, 111, 78, 0.12);
   color: #c4d2b4;
   font-weight: 700;
+}
+
+.battle-status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.6rem;
+}
+
+.battle-status-strip-label,
+.battle-meta-label {
+  font-size: 0.76rem;
+  color: #8a8478;
+  min-width: 4.5rem;
+}
+
+.battle-status-list,
+.battle-meta-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.battle-status-pill,
+.battle-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(108, 93, 72, 0.92);
+  background: rgba(20, 18, 16, 0.48);
+  color: #d8d0c3;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.battle-status-pill-k {
+  display: inline-grid;
+  place-items: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: rgba(192, 132, 87, 0.18);
+  color: #f4d58d;
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.battle-status-pill-v {
+  color: #f0ebe3;
+}
+
+.battle-status-empty {
+  font-size: 0.78rem;
+  color: #7d7669;
+}
+
+.battle-meta-group {
+  flex: 1;
+  min-width: 18rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(20, 18, 16, 0.34);
+  border: 1px solid rgba(61, 53, 40, 0.78);
+}
+
+.battle-meta-pill {
+  border-color: rgba(90, 111, 78, 0.32);
+}
+
+.battle-meta-pill--potion {
+  border-color: rgba(106, 157, 212, 0.34);
+  color: #c8e6ff;
 }
 
 .energy-hint {
@@ -1395,4 +1477,10 @@ body {
 
 .potion-btn:hover {
   border-color: #7ab0d4;
+}
+
+@media (max-width: 900px) {
+  .battle-meta-group {
+    min-width: 100%;
+  }
 }
