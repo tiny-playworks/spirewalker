@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { BattlePage } from '@/features/battle/BattlePage';
 import { EventPage } from '@/features/event/EventPage';
 import { DebugPanel } from '@/features/debug/DebugPanel';
 import { MainMenuPage } from '@/features/main-menu/MainMenuPage';
 import { MapPage } from '@/features/map/MapPage';
+import { RunOverviewPanel } from '@/features/overview/RunOverviewPanel';
 import { RestPage } from '@/features/rest/RestPage';
 import { RewardPage } from '@/features/reward/RewardPage';
 import { ShopPage } from '@/features/shop/ShopPage';
@@ -11,6 +13,12 @@ import { useGameStore } from '@/game/store/gameStore';
 
 export function App() {
   const run = useGameStore((s) => s.run);
+  const [overviewOpen, setOverviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (!run) setOverviewOpen(false);
+  }, [run]);
+
   const page = (() => {
     if (!run) return <MainMenuPage />;
     switch (run.screen.type) {
@@ -41,6 +49,14 @@ export function App() {
   return (
     <>
       {page}
+      {run ? (
+        <RunOverviewPanel
+          run={run}
+          open={overviewOpen}
+          onToggle={() => setOverviewOpen((value) => !value)}
+          onClose={() => setOverviewOpen(false)}
+        />
+      ) : null}
       <DebugPanel />
     </>
   );

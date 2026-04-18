@@ -11,6 +11,16 @@ function cardIdByDef(run: ReturnType<typeof createMvpRun>, defId: string): strin
   return id;
 }
 
+function ensureCardInHand(run: ReturnType<typeof createMvpRun>, defId: string): string {
+  const existing = run.battle!.player.hand.find((x) => run.battle!.player.cards[x]!.definitionId === defId);
+  if (existing) return existing;
+  const fromDrawPile = run.battle!.player.drawPile.find((x) => run.battle!.player.cards[x]!.definitionId === defId);
+  if (!fromDrawPile) throw new Error(`missing ${defId} in battle`);
+  run.battle!.player.drawPile = run.battle!.player.drawPile.filter((x) => x !== fromDrawPile);
+  run.battle!.player.hand.push(fromDrawPile);
+  return fromDrawPile;
+}
+
 describe('DragController / decidePlayCardCommand', () => {
   test('battle 不可行动时返回 null', () => {
     const run = createMvpRun(1);
@@ -55,6 +65,24 @@ describe('DragController / decidePlayCardCommand', () => {
       AOE_RECT,
     );
     expect(cmd).toBeNull();
+  });
+
+  test('single_enemy 牌靠近敌人边缘时仍允许命中', () => {
+    const run = createMvpRun(31);
+    const strike = ensureCardInHand(run, 'strike');
+    const cmd = decidePlayCardCommand(
+      run.battle ?? null,
+      strike,
+      { x: 686, y: 110, width: 20, height: 20 },
+      ENEMY_HIT_RECTS,
+      AOE_RECT,
+    );
+    expect(cmd).toEqual({
+      type: 'PLAY_CARD',
+      cardInstanceId: strike,
+      sourceUnitId: 'u_player',
+      targetUnitId: 'u_enemy_0',
+    });
   });
 
   test('none 目标牌（防御）不依赖命中区域', () => {
@@ -103,6 +131,32 @@ describe('DragController / decidePlayCardCommand', () => {
       AOE_RECT,
     );
     expect(aoeCmd).toEqual({
+      type: 'PLAY_CARD',
+      cardInstanceId: cleaveId,
+      sourceUnitId: 'u_player',
+    });
+  });
+
+  test('all_enemies 牌靠近战区边缘时也允许触发', () => {
+    const run = createMvpRun(32);
+    const cleaveId = 'test_cleave_edge';
+    run.battle!.player.cards[cleaveId] = {
+      instanceId: cleaveId,
+      definitionId: 'cleave',
+      baseCost: 2,
+      costForTurn: 2,
+      upgraded: false,
+    };
+    run.battle!.player.hand.push(cleaveId);
+
+    const cmd = decidePlayCardCommand(
+      run.battle ?? null,
+      cleaveId,
+      { x: 366, y: 60, width: 20, height: 20 },
+      ENEMY_HIT_RECTS,
+      AOE_RECT,
+    );
+    expect(cmd).toEqual({
       type: 'PLAY_CARD',
       cardInstanceId: cleaveId,
       sourceUnitId: 'u_player',

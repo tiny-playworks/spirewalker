@@ -1,3 +1,4 @@
+import { buildCardTooltipText } from '@/game/core/battleUiText';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { SHOP_MIN_MASTER_DECK_SIZE } from '@/game/core/engine/generateShop';
@@ -38,10 +39,14 @@ export function ShopPage() {
               <button
                 type="button"
                 className="shop-buy-btn"
+                title={def ? buildCardTooltipText(def) : o.definitionId}
                 disabled={!canBuy}
                 onClick={() => dispatchCommand({ type: 'BUY_SHOP_CARD', definitionId: o.definitionId })}
               >
                 {def?.name ?? o.definitionId} — {o.price} 金
+                <span className="reward-card-desc">
+                  {def ? `${def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · ${def.cost} 费` : ''}
+                </span>
               </button>
             </li>
           );
@@ -59,11 +64,12 @@ export function ShopPage() {
                   <button
                     type="button"
                     className="shop-buy-btn"
-                    title={def?.description}
+                    title={def ? `${def.name}\n${def.description}` : o.relicId}
                     disabled={!canBuy}
                     onClick={() => dispatchCommand({ type: 'BUY_SHOP_RELIC', relicId: o.relicId })}
                   >
                     {def?.name ?? o.relicId} — {o.price} 金
+                    <span className="reward-card-desc">{def?.description ?? ''}</span>
                   </button>
                 </li>
               );
@@ -83,12 +89,14 @@ export function ShopPage() {
                   <button
                     type="button"
                     className="shop-buy-btn"
+                    title={def ? `${def.name}\n${def.description}` : o.potionId}
                     disabled={!canBuy}
                     onClick={() =>
                       dispatchCommand({ type: 'BUY_SHOP_POTION', potionId: o.potionId })
                     }
                   >
                     {def?.name ?? o.potionId} — {o.price} 金
+                    <span className="reward-card-desc">{def?.description ?? ''}</span>
                   </button>
                 </li>
               );
@@ -110,6 +118,7 @@ export function ShopPage() {
               <button
                 type="button"
                 className="shop-buy-btn"
+                title={def ? buildCardTooltipText(def) : row.definitionId}
                 disabled={!enabled}
                 onClick={() =>
                   dispatchCommand({

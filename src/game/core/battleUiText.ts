@@ -74,3 +74,16 @@ export function buildCardKeywordHints(def: CardDefinition): string[] {
   }
   return [...new Set(lines)];
 }
+
+export function buildCardTooltipText(def: CardDefinition): string {
+  const parts = [
+    `${def.name}`,
+    `${cardTypeLabel(def.type)} · ${cardTargetLabel(def.target)} · ${def.cost} 费`,
+    def.description,
+  ];
+  const hints = buildCardKeywordHints(def);
+  if (hints.length > 0) {
+    parts.push(hints.join('\n'));
+  }
+  return parts.join('\n');
+}

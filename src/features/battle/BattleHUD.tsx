@@ -1,5 +1,6 @@
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
 import { formatMonsterIntentText } from '@/game/core/battleUiText';
-import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
+import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { getStatusMeta } from '@/game/core/definitions/statuses';
 import { useGameStore } from '@/game/store/gameStore';
@@ -16,12 +17,6 @@ function buildRelicTooltip(relicId: string): string {
         ? '满足条件时会在本战中生效。'
         : '当前战斗中持续提供它的效果。';
   return `${def.name}\n${def.description}\n${battleHint}`;
-}
-
-function buildPotionTooltip(potionId: string): string {
-  const def = POTION_DEFINITIONS[potionId];
-  if (!def) return potionId;
-  return `${def.name}\n${def.description}\n点击后会立即在当前战斗中使用。`;
 }
 
 function StatusStrip({
@@ -77,7 +72,17 @@ export function BattleHUD() {
   const canAct = battle.phase === 'player_action';
   const handCount = battle.player.hand.length;
   const outOfEnergy = canAct && battle.player.energy === 0 && handCount > 0;
+  const selectingTarget = battle.inputMode === 'selecting_target' && battle.pendingAction?.type === 'play_card';
+  const pendingCardInstanceId = selectingTarget ? battle.pendingAction?.cardInstanceId ?? null : null;
+  const pendingCard = pendingCardInstanceId
+    ? battle.player.cards[pendingCardInstanceId]
+    : null;
+  const pendingCardName = pendingCard
+    ? CARD_DEFINITIONS[pendingCard.definitionId]?.name ?? pendingCard.definitionId
+    : null;
   const playerStatuses = player?.statuses ?? [];
+  const character = getCharacterDefinition(run?.meta.characterId ?? 'walker');
+  const hasRelics = Boolean(run?.meta.relics.length);
   const enemyStatusRows = enemyIntents
     .map((enemy) => {
       const unit = battle.units[enemy.unitId];
@@ -109,6 +114,12 @@ export function BattleHUD() {
               <strong>{player.block}</strong>
             </span>
           ) : null}
+          <span
+            className="battle-chip"
+            title={`${character.description}\n被动：${character.passiveDescription}`}
+          >
+            角色 <strong>{character.name}</strong> · {character.passiveName}
+          </span>
           {enemyIntents.map((enemy) => {
             const intentLabel = formatMonsterIntentText(enemy.intent);
             return (
@@ -125,13 +136,19 @@ export function BattleHUD() {
           {battle.phase === 'victory' ? (
             <span className="battle-chip battle-chip--win">胜利</span>
           ) : null}
+          {selectingTarget ? (
+            <span className="battle-chip battle-chip--accent">
+              已选中 {pendingCardName ?? '当前卡牌'}：点击敌人确认；再次点该牌或点“取消选目标”退出
+            </span>
+          ) : null}
         </div>
         {player ? <StatusStrip title={`${player.name} 状态`} statuses={playerStatuses} /> : null}
         {enemyStatusRows.map((enemy) => (
           <StatusStrip key={enemy.unitId} title={`${enemy.name} 状态`} statuses={enemy.statuses} />
         ))}
-        <div className="battle-hud-row battle-hud-row--meta">
-          <div className="battle-meta-group">
+        {hasRelics ? (
+          <div className="battle-hud-row battle-hud-row--meta">
+            <div className="battle-meta-group">
             <span className="battle-meta-label">遗物</span>
             {run?.meta.relics.length ? (
               <div className="battle-meta-list">
@@ -152,28 +169,8 @@ export function BattleHUD() {
               <span className="battle-status-empty">暂无遗物</span>
             )}
           </div>
-          <div className="battle-meta-group">
-            <span className="battle-meta-label">药水总览</span>
-            {run?.meta.potions.length ? (
-              <div className="battle-meta-list">
-                {run.meta.potions.map((potionId, slotIndex) => {
-                  const def = POTION_DEFINITIONS[potionId];
-                  return (
-                    <span
-                      key={`${potionId}-${slotIndex}`}
-                      className="battle-meta-pill battle-meta-pill--potion"
-                      title={buildPotionTooltip(potionId)}
-                    >
-                      {def?.name ?? potionId}
-                    </span>
-                  );
-                })}
-              </div>
-            ) : (
-              <span className="battle-status-empty">暂无药水</span>
-            )}
           </div>
-        </div>
+        ) : null}
         <div className="battle-hud-row battle-hud-row--actions">
           <div className="battle-hud-buttons">
             {battle.phase === 'victory' ? (
@@ -193,6 +190,15 @@ export function BattleHUD() {
                 onClick={() => dispatchCommand({ type: 'END_TURN' })}
               >
                 结束回合
+              </button>
+            ) : null}
+            {selectingTarget ? (
+              <button
+                type="button"
+                className="btn-end-turn btn-end-turn--ghost"
+                onClick={() => dispatchCommand({ type: 'CANCEL_TARGET_SELECTION' })}
+              >
+                取消选目标
               </button>
             ) : null}
           </div>

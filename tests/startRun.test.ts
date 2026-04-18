@@ -15,6 +15,7 @@ describe('startRun', () => {
   test('第一步候选节点只提供 battle', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const run = createMapRun(seed);
+      expect(run.meta.characterId).toBe('walker');
       const cur = run.map.currentNodeId!;
       const nextNodeIds = run.map.nodes[cur]!.nextNodeIds;
       expect(nextNodeIds.length).toBeGreaterThan(0);

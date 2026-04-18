@@ -89,6 +89,31 @@ describe('GameEngine MVP', () => {
     ).toBe(true);
   });
 
+  test('选目标阶段可以取消，并恢复 idle 且不消耗卡牌', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(1010);
+    const strikeId = run.battle!.player.hand.find(
+      (id) => run.battle!.player.cards[id].definitionId === 'strike',
+    )!;
+
+    run = engine
+      .dispatch(run, {
+        type: 'PLAY_CARD',
+        cardInstanceId: strikeId,
+        sourceUnitId: PLAYER_UNIT_ID,
+      })
+      .nextRun;
+
+    expect(run.battle!.inputMode).toBe('selecting_target');
+    expect(run.battle!.pendingAction?.cardInstanceId).toBe(strikeId);
+
+    run = engine.dispatch(run, { type: 'CANCEL_TARGET_SELECTION' }).nextRun;
+
+    expect(run.battle!.inputMode).toBe('idle');
+    expect(run.battle!.pendingAction).toBeNull();
+    expect(run.battle!.player.hand.includes(strikeId)).toBe(true);
+  });
+
   test('RESOLVE_ANIMATION_DONE 会清空事件缓存并恢复 idle', () => {
     const engine = new GameEngine();
     let run = createMvpRun(11);
@@ -333,7 +358,7 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, relics: [], potions: [] },
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
 
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
@@ -357,7 +382,7 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, relics: [], potions: [] },
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
@@ -407,7 +432,7 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, relics: [], potions: [] },
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
@@ -750,7 +775,18 @@ describe('GameEngine 战斗修正', () => {
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: battleId }).nextRun;
     const stacks =
       run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0;
-    expect(stacks).toBe(2);
+    expect(stacks).toBe(3);
+  });
+
+  test('当前角色被动：从地图进入战斗时开场 +1 momentum', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(91);
+    const battleId = firstBattleFromCamp(run);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: battleId }).nextRun;
+    const stacks =
+      run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0;
+    expect(run.meta.characterId).toBe('walker');
+    expect(stacks).toBe(1);
   });
 
   test('遗物战术手套：战斗开始时额外抽 1 张牌', () => {
@@ -841,7 +877,7 @@ describe('GameEngine 战斗修正', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, relics: ['guard_knot'], potions: [] },
+      meta: { floor: 1, gold: 0, characterId: 'walker', relics: ['guard_knot'], potions: [] },
     };
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;

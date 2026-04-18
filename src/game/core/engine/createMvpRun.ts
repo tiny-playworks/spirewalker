@@ -1,5 +1,6 @@
 import { addStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
+import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
 import { STATUS_MOMENTUM, STATUS_STRENGTH } from '../definitions/statuses';
 import type { BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
@@ -84,6 +85,7 @@ export function buildInitialBattle(
   deckDefinitionIds: string[] = createStarterMasterDeck(),
   enemySlots: BattleEnemySlot[] = DEFAULT_ENEMY_LINEUP,
   relicIds: string[] = [],
+  characterId?: string,
 ): BattleState {
   assertMonsterSlotsResolved(enemySlots);
   const maxHp = playerHp?.maxHp ?? 50;
@@ -151,6 +153,12 @@ export function buildInitialBattle(
   if (relicIds.includes('wind_chime')) {
     addStatusStacks(units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
   }
+  if (characterId) {
+    const character = getCharacterDefinition(characterId);
+    if (character.passive.type === 'battle_start_status') {
+      addStatusStacks(units[PLAYER_UNIT_ID], character.passive.statusId, character.passive.stacks);
+    }
+  }
 
   const battle: BattleState = {
     id: battleKey,
@@ -192,6 +200,6 @@ export function createMvpRun(seed: number): RunState {
     map: { nodes: {}, currentNodeId: null },
     screen: { type: 'battle' },
     battle,
-    meta: { floor: 1, gold: 0, relics: [], potions: [] },
+    meta: { floor: 1, gold: 0, characterId: DEFAULT_CHARACTER_ID, relics: [], potions: [] },
   };
 }

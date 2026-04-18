@@ -36,6 +36,7 @@ export interface RunState {
   meta: {
     floor: number;
     gold: number;
+    characterId: string;
     relics: string[];
     potions: string[];
   };

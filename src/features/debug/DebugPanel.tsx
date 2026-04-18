@@ -30,7 +30,11 @@ export function DebugPanel() {
                   ? `buff ${intent.statusId}:${intent.value}`
                   : intent.type === 'debuff'
                     ? `debuff ${intent.statusId}:${intent.value}`
-                    : `atk+ ${intent.attack} ${intent.statusId}:${intent.value}`;
+                    : intent.type === 'reduce_status'
+                      ? `reduce ${intent.statusId}:${intent.value}`
+                      : intent.type === 'punish_multi_play'
+                        ? `punish play>=${intent.threshold} blk ${intent.block}`
+                        : `atk+ ${intent.attack} ${intent.statusId}:${intent.value}`;
         const defId = m.monsterId;
         const aiTrace = m.aiTrace ?? '-';
         acc.push({ label: u.name, defId, intentText, aiTrace });
