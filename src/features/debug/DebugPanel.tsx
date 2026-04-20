@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useGameStore } from '@/game/store/gameStore';
 
 type EnemyDebugRow = { label: string; defId: string; intentText: string; aiTrace: string };
@@ -11,7 +12,21 @@ function isDev(): boolean {
 export function DebugPanel() {
   const run = useGameStore((s) => s.run);
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
-  if (!isDev() || !run) return null;
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isDev()) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === '`' || event.key === '~') {
+        event.preventDefault();
+        setOpen((value) => !value);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  if (!isDev() || !run || !open) return null;
   const battle = run.battle;
   const enemyDebugLines: EnemyDebugRow[] = battle
     ? battle.enemyUnitIds.reduce<EnemyDebugRow[]>((acc, id) => {

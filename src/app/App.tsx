@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AppCursor } from '@/app/AppCursor';
 import { BattlePage } from '@/features/battle/BattlePage';
 import { EventPage } from '@/features/event/EventPage';
 import { DebugPanel } from '@/features/debug/DebugPanel';
@@ -58,6 +59,7 @@ export function App() {
         />
       ) : null}
       <DebugPanel />
+      <AppCursor />
     </>
   );
 }

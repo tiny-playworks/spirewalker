@@ -1,8 +1,8 @@
 /** 与 `generateBranchingFloor` 中 `MapNode.y` 的刻度一致：列间距 + 行间距 + 节点半径。 */
 export const MAP_ROUTE_SVG = {
-  COL_GAP: 54,
-  ROW_GAP: 36,
-  PAD: 32,
+  COL_GAP: 68,
+  ROW_GAP: 46,
+  PAD: 40,
   NODE_R: 17,
 } as const;
 

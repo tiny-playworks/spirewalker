@@ -51,7 +51,10 @@ function spreadRowsInColumn(w: number, maxRow: number, rnd: () => number): numbe
   }
   out.sort((a, b) => a - b);
   for (let k = 1; k < out.length; k++) {
-    if (out[k]! <= out[k - 1]!) out[k] = Math.min(maxRow, out[k - 1]! + 1);
+    if (out[k]! <= out[k - 1]! + 1) out[k] = Math.min(maxRow, out[k - 1]! + 2);
+  }
+  for (let k = out.length - 2; k >= 0; k--) {
+    if (out[k + 1]! - out[k]! <= 1) out[k] = Math.max(0, out[k + 1]! - 2);
   }
   return out;
 }

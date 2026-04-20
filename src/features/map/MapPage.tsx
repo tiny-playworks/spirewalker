@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
@@ -7,16 +8,17 @@ import { clearSavedRun } from '@/game/core/persistence/saveRun';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectMapRunState } from '@/game/store/selectors/mapSelectors';
 import { MapRoute } from './MapRoute';
+import { MapNodeIcon } from './mapNodeIcons';
 
-const MAP_LEGEND: { glyph: string; label: string }[] = [
-  { glyph: '营', label: '营地' },
-  { glyph: '战', label: '普通战斗' },
-  { glyph: '精', label: '精英' },
-  { glyph: '王', label: 'Boss' },
-  { glyph: '店', label: '商店' },
-  { glyph: '息', label: '休息' },
-  { glyph: '事', label: '事件' },
-  { glyph: '箱', label: '宝箱' },
+const MAP_LEGEND: { kind: 'camp' | MapNode['type']; label: string }[] = [
+  { kind: 'camp', label: '营地' },
+  { kind: 'battle', label: '普通战斗' },
+  { kind: 'elite', label: '精英' },
+  { kind: 'boss', label: 'Boss' },
+  { kind: 'shop', label: '商店' },
+  { kind: 'rest', label: '休息' },
+  { kind: 'event', label: '事件' },
+  { kind: 'treasure', label: '宝箱' },
 ];
 
 function nodeTitle(n: MapNode): string {
@@ -52,6 +54,23 @@ export function MapPage() {
   const curId = map.currentNodeId;
   const locationName = cur && curId ? nodeTitle(cur) : '—';
   const character = getCharacterDefinition(meta.characterId);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(nextIds[0] ?? null);
+
+  useEffect(() => {
+    if (nextIds.length === 0) {
+      setSelectedNodeId(null);
+      return;
+    }
+    if (!selectedNodeId || !nextIds.includes(selectedNodeId)) {
+      setSelectedNodeId(nextIds[0] ?? null);
+    }
+  }, [nextIds, selectedNodeId]);
+
+  const nextNodes = useMemo(
+    () => nextIds.map((id) => map.nodes[id]).filter((node): node is MapNode => Boolean(node)),
+    [nextIds, map.nodes],
+  );
+  const selectedNode = selectedNodeId ? map.nodes[selectedNodeId] ?? null : null;
 
   return (
     <div className="map-page">
@@ -81,6 +100,7 @@ export function MapPage() {
           <div className="map-hud-current">
             <span className="map-hud-current-k">当前位置</span>
             <span className="map-hud-current-v">{locationName}</span>
+            <span className="map-hud-current-sub">发光营地就是你所在的位置</span>
           </div>
         </div>
         {meta.relics.length > 0 ? (
@@ -100,18 +120,18 @@ export function MapPage() {
               本层路线
             </h2>
             <p className="map-board-sub">
-              {meta.floor >= 2
-                ? '第二层随机岔路：线段表示允许前进的一步；高亮为当前可走区域，灰色为已放弃分支。'
-                : '第一层随机岔路：线段即合法边，只能点下方「下一步」里与当前格相连的节点；游荡商人会进事件。'}
+              {nextIds.length > 0
+                ? '先在地图上点亮一个前方节点，再从下方确认行动。'
+                : '这一层的路线已经走到尽头。'}
             </p>
             <div className="map-legend" aria-label="地图图例">
               <div className="map-legend-row">
                 <span className="map-legend-title">节点</span>
                 <ul className="map-legend-list">
-                  {MAP_LEGEND.map(({ glyph, label }) => (
-                    <li key={glyph} className="map-legend-item">
-                      <span className="map-legend-glyph" aria-hidden>
-                        {glyph}
+                  {MAP_LEGEND.map(({ kind, label }) => (
+                    <li key={kind} className="map-legend-item">
+                      <span className={`map-legend-glyph map-legend-glyph--${kind}`} aria-hidden>
+                        <MapNodeIcon kind={kind} className="map-legend-icon" />
                       </span>
                       <span className="map-legend-label">{label}</span>
                     </li>
@@ -144,7 +164,16 @@ export function MapPage() {
             </div>
           </div>
           <div className="map-board-route">
-            <MapRoute map={map} currentNodeId={curId} floor={meta.floor} />
+            <MapRoute
+              map={map}
+              currentNodeId={curId}
+              floor={meta.floor}
+              selectedNodeId={selectedNodeId}
+              selectableNodeIds={new Set(nextIds)}
+              onSelectNode={(id) => {
+                if (nextIds.includes(id)) setSelectedNodeId(id);
+              }}
+            />
           </div>
         </section>
 
@@ -166,35 +195,71 @@ export function MapPage() {
           </div>
           {nextIds.length === 0 ? (
             <p className="map-done">本层线路已清空。</p>
+          ) : !selectedNode ? (
+            <p className="map-selection-prompt">在地图上选择一个前方节点，继续你的路线。</p>
           ) : (
-            <ul className="map-choices">
-              {nextIds.map((id) => {
-                const n = map.nodes[id];
-                if (!n) return null;
-                return (
-                  <li key={id}>
-                    <button
-                      type="button"
-                      className="map-node-btn"
-                      onClick={() => dispatchCommand({ type: 'CHOOSE_MAP_NODE', nodeId: id })}
-                    >
-                      <span className="map-node-main">
-                        <span className="map-node-title">{nodeTitle(n)}</span>
-                        <span className="map-node-type">{typeLabel(n.type)}</span>
-                      </span>
-                      <span className="map-node-chev" aria-hidden>
-                        →
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="map-decision-panel">
+              <div className="map-decision-head">
+                <div className="map-decision-copy">
+                  <p className="map-decision-kicker">当前抉择</p>
+                  <h3 className="map-decision-title">
+                    {laneLabelForNode(selectedNode, nextNodes)} · {nodeTitle(selectedNode)}
+                  </h3>
+                  <p className="map-decision-desc">{decisionHintForNode(selectedNode)}</p>
+                </div>
+                <div className="map-decision-badges">
+                  <span className={`map-decision-badge map-decision-badge--${selectedNode.type}`}>
+                    {typeLabel(selectedNode.type)}
+                  </span>
+                  <span className="map-decision-badge map-decision-badge--lane">
+                    {laneLabelForNode(selectedNode, nextNodes)}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`map-decision-cta map-decision-cta--${selectedNode.type}`}
+                onClick={() => dispatchCommand({ type: 'CHOOSE_MAP_NODE', nodeId: selectedNode.id })}
+              >
+                前往 {nodeTitle(selectedNode)}
+              </button>
+            </div>
           )}
         </section>
       </div>
     </div>
   );
+}
+
+function laneLabelForNode(node: MapNode, peers: MapNode[]): string {
+  const ordered = [...peers].sort((a, b) => a.y - b.y);
+  if (ordered.length <= 1) return '唯一路线';
+  const index = ordered.findIndex((peer) => peer.id === node.id);
+  if (index <= 0) return '上路';
+  if (index === ordered.length - 1) return '下路';
+  if (ordered.length === 3 && index === 1) return '中路';
+  return `第 ${index + 1} 路`;
+}
+
+function decisionHintForNode(node: MapNode): string {
+  switch (node.type) {
+    case 'battle':
+      return '正面战斗，拿下这一战后继续向前推进。';
+    case 'elite':
+      return '危险更高，但回报也更重，适合状态稳定时出手。';
+    case 'boss':
+      return '这一战会决定本层的终点，确认状态再踏进去。';
+    case 'shop':
+      return '用金币换取节奏，补牌、补药水或找关键资源。';
+    case 'rest':
+      return '喘口气，修整自己，为后面的强敌留余地。';
+    case 'event':
+      return '未知会带来岔路，可能是机遇，也可能是代价。';
+    case 'treasure':
+      return '拿走奖励，再决定这份收益要如何转化成优势。';
+    default:
+      return '选择这条路线，继续向尖塔深处推进。';
+  }
 }
 
 function typeLabel(t: string): string {

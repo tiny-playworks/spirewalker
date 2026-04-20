@@ -11,6 +11,9 @@ importers:
 
   .:
     dependencies:
+      lucide-react:
+        specifier: ^1.8.0
+        version: 1.8.0(react@19.2.5)
       phaser:
         specifier: ^4.0.0
         version: 4.0.0
@@ -655,6 +658,11 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
 
+  lucide-react@1.8.0:
+    resolution: {integrity: sha512-WuvlsjngSk7TnTBJ1hsCy3ql9V9VOdcPkd3PKcSmM34vJD8KG6molxz7m7zbYFgICwsanQWmJ13JlYs4Zp7Arw==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   miniflare@4.20260415.0:
     resolution: {integrity: sha512-JoExRWN4YBI2luA5BoSMFEgi8rQWXUGzo3mtE+58VXCLV3jj/Xnk5Yeqs/IXWz8Es5GJIaq6BtsixDvAxXSIng==}
     engines: {node: '>=18.0.0'}
@@ -1228,6 +1236,10 @@ snapshots:
     optional: true
 
   kleur@4.1.5: {}
+
+  lucide-react@1.8.0(react@19.2.5):
+    dependencies:
+      react: 19.2.5
 
   miniflare@4.20260415.0:
     dependencies:
