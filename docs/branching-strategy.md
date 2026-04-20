@@ -10,6 +10,12 @@
 - `fix/*`: 缺陷修复分支。
 - `chore/*`: 工程维护分支（CI、脚本、依赖等）。
 
+## Deploy Mapping
+
+- 生产分支：`main`
+- 生产地址：`https://spirewalker.miaoduidui.workers.dev/`
+- 部署方式：Cloudflare Pages 直连 GitHub（非生产分支构建按 Cloudflare 项目设置决定）
+
 ## Merge Flow
 
 1. 从 `dev` 拉出功能分支：`feature/xxx`、`fix/xxx`、`chore/xxx`。
