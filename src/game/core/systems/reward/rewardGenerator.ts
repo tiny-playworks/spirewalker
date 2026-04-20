@@ -10,14 +10,15 @@ export function generateBattleRewards(input: {
   tier: RewardEncounterTier;
   ownedRelicIds: string[];
   potionCount: number;
+  characterId: string;
 }): RewardItem[] {
-  const { seed, salt, tier, ownedRelicIds, potionCount } = input;
-  const cards = generateCardRewardChoices(seed, salt, tier);
+  const { seed, salt, tier, ownedRelicIds, potionCount, characterId } = input;
+  const cards = generateCardRewardChoices(seed, salt, tier, characterId);
   const items: RewardItem[] = [{ type: 'card_choice', cards }];
   if (tier === 'elite') items.push({ type: 'gold', amount: 25 });
   if (tier === 'boss') {
     items.push({ type: 'gold', amount: 45 });
-    const relicId = rollBossRelicReward(seed, salt, ownedRelicIds);
+    const relicId = rollBossRelicReward(seed, salt, ownedRelicIds, characterId);
     if (relicId) items.push({ type: 'relic', relicId });
   }
   const potionId = rollPostBattlePotionOffer(seed, salt, tier, potionCount);

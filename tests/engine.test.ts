@@ -2,7 +2,12 @@ import { describe, expect, test } from '@rstest/core';
 import { addStatusStacks } from '@/game/core/combat/statusCombat';
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { buildFloor2Nodes, createMapRun } from '@/game/core/engine/createMapRun';
-import { generateBranchingFloorMap } from '@/game/core/engine/generateBranchingFloor';
+import {
+  BURST_ALTAR_EVENT_ID,
+  generateBranchingFloorMap,
+  PURGING_POOL_EVENT_ID,
+  STILLNESS_SHRINE_EVENT_ID,
+} from '@/game/core/engine/generateBranchingFloor';
 import { rollPostBattlePotionOffer } from '@/game/core/engine/postBattleExtras';
 import { buildInitialBattle, createMvpRun, ENEMY_UNIT_ID, PLAYER_UNIT_ID, lineupGuard, lineupSapper, lineupShell } from '@/game/core/engine/createMvpRun';
 import {
@@ -10,13 +15,17 @@ import {
   BURST_STRIKE,
   CASH_FLOW,
   CLEAVE,
+  FOLLOW_THROUGH,
   PATCH_BREATH,
   PRIME_RHYTHM,
+  QUICK_RELEASE,
   RECENTER,
   RELEASE_FLOW,
   SECOND_WIND,
   SNAP_STRIKE,
+  SOFT_STEP,
   STEADY_STEP,
+  SURVEY_FIELD,
   TEMPO_GUARD,
 } from '@/game/core/definitions/cards/starter';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
@@ -159,21 +168,26 @@ describe('GameEngine MVP', () => {
   test('防御不加目标也可打出并获得格挡', () => {
     const engine = new GameEngine();
     let run = createMvpRun(3);
-    const defendId = run.battle!.player.hand.find(
-      (id) => run.battle!.player.cards[id].definitionId === 'defend',
-    );
-    expect(defendId).toBeDefined();
+    const defendId = 'test_defend';
+    run.battle!.player.cards[defendId] = {
+      instanceId: defendId,
+      definitionId: 'defend',
+      baseCost: 1,
+      costForTurn: 1,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift(defendId);
     const blockBefore = run.battle!.units[PLAYER_UNIT_ID].block;
 
     const { nextRun, events } = engine.dispatch(run, {
       type: 'PLAY_CARD',
-      cardInstanceId: defendId!,
+      cardInstanceId: defendId,
       sourceUnitId: PLAYER_UNIT_ID,
     });
     run = nextRun;
     expect(events.some((e) => e.type === 'BLOCK_GAINED')).toBe(true);
     expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(blockBefore + 5);
-    expect(run.battle!.player.hand.includes(defendId!)).toBe(false);
+    expect(run.battle!.player.hand.includes(defendId)).toBe(false);
   });
 
   test('连势（momentum）在出牌后触发：加格挡并衰减 1 层', () => {
@@ -298,13 +312,23 @@ describe('GameEngine MVP', () => {
     const engine = new GameEngine();
     let run = createMvpRun(79);
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
-
-    const firstDefendId = run.battle!.player.hand.find(
-      (id) => run.battle!.player.cards[id].definitionId === 'defend',
-    )!;
-    const secondDefendId = run.battle!.player.hand.find(
-      (id) => id !== firstDefendId && run.battle!.player.cards[id].definitionId === 'defend',
-    )!;
+    const firstDefendId = 'test_first_defend';
+    const secondDefendId = 'test_second_defend';
+    run.battle!.player.cards[firstDefendId] = {
+      instanceId: firstDefendId,
+      definitionId: 'defend',
+      baseCost: 1,
+      costForTurn: 1,
+      upgraded: false,
+    };
+    run.battle!.player.cards[secondDefendId] = {
+      instanceId: secondDefendId,
+      definitionId: 'defend',
+      baseCost: 1,
+      costForTurn: 1,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift(firstDefendId, secondDefendId);
 
     run = engine
       .dispatch(run, {
@@ -722,6 +746,88 @@ describe('GameEngine MVP', () => {
     expect(run.battle!.player.energy).toBe(1);
   });
 
+  test('保势线补强牌能稳定保留 momentum', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(1401);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 1);
+    run.battle!.player.cards.test_soft_step = {
+      instanceId: 'test_soft_step',
+      definitionId: SOFT_STEP.id,
+      baseCost: SOFT_STEP.cost,
+      costForTurn: SOFT_STEP.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift('test_soft_step');
+
+    run = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: 'test_soft_step',
+      sourceUnitId: PLAYER_UNIT_ID,
+    }).nextRun;
+
+    expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(5);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
+  });
+
+  test('兑现线补强牌能打出高于基础攻击的爆发', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(1402);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
+    run.battle!.player.cards.test_quick_release = {
+      instanceId: 'test_quick_release',
+      definitionId: QUICK_RELEASE.id,
+      baseCost: QUICK_RELEASE.cost,
+      costForTurn: QUICK_RELEASE.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift('test_quick_release');
+
+    const enemyHpBefore = run.battle!.units[ENEMY_UNIT_ID].hp;
+    run = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: 'test_quick_release',
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: ENEMY_UNIT_ID,
+    }).nextRun;
+
+    expect(enemyHpBefore - run.battle!.units[ENEMY_UNIT_ID].hp).toBe(8);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
+  });
+
+  test('观势会抽牌并随机弃 1 张牌', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(1403);
+    const refillIds = ['sv_a', 'sv_b', 'sv_c'].map((id) => `test_${id}`);
+    for (const drawId of refillIds) {
+      run.battle!.player.cards[drawId] = {
+        instanceId: drawId,
+        definitionId: 'strike',
+        baseCost: 1,
+        costForTurn: 1,
+        upgraded: false,
+      };
+    }
+    run.battle!.player.drawPile = [...refillIds, ...run.battle!.player.drawPile];
+    run.battle!.player.cards.test_survey_field = {
+      instanceId: 'test_survey_field',
+      definitionId: SURVEY_FIELD.id,
+      baseCost: SURVEY_FIELD.cost,
+      costForTurn: SURVEY_FIELD.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift('test_survey_field');
+    const discardBefore = run.battle!.player.discardPile.length;
+
+    run = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: 'test_survey_field',
+      sourceUnitId: PLAYER_UNIT_ID,
+    }).nextRun;
+
+    expect(run.battle!.player.discardPile.length).toBe(discardBefore + 2);
+    expect(run.battle!.player.hand.length).toBeGreaterThanOrEqual(6);
+  });
+
   test('结束回合触发状态钩子：玩家虚弱与敌人易伤衰减', () => {
     const engine = new GameEngine();
     let run = createMvpRun(12);
@@ -778,6 +884,26 @@ describe('GameEngine 战斗修正', () => {
     expect(stacks).toBe(3);
   });
 
+  test('遗物定心核：开场获得 1 层金属化', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(511);
+    run.meta.relics.push('still_core');
+    const battleId = firstBattleFromCamp(run);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: battleId }).nextRun;
+    const stacks =
+      run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === 'metallicize')?.stacks ?? 0;
+    expect(stacks).toBe(1);
+  });
+
+  test('遗物缓护符：开场获得 4 点格挡', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(512);
+    run.meta.relics.push('soft_guard');
+    const battleId = firstBattleFromCamp(run);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: battleId }).nextRun;
+    expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(4);
+  });
+
   test('当前角色被动：从地图进入战斗时开场 +1 momentum', () => {
     const engine = new GameEngine();
     let run = createMapRun(91);
@@ -823,6 +949,55 @@ describe('GameEngine 战斗修正', () => {
         targetUnitId: ENEMY_UNIT_ID,
       })
       .nextRun;
+    expect(run.battle!.units[ENEMY_UNIT_ID].hp).toBe(enemyHpBefore - 12);
+  });
+
+  test('遗物疾燃引线：主动消耗 momentum 的伤害牌结算后返还 1 点能量', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(531);
+    run.meta.relics.push('quick_fuse');
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
+
+    run.battle!.player.cards.test_follow_through = {
+      instanceId: 'test_follow_through',
+      definitionId: FOLLOW_THROUGH.id,
+      baseCost: FOLLOW_THROUGH.cost,
+      costForTurn: FOLLOW_THROUGH.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift('test_follow_through');
+
+    run = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: 'test_follow_through',
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: ENEMY_UNIT_ID,
+    }).nextRun;
+    expect(run.battle!.player.energy).toBe(4);
+  });
+
+  test('遗物识隙刃：主动消耗的每层 momentum 额外增加 1 点伤害', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(532);
+    run.meta.relics.push('sighted_edge');
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
+
+    run.battle!.player.cards.test_burst_strike_2 = {
+      instanceId: 'test_burst_strike_2',
+      definitionId: BURST_STRIKE.id,
+      baseCost: BURST_STRIKE.cost,
+      costForTurn: BURST_STRIKE.cost,
+      upgraded: false,
+    };
+    run.battle!.player.hand.unshift('test_burst_strike_2');
+
+    const enemyHpBefore = run.battle!.units[ENEMY_UNIT_ID].hp;
+    run = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: 'test_burst_strike_2',
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: ENEMY_UNIT_ID,
+    }).nextRun;
     expect(run.battle!.units[ENEMY_UNIT_ID].hp).toBe(enemyHpBefore - 12);
   });
 
@@ -1004,7 +1179,9 @@ describe('GameEngine 地图', () => {
     const engine = new GameEngine();
     let run = createMapRun(77);
     const camp = run.map.currentNodeId!;
-    const far = Object.values(run.map.nodes).find((n) => n.x >= 3 && n.type === 'battle');
+    const far = Object.values(run.map.nodes).find(
+      (n) => n.id !== camp && !isLegalMapStep(run.map.nodes, camp, n.id),
+    );
     expect(far).toBeDefined();
     expect(isLegalMapStep(run.map.nodes, camp, far!.id)).toBe(false);
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: far!.id }).nextRun;
@@ -1196,6 +1373,86 @@ describe('GameEngine 地图', () => {
     expect(run.screen.type).toBe('shop');
     expect(run.shop?.cards.length).toBe(4);
     expect(run.shop?.relics?.length).toBeGreaterThan(0);
+  });
+
+  test('静守祠事件可用生命换稳势结，或拿守势回地图', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(303);
+    const eventId = findNodeId(run, (n) => n.type === 'event' && n.eventScriptId === STILLNESS_SHRINE_EVENT_ID);
+    jumpToBeforeNode(run, eventId);
+    const hpBefore = run.player.currentHp;
+
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: eventId }).nextRun;
+    expect(run.screen).toEqual({ type: 'event', eventId: STILLNESS_SHRINE_EVENT_ID });
+    run = engine.dispatch(run, { type: 'RESOLVE_EVENT_OPTION', optionId: 'guard_relic' }).nextRun;
+    expect(run.screen.type).toBe('map');
+    expect(run.meta.relics).toContain('guard_knot');
+    expect(run.player.currentHp).toBe(hpBefore - 6);
+
+    run = createMapRun(304);
+    const cardEventId = findNodeId(run, (n) => n.type === 'event' && n.eventScriptId === STILLNESS_SHRINE_EVENT_ID);
+    jumpToBeforeNode(run, cardEventId);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: cardEventId }).nextRun;
+    run = engine.dispatch(run, { type: 'RESOLVE_EVENT_OPTION', optionId: 'guard_card' }).nextRun;
+    expect(run.masterDeck).toContain(TEMPO_GUARD.id);
+    expect(run.screen.type).toBe('map');
+  });
+
+  test('裂响祭坛事件可用生命换裂响纹章，或拿破势击回地图', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(305);
+    const eventId = findNodeId(run, (n) => n.type === 'event' && n.eventScriptId === BURST_ALTAR_EVENT_ID);
+    jumpToBeforeNode(run, eventId);
+    const hpBefore = run.player.currentHp;
+
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: eventId }).nextRun;
+    expect(run.screen).toEqual({ type: 'event', eventId: BURST_ALTAR_EVENT_ID });
+    run = engine.dispatch(run, { type: 'RESOLVE_EVENT_OPTION', optionId: 'burst_relic' }).nextRun;
+    expect(run.screen.type).toBe('map');
+    expect(run.meta.relics).toContain('burst_emblem');
+    expect(run.player.currentHp).toBe(hpBefore - 6);
+
+    run = createMapRun(306);
+    const cardEventId = findNodeId(run, (n) => n.type === 'event' && n.eventScriptId === BURST_ALTAR_EVENT_ID);
+    jumpToBeforeNode(run, cardEventId);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: cardEventId }).nextRun;
+    run = engine.dispatch(run, { type: 'RESOLVE_EVENT_OPTION', optionId: 'burst_card' }).nextRun;
+    expect(run.masterDeck).toContain(BURST_STRIKE.id);
+    expect(run.screen.type).toBe('map');
+  });
+
+  test('净手池事件可删打击或防御，作为 run 内控牌入口', () => {
+    const engine = new GameEngine();
+    const findRunWithPurgingPool = (): [RunState, string] => {
+      for (let seed = 300; seed <= 380; seed++) {
+        const candidate = createMapRun(seed);
+        const eventNode = Object.values(candidate.map.nodes).find(
+          (n) => n.type === 'event' && n.eventScriptId === PURGING_POOL_EVENT_ID,
+        );
+        if (eventNode) return [candidate, eventNode.id];
+      }
+      throw new Error('purging_pool not found in sampled seeds');
+    };
+
+    let [run, strikeEventId] = findRunWithPurgingPool();
+    jumpToBeforeNode(run, strikeEventId);
+    const strikeBefore = run.masterDeck.filter((id) => id === 'strike').length;
+
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: strikeEventId }).nextRun;
+    expect(run.screen).toEqual({ type: 'event', eventId: PURGING_POOL_EVENT_ID });
+    run = engine.dispatch(run, { type: 'RESOLVE_EVENT_OPTION', optionId: 'remove_strike' }).nextRun;
+    expect(run.screen.type).toBe('map');
+    expect(run.masterDeck.filter((id) => id === 'strike').length).toBe(strikeBefore - 1);
+
+    [run, strikeEventId] = findRunWithPurgingPool();
+    const defendEventId = strikeEventId;
+    jumpToBeforeNode(run, defendEventId);
+    const defendBefore = run.masterDeck.filter((id) => id === 'defend').length;
+
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: defendEventId }).nextRun;
+    run = engine.dispatch(run, { type: 'RESOLVE_EVENT_OPTION', optionId: 'remove_defend' }).nextRun;
+    expect(run.screen.type).toBe('map');
+    expect(run.masterDeck.filter((id) => id === 'defend').length).toBe(defendBefore - 1);
   });
 
   test('商店购买遗物（船锚加生命）', () => {

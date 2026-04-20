@@ -1,3 +1,4 @@
+import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from './characters';
 import type { RunState } from '../model/run';
 import { mulberry32 } from '../utils/rng';
 
@@ -43,29 +44,48 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
     name: '稳势结',
     description: '你的连势被削减时，少失去 1 层。',
   },
+  still_core: {
+    id: 'still_core',
+    name: '定心核',
+    description: '每场战斗开始时获得 1 层金属化。',
+  },
+  soft_guard: {
+    id: 'soft_guard',
+    name: '缓护符',
+    description: '每场战斗开始时获得 4 点格挡。',
+  },
+  quick_fuse: {
+    id: 'quick_fuse',
+    name: '疾燃引线',
+    description: '主动消耗连势的伤害牌结算后获得 1 点能量。',
+  },
+  sighted_edge: {
+    id: 'sighted_edge',
+    name: '识隙刃',
+    description: '主动消耗连势的伤害牌每消耗 1 层连势，额外造成 1 点伤害。',
+  },
 };
 
-export const MOMENTUM_BURST_RELIC_IDS = ['wind_chime', 'burst_emblem'] as const;
+export const MOMENTUM_BURST_RELIC_IDS = ['wind_chime', 'burst_emblem', 'quick_fuse', 'sighted_edge'] as const;
 export const MOMENTUM_FLOW_RELIC_IDS = ['tactical_gloves', 'insight_lens'] as const;
-export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'anchor'] as const;
+export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'anchor', 'still_core', 'soft_guard'] as const;
+export const COMMON_RELIC_POOL = ['vajra', 'anchor', 'wind_chime', 'tactical_gloves', 'insight_lens'] as const;
 
 /** Boss 战后随机其一（已拥有的不再出现） */
-const BOSS_RELIC_POOL = [
-  'vajra',
-  'anchor',
-  'wind_chime',
-  'tactical_gloves',
-  'burst_emblem',
-  'insight_lens',
-  'guard_knot',
-] as const;
+const BOSS_RELIC_POOL = [...COMMON_RELIC_POOL, 'burst_emblem', 'guard_knot', 'still_core', 'soft_guard', 'quick_fuse', 'sighted_edge'] as const;
 
 export function rollBossRelicReward(
   seed: number,
   salt: number,
   ownedRelicIds: string[],
+  characterId = DEFAULT_CHARACTER_ID,
 ): string | null {
-  const available = BOSS_RELIC_POOL.filter((id) => !ownedRelicIds.includes(id));
+  const characterPool = getCharacterDefinition(characterId).rewardRelicPool;
+  const preferred = characterPool.filter((id) => !ownedRelicIds.includes(id));
+  const available =
+    preferred.length > 0
+      ? preferred
+      : BOSS_RELIC_POOL.filter((id) => !ownedRelicIds.includes(id));
   if (available.length === 0) return null;
   const rng = mulberry32((seed ^ salt ^ 0xb055) >>> 0);
   return available[Math.floor(rng() * available.length)]!;
