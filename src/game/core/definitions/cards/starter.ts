@@ -1,4 +1,4 @@
-import { STATUS_MOMENTUM, STATUS_STRENGTH, STATUS_VULNERABLE } from '../statuses';
+import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STRENGTH, STATUS_VULNERABLE } from '../statuses';
 import type { CardDefinition } from '../../model/card';
 
 export const STRIKE: CardDefinition = {
@@ -292,6 +292,113 @@ export const SECOND_WIND: CardDefinition = {
   ],
 };
 
+/** 保势补强：低费补一点防守，同时把连势重新托起来。 */
+export const SOFT_STEP: CardDefinition = {
+  id: 'soft_step',
+  name: '垫步',
+  description: '获得 3 点格挡，并获得 1 层连势。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 0,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 3, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 1, target: 'self' },
+  ],
+};
+
+/** 保势补强：把稳守路线和持续防御连接起来。 */
+export const ANCHORED_BREATH: CardDefinition = {
+  id: 'anchored_breath',
+  name: '定息',
+  description: '获得 5 点格挡，并获得 1 层金属化。',
+  type: 'skill',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 5, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_METALLICIZE, stacks: 1, target: 'self' },
+  ],
+};
+
+/** 兑现补强：小额连势也能立刻换成伤害。 */
+export const QUICK_RELEASE: CardDefinition = {
+  id: 'quick_release',
+  name: '疾放',
+  description: '造成 3 点伤害，并消耗至多 1 层连势，每层额外造成 5 点伤害。',
+  type: 'attack',
+  rarity: 'common',
+  cost: 0,
+  target: 'single_enemy',
+  effects: [
+    {
+      type: 'custom',
+      scriptId: 'momentum_burst_damage',
+      params: {
+        consumeMode: 'fixed',
+        consumeValue: 1,
+        baseDamage: 3,
+        damagePerStack: 5,
+      },
+    },
+  ],
+};
+
+/** 兑现补强：中段兑现后给一点后续行动空间。 */
+export const FOLLOW_THROUGH: CardDefinition = {
+  id: 'follow_through',
+  name: '追击',
+  description: '造成 4 点伤害，并消耗至多 2 层连势，每层额外造成 3 点伤害。获得 1 点能量。',
+  type: 'attack',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    {
+      type: 'custom',
+      scriptId: 'momentum_burst_damage',
+      params: {
+        consumeMode: 'fixed',
+        consumeValue: 2,
+        baseDamage: 4,
+        damagePerStack: 3,
+      },
+    },
+    { type: 'gain_energy', value: 1 },
+  ],
+};
+
+/** 通用修复：整理手牌，不额外引入复杂机制。 */
+export const SURVEY_FIELD: CardDefinition = {
+  id: 'survey_field',
+  name: '观势',
+  description: '抽 2 张牌，弃 1 张牌。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 0,
+  target: 'none',
+  effects: [
+    { type: 'draw', value: 2 },
+    { type: 'discard', value: 1 },
+  ],
+};
+
+/** 通用修复：回一口血，同时不完全放弃下回合节奏。 */
+export const MEASURED_REST: CardDefinition = {
+  id: 'measured_rest',
+  name: '养息',
+  description: '回复 3 点生命，抽 1 张牌。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'heal', value: 3, target: 'self' },
+    { type: 'draw', value: 1 },
+  ],
+};
+
 export const MOMENTUM_SETUP_CARD_IDS = [
   MOMENTUM.id,
   TEMPO_GUARD.id,
@@ -311,11 +418,35 @@ export const TEMPO_RECOVERY_CARD_IDS = [
   RECENTER.id,
   PATCH_BREATH.id,
   SECOND_WIND.id,
+  SURVEY_FIELD.id,
+  MEASURED_REST.id,
+] as const;
+
+export const DEFENSE_LINE_CARD_IDS = [
+  BRACE_RHYTHM.id,
+  TEMPO_GUARD.id,
+  SOFT_STEP.id,
+  ANCHORED_BREATH.id,
+] as const;
+
+export const BURST_LINE_CARD_IDS = [
+  BURST_STRIKE.id,
+  SNAP_STRIKE.id,
+  QUICK_RELEASE.id,
+  FOLLOW_THROUGH.id,
 ] as const;
 
 export const CORE_STAPLE_CARD_IDS = [
   STRIKE.id,
   DEFEND.id,
+  BASH.id,
+  FLEX.id,
+  CLEAVE.id,
+  SKIM.id,
+  SURGE.id,
+] as const;
+
+export const COMMON_REWARD_CARD_POOL = [
   BASH.id,
   FLEX.id,
   CLEAVE.id,
@@ -343,4 +474,10 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [RECENTER.id]: RECENTER,
   [PATCH_BREATH.id]: PATCH_BREATH,
   [SECOND_WIND.id]: SECOND_WIND,
+  [SOFT_STEP.id]: SOFT_STEP,
+  [ANCHORED_BREATH.id]: ANCHORED_BREATH,
+  [QUICK_RELEASE.id]: QUICK_RELEASE,
+  [FOLLOW_THROUGH.id]: FOLLOW_THROUGH,
+  [SURVEY_FIELD.id]: SURVEY_FIELD,
+  [MEASURED_REST.id]: MEASURED_REST,
 };

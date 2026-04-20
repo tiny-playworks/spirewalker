@@ -1,7 +1,7 @@
 import { addStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
-import { STATUS_MOMENTUM, STATUS_STRENGTH } from '../definitions/statuses';
+import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STRENGTH } from '../definitions/statuses';
 import type { BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
 import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
@@ -88,7 +88,8 @@ export function buildInitialBattle(
   characterId?: string,
 ): BattleState {
   assertMonsterSlotsResolved(enemySlots);
-  const maxHp = playerHp?.maxHp ?? 50;
+  const character = characterId ? getCharacterDefinition(characterId) : null;
+  const maxHp = playerHp?.maxHp ?? character?.baseMaxHp ?? 50;
   const currentHp = playerHp?.currentHp ?? maxHp;
   const rng = mulberry32((seed ^ hashBattleKey(battleKey) ^ 0x9e3779b9) >>> 0);
   const random = () => rng();
@@ -114,7 +115,7 @@ export function buildInitialBattle(
     [PLAYER_UNIT_ID]: {
       id: PLAYER_UNIT_ID,
       side: 'player',
-      name: '铁甲战士',
+      name: character?.name ?? '铁甲战士',
       hp: currentHp,
       maxHp,
       block: 0,
@@ -153,11 +154,14 @@ export function buildInitialBattle(
   if (relicIds.includes('wind_chime')) {
     addStatusStacks(units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
   }
-  if (characterId) {
-    const character = getCharacterDefinition(characterId);
-    if (character.passive.type === 'battle_start_status') {
-      addStatusStacks(units[PLAYER_UNIT_ID], character.passive.statusId, character.passive.stacks);
-    }
+  if (relicIds.includes('still_core')) {
+    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_METALLICIZE, 1);
+  }
+  if (relicIds.includes('soft_guard')) {
+    units[PLAYER_UNIT_ID].block += 4;
+  }
+  if (character?.passive.type === 'battle_start_status') {
+    addStatusStacks(units[PLAYER_UNIT_ID], character.passive.statusId, character.passive.stacks);
   }
 
   const battle: BattleState = {

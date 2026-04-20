@@ -18,6 +18,10 @@ const SHOP_RELIC_POOL = [
   'burst_emblem',
   'insight_lens',
   'guard_knot',
+  'still_core',
+  'soft_guard',
+  'quick_fuse',
+  'sighted_edge',
 ] as const;
 
 function pickOne<T>(pool: readonly T[], random: () => number): T {

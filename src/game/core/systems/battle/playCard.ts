@@ -98,9 +98,15 @@ function applyMomentumBurstDamage(
     decayStatus(source, STATUS_MOMENTUM, consumedStacks);
   }
 
-  const relicBonus = relicIds.includes('burst_emblem') ? 2 : 0;
+  const relicBonus =
+    (relicIds.includes('burst_emblem') ? 2 : 0)
+    + (relicIds.includes('sighted_edge') ? consumedStacks : 0);
   const damage = params.baseDamage + consumedStacks * params.damagePerStack + relicBonus;
   dealDamageTo(battle, sourceUnitId, target, damage, events);
+  if (relicIds.includes('quick_fuse')) {
+    battle.player.energy += 1;
+    events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
+  }
 }
 
 function applyMomentumBurstDraw(
