@@ -9,6 +9,7 @@ export default defineConfig({
   },
   html: {
     title: '肉鸽卡牌 · MVP 战斗',
+    favicon: './public/favicon.svg',
   },
   source: {
     entry: {
