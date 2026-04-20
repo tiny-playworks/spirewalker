@@ -19,11 +19,12 @@
   "scripts": {
     "dev": "rsbuild dev",
     "build": "rsbuild build",
-    "preview": "rsbuild preview",
+    "preview": "wrangler dev",
     "test": "rstest run",
     "test:watch": "rstest --watch",
     "lint": "rslint",
-    "check": "pnpm lint && pnpm test"
+    "check": "pnpm lint && pnpm test",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "phaser": "^4.0.0",
@@ -40,7 +41,8 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.83.0"
   },
   "npmClient": "pnpm",
   "pnpm": {
