@@ -27,6 +27,10 @@ function uniquePush(out: string[], picked: string, fallbackPool: readonly string
   out.push(picked);
 }
 
+function pickOne<T>(pool: readonly T[], random: () => number): T {
+  return pool[Math.floor(random() * pool.length)]!;
+}
+
 /**
  * 战后三选一：每个槽位独立按 75/25 从角色池 / 通用池混抽。
  */
