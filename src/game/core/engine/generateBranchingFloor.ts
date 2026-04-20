@@ -249,7 +249,9 @@ export function generateBranchingFloorMap(floor: number, seed: number): Record<s
   /** 首步强转战斗可能吃掉唯一的宝箱，这里保证中间层仍至少有一处 treasure。 */
   if (midCount > 0 && !middleIds.some((id) => nodes[id]!.type === 'treasure')) {
     const battleIds = middleIds
-      .filter((id) => id !== merchantHost && nodes[id]!.type === 'battle')
+      .filter(
+        (id) => id !== merchantHost && !firstStepIds.includes(id) && nodes[id]!.type === 'battle',
+      )
       .sort((a, b) => nodes[b]!.x - nodes[a]!.x);
     const fromBattle = battleIds[0];
     if (fromBattle) {
@@ -257,7 +259,9 @@ export function generateBranchingFloorMap(floor: number, seed: number): Record<s
       delete nodes[fromBattle]!.eventScriptId;
     } else {
       const eventIds = middleIds
-        .filter((id) => id !== merchantHost && nodes[id]!.type === 'event')
+        .filter(
+          (id) => id !== merchantHost && !firstStepIds.includes(id) && nodes[id]!.type === 'event',
+        )
         .sort((a, b) => nodes[b]!.x - nodes[a]!.x);
       const fromEvent = eventIds[0];
       if (fromEvent) {
