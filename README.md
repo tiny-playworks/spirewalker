@@ -26,6 +26,11 @@ pnpm dev
 
 默认开发地址：`http://localhost:3000/`
 
+## 在线地址
+
+- 生产环境：`https://spirewalker.miaoduidui.workers.dev/`
+- 部署平台：Cloudflare Pages（仓库直连 GitHub）
+
 ## 常用命令
 
 ```bash

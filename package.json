@@ -14,7 +14,7 @@
   "bugs": {
     "url": "https://github.com/ILoveChy/spirewalker/issues"
   },
-  "homepage": "https://github.com/ILoveChy/spirewalker#readme",
+  "homepage": "https://spirewalker.miaoduidui.workers.dev/",
   "type": "module",
   "scripts": {
     "dev": "rsbuild dev",

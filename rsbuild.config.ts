@@ -4,7 +4,7 @@ import { pluginReact } from '@rsbuild/plugin-react';
 export default defineConfig({
   plugins: [pluginReact()],
   output: {
-    // GitHub Pages 项目页需要带仓库子路径；自定义域名可覆盖为 "/"
+    // 静态站点默认使用根路径；如果托管平台要求子路径，可通过 PUBLIC_BASE 覆盖。
     assetPrefix: process.env.PUBLIC_BASE || '/',
   },
   html: {
