@@ -4,6 +4,9 @@ import { shuffleInPlace } from '../utils/shuffle';
 
 /** 游荡商人：`MapNode.eventScriptId` 与 `run.screen.eventId` 共用此字面量。 */
 export const WANDERING_MERCHANT_EVENT_ID = 'wandering_merchant';
+export const STILLNESS_SHRINE_EVENT_ID = 'stillness_shrine';
+export const BURST_ALTAR_EVENT_ID = 'burst_altar';
+export const PURGING_POOL_EVENT_ID = 'purging_pool';
 
 /** 与地图 SVG 布局一致：节点 `y` 取 0..MAX_ROW（含）。 */
 export const MAP_MAX_ROW_FLOOR1 = 6;
@@ -216,21 +219,29 @@ export function generateBranchingFloorMap(floor: number, seed: number): Record<s
 
   const nonFirstStepIds = middleIds.filter((id) => !firstStepIds.includes(id));
   const eventNodes = nonFirstStepIds.filter((id) => nodes[id]!.type === 'event');
-  const merchantHost =
-    eventNodes[0]
-    ?? nonFirstStepIds.find((id) => nodes[id]!.type === 'battle')
-    ?? middleIds.find((id) => nodes[id]!.type === 'battle')
-    ?? middleIds[0];
-  if (merchantHost) {
-    nodes[merchantHost]!.type = 'event';
-    nodes[merchantHost]!.eventScriptId = WANDERING_MERCHANT_EVENT_ID;
-  }
-
-  for (const id of middleIds) {
-    if (nodes[id]!.type === 'event' && id !== merchantHost) {
-      delete nodes[id]!.eventScriptId;
+  const scriptedEventIds = [
+    WANDERING_MERCHANT_EVENT_ID,
+    STILLNESS_SHRINE_EVENT_ID,
+    BURST_ALTAR_EVENT_ID,
+    PURGING_POOL_EVENT_ID,
+  ] as const;
+  while (eventNodes.length < scriptedEventIds.length) {
+    const battleCandidates = middleIds.filter((id) => nodes[id]!.type === 'battle' && !firstStepIds.includes(id));
+    const totalBattleCount = middleIds.filter((id) => nodes[id]!.type === 'battle').length;
+    const fallbackBattle = totalBattleCount > 1 && battleCandidates.length > 0
+      ? battleCandidates[0]
+      : middleIds.find((id) => nodes[id]!.type === 'event' && !eventNodes.includes(id));
+    if (!fallbackBattle || eventNodes.includes(fallbackBattle)) break;
+    if (nodes[fallbackBattle]!.type === 'battle') {
+      nodes[fallbackBattle]!.type = 'event';
     }
+    eventNodes.push(fallbackBattle);
   }
+  shuffleInPlace(eventNodes, rnd);
+  for (let i = 0; i < eventNodes.length; i++) {
+    nodes[eventNodes[i]!]!.eventScriptId = scriptedEventIds[i % scriptedEventIds.length]!;
+  }
+  const merchantHost = eventNodes.find((id) => nodes[id]!.eventScriptId === WANDERING_MERCHANT_EVENT_ID);
 
   /** 首步强转战斗可能吃掉唯一的宝箱，这里保证中间层仍至少有一处 treasure。 */
   if (midCount > 0 && !middleIds.some((id) => nodes[id]!.type === 'treasure')) {

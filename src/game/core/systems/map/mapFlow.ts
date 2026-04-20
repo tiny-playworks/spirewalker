@@ -5,7 +5,6 @@ import { isLegalMapStep, pruneMapEdgesToAlive } from '../../model/mapGraph';
 import type { RunState } from '../../model/run';
 import { mulberry32 } from '../../utils/rng';
 import { buildInitialBattle, DEFAULT_ENEMY_LINEUP, lineupBoss, lineupElite } from '../../engine/createMvpRun';
-import { WANDERING_MERCHANT_EVENT_ID } from '../../engine/generateBranchingFloor';
 import { generateCardRewardChoices } from '../../engine/generateRewardChoices';
 import { generateShop } from '../../engine/generateShop';
 import { rollPostBattlePotionOffer } from '../../engine/postBattleExtras';
@@ -50,11 +49,11 @@ export function chooseMapNodeFlow(
     events.push({ type: 'ENTERED_BATTLE_FROM_MAP', nodeId });
     return;
   }
-  if (node.type === 'event' && node.eventScriptId === WANDERING_MERCHANT_EVENT_ID) {
-    run.screen = { type: 'event', eventId: WANDERING_MERCHANT_EVENT_ID };
+  if (node.type === 'event') {
+    if (!node.eventScriptId) return;
+    run.screen = { type: 'event', eventId: node.eventScriptId };
     return;
   }
-  if (node.type === 'event') return;
   if (node.type === 'shop') {
     run.shop = generateShop(run.seed, run.meta.floor, run.meta.relics);
     run.screen = { type: 'shop' };
@@ -69,7 +68,7 @@ export function chooseMapNodeFlow(
   if (node.type === 'treasure') {
     const salt = (run.seed ^ run.meta.gold ^ 0x7e5afe ^ hashMapNodeId(nodeId)) >>> 0;
     const tier = 'treasure' as const;
-    const cards = generateCardRewardChoices(run.seed, salt, tier);
+    const cards = generateCardRewardChoices(run.seed, salt, tier, run.meta.characterId);
     const tr = mulberry32((salt ^ 0xc4e123) >>> 0);
     const bonusChestGold = 20 + Math.floor(tr() * 11);
     const items: RewardItem[] = [

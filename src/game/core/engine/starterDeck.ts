@@ -1,9 +1,6 @@
-/** v0.4 首套牌：保留基础攻防，同时让首战就能接触 momentum 与节奏修复。 */
-export function createStarterMasterDeck(): string[] {
-  return [
-    ...Array.from({ length: 4 }, () => 'strike'),
-    ...Array.from({ length: 4 }, () => 'defend'),
-    'prime_rhythm',
-    'steady_step',
-  ];
+import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
+
+/** 默认返回当前唯一正式角色行者的 starter。 */
+export function createStarterMasterDeck(characterId = DEFAULT_CHARACTER_ID): string[] {
+  return [...getCharacterDefinition(characterId).starterDeck];
 }

@@ -1,4 +1,3 @@
-import { WANDERING_MERCHANT_EVENT_ID } from '../../engine/generateBranchingFloor';
 import type { GameCommand } from '../../commands/types';
 import type { GameEvent } from '../../events/types';
 import type { RunState } from '../../model/run';
@@ -12,5 +11,5 @@ export function resolveEventOptionFlow(
   if (run.screen.type !== 'event') return;
   const { eventId } = run.screen;
   const { optionId } = command;
-  if (eventId === WANDERING_MERCHANT_EVENT_ID) resolveEventOption(run, eventId, optionId, events);
+  resolveEventOption(run, eventId, optionId, events);
 }
