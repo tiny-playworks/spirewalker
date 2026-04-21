@@ -5,7 +5,8 @@ import { isLegalMapStep, pruneMapEdgesToAlive } from '../../model/mapGraph';
 import type { RunState } from '../../model/run';
 import { mulberry32 } from '../../utils/rng';
 import { buildInitialBattle } from '../../engine/createMvpRun';
-import { resolveEncounterTemplate } from '../../definitions/encounters';
+import { getEncounterById, hydrateEncounterEnemySlots, selectEncounterForNode } from '../../definitions/encounters';
+import { getMonsterDefinition } from '../../definitions/monsters';
 import { generateCardRewardChoices } from '../../engine/generateRewardChoices';
 import { generateShop } from '../../engine/generateShop';
 import { rollPostBattlePotionOffer } from '../../engine/postBattleExtras';
@@ -37,21 +38,46 @@ export function chooseMapNodeFlow(
   pruneMapEdgesToAlive(map);
 
   if (node.type === 'battle' || node.type === 'elite' || node.type === 'boss') {
-    const encounter = resolveEncounterTemplate(node.act, node.encounterTableId, nodeId, run.seed);
+    const encounter = node.encounterId
+      ? getEncounterById(node.encounterId)
+      : selectEncounterForNode({
+          runSeed: run.seed,
+          nodeId,
+          act: node.act,
+          encounterPoolId: node.encounterPoolId,
+          runHistory: run.meta.encounterHistory,
+        });
+    if (!encounter) {
+      throw new Error(`mapFlow: encounter not found for node=${nodeId}`);
+    }
+    node.encounterId = encounter.id;
+    run.meta.encounterHistory.ids = [...run.meta.encounterHistory.ids.slice(-5), encounter.id];
+    run.meta.encounterHistory.tags = [
+      ...run.meta.encounterHistory.tags.slice(-8),
+      ...encounter.tags,
+    ].slice(-8);
+    const archetypes = encounter.lineup
+      .map((entry) => getMonsterDefinition(entry.enemyId)?.ai.archetype)
+      .filter(Boolean) as string[];
+    run.meta.encounterHistory.archetypes = [
+      ...run.meta.encounterHistory.archetypes.slice(-8),
+      ...archetypes,
+    ].slice(-8);
     run.battle = buildInitialBattle(
       run.seed,
       { currentHp: run.player.currentHp, maxHp: run.player.maxHp },
       `map_${nodeId}`,
       run.masterDeck,
-      encounter.enemySlots,
+      hydrateEncounterEnemySlots(encounter),
       run.meta.relics,
       run.meta.characterId,
       {
         id: encounter.id,
-        tableId: encounter.tableId,
+        poolId: node.encounterPoolId ?? 'unknown',
         tier: encounter.tier,
         name: encounter.name,
         tags: encounter.tags,
+        pressureProfile: encounter.pressureProfile,
       },
     );
     run.screen = { type: 'battle' };

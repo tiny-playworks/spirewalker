@@ -19,6 +19,16 @@ export interface PlayerRunState {
   currentHp: number;
 }
 
+export interface EncounterHistoryState {
+  ids: string[];
+  tags: string[];
+  archetypes: string[];
+}
+
+export function createEmptyEncounterHistory(): EncounterHistoryState {
+  return { ids: [], tags: [], archetypes: [] };
+}
+
 export interface RunState {
   /** 存档结构版本，便于迁移（见 persistence/saveRun） */
   saveVersion?: number;
@@ -41,5 +51,6 @@ export interface RunState {
     characterId: string;
     relics: string[];
     potions: string[];
+    encounterHistory: EncounterHistoryState;
   };
 }

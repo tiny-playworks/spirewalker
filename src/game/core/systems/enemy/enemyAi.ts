@@ -1,147 +1,75 @@
 import { getMonsterDefinition } from '../../definitions/monsters';
-import type {
-  MonsterAiDefinition,
-  MonsterDefinition,
-} from '../../definitions/monsters';
 import type { BattleState, MonsterBattleState, MonsterIntent } from '../../model/battle';
+import type { EnemyAiDefinition, EnemyAiPhase, EnemyDefinition } from '../../definitions/monsters';
 
 export interface IntentComputation {
   intent: MonsterIntent;
   trace: string;
-  bossPhase?: 1 | 2;
+  bossPhase?: number;
   bossPhaseLabel?: string;
 }
 
 function pickPatternIntent(pattern: readonly MonsterIntent[], moveHistoryLength: number): MonsterIntent {
+  if (pattern.length === 0) {
+    throw new Error('enemyAi: empty rotation');
+  }
   return pattern[moveHistoryLength % pattern.length]!;
 }
 
-function computeCycleAttackIntent(
-  def: MonsterDefinition,
-  ai: Extract<MonsterAiDefinition, { scriptId: 'cycle_attack' }>,
-  moveHistoryLength: number,
-): IntentComputation {
-  return {
-    intent: pickPatternIntent(ai.params.attacks, moveHistoryLength),
-    trace: `cycle_attack[${def.id}] len=${moveHistoryLength}`,
-  };
-}
-
-function computeCycleAttackBlockIntent(
-  def: MonsterDefinition,
-  ai: Extract<MonsterAiDefinition, { scriptId: 'cycle_attack_block' }>,
-  moveHistoryLength: number,
-): IntentComputation {
-  if (moveHistoryLength % 2 === 0) {
-    return {
-      intent: pickPatternIntent(ai.params.attacks, moveHistoryLength / 2),
-      trace: `cycle_attack_block[${def.id}] len=${moveHistoryLength} -> attack`,
-    };
+function describeIntent(intent: MonsterIntent): string {
+  switch (intent.type) {
+    case 'attack':
+      return `attack=${intent.value}`;
+    case 'multi_hit':
+      return `multi=${intent.value}x${intent.hits}`;
+    case 'block':
+      return `block=${intent.value}`;
+    case 'reduce_status':
+      return `reduce ${intent.statusId} by ${intent.value}`;
+    case 'punish_multi_play':
+      return `punish threshold=${intent.threshold} block=${intent.block}`;
+    default:
+      return intent.type;
   }
-  return {
-    intent: { type: 'block', value: ai.params.block },
-    trace: `cycle_attack_block[${def.id}] len=${moveHistoryLength} -> block=${ai.params.block}`,
-  };
 }
 
-function computeCycleAttackDebuffIntent(
-  def: MonsterDefinition,
-  ai: Extract<MonsterAiDefinition, { scriptId: 'cycle_attack_debuff' }>,
-  moveHistoryLength: number,
-): IntentComputation {
-  if (moveHistoryLength % 2 === 0) {
-    return {
-      intent: pickPatternIntent(ai.params.attacks, moveHistoryLength / 2),
-      trace: `cycle_attack_debuff[${def.id}] len=${moveHistoryLength} -> attack`,
-    };
+function pickPhase(phases: EnemyAiPhase[] | undefined, hpRate: number): {
+  phase: EnemyAiPhase | null;
+  phaseIndex: number;
+} {
+  if (!phases || phases.length === 0) return { phase: null, phaseIndex: 0 };
+  let selectedIndex = 0;
+  for (let index = 0; index < phases.length; index += 1) {
+    const phase = phases[index]!;
+    if (phase.threshold !== undefined && hpRate <= phase.threshold) {
+      selectedIndex = index;
+    }
   }
-  return {
-    intent:
-      ai.params.mode === 'buff'
-        ? { type: 'buff', statusId: ai.params.statusId, value: ai.params.value }
-        : { type: 'debuff', statusId: ai.params.statusId, value: ai.params.value },
-    trace: `cycle_attack_debuff[${def.id}] len=${moveHistoryLength} -> ${ai.params.mode} ${ai.params.statusId} ${ai.params.value}`,
-  };
+  return { phase: phases[selectedIndex] ?? null, phaseIndex: selectedIndex + 1 };
 }
 
-function computeMomentumBreakIntent(
-  def: MonsterDefinition,
-  ai: Extract<MonsterAiDefinition, { scriptId: 'momentum_break' }>,
-  moveHistoryLength: number,
-): IntentComputation {
-  if (moveHistoryLength % 2 === 0) {
-    return {
-      intent: { type: 'attack', value: ai.params.attack },
-      trace: `momentum_break[${def.id}] len=${moveHistoryLength} -> attack=${ai.params.attack}`,
-    };
-  }
-  return {
-    intent: { type: 'reduce_status', statusId: 'momentum', value: ai.params.reduceValue },
-    trace: `momentum_break[${def.id}] len=${moveHistoryLength} -> reduce momentum by ${ai.params.reduceValue}`,
-  };
-}
-
-function computeMultiPlayPunishIntent(
-  def: MonsterDefinition,
-  ai: Extract<MonsterAiDefinition, { scriptId: 'multi_play_punish' }>,
-  moveHistoryLength: number,
-): IntentComputation {
-  if (moveHistoryLength % 2 === 0) {
-    return {
-      intent: { type: 'attack', value: ai.params.attack },
-      trace: `multi_play_punish[${def.id}] len=${moveHistoryLength} -> attack=${ai.params.attack}`,
-    };
-  }
-  return {
-    intent: {
-      type: 'punish_multi_play',
-      threshold: ai.params.threshold,
-      block: ai.params.block,
-    },
-    trace: `multi_play_punish[${def.id}] len=${moveHistoryLength} -> punish threshold=${ai.params.threshold} block=${ai.params.block}`,
-  };
-}
-
-function computeBossPhaseShiftIntent(
-  def: MonsterDefinition,
-  ai: Extract<MonsterAiDefinition, { scriptId: 'boss_phase_shift' }>,
+function computeGenericIntent(
+  def: EnemyDefinition,
+  ai: EnemyAiDefinition,
   moveHistoryLength: number,
   hpRate: number,
 ): IntentComputation {
-  const bossPhase = hpRate <= ai.params.threshold ? 2 : 1;
-  const pattern = bossPhase === 1 ? ai.params.phase1 : ai.params.phase2;
+  const { phase, phaseIndex } = pickPhase(ai.phases, hpRate);
+  const pattern = phase?.rotation ?? ai.rotation ?? [];
+  const intent = pickPatternIntent(pattern, moveHistoryLength);
+  const phaseLabel = phase?.label;
   return {
-    intent: pickPatternIntent(pattern, moveHistoryLength),
-    trace: `boss_phase_shift[${def.id}] len=${moveHistoryLength} -> phase=${bossPhase}`,
-    bossPhase,
-    bossPhaseLabel: ai.params.phaseLabels[bossPhase - 1],
+    intent,
+    trace: `${ai.archetype}[${def.id}] len=${moveHistoryLength}${phaseLabel ? ` phase=${phaseLabel}` : ''} -> ${describeIntent(intent)}`,
+    bossPhase: phase ? phaseIndex : undefined,
+    bossPhaseLabel: phaseLabel,
   };
 }
 
 function computeLegacyIntent(monsterId: string, moveHistoryLength: number): IntentComputation {
   const def = getMonsterDefinition(monsterId);
   if (!def) throw new Error(`enemyAi: unknown monsterId "${monsterId}"`);
-  if (monsterId === 'slime_boss') {
-    return {
-      intent: moveHistoryLength % 2 === 0 ? { type: 'attack', value: 6 } : { type: 'attack', value: 9 },
-      trace: `cycle_attack[slime_boss] len=${moveHistoryLength}`,
-    };
-  }
-
-  switch (def.ai.scriptId) {
-    case 'cycle_attack':
-      return computeCycleAttackIntent(def, def.ai, moveHistoryLength);
-    case 'cycle_attack_block':
-      return computeCycleAttackBlockIntent(def, def.ai, moveHistoryLength);
-    case 'cycle_attack_debuff':
-      return computeCycleAttackDebuffIntent(def, def.ai, moveHistoryLength);
-    case 'momentum_break':
-      return computeMomentumBreakIntent(def, def.ai, moveHistoryLength);
-    case 'multi_play_punish':
-      return computeMultiPlayPunishIntent(def, def.ai, moveHistoryLength);
-    case 'boss_phase_shift':
-      return computeBossPhaseShiftIntent(def, def.ai, moveHistoryLength, 1);
-  }
+  return computeGenericIntent(def, def.ai, moveHistoryLength, 1);
 }
 
 export function computeIntentForMonster(
@@ -161,23 +89,8 @@ export function computeIntentForMonster(
   if (!monster || !unit) throw new Error(`enemyAi: unknown enemy unit "${enemyUnitId}"`);
   const def = getMonsterDefinition(monster.monsterId);
   if (!def) throw new Error(`enemyAi: unknown monsterId "${monster.monsterId}"`);
-
-  switch (def.ai.scriptId) {
-    case 'cycle_attack':
-      return computeCycleAttackIntent(def, def.ai, historyLength);
-    case 'cycle_attack_block':
-      return computeCycleAttackBlockIntent(def, def.ai, historyLength);
-    case 'cycle_attack_debuff':
-      return computeCycleAttackDebuffIntent(def, def.ai, historyLength);
-    case 'momentum_break':
-      return computeMomentumBreakIntent(def, def.ai, historyLength);
-    case 'multi_play_punish':
-      return computeMultiPlayPunishIntent(def, def.ai, historyLength);
-    case 'boss_phase_shift': {
-      const hpRate = unit.maxHp <= 0 ? 0 : unit.hp / unit.maxHp;
-      return computeBossPhaseShiftIntent(def, def.ai, historyLength, hpRate);
-    }
-  }
+  const hpRate = unit.maxHp <= 0 ? 0 : unit.hp / unit.maxHp;
+  return computeGenericIntent(def, def.ai, historyLength, hpRate);
 }
 
 export function applyIntentToMonster(monster: MonsterBattleState, comp: IntentComputation): void {

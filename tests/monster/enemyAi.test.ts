@@ -4,7 +4,7 @@ import { buildInitialBattle, createMvpRun, ENEMY_UNIT_ID, lineupGuard, lineupSap
 import { MONSTER_DEFINITIONS } from '@/game/core/definitions/monsters';
 import { STATUS_MOMENTUM } from '@/game/core/definitions/statuses';
 import { computeIntentForMonster } from '@/game/core/systems/enemy/enemyAi';
-import type { RunState } from '@/game/core/model/run';
+import { createEmptyEncounterHistory, type RunState } from '@/game/core/model/run';
 import { RUN_SAVE_VERSION } from '@/game/core/persistence/saveVersion';
 
 describe('monster/enemyAi', () => {
@@ -72,7 +72,16 @@ describe('monster/enemyAi', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: {
+        act: 1,
+        actFloor: 1,
+        floor: 1,
+        gold: 0,
+        characterId: 'walker',
+        relics: [],
+        potions: [],
+        encounterHistory: createEmptyEncounterHistory(),
+      },
     };
     const m0 = run.battle!.monsters[ENEMY_UNIT_ID]!;
     expect(m0.intent).toEqual({ type: 'attack', value: 5 });
@@ -94,7 +103,16 @@ describe('monster/enemyAi', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: {
+        act: 1,
+        actFloor: 1,
+        floor: 1,
+        gold: 0,
+        characterId: 'walker',
+        relics: [],
+        potions: [],
+        encounterHistory: createEmptyEncounterHistory(),
+      },
     };
     const m0 = run.battle!.monsters[ENEMY_UNIT_ID]!;
     expect(m0.intent).toEqual({ type: 'attack', value: 5 });
@@ -116,7 +134,16 @@ describe('monster/enemyAi', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: {
+        act: 1,
+        actFloor: 1,
+        floor: 1,
+        gold: 0,
+        characterId: 'walker',
+        relics: [],
+        potions: [],
+        encounterHistory: createEmptyEncounterHistory(),
+      },
     };
     const m0 = run.battle!.monsters[ENEMY_UNIT_ID]!;
     expect(m0.intent).toEqual({ type: 'attack', value: 4 });

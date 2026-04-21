@@ -399,6 +399,39 @@ export const MEASURED_REST: CardDefinition = {
   ],
 };
 
+export const JUNK_SLUDGE: CardDefinition = {
+  id: 'junk_sludge',
+  name: '淤泥',
+  description: '污染牌。没有任何效果。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [],
+};
+
+export const JUNK_BURN: CardDefinition = {
+  id: 'junk_burn',
+  name: '灼痕',
+  description: '污染牌。没有任何效果。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [],
+};
+
+export const JUNK_STATIC: CardDefinition = {
+  id: 'junk_static',
+  name: '噪讯',
+  description: '污染牌。没有任何效果。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [],
+};
+
 export const MOMENTUM_SETUP_CARD_IDS = [
   MOMENTUM.id,
   TEMPO_GUARD.id,
@@ -480,4 +513,7 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [FOLLOW_THROUGH.id]: FOLLOW_THROUGH,
   [SURVEY_FIELD.id]: SURVEY_FIELD,
   [MEASURED_REST.id]: MEASURED_REST,
+  [JUNK_SLUDGE.id]: JUNK_SLUDGE,
+  [JUNK_BURN.id]: JUNK_BURN,
+  [JUNK_STATIC.id]: JUNK_STATIC,
 };

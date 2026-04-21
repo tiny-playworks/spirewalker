@@ -154,12 +154,12 @@ function generatePathRows(
   return rows;
 }
 
-function encounterMetaForType(type: MapNodeType, act: MapAct): Pick<MapNode, 'encounterTier' | 'encounterTableId'> {
-  if (type === 'battle') return { encounterTier: 'normal', encounterTableId: `act_${act}_normal` };
-  if (type === 'elite') return { encounterTier: 'elite', encounterTableId: `act_${act}_elite` };
-  if (type === 'boss') return { encounterTier: 'boss', encounterTableId: `act_${act}_boss` };
-  if (type === 'treasure') return { encounterTier: 'treasure', encounterTableId: `act_${act}_treasure` };
-  return { encounterTier: 'none', encounterTableId: null };
+function encounterMetaForType(type: MapNodeType, act: MapAct): Pick<MapNode, 'encounterTier' | 'encounterPoolId' | 'encounterId'> {
+  if (type === 'battle') return { encounterTier: 'normal', encounterPoolId: `act_${act}_normal`, encounterId: null };
+  if (type === 'elite') return { encounterTier: 'elite', encounterPoolId: `act_${act}_elite`, encounterId: null };
+  if (type === 'boss') return { encounterTier: 'boss', encounterPoolId: `act_${act}_boss`, encounterId: null };
+  if (type === 'treasure') return { encounterTier: 'treasure', encounterPoolId: `act_${act}_treasure`, encounterId: null };
+  return { encounterTier: 'none', encounterPoolId: null, encounterId: null };
 }
 
 function addEdge(nodes: Record<string, MapNode>, fromId: string, toId: string): void {

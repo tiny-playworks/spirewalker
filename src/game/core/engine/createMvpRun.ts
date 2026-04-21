@@ -5,8 +5,9 @@ import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STRENGTH } from '../definit
 import type { BattleEncounterMeta, BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
 import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
-import type { RunState } from '../model/run';
+import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
+import { buildInitialMonsterRuntime, getMonsterDefinition } from '../definitions/monsters';
 import { setInitialEnemyIntent } from '../systems/enemy/enemyAi';
 import { createInstanceId, resetIdCounter } from '../utils/id';
 import { mulberry32 } from '../utils/rng';
@@ -88,7 +89,7 @@ export function buildInitialBattle(
   characterId?: string,
   encounter: BattleEncounterMeta = {
     id: battleKey,
-    tableId: 'debug',
+    poolId: 'debug',
     tier: 'normal' as const,
     name: '调试战斗',
     tags: ['普通战'],
@@ -150,6 +151,8 @@ export function buildInitialBattle(
       monsterId: slot.monsterId,
       intent: null,
       moveHistory: [],
+      runtime: buildInitialMonsterRuntime(getMonsterDefinition(slot.monsterId)!),
+      scriptState: {},
     };
     monsters[slot.unitId] = monsterState;
   }
@@ -189,8 +192,12 @@ export function buildInitialBattle(
       discardPile: [],
       exhaustPile: [],
       cards,
+      lockedCardInstanceIds: [],
+      pendingHandLocks: 0,
+      drawPressure: 0,
     },
     monsters,
+    nextEnemyUnitSeq: enemySlots.length,
     pendingAction: null,
     lastResolvedEvents: [],
   };
@@ -215,6 +222,15 @@ export function createMvpRun(seed: number): RunState {
     map: { nodes: {}, currentNodeId: null },
     screen: { type: 'battle' },
     battle,
-    meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: DEFAULT_CHARACTER_ID, relics: [], potions: [] },
+    meta: {
+      act: 1,
+      actFloor: 1,
+      floor: 1,
+      gold: 0,
+      characterId: DEFAULT_CHARACTER_ID,
+      relics: [],
+      potions: [],
+      encounterHistory: createEmptyEncounterHistory(),
+    },
   };
 }

@@ -1,9 +1,9 @@
 import { createStarterMasterDeck } from '../engine/starterDeck';
 import { DEFAULT_CHARACTER_ID } from '../definitions/characters';
-import type { RunState } from '../model/run';
+import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from './saveVersion';
 
-const KEY = 'sljt_run_v2';
+const KEY = 'sljt_run_v3';
 
 export { RUN_SAVE_VERSION } from './saveVersion';
 
@@ -25,6 +25,12 @@ export function normalizeRunState(raw: unknown): RunState | null {
   }
   if (!Array.isArray(run.meta.relics)) run.meta.relics = [];
   if (!Array.isArray(run.meta.potions)) run.meta.potions = [];
+  if (!run.meta.encounterHistory || typeof run.meta.encounterHistory !== 'object') {
+    run.meta.encounterHistory = createEmptyEncounterHistory();
+  }
+  if (!Array.isArray(run.meta.encounterHistory.ids)) run.meta.encounterHistory.ids = [];
+  if (!Array.isArray(run.meta.encounterHistory.tags)) run.meta.encounterHistory.tags = [];
+  if (!Array.isArray(run.meta.encounterHistory.archetypes)) run.meta.encounterHistory.archetypes = [];
   if (typeof run.meta.characterId !== 'string' || run.meta.characterId.length === 0) {
     run.meta.characterId = DEFAULT_CHARACTER_ID;
   }

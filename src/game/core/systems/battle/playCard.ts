@@ -10,10 +10,10 @@ import type {
   MomentumBurstDrawParams,
 } from '../../model/card';
 import type { RunState } from '../../model/run';
-import type { CombatUnit } from '../../model/unit';
-import { runOnAfterPlayCard, runOnBeforeDealDamage, runOnBeforeTakeDamage } from '../status/statusHooks';
+import { runOnAfterPlayCard } from '../status/statusHooks';
 import { mulberry32 } from '../../utils/rng';
 import { shuffleInPlace } from '../../utils/shuffle';
+import { applyEnemyReactionToPlayerCard, dealDamageToUnit } from '../enemy/runtimeHooks';
 
 function drawAdditionalCards(
   battle: BattleState,
@@ -33,29 +33,6 @@ function drawAdditionalCards(
     battle.player.hand.push(id);
     events.push({ type: 'CARD_DRAWN', unitId: battle.playerUnitId, cardInstanceId: id });
   }
-}
-
-function dealDamageTo(
-  battle: BattleState,
-  sourceId: string,
-  target: CombatUnit,
-  baseAmount: number,
-  events: GameEvent[],
-): void {
-  if (!target.alive) return;
-  const source = battle.units[sourceId];
-  let remaining = source ? runOnBeforeDealDamage(source, baseAmount) : baseAmount;
-  remaining = runOnBeforeTakeDamage(target, remaining);
-  const blockAbsorb = Math.min(target.block, remaining);
-  if (blockAbsorb > 0) {
-    target.block -= blockAbsorb;
-    remaining -= blockAbsorb;
-  }
-  const hpLoss = Math.min(target.hp, remaining);
-  target.hp -= hpLoss;
-  if (hpLoss > 0) events.push({ type: 'DAMAGE_DEALT', sourceUnitId: sourceId, targetUnitId: target.id, value: hpLoss });
-  target.alive = target.hp > 0;
-  if (!target.alive) events.push({ type: 'UNIT_DIED', unitId: target.id });
 }
 
 function readMomentumBurstParams(params: unknown): MomentumBurstDamageParams | null {
@@ -102,7 +79,7 @@ function applyMomentumBurstDamage(
     (relicIds.includes('burst_emblem') ? 2 : 0)
     + (relicIds.includes('sighted_edge') ? consumedStacks : 0);
   const damage = params.baseDamage + consumedStacks * params.damagePerStack + relicBonus;
-  dealDamageTo(battle, sourceUnitId, target, damage, events);
+  dealDamageToUnit(battle, sourceUnitId, targetUnitId, damage, events);
   if (relicIds.includes('quick_fuse')) {
     battle.player.energy += 1;
     events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
@@ -149,14 +126,14 @@ function applyEffects(
       if (e.target === 'all_enemies') {
         for (const eid of battle.enemyUnitIds) {
           const t = battle.units[eid];
-          if (t?.alive) dealDamageTo(battle, sourceUnitId, t, e.value, events);
+          if (t?.alive) dealDamageToUnit(battle, sourceUnitId, eid, e.value, events);
         }
       } else {
         const tid = e.target === 'selected' ? targetUnitId : e.target === 'self' ? sourceUnitId : battle.enemyUnitIds[0];
         if (!tid) continue;
         const t = battle.units[tid];
         if (!t) continue;
-        dealDamageTo(battle, sourceUnitId, t, e.value, events);
+        dealDamageToUnit(battle, sourceUnitId, tid, e.value, events);
       }
     } else if (e.type === 'block') {
       const tid = e.target === 'self' ? sourceUnitId : targetUnitId;
@@ -242,6 +219,7 @@ export function playCardFlow(
     if (!pending) return;
     if (pending.cardInstanceId !== cardInstanceId || pending.sourceUnitId !== sourceUnitId) return;
   }
+  if (battle.player.lockedCardInstanceIds.includes(cardInstanceId)) return;
   if (!battle.player.hand.includes(cardInstanceId)) return;
   const card = battle.player.cards[cardInstanceId];
   if (!card) return;
@@ -276,6 +254,15 @@ export function playCardFlow(
     events,
     skipMomentumAutoConsume: shouldSkipMomentumAutoConsume(def.effects),
   });
+  for (const enemyUnitId of battle.enemyUnitIds) {
+    applyEnemyReactionToPlayerCard(
+      battle,
+      enemyUnitId,
+      def.type === 'attack',
+      battle.playerCardsPlayedThisTurn,
+      events,
+    );
+  }
   if (events.some((e) => e.type === 'BATTLE_WON')) battle.phase = 'victory';
   if (events.some((e) => e.type === 'BATTLE_LOST')) battle.phase = 'defeat';
   battle.pendingAction = null;

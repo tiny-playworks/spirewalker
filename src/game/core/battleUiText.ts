@@ -7,14 +7,54 @@ export function formatMonsterIntentText(intent: MonsterIntent | null | undefined
   switch (intent.type) {
     case 'attack':
       return `攻击 ${intent.value}`;
+    case 'multi_hit':
+      return `连击 ${intent.value} x${intent.hits}`;
+    case 'heavy_charge':
+      return `重击 ${intent.value}`;
     case 'block':
       return `防御 ${intent.value}`;
     case 'buff':
       return `获得 ${getStatusMeta(intent.statusId).name} ${intent.value}`;
+    case 'scale':
+      return `成长 ${intent.stat} ${intent.value}`;
     case 'debuff':
       return `施加 ${getStatusMeta(intent.statusId).name} ${intent.value}`;
     case 'reduce_status':
       return `削减 ${getStatusMeta(intent.statusId).name} ${intent.value}`;
+    case 'summon':
+      return `召唤 ${intent.count} 个援军`;
+    case 'split_on_death':
+      return `死亡后分裂`;
+    case 'revive':
+      return `复活 ${intent.charges} 次`;
+    case 'thorns':
+      return `反刺 ${intent.damage}`;
+    case 'reactive':
+      return `反制 ${intent.damage}`;
+    case 'counter':
+      return `反击阈值 ${intent.threshold}`;
+    case 'pollute_draw':
+      return `污染 ${intent.count} 张`;
+    case 'lock_hand':
+      return `锁定 ${intent.count} 张手牌`;
+    case 'draw_pressure':
+      return `压制抽牌 ${intent.value}`;
+    case 'heal':
+      return `治疗 ${intent.value}`;
+    case 'leech':
+      return `吸取 ${intent.attack}`;
+    case 'countdown':
+      return `倒计时 ${intent.turns}`;
+    case 'double_action':
+      return `额外行动 ${intent.times}`;
+    case 'phase_shift':
+      return `切换阶段 ${intent.label}`;
+    case 'max_hp_down':
+      return `压低上限 ${intent.value}`;
+    case 'mechanic_reset':
+      return `重置 ${intent.mode}`;
+    case 'copy_echo':
+      return '复制场面';
     case 'punish_multi_play':
       return `连打惩罚：你本回合出牌 >= ${intent.threshold} 时，获得 ${intent.block} 格挡`;
     case 'attack_buff':

@@ -26,7 +26,8 @@ export interface MapNode {
   y: number;
   type: MapNodeType;
   encounterTier: EncounterTier;
-  encounterTableId: string | null;
+  encounterPoolId: string | null;
+  encounterId: string | null;
   routeBias?: MapRouteBias;
   /** 仅 `type === 'event'` 时可选；用于进哪个事件屏（与节点 id 解耦）。 */
   eventScriptId?: string;

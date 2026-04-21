@@ -1,6 +1,6 @@
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
 import type { MapAct, MapNode } from '../model/map';
-import type { RunState } from '../model/run';
+import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
 import { resetIdCounter } from '../utils/id';
 import { ACT_FLOOR_COUNTS, generateActMap, globalFloorFor } from './generateBranchingFloor';
@@ -38,6 +38,7 @@ export function createMapRun(seed: number): RunState {
       characterId: character.id,
       relics: [...character.startingRelics],
       potions: [...character.startingPotions],
+      encounterHistory: createEmptyEncounterHistory(),
     },
   };
 }

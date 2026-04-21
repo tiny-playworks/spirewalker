@@ -39,7 +39,7 @@ import {
 } from '@/game/core/definitions/statuses';
 import type { MapNode } from '@/game/core/model/map';
 import { isLegalMapStep, markVisitedFromCampTo, pickPredecessorId } from '@/game/core/model/mapGraph';
-import type { RunState } from '@/game/core/model/run';
+import { createEmptyEncounterHistory, type RunState } from '@/game/core/model/run';
 import { RUN_SAVE_VERSION } from '@/game/core/persistence/saveVersion';
 
 function jumpToBeforeNode(run: RunState, targetId: string): void {
@@ -384,7 +384,16 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: {
+        act: 1,
+        actFloor: 1,
+        floor: 1,
+        gold: 0,
+        characterId: 'walker',
+        relics: [],
+        potions: [],
+        encounterHistory: createEmptyEncounterHistory(),
+      },
     };
 
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
@@ -408,7 +417,16 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: {
+        act: 1,
+        actFloor: 1,
+        floor: 1,
+        gold: 0,
+        characterId: 'walker',
+        relics: [],
+        potions: [],
+        encounterHistory: createEmptyEncounterHistory(),
+      },
     };
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
@@ -458,7 +476,16 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: {
+        act: 1,
+        actFloor: 1,
+        floor: 1,
+        gold: 0,
+        characterId: 'walker',
+        relics: [],
+        potions: [],
+        encounterHistory: createEmptyEncounterHistory(),
+      },
     };
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
@@ -1054,7 +1081,16 @@ describe('GameEngine 战斗修正', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: ['guard_knot'], potions: [] },
+      meta: {
+        act: 1,
+        actFloor: 1,
+        floor: 1,
+        gold: 0,
+        characterId: 'walker',
+        relics: ['guard_knot'],
+        potions: [],
+        encounterHistory: createEmptyEncounterHistory(),
+      },
     };
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
@@ -1072,7 +1108,7 @@ describe('GameEngine 战斗修正', () => {
         (n) =>
           n.type === 'elite' &&
           n.floor === 1 &&
-          resolveEncounterTemplate(n.act, n.encounterTableId, n.id, candidate.seed).id === 'act1_elite_open',
+          resolveEncounterTemplate(n.act, n.encounterPoolId, n.id, candidate.seed).id === 'act1_elite_open',
       );
       if (target) {
         run = candidate;
