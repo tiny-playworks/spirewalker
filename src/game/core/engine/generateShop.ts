@@ -3,6 +3,7 @@ import {
   MOMENTUM_SETUP_CARD_IDS,
   TEMPO_RECOVERY_CARD_IDS,
 } from '../definitions/cards/starter';
+import type { MapAct } from '../model/map';
 import type { ShopState } from '../model/shop';
 import { mulberry32 } from '../utils/rng';
 
@@ -31,10 +32,11 @@ function pickOne<T>(pool: readonly T[], random: () => number): T {
 /** 进入商店节点时生成（价格随层数略涨；遗物依已持有过滤） */
 export function generateShop(
   seed: number,
-  floor: number,
+  act: MapAct,
+  actFloor: number,
   ownedRelicIds: string[],
 ): ShopState {
-  const f = Math.max(1, floor);
+  const f = Math.max(1, actFloor + act * 4);
   const jitter = (seed ^ f * 0x9e37) & 7;
   const rng = mulberry32((seed ^ f * 0x5c0ffee) >>> 0);
 
@@ -42,7 +44,7 @@ export function generateShop(
   const relics: ShopState['relics'] = [];
   if (available.length > 0) {
     const pick = available[Math.floor(rng() * available.length)]!;
-    relics.push({ relicId: pick, price: 135 + f * 12 + jitter });
+    relics.push({ relicId: pick, price: 152 + f * 12 + jitter });
   }
 
   const random = () => rng();
@@ -52,13 +54,13 @@ export function generateShop(
 
   return {
     cards: [
-      { definitionId: 'strike', price: 40 + f * 8 + jitter },
-      { definitionId: setupOffer, price: 44 + f * 8 + jitter },
-      { definitionId: payoffOffer, price: 58 + f * 10 + jitter },
-      { definitionId: recoveryOffer, price: 42 + f * 8 + jitter },
+      { definitionId: 'strike', price: 52 + f * 7 + jitter },
+      { definitionId: setupOffer, price: 58 + f * 7 + jitter },
+      { definitionId: payoffOffer, price: 72 + f * 8 + jitter },
+      { definitionId: recoveryOffer, price: 60 + f * 7 + jitter },
     ],
     relics,
-    potions: [{ potionId: 'healing_dew', price: 48 + f * 6 + jitter }],
-    removeCardPrice: 70 + f * 10,
+    potions: [{ potionId: 'healing_dew', price: 60 + f * 5 + jitter }],
+    removeCardPrice: 96 + f * 9,
   };
 }

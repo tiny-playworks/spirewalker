@@ -14,28 +14,36 @@ function cn(...classNames: Array<string | false | null | undefined>) {
 type MapRouteProps = {
   map: MapState;
   currentNodeId: string | null;
-  floor: number;
+  act: number;
   selectedNodeId: string | null;
+  hoveredNodeId: string | null;
   selectableNodeIds: Set<string>;
   onSelectNode: (nodeId: string) => void;
+  onHoverNode: (nodeId: string | null) => void;
 };
 
 export function MapRoute({
   map,
   currentNodeId,
-  floor,
+  act,
   selectedNodeId,
+  hoveredNodeId,
   selectableNodeIds,
   onSelectNode,
+  onHoverNode,
 }: MapRouteProps) {
   const reachable = useMemo(
     () => getForwardReachableNodeIds(map.nodes, currentNodeId),
     [map.nodes, currentNodeId],
   );
+  const hoveredReachable = useMemo(
+    () => getForwardReachableNodeIds(map.nodes, hoveredNodeId),
+    [map.nodes, hoveredNodeId],
+  );
 
   const floorNodes = useMemo(
-    () => Object.values(map.nodes).filter((n) => n.floor === floor),
-    [map.nodes, floor],
+    () => Object.values(map.nodes).filter((n) => n.act === act),
+    [map.nodes, act],
   );
 
   const maxX = Math.max(0, ...floorNodes.map((n) => n.x));
@@ -47,7 +55,7 @@ export function MapRoute({
     for (const n of floorNodes) {
       for (const to of n.nextNodeIds) {
         const target = map.nodes[to];
-        if (!target || target.floor !== floor) continue;
+        if (!target || target.act !== act) continue;
         const key = `${n.id}|${to}`;
         if (seen.has(key)) continue;
         seen.add(key);
@@ -55,7 +63,7 @@ export function MapRoute({
       }
     }
     return list;
-  }, [floorNodes, map.nodes, floor]);
+  }, [floorNodes, map.nodes, act]);
 
   const vb = mapRouteViewBox(maxX, maxY);
   const { NODE_R } = MAP_ROUTE_SVG;
@@ -78,6 +86,10 @@ export function MapRoute({
             from === currentNodeId ||
             to === currentNodeId ||
             (reachable.has(from) && reachable.has(to));
+          const isPreviewed =
+            hoveredNodeId !== null &&
+            hoveredReachable.has(from) &&
+            hoveredReachable.has(to);
 
           return (
             <line
@@ -91,6 +103,7 @@ export function MapRoute({
                 styles.routeEdgeEmphasis[emphasis ? 'active' : 'dim'],
                 emphasis ? styles.routeEdgeTone[routePresentation.tone] : null,
                 emphasis ? styles.routeEdgeGlow[routePresentation.glow] : null,
+                isPreviewed && styles.routeEdgePreview,
               )}
             />
           );
@@ -102,6 +115,7 @@ export function MapRoute({
           const canReach = reachable.has(node.id);
           const isSelectable = selectableNodeIds.has(node.id);
           const isSelected = selectedNodeId === node.id;
+          const isHovered = hoveredNodeId === node.id;
           const viewState = mapNodeViewState({ isCurrent, isVisited, canReach });
           const tone = mapNodeToneForNode(node);
 
@@ -122,6 +136,8 @@ export function MapRoute({
                   : undefined
               }
               onClick={isSelectable ? () => onSelectNode(node.id) : undefined}
+              onPointerEnter={isSelectable ? () => onHoverNode(node.id) : undefined}
+              onPointerLeave={isSelectable ? () => onHoverNode(null) : undefined}
             >
               {isSelectable ? (
                 <circle className={styles.nodeHit} r={NODE_R + 10} cx={0} cy={0} />
@@ -134,6 +150,9 @@ export function MapRoute({
                 ) : null}
                 {isSelected ? (
                   <circle className={styles.nodeSelection} r={NODE_R + 5} cx={0} cy={0} />
+                ) : null}
+                {isHovered && !isSelected ? (
+                  <circle className={styles.nodeHoverRing} r={NODE_R + 5} cx={0} cy={0} />
                 ) : null}
                 <circle
                   className={cn(

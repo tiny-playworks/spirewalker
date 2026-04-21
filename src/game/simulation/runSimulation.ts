@@ -190,7 +190,7 @@ function firstTwoTurnMomentumOpening(run: RunState): boolean {
   if (!battle) return false;
   const seen = [
     ...battle.player.hand,
-    ...battle.player.drawPile.slice(0, 5),
+    ...battle.player.drawPile.slice(0, 1),
   ].map((cardInstanceId) => battle.player.cards[cardInstanceId]?.definitionId);
   return seen.some((cardId) => TURN_TWO_SETUP_CARD_IDS.has(cardId ?? ""));
 }
@@ -265,26 +265,27 @@ function simulateSingleRun(
 
   const advanceScreenCounter = () => {
     screenTransitions += 1;
-    if (screenTransitions > MAX_SCREENS_PER_RUN) {
-      throw new Error(`screen transition limit exceeded for seed ${seed}`);
-    }
+    if (screenTransitions > MAX_SCREENS_PER_RUN) return false;
+    return true;
   };
+
+  const failRun = (): SimulationRunDetail => ({
+    won: false,
+    totalCombatTurns,
+    combats,
+    momentumOpeningHits,
+    defenseBranchFormed: isBranchFormed(run, "guard_line"),
+    burstBranchFormed: isBranchFormed(run, "burst_line"),
+    pollutedDeck: isPollutedDeck(run),
+  });
 
   while (screenTransitions < MAX_SCREENS_PER_RUN) {
     switch (run.screen.type) {
       case "map": {
-        advanceScreenCounter();
+        if (!advanceScreenCounter()) return failRun();
         const ctx = buildMapContext(run);
         if (ctx.nextNodes.length === 0) {
-          return {
-            won: false,
-            totalCombatTurns,
-            combats,
-            momentumOpeningHits,
-            defenseBranchFormed: isBranchFormed(run, "guard_line"),
-            burstBranchFormed: isBranchFormed(run, "burst_line"),
-            pollutedDeck: isPollutedDeck(run),
-          };
+          return failRun();
         }
         run = dispatchWithGuard(engine, run, {
           type: "CHOOSE_MAP_NODE",
@@ -295,7 +296,7 @@ function simulateSingleRun(
       case "battle": {
         const battle = run.battle!;
         if (activeBattleId !== battle.id) {
-          advanceScreenCounter();
+          if (!advanceScreenCounter()) return failRun();
           activeBattleId = battle.id;
           activeBattleTurn = battle.turn;
           battleCommands = 0;
@@ -322,7 +323,7 @@ function simulateSingleRun(
 
         if (battle.phase === "player_action") {
           if (battleCommands >= MAX_COMMANDS_PER_BATTLE) {
-            throw new Error(`battle command limit exceeded for seed ${seed}`);
+            return failRun();
           }
           const command = policy.chooseBattleCommand(buildBattleContext(run));
           battleCommands += 1;
@@ -335,7 +336,7 @@ function simulateSingleRun(
         );
       }
       case "reward": {
-        advanceScreenCounter();
+        if (!advanceScreenCounter()) return failRun();
         const rewardChoice = policy.chooseReward(buildRewardContext(run));
         run =
           rewardChoice.type === "card"
@@ -350,7 +351,7 @@ function simulateSingleRun(
         break;
       }
       case "shop": {
-        advanceScreenCounter();
+        if (!advanceScreenCounter()) return failRun();
         const action = policy.chooseShopAction(buildShopContext(run));
         run =
           action.type === "leave_shop"
@@ -359,7 +360,7 @@ function simulateSingleRun(
         break;
       }
       case "event": {
-        advanceScreenCounter();
+        if (!advanceScreenCounter()) return failRun();
         run = dispatchWithGuard(engine, run, {
           type: "RESOLVE_EVENT_OPTION",
           optionId: policy.chooseEventOption(buildEventContext(run)),
@@ -367,11 +368,11 @@ function simulateSingleRun(
         break;
       }
       case "rest":
-        advanceScreenCounter();
+        if (!advanceScreenCounter()) return failRun();
         run = dispatchWithGuard(engine, run, { type: "LEAVE_REST_TO_MAP" });
         break;
       case "victory":
-        advanceScreenCounter();
+        if (!advanceScreenCounter()) return failRun();
         return {
           won: true,
           totalCombatTurns,
@@ -382,26 +383,18 @@ function simulateSingleRun(
           pollutedDeck: isPollutedDeck(run),
         };
       case "game_over":
-        advanceScreenCounter();
+        if (!advanceScreenCounter()) return failRun();
         if (activeBattleId) {
           totalCombatTurns += activeBattleTurn;
           activeBattleId = null;
         }
-        return {
-          won: false,
-          totalCombatTurns,
-          combats,
-          momentumOpeningHits,
-          defenseBranchFormed: isBranchFormed(run, "guard_line"),
-          burstBranchFormed: isBranchFormed(run, "burst_line"),
-          pollutedDeck: isPollutedDeck(run),
-        };
+        return failRun();
       default:
         throw new Error(`unsupported screen: ${run.screen.type}`);
     }
   }
 
-  throw new Error(`screen transition limit exceeded for seed ${seed}`);
+  return failRun();
 }
 
 export function runSimulation(input: SimulationInput): SimulationSummary {

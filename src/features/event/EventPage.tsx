@@ -23,6 +23,7 @@ export function EventPage() {
     return (
       <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot)} data-testid="event-page">
         <h2 className={subscreenStyles.title}>游荡商人</h2>
+        <p className={subscreenStyles.tip}>Act {run.meta.act} · 当前章节事件池。</p>
         <p className={subscreenStyles.tip}>选一个奖励后返回地图。</p>
         <div className={subscreenStyles.eventOptions}>
           <button
@@ -62,6 +63,7 @@ export function EventPage() {
     return (
       <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot)} data-testid="event-page">
         <h2 className={subscreenStyles.title}>静守祠</h2>
+        <p className={subscreenStyles.tip}>Act {run.meta.act} · 当前章节事件池。</p>
         <p className={subscreenStyles.tip}>在稳住连势与立刻补强之间选一条路。</p>
         <div className={subscreenStyles.eventOptions}>
           <button
@@ -101,6 +103,7 @@ export function EventPage() {
     return (
       <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot)} data-testid="event-page">
         <h2 className={subscreenStyles.title}>裂响祭坛</h2>
+        <p className={subscreenStyles.tip}>Act {run.meta.act} · 当前章节事件池。</p>
         <p className={subscreenStyles.tip}>更早兑现连势，但要先付出一点代价。</p>
         <div className={subscreenStyles.eventOptions}>
           <button
@@ -141,6 +144,7 @@ export function EventPage() {
     return (
       <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot)} data-testid="event-page">
         <h2 className={subscreenStyles.title}>净手池</h2>
+        <p className={subscreenStyles.tip}>Act {run.meta.act} · 当前章节事件池。</p>
         <p className={subscreenStyles.tip}>把一张基础牌沉进池水，换更干净的牌组。</p>
         <div className={subscreenStyles.eventOptions}>
           <button

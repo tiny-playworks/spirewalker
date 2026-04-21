@@ -72,7 +72,7 @@ describe('monster/enemyAi', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
     const m0 = run.battle!.monsters[ENEMY_UNIT_ID]!;
     expect(m0.intent).toEqual({ type: 'attack', value: 5 });
@@ -94,7 +94,7 @@ describe('monster/enemyAi', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
     const m0 = run.battle!.monsters[ENEMY_UNIT_ID]!;
     expect(m0.intent).toEqual({ type: 'attack', value: 5 });
@@ -116,7 +116,7 @@ describe('monster/enemyAi', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
     const m0 = run.battle!.monsters[ENEMY_UNIT_ID]!;
     expect(m0.intent).toEqual({ type: 'attack', value: 4 });

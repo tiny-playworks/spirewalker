@@ -89,6 +89,12 @@ export const routeEdgeBase = style({
   ].join(', '),
 });
 
+export const routeEdgePreview = style({
+  strokeWidth: 2.85,
+  opacity: 1,
+  filter: 'drop-shadow(0 0 10px rgba(244, 213, 141, 0.2))',
+});
+
 export const routeEdgeEmphasis = styleVariants({
   active: {
     stroke: 'rgba(140, 124, 98, 0.85)',
@@ -227,6 +233,13 @@ export const nodeCircleTone = styleVariants({
 
 export const nodeCircleSelected = style({
   filter: 'drop-shadow(0 0 16px rgba(244, 213, 141, 0.3))',
+});
+
+export const nodeHoverRing = style({
+  fill: 'none',
+  stroke: 'rgba(244, 213, 141, 0.72)',
+  strokeWidth: 2,
+  filter: 'drop-shadow(0 0 10px rgba(244, 213, 141, 0.18))',
 });
 
 export const nodeIconBase = style({

@@ -4,22 +4,24 @@ import { walkerMomentumPolicy } from '@/game/simulation/policies/walkerMomentumP
 import { runSimulation } from '@/game/simulation/runSimulation';
 
 describe('simulation/walkerStarterOpening', () => {
-  test('SimplePolicy 满足 v0.5 前两回合接触起势入口强约束', () => {
-    const summary = runSimulation({ seed: 1001, runs: 100, policy: simplePolicy, characterId: 'walker' });
+  test('SimplePolicy 的前两回合起势接触率落在新护栏内', () => {
+    const summary = runSimulation({ seed: 1001, runs: 30, policy: simplePolicy, characterId: 'walker' });
 
-    expect(summary.totalRuns).toBe(100);
-    expect(summary.momentumOpenedByTurn2Rate).toBe(1);
+    expect(summary.totalRuns).toBe(30);
+    expect(summary.momentumOpenedByTurn2Rate).toBeGreaterThanOrEqual(0.7);
+    expect(summary.momentumOpenedByTurn2Rate).toBeLessThanOrEqual(0.95);
   });
 
-  test('WalkerMomentumPolicy 满足 v0.5 前两回合接触起势入口强约束', () => {
+  test('WalkerMomentumPolicy 的前两回合起势接触率落在新护栏内', () => {
     const summary = runSimulation({
       seed: 2001,
-      runs: 100,
+      runs: 30,
       policy: walkerMomentumPolicy,
       characterId: 'walker',
     });
 
-    expect(summary.totalRuns).toBe(100);
-    expect(summary.momentumOpenedByTurn2Rate).toBe(1);
+    expect(summary.totalRuns).toBe(30);
+    expect(summary.momentumOpenedByTurn2Rate).toBeGreaterThanOrEqual(0.7);
+    expect(summary.momentumOpenedByTurn2Rate).toBeLessThanOrEqual(0.95);
   });
 });

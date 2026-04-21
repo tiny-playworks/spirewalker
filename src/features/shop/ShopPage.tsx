@@ -35,6 +35,9 @@ export function ShopPage() {
     >
       <h2 className={subscreenStyles.title}>商店</h2>
       <p className={subscreenStyles.tip}>
+        Act <strong>{meta.act}</strong> · 本章第 <strong>{meta.actFloor}</strong> 层 · 全局第{' '}
+        <strong>{meta.floor}</strong> 层
+        <br />
         金币 <strong>{meta.gold}</strong> · 药水栏 {meta.potions.length}/{MAX_POTIONS} · 牌组{' '}
         <strong>{masterDeck.length}</strong> 张（删牌后不少于 {SHOP_MIN_MASTER_DECK_SIZE} 张）
       </p>
@@ -115,7 +118,7 @@ export function ShopPage() {
       ) : null}
       <h3 className={subscreenStyles.sectionTitle}>删牌（每次 {shop.removeCardPrice} 金）</h3>
       <p className={subscreenStyles.removeHint}>
-        从牌组移除一张同名副本，便于精简循环；牌组过短无法继续删除。
+        删牌比旧版更贵，只保留给真想收紧构筑的时刻使用；牌组过短无法继续删除。
       </p>
       <ul className={cx(subscreenStyles.sectionList, subscreenStyles.removeList)}>
         {deckRows.map((row) => {

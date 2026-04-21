@@ -99,6 +99,9 @@ export function BattleHUD() {
       };
     })
     .filter((enemy) => enemy.statuses.length > 0);
+  const bossPhaseMonster = battle.enemyUnitIds
+    .map((id) => battle.monsters[id])
+    .find((monster) => monster?.bossPhase);
 
   return (
     <header className={cx(sceneThemeClass, styles.root)} data-testid="battle-hud">
@@ -106,6 +109,13 @@ export function BattleHUD() {
         <div className={cx(styles.row, styles.rowTone.stats)}>
           <span className={cx(styles.chip, styles.chipTone.default)}>
             回合 <strong>{playerStats?.turn ?? battle.turn}</strong>
+          </span>
+          <span className={cx(styles.chip, styles.chipTone.default)}>
+            {battle.encounter.tier === 'boss' ? 'Boss' : battle.encounter.tier === 'elite' ? '精英' : '普通战'} ·{' '}
+            <strong>{battle.encounter.name}</strong>
+          </span>
+          <span className={cx(styles.chip, styles.chipTone.default)}>
+            标签 <strong>{battle.encounter.tags.join(' / ')}</strong>
           </span>
           <span className={cx(styles.chip, styles.chipTone.default)}>
             能量 <strong>{playerStats?.energy ?? battle.player.energy}</strong> /{' '}
@@ -141,6 +151,11 @@ export function BattleHUD() {
           })}
           {battle.phase === 'victory' ? (
             <span className={cx(styles.chip, styles.chipTone.win)}>胜利</span>
+          ) : null}
+          {bossPhaseMonster?.bossPhaseLabel ? (
+            <span className={cx(styles.chip, styles.chipTone.accent)}>
+              Boss 阶段 <strong>{bossPhaseMonster.bossPhase}</strong> · {bossPhaseMonster.bossPhaseLabel}
+            </span>
           ) : null}
           {selectingTarget ? (
             <span className={cx(styles.chip, styles.chipTone.accent)}>

@@ -68,7 +68,7 @@ export function debugJumpScreen(
   run.reward = undefined;
 
   if (screen === 'shop') {
-    run.shop = generateShop(run.seed, run.meta.floor, run.meta.relics);
+    run.shop = generateShop(run.seed, run.meta.act, run.meta.actFloor, run.meta.relics);
     run.screen = { type: 'shop' };
     return;
   }
@@ -79,6 +79,7 @@ export function debugJumpScreen(
         seed: run.seed,
         salt: (run.seed ^ run.meta.floor ^ 0xd3b6) >>> 0,
         tier: 'normal',
+        act: run.meta.act,
         ownedRelicIds: run.meta.relics,
         potionCount: run.meta.potions.length,
         characterId: run.meta.characterId,

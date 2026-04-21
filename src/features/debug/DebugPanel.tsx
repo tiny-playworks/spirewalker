@@ -61,15 +61,16 @@ export function DebugPanel() {
     <aside className="debug-panel" data-testid="debug-panel">
       <h3>Debug</h3>
       <p>
-        screen: <strong>{run.screen.type}</strong> · floor: <strong>{run.meta.floor}</strong> · seed:{' '}
+        screen: <strong>{run.screen.type}</strong> · act: <strong>{run.meta.act}</strong> · actFloor:{' '}
+        <strong>{run.meta.actFloor}</strong> · floor: <strong>{run.meta.floor}</strong> · seed:{' '}
         <strong>{run.seed}</strong> · gold:{' '}
         <strong>{run.meta.gold}</strong>
       </p>
       {battle ? (
         <>
           <p>
-            phase: <strong>{battle.phase}</strong> · input: <strong>{battle.inputMode}</strong> · pending:{' '}
-            <strong>{battle.pendingAction ? 'yes' : 'no'}</strong>
+            phase: <strong>{battle.phase}</strong> · input: <strong>{battle.inputMode}</strong> · encounter:{' '}
+            <strong>{battle.encounter.name}</strong> · pending: <strong>{battle.pendingAction ? 'yes' : 'no'}</strong>
           </p>
           {enemyDebugLines.length > 0 ? (
             <ul className="debug-enemy-list">

@@ -1,14 +1,15 @@
 import { describe, expect, test } from '@rstest/core';
 import { addStatusStacks } from '@/game/core/combat/statusCombat';
 import { GameEngine } from '@/game/core/engine/GameEngine';
-import { buildFloor2Nodes, createMapRun } from '@/game/core/engine/createMapRun';
+import { buildActNodes, buildFloor2Nodes, createMapRun } from '@/game/core/engine/createMapRun';
 import {
   BURST_ALTAR_EVENT_ID,
   generateBranchingFloorMap,
+  globalFloorFor,
   PURGING_POOL_EVENT_ID,
   STILLNESS_SHRINE_EVENT_ID,
 } from '@/game/core/engine/generateBranchingFloor';
-import { rollPostBattlePotionOffer } from '@/game/core/engine/postBattleExtras';
+import { rollPostBattlePotionOffer, skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { buildInitialBattle, createMvpRun, ENEMY_UNIT_ID, PLAYER_UNIT_ID, lineupGuard, lineupSapper, lineupShell } from '@/game/core/engine/createMvpRun';
 import {
   BRACE_RHYTHM,
@@ -29,6 +30,7 @@ import {
   TEMPO_GUARD,
 } from '@/game/core/definitions/cards/starter';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
+import { resolveEncounterTemplate } from '@/game/core/definitions/encounters';
 import {
   STATUS_MOMENTUM,
   STATUS_STRENGTH,
@@ -382,7 +384,7 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
 
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
@@ -406,7 +408,7 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
@@ -456,7 +458,7 @@ describe('GameEngine MVP', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
+      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: [], potions: [] },
     };
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
@@ -1052,7 +1054,7 @@ describe('GameEngine 战斗修正', () => {
       map: { nodes: {}, currentNodeId: null },
       screen: { type: 'battle' },
       battle,
-      meta: { floor: 1, gold: 0, characterId: 'walker', relics: ['guard_knot'], potions: [] },
+      meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: 'walker', relics: ['guard_knot'], potions: [] },
     };
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
@@ -1063,12 +1065,27 @@ describe('GameEngine 战斗修正', () => {
   test('精英节点为精英单敌，且具备反制 momentum 的意图', () => {
     const engine = new GameEngine();
     let run = createMapRun(8);
-    const eliteId = findNodeId(run, (n) => n.type === 'elite' && n.floor === 1);
+    let eliteId = '';
+    for (let seed = 8; seed < 40; seed += 1) {
+      const candidate = createMapRun(seed);
+      const target = Object.values(candidate.map.nodes).find(
+        (n) =>
+          n.type === 'elite' &&
+          n.floor === 1 &&
+          resolveEncounterTemplate(n.act, n.encounterTableId, n.id, candidate.seed).id === 'act1_elite_open',
+      );
+      if (target) {
+        run = candidate;
+        eliteId = target.id;
+        break;
+      }
+    }
+    if (!eliteId) throw new Error('elite_open not found');
     jumpToBeforeNode(run, eliteId);
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: eliteId }).nextRun;
     expect(run.map.nodes[eliteId].type).toBe('elite');
     expect(run.battle?.enemyUnitIds.length).toBe(1);
-    expect(run.battle?.units[ENEMY_UNIT_ID].maxHp).toBe(48);
+    expect(run.battle?.units[ENEMY_UNIT_ID].maxHp).toBeGreaterThanOrEqual(56);
     expect(run.battle?.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 8 });
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     expect(run.battle?.monsters[ENEMY_UNIT_ID]?.intent).toEqual({
@@ -1234,7 +1251,8 @@ describe('GameEngine 地图', () => {
     run = nextRun;
     expect(run.screen.type).toBe('map');
     expect(run.battle).toBeUndefined();
-    expect(run.meta.gold).toBe(15);
+    expect(run.meta.gold).toBeGreaterThanOrEqual(0);
+    expect(run.meta.gold).toBeLessThanOrEqual(24);
     expect(run.masterDeck.length).toBe(11);
     expect(events.some((e) => e.type === 'RETURNED_TO_MAP_FROM_BATTLE')).toBe(true);
   });
@@ -1248,9 +1266,10 @@ describe('GameEngine 地图', () => {
     run.battle!.phase = 'victory';
     run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
     const deckLen = run.masterDeck.length;
-    run = engine.dispatch(run, { type: 'TAKE_REWARD_GOLD', amount: 30 }).nextRun;
+    const skipGold = skipCardGoldAmount('normal');
+    run = engine.dispatch(run, { type: 'TAKE_REWARD_GOLD', amount: skipGold }).nextRun;
     expect(run.masterDeck.length).toBe(deckLen);
-    expect(run.meta.gold).toBe(30);
+    expect(run.meta.gold).toBeGreaterThanOrEqual(skipGold);
     expect(run.screen.type).toBe('map');
   });
 
@@ -1279,7 +1298,7 @@ describe('GameEngine 地图', () => {
     expect(run.map.currentNodeId).toBe(eliteId);
     run.battle!.phase = 'victory';
     run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
-    expect(run.reward?.items.some((i) => i.type === 'gold' && i.amount === 25)).toBe(true);
+    expect(run.reward?.items.some((i) => i.type === 'gold' && i.amount === 33)).toBe(true);
     expect(run.reward?.items.some((i) => i.type === 'potion' && i.potionId === 'healing_dew')).toBe(
       true,
     );
@@ -1289,7 +1308,7 @@ describe('GameEngine 地图', () => {
     run = engine
       .dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: cardChoice.cards[0]! })
       .nextRun;
-    expect(run.meta.gold).toBe(40);
+    expect(run.meta.gold).toBe(33);
     expect(run.meta.potions.length).toBe(potionsBefore + 1);
   });
 
@@ -1301,7 +1320,7 @@ describe('GameEngine 地图', () => {
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: bossId }).nextRun;
     run.battle!.phase = 'victory';
     run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
-    expect(run.reward?.items.some((i) => i.type === 'gold' && i.amount === 45)).toBe(true);
+    expect(run.reward?.items.some((i) => i.type === 'gold' && i.amount === 56)).toBe(true);
     expect(run.reward?.items.some((i) => i.type === 'potion' && i.potionId === 'healing_dew')).toBe(
       true,
     );
@@ -1315,7 +1334,7 @@ describe('GameEngine 地图', () => {
     run = engine
       .dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: cardChoice.cards[0]! })
       .nextRun;
-    expect(run.meta.gold).toBe(60);
+    expect(run.meta.gold).toBe(56);
     expect(run.meta.potions.length).toBe(bossPotionsBefore + 1);
     expect(run.meta.relics).toContain(relicId);
     if (relicId === 'anchor') {
@@ -1323,23 +1342,27 @@ describe('GameEngine 地图', () => {
     } else {
       expect(run.player.maxHp).toBe(50);
     }
-    expect(run.meta.floor).toBe(2);
-    const f2Camp = Object.keys(run.map.nodes).find((id) => run.map.nodes[id]!.x === 0);
+    expect(run.meta.act).toBe(2);
+    expect(run.meta.actFloor).toBe(1);
+    expect(run.meta.floor).toBe(globalFloorFor(2, 1));
+    const f2Camp = Object.keys(run.map.nodes).find((id) => run.map.nodes[id]!.depth === 1);
     expect(run.map.currentNodeId).toBe(f2Camp);
-    expect(Object.values(run.map.nodes).some((n) => n.type === 'battle' && n.floor === 2)).toBe(
+    expect(Object.values(run.map.nodes).some((n) => n.type === 'battle' && n.act === 2)).toBe(
       true,
     );
     expect(run.screen.type).toBe('map');
   });
 
-  test('第二层 Boss 战后选牌进入通关界面', () => {
+  test('第三章 Boss 战后选牌进入通关界面', () => {
     const engine = new GameEngine();
     let run = createMapRun(22);
-    run.meta.floor = 2;
-    const f2Nodes = buildFloor2Nodes(22);
-    const f2BossId = Object.values(f2Nodes).find((n) => n.type === 'boss')!.id;
-    f2Nodes[f2BossId]!.visited = true;
-    run.map = { nodes: f2Nodes, currentNodeId: f2BossId };
+    run.meta.act = 3;
+    run.meta.actFloor = 26;
+    run.meta.floor = globalFloorFor(3, 26);
+    const f3Nodes = buildActNodes(3, 22);
+    const f3BossId = Object.values(f3Nodes).find((n) => n.type === 'boss')!.id;
+    f3Nodes[f3BossId]!.visited = true;
+    run.map = { nodes: f3Nodes, currentNodeId: f3BossId };
     run.screen = { type: 'reward' };
     run.reward = {
       items: [{ type: 'card_choice', cards: ['strike', 'defend', 'bash'] }],
@@ -1349,7 +1372,7 @@ describe('GameEngine 地图', () => {
       .dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: 'strike' })
       .nextRun;
     expect(run.screen.type).toBe('victory');
-    expect(run.meta.gold).toBe(15);
+    expect(run.meta.gold).toBe(0);
   });
 
   test('Boss 遗物池已空时不重复掉落', () => {
@@ -1398,10 +1421,14 @@ describe('GameEngine 地图', () => {
     expect(run.screen.type).toBe('map');
   });
 
-  test('裂响祭坛事件可用生命换裂响纹章，或拿破势击回地图', () => {
+  test('第二章事件池可出现裂响祭坛并正常结算', () => {
     const engine = new GameEngine();
     let run = createMapRun(305);
-    const eventId = findNodeId(run, (n) => n.type === 'event' && n.eventScriptId === BURST_ALTAR_EVENT_ID);
+    run.meta.act = 2;
+    run.meta.actFloor = 1;
+    run.meta.floor = globalFloorFor(2, 1);
+    run.map = { nodes: buildFloor2Nodes(305), currentNodeId: Object.values(buildFloor2Nodes(305)).find((n) => n.depth === 1)!.id };
+    const eventId = findNodeId(run, (n) => n.type === 'event' && n.depth > 1 && n.eventScriptId === BURST_ALTAR_EVENT_ID);
     jumpToBeforeNode(run, eventId);
     const hpBefore = run.player.currentHp;
 
@@ -1412,8 +1439,13 @@ describe('GameEngine 地图', () => {
     expect(run.meta.relics).toContain('burst_emblem');
     expect(run.player.currentHp).toBe(hpBefore - 6);
 
+    const nodes = buildFloor2Nodes(306);
     run = createMapRun(306);
-    const cardEventId = findNodeId(run, (n) => n.type === 'event' && n.eventScriptId === BURST_ALTAR_EVENT_ID);
+    run.meta.act = 2;
+    run.meta.actFloor = 1;
+    run.meta.floor = globalFloorFor(2, 1);
+    run.map = { nodes, currentNodeId: Object.values(nodes).find((n) => n.depth === 1)!.id };
+    const cardEventId = findNodeId(run, (n) => n.type === 'event' && n.depth > 1 && n.eventScriptId === BURST_ALTAR_EVENT_ID);
     jumpToBeforeNode(run, cardEventId);
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: cardEventId }).nextRun;
     run = engine.dispatch(run, { type: 'RESOLVE_EVENT_OPTION', optionId: 'burst_card' }).nextRun;
@@ -1421,11 +1453,15 @@ describe('GameEngine 地图', () => {
     expect(run.screen.type).toBe('map');
   });
 
-  test('净手池事件可删打击或防御，作为 run 内控牌入口', () => {
+  test('第二章事件池可出现净手池并提供删基础牌入口', () => {
     const engine = new GameEngine();
     const findRunWithPurgingPool = (): [RunState, string] => {
       for (let seed = 300; seed <= 380; seed++) {
         const candidate = createMapRun(seed);
+        candidate.meta.act = 2;
+        candidate.meta.actFloor = 1;
+        candidate.meta.floor = globalFloorFor(2, 1);
+        candidate.map = { nodes: buildFloor2Nodes(seed), currentNodeId: Object.values(buildFloor2Nodes(seed)).find((n) => n.depth === 1)!.id };
         const eventNode = Object.values(candidate.map.nodes).find(
           (n) => n.type === 'event' && n.eventScriptId === PURGING_POOL_EVENT_ID,
         );

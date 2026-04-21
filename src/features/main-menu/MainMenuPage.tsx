@@ -38,7 +38,7 @@ function describeScreen(type: RunState["screen"]["type"]) {
 }
 
 function describeSavedRun(run: RunState) {
-  return `你停在第 ${run.meta.floor} 层的${describeScreen(run.screen.type)}，携带 ${run.meta.relics.length} 件遗物与 ${run.meta.gold} 枚金币。`;
+  return `你停在 Act ${run.meta.act} 第 ${run.meta.actFloor} 层（全局第 ${run.meta.floor} 层）的${describeScreen(run.screen.type)}，携带 ${run.meta.relics.length} 件遗物与 ${run.meta.gold} 枚金币。`;
 }
 
 export function MainMenuPage() {

@@ -28,7 +28,7 @@ function cx(...classNames: Array<string | false | null | undefined>) {
 }
 
 function nodeTitle(n: MapNode): string {
-  if (n.x === 0) return n.floor >= 2 ? '第二层 · 营地' : '营地';
+  if (n.x === 0) return `Act ${n.act} · 营地`;
   switch (n.type) {
     case 'battle':
       return '战斗 · 黏液怪';
@@ -61,16 +61,21 @@ export function MapPage() {
   const locationName = cur && curId ? nodeTitle(cur) : '—';
   const character = getCharacterDefinition(meta.characterId);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(nextIds[0] ?? null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   useEffect(() => {
     if (nextIds.length === 0) {
       setSelectedNodeId(null);
+      setHoveredNodeId(null);
       return;
     }
     if (!selectedNodeId || !nextIds.includes(selectedNodeId)) {
       setSelectedNodeId(nextIds[0] ?? null);
     }
-  }, [nextIds, selectedNodeId]);
+    if (hoveredNodeId && !nextIds.includes(hoveredNodeId)) {
+      setHoveredNodeId(null);
+    }
+  }, [nextIds, selectedNodeId, hoveredNodeId]);
 
   const nextNodes = useMemo(
     () => nextIds.map((id) => map.nodes[id]).filter((node): node is MapNode => Boolean(node)),
@@ -81,9 +86,11 @@ export function MapPage() {
   return (
     <div className={`${sceneThemeClass} ${styles.page}`}>
       <header className={styles.hud}>
-        <div className={styles.hudTop}>
+          <div className={styles.hudTop}>
           <div className={styles.hudChips} aria-label="冒险状态">
-            <div className={styles.chipFloor}>第 {meta.floor} 层</div>
+            <div className={styles.chipFloor}>Act {meta.act}</div>
+            <div className={styles.chip}>本章第 <strong>{meta.actFloor}</strong> 层</div>
+            <div className={styles.chip}>全局第 <strong>{meta.floor}</strong> 层</div>
             <div className={styles.chip}>
               金币 <strong>{meta.gold}</strong>
             </div>
@@ -106,7 +113,11 @@ export function MapPage() {
           <div className={styles.hudCurrent}>
             <span className={styles.hudCurrentKey}>当前位置</span>
             <span className={styles.hudCurrentValue}>{locationName}</span>
-            <span className={styles.hudCurrentSub}>发光营地就是你所在的位置</span>
+            <span className={styles.hudCurrentSub}>
+              {meta.actFloor === 19 || meta.actFloor === 23 || meta.actFloor === 25
+                ? '下一层就是 Boss，先决定要不要在这里修整。'
+                : '发光营地就是你所在的位置。'}
+            </span>
           </div>
         </div>
         {meta.relics.length > 0 ? (
@@ -167,12 +178,14 @@ export function MapPage() {
             <MapRoute
               map={map}
               currentNodeId={curId}
-              floor={meta.floor}
+              act={meta.act}
               selectedNodeId={selectedNodeId}
+              hoveredNodeId={hoveredNodeId}
               selectableNodeIds={new Set(nextIds)}
               onSelectNode={(id) => {
                 if (nextIds.includes(id)) setSelectedNodeId(id);
               }}
+              onHoverNode={setHoveredNodeId}
             />
           </div>
         </section>
@@ -209,11 +222,16 @@ export function MapPage() {
                   <h3 className={styles.decisionTitle}>
                     {laneLabelForNode(selectedNode, nextNodes)} · {nodeTitle(selectedNode)}
                   </h3>
-                  <p className={styles.decisionDesc}>{decisionHintForNode(selectedNode)}</p>
+                  <p className={styles.decisionDesc}>
+                    {decisionHintForNode(selectedNode)} {routeBiasHint(selectedNode.routeBias)}
+                  </p>
                 </div>
                 <div className={styles.decisionBadges}>
                   <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone[selectedNode.type])}>
                     {typeLabel(selectedNode.type)}
+                  </span>
+                  <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone.lane)}>
+                    {routeBiasLabel(selectedNode.routeBias)}
                   </span>
                   <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone.lane)}>
                     {laneLabelForNode(selectedNode, nextNodes)}
@@ -253,17 +271,39 @@ function decisionHintForNode(node: MapNode): string {
     case 'elite':
       return '危险更高，但回报也更重，适合状态稳定时出手。';
     case 'boss':
-      return '这一战会决定本层的终点，确认状态再踏进去。';
+      return `这一战会决定 Act ${node.act} 的终点，确认状态再踏进去。`;
     case 'shop':
       return '用金币换取节奏，补牌、补药水或找关键资源。';
     case 'rest':
-      return '喘口气，修整自己，为后面的强敌留余地。';
+      return '这是固定修整点，通常意味着 Boss 已经很近。';
     case 'event':
       return '未知会带来岔路，可能是机遇，也可能是代价。';
     case 'treasure':
       return '拿走奖励，再决定这份收益要如何转化成优势。';
     default:
       return '选择这条路线，继续向尖塔深处推进。';
+  }
+}
+
+function routeBiasLabel(bias: MapNode['routeBias']): string {
+  switch (bias) {
+    case 'risk':
+      return '高风险路线';
+    case 'safe':
+      return '稳健路线';
+    default:
+      return '平衡路线';
+  }
+}
+
+function routeBiasHint(bias: MapNode['routeBias']): string {
+  switch (bias) {
+    case 'risk':
+      return '这条线更容易撞上硬仗，适合追求收益时走。';
+    case 'safe':
+      return '这条线更偏补给与修整，适合带伤或缺资源时走。';
+    default:
+      return '这条线的风险和补给更均衡，适合稳步推进。';
   }
 }
 

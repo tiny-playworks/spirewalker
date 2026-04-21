@@ -1,4 +1,5 @@
 import type { CardInstance } from './card';
+import type { EncounterTier } from './map';
 import type { CombatUnit } from './unit';
 import type { GameEvent } from '../events/types';
 
@@ -49,12 +50,23 @@ export interface MonsterBattleState {
   monsterId: string;
   intent: MonsterIntent | null;
   moveHistory: string[];
+  bossPhase?: 1 | 2;
+  bossPhaseLabel?: string;
   /** 开发态：最近一次意图计算说明（由 enemyAi 写入） */
   aiTrace?: string;
 }
 
+export interface BattleEncounterMeta {
+  id: string;
+  tableId: string;
+  tier: Exclude<EncounterTier, 'none' | 'treasure'>;
+  name: string;
+  tags: string[];
+}
+
 export interface BattleState {
   id: string;
+  encounter: BattleEncounterMeta;
   turn: number;
   playerCardsPlayedThisTurn: number;
   phase: BattlePhase;

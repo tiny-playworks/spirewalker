@@ -1,7 +1,7 @@
 export {
   getMonsterDefinition,
   MONSTER_DEFINITIONS,
-  type MonsterAiConfig,
+  type MonsterAiDefinition,
   type MonsterAiKind,
   type MonsterDefinition,
 } from './definitions';

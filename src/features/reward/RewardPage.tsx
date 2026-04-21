@@ -48,6 +48,10 @@ export function RewardPage() {
       <h2 className={subscreenStyles.title}>
         {encounterTier === 'treasure' ? '宝箱' : '战后奖励'}
       </h2>
+      <p className={subscreenStyles.tip}>
+        Act <strong>{run.meta.act}</strong> · 本章第 <strong>{run.meta.actFloor}</strong> 层 · 全局第{' '}
+        <strong>{run.meta.floor}</strong> 层
+      </p>
       {relicItems.length > 0 ? (
         <div className={cx(subscreenStyles.banner, subscreenStyles.bannerTone.reward)}>
           {relicItems.map((r) => {
@@ -88,18 +92,18 @@ export function RewardPage() {
         {bonusGold > 0 ? (
           <>
             {' '}
-            （基础 +15，节点额外 +{bonusGold}）
+            （本次奖励额外 +{bonusGold}）
           </>
         ) : (
-          <>（基础奖励）</>
+          <>（这次没有额外金币条目）</>
         )}
         。
         {potionItems.length > 0 ? (
           <> 若有药水，会与卡牌奖励同时结算。</>
         ) : encounterTier === 'normal' ? (
-          <> 普通战有 <strong>25%</strong> 概率额外掉落一瓶药水（本局未触发则下方不显示药水栏）。</>
+          <> 普通战药水掉率已压低，本次未触发额外掉落。</>
         ) : encounterTier === 'treasure' ? (
-          <> 宝箱有约 <strong>55%</strong> 概率额外掉落一瓶药水（栏位未满时）。</>
+          <> 宝箱仍有机会额外掉药，但不会像旧版那样过于稳定。</>
         ) : null}
       </p>
       <ul className={subscreenStyles.choiceList}>

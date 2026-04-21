@@ -34,6 +34,8 @@ export interface RunState {
   /** 商店库存（进入商店节点时生成） */
   shop?: ShopState;
   meta: {
+    act: 1 | 2 | 3;
+    actFloor: number;
     floor: number;
     gold: number;
     characterId: string;

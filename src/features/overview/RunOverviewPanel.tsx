@@ -127,7 +127,9 @@ export function RunOverviewPanel({
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>当前状态</h3>
           <div className={styles.stats}>
-            <span className={styles.statChip}>楼层 {run.meta.floor}</span>
+            <span className={styles.statChip}>Act {run.meta.act}</span>
+            <span className={styles.statChip}>章内 {run.meta.actFloor} 层</span>
+            <span className={styles.statChip}>全局 {run.meta.floor} 层</span>
             <span className={styles.statChip}>界面 {screenLabel(run)}</span>
             <span className={styles.statChip}>节点 {currentNodeLabel(run)}</span>
             <span className={styles.statChip}>金币 {run.meta.gold}</span>

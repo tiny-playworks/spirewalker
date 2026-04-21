@@ -1,132 +1,200 @@
 import { getMonsterDefinition } from '../../definitions/monsters';
+import type {
+  MonsterAiDefinition,
+  MonsterDefinition,
+} from '../../definitions/monsters';
 import type { BattleState, MonsterBattleState, MonsterIntent } from '../../model/battle';
 
 export interface IntentComputation {
   intent: MonsterIntent;
-  /** 开发态展示：规则 + 索引说明 */
   trace: string;
+  bossPhase?: 1 | 2;
+  bossPhaseLabel?: string;
 }
 
-function alternatingAttackIntent(
-  defId: string,
-  moveHistoryLength: number,
-  low: number,
-  high: number,
-): IntentComputation {
-  const useLow = moveHistoryLength % 2 === 0;
-  const value = useLow ? low : high;
-  const trace = `alternating_attack[${defId}] len=${moveHistoryLength} → ${useLow ? 'even' : 'odd'} dmg=${value}`;
-  return { intent: { type: 'attack', value }, trace };
+function pickPatternIntent(pattern: readonly MonsterIntent[], moveHistoryLength: number): MonsterIntent {
+  return pattern[moveHistoryLength % pattern.length]!;
 }
 
-function alternatingAttackReduceStatusIntent(
-  defId: string,
+function computeCycleAttackIntent(
+  def: MonsterDefinition,
+  ai: Extract<MonsterAiDefinition, { scriptId: 'cycle_attack' }>,
   moveHistoryLength: number,
-  attackDamage: number,
-  statusId: string,
-  reduceValue: number,
 ): IntentComputation {
-  const useAttack = moveHistoryLength % 2 === 0;
-  if (useAttack) {
-    return {
-      intent: { type: 'attack', value: attackDamage },
-      trace: `alternating_attack_reduce_status[${defId}] len=${moveHistoryLength} → attack=${attackDamage}`,
-    };
-  }
   return {
-    intent: { type: 'reduce_status', statusId, value: reduceValue },
-    trace: `alternating_attack_reduce_status[${defId}] len=${moveHistoryLength} → reduce ${statusId} by ${reduceValue}`,
+    intent: pickPatternIntent(ai.params.attacks, moveHistoryLength),
+    trace: `cycle_attack[${def.id}] len=${moveHistoryLength}`,
   };
 }
 
-function alternatingAttackPunishMultiPlayIntent(
-  defId: string,
+function computeCycleAttackBlockIntent(
+  def: MonsterDefinition,
+  ai: Extract<MonsterAiDefinition, { scriptId: 'cycle_attack_block' }>,
   moveHistoryLength: number,
-  attackDamage: number,
-  threshold: number,
-  blockValue: number,
 ): IntentComputation {
-  const useAttack = moveHistoryLength % 2 === 0;
-  if (useAttack) {
+  if (moveHistoryLength % 2 === 0) {
     return {
-      intent: { type: 'attack', value: attackDamage },
-      trace: `alternating_attack_punish_multi_play[${defId}] len=${moveHistoryLength} → attack=${attackDamage}`,
+      intent: pickPatternIntent(ai.params.attacks, moveHistoryLength / 2),
+      trace: `cycle_attack_block[${def.id}] len=${moveHistoryLength} -> attack`,
     };
   }
   return {
-    intent: { type: 'punish_multi_play', threshold, block: blockValue },
-    trace: `alternating_attack_punish_multi_play[${defId}] len=${moveHistoryLength} → punish threshold=${threshold} block=${blockValue}`,
+    intent: { type: 'block', value: ai.params.block },
+    trace: `cycle_attack_block[${def.id}] len=${moveHistoryLength} -> block=${ai.params.block}`,
   };
 }
 
-function alternatingAttackBlockIntent(
-  defId: string,
+function computeCycleAttackDebuffIntent(
+  def: MonsterDefinition,
+  ai: Extract<MonsterAiDefinition, { scriptId: 'cycle_attack_debuff' }>,
   moveHistoryLength: number,
-  attackDamage: number,
-  blockValue: number,
 ): IntentComputation {
-  const useAttack = moveHistoryLength % 2 === 0;
-  if (useAttack) {
+  if (moveHistoryLength % 2 === 0) {
     return {
-      intent: { type: 'attack', value: attackDamage },
-      trace: `alternating_attack_block[${defId}] len=${moveHistoryLength} → attack=${attackDamage}`,
+      intent: pickPatternIntent(ai.params.attacks, moveHistoryLength / 2),
+      trace: `cycle_attack_debuff[${def.id}] len=${moveHistoryLength} -> attack`,
     };
   }
   return {
-    intent: { type: 'block', value: blockValue },
-    trace: `alternating_attack_block[${defId}] len=${moveHistoryLength} → block=${blockValue}`,
+    intent:
+      ai.params.mode === 'buff'
+        ? { type: 'buff', statusId: ai.params.statusId, value: ai.params.value }
+        : { type: 'debuff', statusId: ai.params.statusId, value: ai.params.value },
+    trace: `cycle_attack_debuff[${def.id}] len=${moveHistoryLength} -> ${ai.params.mode} ${ai.params.statusId} ${ai.params.value}`,
   };
 }
 
-/** 根据怪物定义与已结算行动次数，计算下一意图（含首轮展示） */
-export function computeIntentForMonster(monsterId: string, moveHistoryLength: number): IntentComputation {
+function computeMomentumBreakIntent(
+  def: MonsterDefinition,
+  ai: Extract<MonsterAiDefinition, { scriptId: 'momentum_break' }>,
+  moveHistoryLength: number,
+): IntentComputation {
+  if (moveHistoryLength % 2 === 0) {
+    return {
+      intent: { type: 'attack', value: ai.params.attack },
+      trace: `momentum_break[${def.id}] len=${moveHistoryLength} -> attack=${ai.params.attack}`,
+    };
+  }
+  return {
+    intent: { type: 'reduce_status', statusId: 'momentum', value: ai.params.reduceValue },
+    trace: `momentum_break[${def.id}] len=${moveHistoryLength} -> reduce momentum by ${ai.params.reduceValue}`,
+  };
+}
+
+function computeMultiPlayPunishIntent(
+  def: MonsterDefinition,
+  ai: Extract<MonsterAiDefinition, { scriptId: 'multi_play_punish' }>,
+  moveHistoryLength: number,
+): IntentComputation {
+  if (moveHistoryLength % 2 === 0) {
+    return {
+      intent: { type: 'attack', value: ai.params.attack },
+      trace: `multi_play_punish[${def.id}] len=${moveHistoryLength} -> attack=${ai.params.attack}`,
+    };
+  }
+  return {
+    intent: {
+      type: 'punish_multi_play',
+      threshold: ai.params.threshold,
+      block: ai.params.block,
+    },
+    trace: `multi_play_punish[${def.id}] len=${moveHistoryLength} -> punish threshold=${ai.params.threshold} block=${ai.params.block}`,
+  };
+}
+
+function computeBossPhaseShiftIntent(
+  def: MonsterDefinition,
+  ai: Extract<MonsterAiDefinition, { scriptId: 'boss_phase_shift' }>,
+  moveHistoryLength: number,
+  hpRate: number,
+): IntentComputation {
+  const bossPhase = hpRate <= ai.params.threshold ? 2 : 1;
+  const pattern = bossPhase === 1 ? ai.params.phase1 : ai.params.phase2;
+  return {
+    intent: pickPatternIntent(pattern, moveHistoryLength),
+    trace: `boss_phase_shift[${def.id}] len=${moveHistoryLength} -> phase=${bossPhase}`,
+    bossPhase,
+    bossPhaseLabel: ai.params.phaseLabels[bossPhase - 1],
+  };
+}
+
+function computeLegacyIntent(monsterId: string, moveHistoryLength: number): IntentComputation {
   const def = getMonsterDefinition(monsterId);
-  if (!def) {
-    throw new Error(`enemyAi: unknown monsterId "${monsterId}"`);
+  if (!def) throw new Error(`enemyAi: unknown monsterId "${monsterId}"`);
+  if (monsterId === 'slime_boss') {
+    return {
+      intent: moveHistoryLength % 2 === 0 ? { type: 'attack', value: 6 } : { type: 'attack', value: 9 },
+      trace: `cycle_attack[slime_boss] len=${moveHistoryLength}`,
+    };
   }
-  const { ai } = def;
-  if (ai.kind === 'alternating_attack') {
-    const [low, high] = ai.damages;
-    return alternatingAttackIntent(def.id, moveHistoryLength, low, high);
+
+  switch (def.ai.scriptId) {
+    case 'cycle_attack':
+      return computeCycleAttackIntent(def, def.ai, moveHistoryLength);
+    case 'cycle_attack_block':
+      return computeCycleAttackBlockIntent(def, def.ai, moveHistoryLength);
+    case 'cycle_attack_debuff':
+      return computeCycleAttackDebuffIntent(def, def.ai, moveHistoryLength);
+    case 'momentum_break':
+      return computeMomentumBreakIntent(def, def.ai, moveHistoryLength);
+    case 'multi_play_punish':
+      return computeMultiPlayPunishIntent(def, def.ai, moveHistoryLength);
+    case 'boss_phase_shift':
+      return computeBossPhaseShiftIntent(def, def.ai, moveHistoryLength, 1);
   }
-  if (ai.kind === 'alternating_attack_reduce_status') {
-    return alternatingAttackReduceStatusIntent(
-      def.id,
-      moveHistoryLength,
-      ai.attackDamage,
-      ai.statusId,
-      ai.reduceValue,
-    );
+}
+
+export function computeIntentForMonster(
+  battleOrMonsterId: BattleState | string,
+  enemyUnitIdOrMoveHistoryLength: string | number,
+  moveHistoryLength?: number,
+): IntentComputation {
+  if (typeof battleOrMonsterId === 'string') {
+    return computeLegacyIntent(battleOrMonsterId, enemyUnitIdOrMoveHistoryLength as number);
   }
-  if (ai.kind === 'alternating_attack_punish_multi_play') {
-    return alternatingAttackPunishMultiPlayIntent(
-      def.id,
-      moveHistoryLength,
-      ai.attackDamage,
-      ai.threshold,
-      ai.blockValue,
-    );
+
+  const battle = battleOrMonsterId;
+  const enemyUnitId = enemyUnitIdOrMoveHistoryLength as string;
+  const historyLength = moveHistoryLength ?? 0;
+  const monster = battle.monsters[enemyUnitId];
+  const unit = battle.units[enemyUnitId];
+  if (!monster || !unit) throw new Error(`enemyAi: unknown enemy unit "${enemyUnitId}"`);
+  const def = getMonsterDefinition(monster.monsterId);
+  if (!def) throw new Error(`enemyAi: unknown monsterId "${monster.monsterId}"`);
+
+  switch (def.ai.scriptId) {
+    case 'cycle_attack':
+      return computeCycleAttackIntent(def, def.ai, historyLength);
+    case 'cycle_attack_block':
+      return computeCycleAttackBlockIntent(def, def.ai, historyLength);
+    case 'cycle_attack_debuff':
+      return computeCycleAttackDebuffIntent(def, def.ai, historyLength);
+    case 'momentum_break':
+      return computeMomentumBreakIntent(def, def.ai, historyLength);
+    case 'multi_play_punish':
+      return computeMultiPlayPunishIntent(def, def.ai, historyLength);
+    case 'boss_phase_shift': {
+      const hpRate = unit.maxHp <= 0 ? 0 : unit.hp / unit.maxHp;
+      return computeBossPhaseShiftIntent(def, def.ai, historyLength, hpRate);
+    }
   }
-  if (ai.kind === 'alternating_attack_block') {
-    return alternatingAttackBlockIntent(def.id, moveHistoryLength, ai.attackDamage, ai.blockValue);
-  }
-  throw new Error(`enemyAi: unhandled ai.kind for ${monsterId}`);
 }
 
 export function applyIntentToMonster(monster: MonsterBattleState, comp: IntentComputation): void {
   monster.intent = comp.intent;
   monster.aiTrace = comp.trace;
+  monster.bossPhase = comp.bossPhase;
+  monster.bossPhaseLabel = comp.bossPhaseLabel;
 }
 
-/** 敌方回合结束后刷新意图（moveHistory 已含本回合行动） */
 export function refreshEnemyIntent(battle: BattleState, enemyUnitId: string): void {
-  const m = battle.monsters[enemyUnitId];
-  if (!m) return;
-  const comp = computeIntentForMonster(m.monsterId, m.moveHistory.length);
-  applyIntentToMonster(m, comp);
+  const monster = battle.monsters[enemyUnitId];
+  if (!monster) return;
+  applyIntentToMonster(monster, computeIntentForMonster(battle, enemyUnitId, monster.moveHistory.length));
 }
 
-export function setInitialEnemyIntent(monster: MonsterBattleState): void {
-  const comp = computeIntentForMonster(monster.monsterId, 0);
-  applyIntentToMonster(monster, comp);
+export function setInitialEnemyIntent(battle: BattleState, enemyUnitId: string): void {
+  const monster = battle.monsters[enemyUnitId];
+  if (!monster) return;
+  applyIntentToMonster(monster, computeIntentForMonster(battle, enemyUnitId, 0));
 }

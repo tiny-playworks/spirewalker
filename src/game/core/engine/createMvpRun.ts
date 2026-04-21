@@ -2,7 +2,7 @@ import { addStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
 import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STRENGTH } from '../definitions/statuses';
-import type { BattleState } from '../model/battle';
+import type { BattleEncounterMeta, BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
 import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
 import type { RunState } from '../model/run';
@@ -86,6 +86,13 @@ export function buildInitialBattle(
   enemySlots: BattleEnemySlot[] = DEFAULT_ENEMY_LINEUP,
   relicIds: string[] = [],
   characterId?: string,
+  encounter: BattleEncounterMeta = {
+    id: battleKey,
+    tableId: 'debug',
+    tier: 'normal' as const,
+    name: '调试战斗',
+    tags: ['普通战'],
+  },
 ): BattleState {
   assertMonsterSlotsResolved(enemySlots);
   const character = characterId ? getCharacterDefinition(characterId) : null;
@@ -144,7 +151,6 @@ export function buildInitialBattle(
       intent: null,
       moveHistory: [],
     };
-    setInitialEnemyIntent(monsterState);
     monsters[slot.unitId] = monsterState;
   }
 
@@ -166,6 +172,7 @@ export function buildInitialBattle(
 
   const battle: BattleState = {
     id: battleKey,
+    encounter,
     turn: 1,
     playerCardsPlayedThisTurn: 0,
     phase: 'player_action',
@@ -188,6 +195,10 @@ export function buildInitialBattle(
     lastResolvedEvents: [],
   };
 
+  for (const enemyUnitId of enemyUnitIds) {
+    setInitialEnemyIntent(battle, enemyUnitId);
+  }
+
   return battle;
 }
 
@@ -204,6 +215,6 @@ export function createMvpRun(seed: number): RunState {
     map: { nodes: {}, currentNodeId: null },
     screen: { type: 'battle' },
     battle,
-    meta: { floor: 1, gold: 0, characterId: DEFAULT_CHARACTER_ID, relics: [], potions: [] },
+    meta: { act: 1, actFloor: 1, floor: 1, gold: 0, characterId: DEFAULT_CHARACTER_ID, relics: [], potions: [] },
   };
 }

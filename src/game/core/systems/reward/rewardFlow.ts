@@ -18,6 +18,7 @@ export function leaveBattleToRewardFlow(run: RunState, events: GameEvent[]): voi
     seed: run.seed,
     salt,
     tier,
+    act: run.meta.act,
     ownedRelicIds: run.meta.relics,
     potionCount: run.meta.potions.length,
     characterId: run.meta.characterId,
