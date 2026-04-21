@@ -44,7 +44,7 @@ export function RewardPage() {
   });
 
   return (
-    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot)}>
+    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot)} data-testid="reward-page">
       <h2 className={subscreenStyles.title}>
         {encounterTier === 'treasure' ? '宝箱' : '战后奖励'}
       </h2>

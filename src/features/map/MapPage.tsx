@@ -223,6 +223,7 @@ export function MapPage() {
               <button
                 type="button"
                 className={cx(styles.decisionCtaBase, styles.decisionCtaTone[selectedNode.type])}
+                data-testid="decision-cta"
                 onClick={() => dispatchCommand({ type: 'CHOOSE_MAP_NODE', nodeId: selectedNode.id })}
               >
                 前往 {nodeTitle(selectedNode)}

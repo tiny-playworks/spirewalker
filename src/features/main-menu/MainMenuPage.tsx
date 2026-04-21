@@ -133,6 +133,7 @@ export function MainMenuPage() {
             <button
               type="button"
               className={cx(styles.actionButtonBase, styles.actionButtonKind.secondary)}
+              data-testid="new-game-button"
               onClick={() => {
                 clearSavedRun();
                 initRun(createMapRun(Date.now() & 0xffff_ffff));

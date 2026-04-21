@@ -22,6 +22,8 @@
     "preview": "wrangler dev",
     "test": "rstest run",
     "test:watch": "rstest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "lint": "rslint",
     "check": "pnpm lint && pnpm test",
     "deploy": "wrangler deploy"
@@ -34,8 +36,9 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@rsbuild/core": "2.0.0-rc.3",
-    "@rsbuild/plugin-react": "2.0.0-rc.3",
+    "@playwright/test": "^1.54.2",
+    "@rsbuild/core": "2.0.0-rc.4",
+    "@rsbuild/plugin-react": "2.0.0-rc.4",
     "@rslint/core": "^0.4.2",
     "@rstest/adapter-rsbuild": "^0.2.6",
     "@rstest/core": "^0.9.7",
@@ -50,7 +53,7 @@
   "npmClient": "pnpm",
   "pnpm": {
     "overrides": {
-      "@rsbuild/core": "2.0.0-rc.3"
+      "@rsbuild/core": "2.0.0-rc.4"
     }
   }
 }

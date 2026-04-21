@@ -29,7 +29,10 @@ export function ShopPage() {
   const deckRows = deckUniqueCounts(masterDeck);
 
   return (
-    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenWidth.wide)}>
+    <div
+      className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenWidth.wide)}
+      data-testid="shop-page"
+    >
       <h2 className={subscreenStyles.title}>商店</h2>
       <p className={subscreenStyles.tip}>
         金币 <strong>{meta.gold}</strong> · 药水栏 {meta.potions.length}/{MAX_POTIONS} · 牌组{' '}

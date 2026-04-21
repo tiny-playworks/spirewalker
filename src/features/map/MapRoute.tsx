@@ -111,6 +111,7 @@ export function MapRoute({
               className={cn(styles.nodeRoot, isSelectable && styles.nodeRootSelectable)}
               transform={`translate(${cx},${cy})`}
               aria-current={isCurrent ? 'step' : undefined}
+              data-testid={`map-node-${node.id}`}
               data-cursor-target={isSelectable ? 'true' : undefined}
               focusable="false"
               onPointerDown={

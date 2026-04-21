@@ -1,6 +1,8 @@
 import { addStatusStacks } from '../../combat/statusCombat';
 import type { GameCommand } from '../../commands/types';
 import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { generateShop } from '../../engine/generateShop';
+import { generateBattleRewards } from '../reward/rewardGenerator';
 import { createInstanceId } from '../../utils/id';
 import type { RunState } from '../../model/run';
 
@@ -61,6 +63,36 @@ export function debugJumpScreen(
   run: RunState,
   screen: Extract<GameCommand, { type: 'DEBUG_JUMP_SCREEN' }>['screen'],
 ): void {
-  if (screen === 'event') run.screen = { type: 'event', eventId: 'wandering_merchant' };
-  else run.screen = { type: screen };
+  run.battle = undefined;
+  run.shop = undefined;
+  run.reward = undefined;
+
+  if (screen === 'shop') {
+    run.shop = generateShop(run.seed, run.meta.floor, run.meta.relics);
+    run.screen = { type: 'shop' };
+    return;
+  }
+
+  if (screen === 'reward') {
+    run.reward = {
+      items: generateBattleRewards({
+        seed: run.seed,
+        salt: (run.seed ^ run.meta.floor ^ 0xd3b6) >>> 0,
+        tier: 'normal',
+        ownedRelicIds: run.meta.relics,
+        potionCount: run.meta.potions.length,
+        characterId: run.meta.characterId,
+      }),
+      claimed: false,
+    };
+    run.screen = { type: 'reward' };
+    return;
+  }
+
+  if (screen === 'event') {
+    run.screen = { type: 'event', eventId: 'wandering_merchant' };
+    return;
+  }
+
+  run.screen = { type: screen };
 }

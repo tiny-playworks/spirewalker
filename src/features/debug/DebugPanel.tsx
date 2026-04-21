@@ -58,7 +58,7 @@ export function DebugPanel() {
     : [];
 
   return (
-    <aside className="debug-panel">
+    <aside className="debug-panel" data-testid="debug-panel">
       <h3>Debug</h3>
       <p>
         screen: <strong>{run.screen.type}</strong> · floor: <strong>{run.meta.floor}</strong> · seed:{' '}
@@ -92,36 +92,58 @@ export function DebugPanel() {
         </>
       ) : null}
       <div className="debug-panel-actions">
-        <button type="button" onClick={() => dispatchCommand({ type: 'END_TURN' })}>
+        <button type="button" data-testid="debug-end-turn" onClick={() => dispatchCommand({ type: 'END_TURN' })}>
           下一回合
         </button>
-        <button type="button" onClick={() => dispatchCommand({ type: 'DEBUG_SET_PLAYER_HP', hp: 5 })}>
+        <button
+          type="button"
+          data-testid="debug-set-player-hp"
+          onClick={() => dispatchCommand({ type: 'DEBUG_SET_PLAYER_HP', hp: 5 })}
+        >
           残血(5)
         </button>
         <button
           type="button"
+          data-testid="debug-add-strength"
           onClick={() =>
             dispatchCommand({ type: 'DEBUG_ADD_STATUS', statusId: 'strength', stacks: 2 })
           }
         >
           +2力量
         </button>
-        <button type="button" onClick={() => dispatchCommand({ type: 'DEBUG_ADD_HAND_CARD', definitionId: 'bash' })}>
+        <button
+          type="button"
+          data-testid="debug-add-hand-card"
+          onClick={() => dispatchCommand({ type: 'DEBUG_ADD_HAND_CARD', definitionId: 'bash' })}
+        >
           加测试牌
         </button>
         <button
           type="button"
+          data-testid="debug-force-victory"
           onClick={() => dispatchCommand({ type: 'DEBUG_FORCE_BATTLE_OUTCOME', outcome: 'victory' })}
         >
           一键胜利
         </button>
-        <button type="button" onClick={() => dispatchCommand({ type: 'DEBUG_JUMP_SCREEN', screen: 'shop' })}>
+        <button
+          type="button"
+          data-testid="debug-jump-shop"
+          onClick={() => dispatchCommand({ type: 'DEBUG_JUMP_SCREEN', screen: 'shop' })}
+        >
           跳商店
         </button>
-        <button type="button" onClick={() => dispatchCommand({ type: 'DEBUG_JUMP_SCREEN', screen: 'event' })}>
+        <button
+          type="button"
+          data-testid="debug-jump-event"
+          onClick={() => dispatchCommand({ type: 'DEBUG_JUMP_SCREEN', screen: 'event' })}
+        >
           跳事件
         </button>
-        <button type="button" onClick={() => dispatchCommand({ type: 'DEBUG_JUMP_SCREEN', screen: 'reward' })}>
+        <button
+          type="button"
+          data-testid="debug-jump-reward"
+          onClick={() => dispatchCommand({ type: 'DEBUG_JUMP_SCREEN', screen: 'reward' })}
+        >
           跳奖励
         </button>
       </div>

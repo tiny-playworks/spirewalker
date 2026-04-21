@@ -101,7 +101,7 @@ export function BattleHUD() {
     .filter((enemy) => enemy.statuses.length > 0);
 
   return (
-    <header className={cx(sceneThemeClass, styles.root)}>
+    <header className={cx(sceneThemeClass, styles.root)} data-testid="battle-hud">
       <div className={styles.inner}>
         <div className={cx(styles.row, styles.rowTone.stats)}>
           <span className={cx(styles.chip, styles.chipTone.default)}>
@@ -183,6 +183,7 @@ export function BattleHUD() {
               <button
                 type="button"
                 className={cx(styles.actionButton, styles.actionButtonTone.primary)}
+                data-testid="leave-battle-to-reward"
                 onClick={() => dispatchCommand({ type: 'LEAVE_BATTLE_TO_REWARD' })}
               >
                 领取奖励
