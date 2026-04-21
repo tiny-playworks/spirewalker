@@ -90,9 +90,10 @@ export const routeEdgeBase = style({
 });
 
 export const routeEdgePreview = style({
-  strokeWidth: 2.85,
+  stroke: 'rgba(244, 213, 141, 0.92)',
+  strokeWidth: 2.7,
   opacity: 1,
-  filter: 'drop-shadow(0 0 10px rgba(244, 213, 141, 0.2))',
+  filter: 'drop-shadow(0 0 8px rgba(244, 213, 141, 0.16))',
 });
 
 export const routeEdgeEmphasis = styleVariants({
@@ -107,28 +108,32 @@ export const routeEdgeEmphasis = styleVariants({
 });
 
 export const routeEdgeTone = styleVariants({
+  neutral: {
+    stroke: 'rgba(140, 124, 98, 0.76)',
+  },
   hazard: {
-    stroke: sceneVars.color.hazard,
+    stroke: 'rgba(171, 112, 90, 0.72)',
   },
   fortune: {
-    stroke: sceneVars.color.fortune,
+    stroke: 'rgba(191, 152, 79, 0.68)',
   },
   mystery: {
-    stroke: sceneVars.color.mystery,
+    stroke: 'rgba(104, 126, 160, 0.68)',
   },
   relief: {
-    stroke: sceneVars.color.relief,
+    stroke: 'rgba(102, 140, 117, 0.66)',
   },
 });
 
 export const routeEdgeGlow = styleVariants({
   soft: {
-    strokeWidth: 2.1,
-    opacity: 0.8,
+    strokeWidth: 2.05,
+    opacity: 0.78,
   },
   medium: {
-    strokeWidth: 2.25,
-    filter: 'drop-shadow(0 0 5px rgba(244, 213, 141, 0.06))',
+    strokeWidth: 2.18,
+    opacity: 0.84,
+    filter: 'drop-shadow(0 0 4px rgba(244, 213, 141, 0.04))',
   },
   strong: {
     strokeWidth: 2.45,
@@ -240,6 +245,30 @@ export const nodeHoverRing = style({
   stroke: 'rgba(244, 213, 141, 0.72)',
   strokeWidth: 2,
   filter: 'drop-shadow(0 0 10px rgba(244, 213, 141, 0.18))',
+});
+
+export const nodeThreatRing = style({
+  fill: 'none',
+  pointerEvents: 'none',
+  strokeWidth: 2.4,
+  opacity: 0.92,
+});
+
+export const nodeThreatTone = styleVariants({
+  elite: {
+    stroke: 'rgba(202, 95, 77, 0.92)',
+    filter: 'drop-shadow(0 0 10px rgba(202, 95, 77, 0.24))',
+  },
+  boss: {
+    stroke: 'rgba(215, 88, 68, 0.96)',
+    filter: 'drop-shadow(0 0 12px rgba(215, 88, 68, 0.28))',
+  },
+});
+
+export const nodeThreatHalo = style({
+  fill: 'rgba(171, 85, 64, 0.1)',
+  pointerEvents: 'none',
+  filter: 'blur(1px)',
 });
 
 export const nodeIconBase = style({

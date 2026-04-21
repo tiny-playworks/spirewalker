@@ -2,8 +2,8 @@ import { describe, expect, it } from '@rstest/core';
 import { routePresentationForNodeType, type GlowLevel } from '../src/features/map/mapRouteTone';
 
 describe('routePresentationForNodeType', () => {
-  it('maps node types to distinct route tones', () => {
-    expect(routePresentationForNodeType('battle').tone).toBe('hazard');
+  it('普通路线保持中性，强威胁节点才保留更明显的危险提示', () => {
+    expect(routePresentationForNodeType('battle').tone).toBe('neutral');
     expect(routePresentationForNodeType('elite').tone).toBe('hazard');
     expect(routePresentationForNodeType('boss').tone).toBe('hazard');
     expect(routePresentationForNodeType('shop').tone).toBe('fortune');
@@ -12,7 +12,7 @@ describe('routePresentationForNodeType', () => {
     expect(routePresentationForNodeType('rest').tone).toBe('relief');
   });
 
-  it('returns stronger glow levels for riskier nodes', () => {
+  it('仅保留有限的强弱差异，避免整张图都在抢戏', () => {
     const order: GlowLevel[] = [
       routePresentationForNodeType('rest').glow,
       routePresentationForNodeType('event').glow,
@@ -22,7 +22,7 @@ describe('routePresentationForNodeType', () => {
       routePresentationForNodeType('boss').glow,
     ];
 
-    expect(order).toEqual(['soft', 'medium', 'medium', 'strong', 'intense', 'intense']);
+    expect(order).toEqual(['soft', 'soft', 'soft', 'soft', 'medium', 'medium']);
   });
 
   it('keeps map route lines solid across all node types', () => {

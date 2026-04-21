@@ -81,6 +81,7 @@ export function MapPage() {
     () => nextIds.map((id) => map.nodes[id]).filter((node): node is MapNode => Boolean(node)),
     [nextIds, map.nodes],
   );
+  const hoveredNode = hoveredNodeId ? map.nodes[hoveredNodeId] ?? null : null;
   const selectedNode = selectedNodeId ? map.nodes[selectedNodeId] ?? null : null;
 
   return (
@@ -138,7 +139,9 @@ export function MapPage() {
             </h2>
             <p className={styles.boardSub}>
               {nextIds.length > 0
-                ? '先在地图上点亮一个前方节点，再从下方确认行动。'
+                ? hoveredNode
+                  ? `悬停预览：${hoverPreviewHint(hoveredNode)}`
+                  : '先在地图上点亮一个前方节点，再从下方确认行动。'
                 : '这一层的路线已经走到尽头。'}
             </p>
             <div className={styles.legend} aria-label="地图图例">
@@ -231,9 +234,6 @@ export function MapPage() {
                     {typeLabel(selectedNode.type)}
                   </span>
                   <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone.lane)}>
-                    {routeBiasLabel(selectedNode.routeBias)}
-                  </span>
-                  <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone.lane)}>
                     {laneLabelForNode(selectedNode, nextNodes)}
                   </span>
                 </div>
@@ -285,25 +285,25 @@ function decisionHintForNode(node: MapNode): string {
   }
 }
 
-function routeBiasLabel(bias: MapNode['routeBias']): string {
-  switch (bias) {
-    case 'risk':
-      return '高风险路线';
-    case 'safe':
-      return '稳健路线';
-    default:
-      return '平衡路线';
-  }
-}
-
 function routeBiasHint(bias: MapNode['routeBias']): string {
   switch (bias) {
     case 'risk':
-      return '这条线更容易撞上硬仗，适合追求收益时走。';
+      return '短期走势偏高风险，后续更容易接到硬仗。';
     case 'safe':
-      return '这条线更偏补给与修整，适合带伤或缺资源时走。';
+      return '短期走势偏稳健，更容易拿到修整窗口。';
     default:
-      return '这条线的风险和补给更均衡，适合稳步推进。';
+      return '短期走势比较平衡，方便后续再转向。';
+  }
+}
+
+function hoverPreviewHint(node: MapNode): string {
+  switch (node.routeBias) {
+    case 'risk':
+      return '这条路线偏高风险，短期更容易遇到硬仗或精英。';
+    case 'safe':
+      return '这条路线偏稳健，短期更容易接到补给或恢复窗口。';
+    default:
+      return '这条路线比较平衡，方便再观察后续转向。';
   }
 }
 

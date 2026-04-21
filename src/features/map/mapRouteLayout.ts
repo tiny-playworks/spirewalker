@@ -4,6 +4,8 @@ export const MAP_ROUTE_SVG = {
   ROW_GAP: 46,
   PAD: 40,
   NODE_R: 17,
+  ELITE_NODE_R: 19,
+  BOSS_NODE_R: 21,
 } as const;
 
 export function mapNodeCenter(node: { x: number; y: number }): { cx: number; cy: number } {
@@ -15,8 +17,8 @@ export function mapNodeCenter(node: { x: number; y: number }): { cx: number; cy:
 }
 
 export function mapRouteViewBox(maxX: number, maxY: number): string {
-  const { COL_GAP, ROW_GAP, PAD, NODE_R } = MAP_ROUTE_SVG;
-  const w = PAD * 2 + Math.max(0, maxX) * COL_GAP + NODE_R * 2;
-  const h = PAD * 2 + Math.max(0, maxY) * ROW_GAP + NODE_R * 2;
+  const { COL_GAP, ROW_GAP, PAD, BOSS_NODE_R } = MAP_ROUTE_SVG;
+  const w = PAD * 2 + Math.max(0, maxX) * COL_GAP + BOSS_NODE_R * 2;
+  const h = PAD * 2 + Math.max(0, maxY) * ROW_GAP + BOSS_NODE_R * 2;
   return `0 0 ${w} ${h}`;
 }

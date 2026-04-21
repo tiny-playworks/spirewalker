@@ -19,6 +19,9 @@ const FIRST_STEP_ROWS = [1, 2, 4, 5] as const;
 const CROSS_LINK_CHANCE = 0.3;
 const EARLY_ELITE_PROTECTION_DEPTH = 4;
 const ELITE_DEPTH_GAP = 5;
+const EVENT_CHAIN_LIMIT = 2;
+const SAFE_SUPPLY_CHAIN_LIMIT = 1;
+const SOFT_SUPPLY_PITY_START = 6;
 
 const ACT_START_FLOOR: Record<MapAct, number> = {
   1: 1,
@@ -45,11 +48,11 @@ type WeightedNodeType = Exclude<MapNodeType, 'boss' | 'treasure'>;
 
 const PHASE_WEIGHTS: Record<Phase, Record<WeightedNodeType, number>> = {
   early: {
-    battle: 60,
-    elite: 5,
-    event: 20,
-    shop: 5,
-    rest: 10,
+    battle: 72,
+    elite: 2,
+    event: 18,
+    shop: 3,
+    rest: 5,
   },
   mid: {
     battle: 45,
@@ -77,11 +80,11 @@ const BIAS_WEIGHT_DELTA: Record<MapRouteBias, Partial<Record<WeightedNodeType, n
   },
   balance: {},
   safe: {
-    battle: -4,
-    elite: -12,
+    battle: -2,
+    elite: -10,
     event: 1,
-    shop: 8,
-    rest: 10,
+    shop: 5,
+    rest: 6,
   },
 };
 
@@ -114,6 +117,10 @@ function phaseForDepth(depth: number, totalDepth: number): Phase {
   if (ratio <= 0.3) return 'early';
   if (ratio <= 0.7) return 'mid';
   return 'late';
+}
+
+function lateRiskStartDepth(totalDepth: number): number {
+  return Math.max(6, Math.ceil(totalDepth * 0.8));
 }
 
 function idealRowFor(depth: number, totalDepth: number, bias: MapRouteBias): number {
@@ -164,21 +171,72 @@ function addEdge(nodes: Record<string, MapNode>, fromId: string, toId: string): 
   from.nextNodeIds.push(toId);
 }
 
+function isSupplyType(type: MapNodeType): boolean {
+  return type === 'shop' || type === 'rest';
+}
+
+function applySoftGuarantees(
+  weights: Record<WeightedNodeType, number>,
+  depth: number,
+  totalDepth: number,
+  sinceShop: number,
+  sinceRest: number,
+): void {
+  if (depth >= totalDepth - 2) return;
+  if (sinceShop >= SOFT_SUPPLY_PITY_START) {
+    weights.shop += 6 + (sinceShop - SOFT_SUPPLY_PITY_START) * 4;
+    weights.battle = Math.max(8, weights.battle - 4);
+  }
+  if (sinceRest >= SOFT_SUPPLY_PITY_START) {
+    weights.rest += 7 + (sinceRest - SOFT_SUPPLY_PITY_START) * 4;
+    weights.battle = Math.max(8, weights.battle - 4);
+  }
+}
+
+function openingTypeForDepth(depth: number, routeBias: MapRouteBias, rnd: () => number): WeightedNodeType {
+  if (depth <= 2) return 'battle';
+  if (depth === 3) return rnd() < 0.18 && routeBias !== 'risk' ? 'event' : 'battle';
+  if (depth === 4) {
+    if (routeBias === 'risk') return rnd() < 0.16 ? 'event' : 'battle';
+    if (routeBias === 'safe') return rnd() < 0.28 ? 'event' : 'battle';
+    return rnd() < 0.24 ? 'event' : 'battle';
+  }
+  return 'battle';
+}
+
 function chooseWeightedType(
   depth: number,
   totalDepth: number,
   routeBias: MapRouteBias,
   lastEliteDepth: number,
+  sinceShop: number,
+  sinceRest: number,
+  previousType: MapNodeType | null,
   rnd: () => number,
 ): WeightedNodeType {
-  if (depth <= 2) return 'battle';
+  if (depth <= 4) return openingTypeForDepth(depth, routeBias, rnd);
   const baseWeights = { ...PHASE_WEIGHTS[phaseForDepth(depth, totalDepth)] };
   const delta = BIAS_WEIGHT_DELTA[routeBias];
   for (const key of Object.keys(delta) as WeightedNodeType[]) {
     baseWeights[key] = Math.max(0, baseWeights[key] + (delta[key] ?? 0));
   }
+  applySoftGuarantees(baseWeights, depth, totalDepth, sinceShop, sinceRest);
   if (depth <= EARLY_ELITE_PROTECTION_DEPTH || depth - lastEliteDepth < ELITE_DEPTH_GAP) {
     baseWeights.elite = 0;
+  }
+  if (previousType === 'shop') {
+    baseWeights.shop = 0;
+    baseWeights.rest = Math.max(0, baseWeights.rest - 4);
+  }
+  if (previousType === 'rest') {
+    baseWeights.rest = 0;
+    baseWeights.shop = Math.max(0, baseWeights.shop - 4);
+  }
+  if (routeBias === 'safe' && isSupplyType(previousType ?? 'battle')) {
+    baseWeights.shop = 0;
+    baseWeights.rest = 0;
+    baseWeights.event += 2;
+    baseWeights.battle += 3;
   }
   const totalWeight = Object.values(baseWeights).reduce((sum, value) => sum + value, 0);
   let roll = rnd() * totalWeight;
@@ -204,32 +262,6 @@ function pickChunkCandidate(
     })[0];
 }
 
-function ensureChunkGuarantee(
-  allNodes: MapNode[],
-  totalDepth: number,
-  type: 'shop' | 'rest',
-): void {
-  for (let chunkStart = 1; chunkStart <= totalDepth; chunkStart += 10) {
-    const chunkEnd = Math.min(totalDepth, chunkStart + 9);
-    const chunkNodes = allNodes.filter(
-      (node) => node.depth >= chunkStart && node.depth <= chunkEnd && node.depth > 2,
-    );
-    if (chunkNodes.some((node) => node.type === type)) continue;
-    const candidate =
-      pickChunkCandidate(
-        chunkNodes,
-        type === 'shop' ? ['safe', 'balance', 'risk'] : ['safe', 'balance', 'risk'],
-        ['boss', 'treasure', type, type === 'shop' ? 'rest' : 'shop'],
-      ) ??
-      pickChunkCandidate(
-        chunkNodes,
-        type === 'shop' ? ['safe', 'balance', 'risk'] : ['safe', 'balance', 'risk'],
-        ['boss', type, type === 'shop' ? 'rest' : 'shop'],
-      );
-    if (candidate) candidate.type = type;
-  }
-}
-
 function ensureEventFallback(allNodes: MapNode[]): void {
   const eventExists = allNodes.some((node) => node.type === 'event');
   if (eventExists) return;
@@ -239,35 +271,114 @@ function ensureEventFallback(allNodes: MapNode[]): void {
   if (fallback) fallback.type = 'event';
 }
 
-function repairChunkSupplies(allNodes: MapNode[], totalDepth: number): void {
-  const restDepth = totalDepth - 1;
-  for (let chunkStart = 1; chunkStart <= totalDepth; chunkStart += 10) {
-    const chunkEnd = Math.min(totalDepth, chunkStart + 9);
-    const chunkNodes = allNodes.filter(
-      (node) => node.depth >= chunkStart && node.depth <= chunkEnd && node.depth > 2,
-    );
-    const shops = chunkNodes.filter((node) => node.type === 'shop');
-    const rests = chunkNodes.filter((node) => node.type === 'rest');
-    if (shops.length === 0) {
-      const candidate = [...chunkNodes]
-        .filter((node) => node.type !== 'boss' && node.type !== 'treasure')
-        .filter((node) => node.type !== 'rest' || rests.length > 1)
-        .sort((a, b) => {
-          const aPenalty = a.depth === restDepth ? 1 : 0;
-          const bPenalty = b.depth === restDepth ? 1 : 0;
-          if (aPenalty !== bPenalty) return aPenalty - bPenalty;
-          return a.depth - b.depth;
-        })[0];
-      if (candidate) candidate.type = 'shop';
-    }
-    if (rests.length === 0) {
-      const candidate = [...chunkNodes]
-        .filter((node) => node.type !== 'boss' && node.type !== 'treasure')
-        .filter((node) => node.type !== 'shop' || shops.length > 1)
-        .sort((a, b) => a.depth - b.depth)[0];
-      if (candidate) candidate.type = 'rest';
+function breakEventChains(nodes: MapNode[], totalDepth: number): void {
+  const byBias: Record<MapRouteBias, MapNode[]> = {
+    risk: [],
+    balance: [],
+    safe: [],
+  };
+  for (const node of nodes) {
+    if (node.type !== 'event') continue;
+    byBias[node.routeBias ?? 'balance'].push(node);
+  }
+  for (const bias of Object.keys(byBias) as MapRouteBias[]) {
+    const depths = [...new Set(byBias[bias].map((node) => node.depth))].sort((a, b) => a - b);
+    let previousDepth = -99;
+    let streak = 0;
+    for (const depth of depths) {
+      streak = depth === previousDepth + 1 ? streak + 1 : 1;
+      if (streak > EVENT_CHAIN_LIMIT) {
+        for (const node of nodes) {
+          if (node.routeBias !== bias || node.depth !== depth || node.type !== 'event') continue;
+          node.type = depth >= lateRiskStartDepth(totalDepth) && bias === 'risk' ? 'elite' : 'battle';
+        }
+        previousDepth = -99;
+        streak = 0;
+        continue;
+      }
+      previousDepth = depth;
     }
   }
+}
+
+function enforceSupplySpacing(nodes: MapNode[]): void {
+  const byBias: Record<MapRouteBias, MapNode[]> = {
+    risk: [],
+    balance: [],
+    safe: [],
+  };
+  for (const node of nodes) {
+    byBias[node.routeBias ?? 'balance'].push(node);
+  }
+  for (const bias of Object.keys(byBias) as MapRouteBias[]) {
+    const ordered = byBias[bias].sort((a, b) => a.depth - b.depth || a.y - b.y);
+    let supplyChain = 0;
+    for (const node of ordered) {
+      if (!isSupplyType(node.type)) {
+        supplyChain = 0;
+        continue;
+      }
+      supplyChain += 1;
+      if (supplyChain <= SAFE_SUPPLY_CHAIN_LIMIT) continue;
+      node.type = bias === 'safe' ? 'event' : 'battle';
+      supplyChain = 0;
+    }
+  }
+}
+
+function repairSoftSupplies(nodes: MapNode[], totalDepth: number): void {
+  let sinceShop = 0;
+  let sinceRest = 0;
+  for (let depth = 2; depth <= totalDepth - 2; depth++) {
+    const layer = nodes.filter((node) => node.depth === depth);
+    if (layer.some((node) => node.type === 'shop')) {
+      sinceShop = 0;
+    } else {
+      sinceShop += 1;
+    }
+    if (layer.some((node) => node.type === 'rest')) {
+      sinceRest = 0;
+    } else {
+      sinceRest += 1;
+    }
+    if (sinceShop >= SOFT_SUPPLY_PITY_START + 1) {
+      const candidate =
+        pickChunkCandidate(layer, ['safe', 'balance', 'risk'], ['boss', 'treasure', 'rest', 'shop']) ??
+        pickChunkCandidate(layer, ['safe', 'balance', 'risk'], ['boss', 'treasure', 'shop']);
+      if (candidate) {
+        candidate.type = 'shop';
+        sinceShop = 0;
+      }
+    }
+    if (sinceRest >= SOFT_SUPPLY_PITY_START + 1) {
+      const candidate =
+        pickChunkCandidate(layer, ['safe', 'balance', 'risk'], ['boss', 'treasure', 'shop', 'rest']) ??
+        pickChunkCandidate(layer, ['safe', 'balance', 'risk'], ['boss', 'treasure', 'rest']);
+      if (candidate) {
+        candidate.type = 'rest';
+        sinceRest = 0;
+      }
+    }
+  }
+}
+
+function ensureLateRiskPeak(nodes: MapNode[], totalDepth: number): void {
+  const startDepth = lateRiskStartDepth(totalDepth);
+  const endDepth = totalDepth - 2;
+  const lateNodes = nodes.filter((node) => node.depth >= startDepth && node.depth <= endDepth);
+  if (lateNodes.some((node) => node.type === 'elite')) return;
+  const targetDepth = Math.max(startDepth, totalDepth - 4);
+  const candidate = [...lateNodes]
+    .filter((node) => node.type !== 'rest' && node.type !== 'shop' && node.type !== 'treasure')
+    .sort((a, b) => {
+      const biasScore =
+        ['risk', 'balance', 'safe'].indexOf(a.routeBias ?? 'balance') -
+        ['risk', 'balance', 'safe'].indexOf(b.routeBias ?? 'balance');
+      if (biasScore !== 0) return biasScore;
+      return Math.abs(a.depth - targetDepth) - Math.abs(b.depth - targetDepth);
+    })[0];
+  if (!candidate) return;
+  candidate.type = 'elite';
 }
 
 function assignTreasureNode(allNodes: MapNode[], totalDepth: number): void {
@@ -396,23 +507,33 @@ export function generateActMap(act: MapAct, seed: number): Record<string, MapNod
   mutableNodes.sort((a, b) => a.depth - b.depth || a.y - b.y);
 
   let lastEliteDepth = -99;
+  let sinceShop = 0;
+  let sinceRest = 0;
+  let previousType: MapNodeType | null = null;
   for (const node of mutableNodes) {
     const chosen = chooseWeightedType(
       node.depth,
       totalDepth,
       node.routeBias ?? 'balance',
       lastEliteDepth,
+      sinceShop,
+      sinceRest,
+      previousType,
       rnd,
     );
     node.type = chosen;
     if (chosen === 'elite') lastEliteDepth = node.depth;
+    sinceShop = chosen === 'shop' ? 0 : sinceShop + 1;
+    sinceRest = chosen === 'rest' ? 0 : sinceRest + 1;
+    previousType = chosen;
   }
 
   assignTreasureNode(mutableNodes, totalDepth);
-  ensureChunkGuarantee(mutableNodes, totalDepth, 'shop');
-  ensureChunkGuarantee([...mutableNodes, rest], totalDepth, 'rest');
-  ensureChunkGuarantee([...mutableNodes, rest], totalDepth, 'shop');
-  repairChunkSupplies([...mutableNodes, rest, boss], totalDepth);
+  enforceSupplySpacing(mutableNodes);
+  repairSoftSupplies(mutableNodes, totalDepth);
+  enforceSupplySpacing(mutableNodes);
+  breakEventChains(mutableNodes, totalDepth);
+  ensureLateRiskPeak(mutableNodes, totalDepth);
   ensureEventFallback(mutableNodes);
 
   assignEventScripts(act, Object.values(nodes));
