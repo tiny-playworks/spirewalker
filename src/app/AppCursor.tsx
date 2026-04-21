@@ -47,9 +47,7 @@ export function AppCursor() {
     const syncHoverState = (nextTarget: EventTarget | null) => {
       const element = nextTarget instanceof Element ? nextTarget : null;
       hovered = Boolean(
-        element?.closest(
-          "button, a, [role='button'], .map-route-node--selectable, .map-tool-btn, .btn-end-turn, .reward-card-btn, .reward-skip-gold-btn, .shop-buy-btn",
-        ),
+        element?.closest("button, a, [role='button'], [data-cursor-target='true']"),
       );
       applyState();
     };

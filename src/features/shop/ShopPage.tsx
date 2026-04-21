@@ -5,6 +5,12 @@ import { SHOP_MIN_MASTER_DECK_SIZE } from '@/game/core/engine/generateShop';
 import { MAX_POTIONS, POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectShopRunState } from '@/game/store/selectors/shopSelectors';
+import { sceneThemeClass } from '@/styles/sceneTheme.css';
+import * as subscreenStyles from '@/styles/subscreen.css';
+
+function cx(...classNames: Array<string | false | null | undefined>) {
+  return classNames.filter(Boolean).join(' ');
+}
 
 function deckUniqueCounts(deck: string[]): { definitionId: string; count: number }[] {
   const m = new Map<string, number>();
@@ -23,14 +29,14 @@ export function ShopPage() {
   const deckRows = deckUniqueCounts(masterDeck);
 
   return (
-    <div className="boot shop-page">
-      <h2 className="subscreen-title">商店</h2>
-      <p className="subscreen-tip">
+    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenWidth.wide)}>
+      <h2 className={subscreenStyles.title}>商店</h2>
+      <p className={subscreenStyles.tip}>
         金币 <strong>{meta.gold}</strong> · 药水栏 {meta.potions.length}/{MAX_POTIONS} · 牌组{' '}
         <strong>{masterDeck.length}</strong> 张（删牌后不少于 {SHOP_MIN_MASTER_DECK_SIZE} 张）
       </p>
-      <h3 className="shop-section-title">卡牌</h3>
-      <ul className="shop-list">
+      <h3 className={subscreenStyles.sectionTitle}>卡牌</h3>
+      <ul className={subscreenStyles.sectionList}>
         {shop.cards.map((o) => {
           const def = CARD_DEFINITIONS[o.definitionId];
           const canBuy = meta.gold >= o.price;
@@ -38,13 +44,13 @@ export function ShopPage() {
             <li key={o.definitionId}>
               <button
                 type="button"
-                className="shop-buy-btn"
+                className={subscreenStyles.compactChoiceButton}
                 title={def ? buildCardTooltipText(def) : o.definitionId}
                 disabled={!canBuy}
                 onClick={() => dispatchCommand({ type: 'BUY_SHOP_CARD', definitionId: o.definitionId })}
               >
                 {def?.name ?? o.definitionId} — {o.price} 金
-                <span className="reward-card-desc">
+                <span className={subscreenStyles.choiceDesc}>
                   {def ? `${def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · ${def.cost} 费` : ''}
                 </span>
               </button>
@@ -54,8 +60,8 @@ export function ShopPage() {
       </ul>
       {(shop.relics ?? []).length > 0 ? (
         <>
-          <h3 className="shop-section-title">遗物</h3>
-          <ul className="shop-list">
+          <h3 className={subscreenStyles.sectionTitle}>遗物</h3>
+          <ul className={subscreenStyles.sectionList}>
             {(shop.relics ?? []).map((o) => {
               const def = RELIC_DEFINITIONS[o.relicId];
               const canBuy = meta.gold >= o.price;
@@ -63,13 +69,13 @@ export function ShopPage() {
                 <li key={o.relicId}>
                   <button
                     type="button"
-                    className="shop-buy-btn"
+                    className={subscreenStyles.compactChoiceButton}
                     title={def ? `${def.name}\n${def.description}` : o.relicId}
                     disabled={!canBuy}
                     onClick={() => dispatchCommand({ type: 'BUY_SHOP_RELIC', relicId: o.relicId })}
                   >
                     {def?.name ?? o.relicId} — {o.price} 金
-                    <span className="reward-card-desc">{def?.description ?? ''}</span>
+                    <span className={subscreenStyles.choiceDesc}>{def?.description ?? ''}</span>
                   </button>
                 </li>
               );
@@ -79,8 +85,8 @@ export function ShopPage() {
       ) : null}
       {(shop.potions ?? []).length > 0 ? (
         <>
-          <h3 className="shop-section-title">药水</h3>
-          <ul className="shop-list">
+          <h3 className={subscreenStyles.sectionTitle}>药水</h3>
+          <ul className={subscreenStyles.sectionList}>
             {(shop.potions ?? []).map((o) => {
               const def = POTION_DEFINITIONS[o.potionId];
               const canBuy = meta.gold >= o.price && meta.potions.length < MAX_POTIONS;
@@ -88,7 +94,7 @@ export function ShopPage() {
                 <li key={o.potionId}>
                   <button
                     type="button"
-                    className="shop-buy-btn"
+                    className={subscreenStyles.compactChoiceButton}
                     title={def ? `${def.name}\n${def.description}` : o.potionId}
                     disabled={!canBuy}
                     onClick={() =>
@@ -96,7 +102,7 @@ export function ShopPage() {
                     }
                   >
                     {def?.name ?? o.potionId} — {o.price} 金
-                    <span className="reward-card-desc">{def?.description ?? ''}</span>
+                    <span className={subscreenStyles.choiceDesc}>{def?.description ?? ''}</span>
                   </button>
                 </li>
               );
@@ -104,11 +110,11 @@ export function ShopPage() {
           </ul>
         </>
       ) : null}
-      <h3 className="shop-section-title">删牌（每次 {shop.removeCardPrice} 金）</h3>
-      <p className="shop-remove-hint">
+      <h3 className={subscreenStyles.sectionTitle}>删牌（每次 {shop.removeCardPrice} 金）</h3>
+      <p className={subscreenStyles.removeHint}>
         从牌组移除一张同名副本，便于精简循环；牌组过短无法继续删除。
       </p>
-      <ul className="shop-list shop-remove-list">
+      <ul className={cx(subscreenStyles.sectionList, subscreenStyles.removeList)}>
         {deckRows.map((row) => {
           const def = CARD_DEFINITIONS[row.definitionId];
           const canPay = meta.gold >= shop.removeCardPrice;
@@ -117,7 +123,7 @@ export function ShopPage() {
             <li key={row.definitionId}>
               <button
                 type="button"
-                className="shop-buy-btn"
+                className={subscreenStyles.compactChoiceButton}
                 title={def ? buildCardTooltipText(def) : row.definitionId}
                 disabled={!enabled}
                 onClick={() =>
@@ -136,7 +142,11 @@ export function ShopPage() {
       </ul>
       <button
         type="button"
-        className="btn-end-turn subscreen-leave"
+        className={cx(
+          subscreenStyles.actionButton,
+          subscreenStyles.actionButtonTone.primary,
+          subscreenStyles.leaveButton,
+        )}
         onClick={() => dispatchCommand({ type: 'LEAVE_SHOP_TO_MAP' })}
       >
         离开商店

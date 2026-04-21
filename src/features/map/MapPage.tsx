@@ -7,7 +7,9 @@ import type { MapNode } from '@/game/core/model/map';
 import { clearSavedRun } from '@/game/core/persistence/saveRun';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectMapRunState } from '@/game/store/selectors/mapSelectors';
+import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import { MapRoute } from './MapRoute';
+import * as styles from './mapPage.css';
 import { MapNodeIcon } from './mapNodeIcons';
 
 const MAP_LEGEND: { kind: 'camp' | MapNode['type']; label: string }[] = [
@@ -20,6 +22,10 @@ const MAP_LEGEND: { kind: 'camp' | MapNode['type']; label: string }[] = [
   { kind: 'event', label: '事件' },
   { kind: 'treasure', label: '宝箱' },
 ];
+
+function cx(...classNames: Array<string | false | null | undefined>) {
+  return classNames.filter(Boolean).join(' ');
+}
 
 function nodeTitle(n: MapNode): string {
   if (n.x === 0) return n.floor >= 2 ? '第二层 · 营地' : '营地';
@@ -73,89 +79,83 @@ export function MapPage() {
   const selectedNode = selectedNodeId ? map.nodes[selectedNodeId] ?? null : null;
 
   return (
-    <div className="map-page">
-      <header className="map-hud">
-        <div className="map-hud-top">
-          <div className="map-hud-chips" aria-label="冒险状态">
-            <div className="map-chip map-chip--floor">第 {meta.floor} 层</div>
-            <div className="map-chip">
+    <div className={`${sceneThemeClass} ${styles.page}`}>
+      <header className={styles.hud}>
+        <div className={styles.hudTop}>
+          <div className={styles.hudChips} aria-label="冒险状态">
+            <div className={styles.chipFloor}>第 {meta.floor} 层</div>
+            <div className={styles.chip}>
               金币 <strong>{meta.gold}</strong>
             </div>
-            <div className="map-chip">
+            <div className={styles.chip}>
               药水 <strong>{meta.potions.length}</strong>
             </div>
-            <div className="map-chip">
+            <div className={styles.chip}>
               生命{' '}
               <strong>
                 {player.currentHp}/{player.maxHp}
               </strong>
             </div>
-            <div className="map-chip">
+            <div className={styles.chip}>
               牌组 <strong>{masterDeckSize}</strong> 张
             </div>
-            <div className="map-chip" title={`${character.description}\n被动：${character.passiveDescription}`}>
+            <div className={styles.chip} title={`${character.description}\n被动：${character.passiveDescription}`}>
               角色 <strong>{character.name}</strong>
             </div>
           </div>
-          <div className="map-hud-current">
-            <span className="map-hud-current-k">当前位置</span>
-            <span className="map-hud-current-v">{locationName}</span>
-            <span className="map-hud-current-sub">发光营地就是你所在的位置</span>
+          <div className={styles.hudCurrent}>
+            <span className={styles.hudCurrentKey}>当前位置</span>
+            <span className={styles.hudCurrentValue}>{locationName}</span>
+            <span className={styles.hudCurrentSub}>发光营地就是你所在的位置</span>
           </div>
         </div>
         {meta.relics.length > 0 ? (
-          <div className="map-hud-relics">
-            <span className="map-hud-relics-k">遗物</span>
-            <span className="map-hud-relics-v">
+          <div className={styles.hudRelics}>
+            <span className={styles.hudRelicsKey}>遗物</span>
+            <span>
               {meta.relics.map((id) => RELIC_DEFINITIONS[id]?.name ?? id).join('、')}
             </span>
           </div>
         ) : null}
       </header>
 
-      <div className="map-body">
-        <section className="map-board" aria-labelledby="map-board-title">
-          <div className="map-board-head">
-            <h2 id="map-board-title" className="map-board-title">
+      <div className={styles.body}>
+        <section className={styles.board} aria-labelledby="map-board-title">
+          <div className={styles.boardHead}>
+            <h2 id="map-board-title" className={styles.boardTitle}>
               本层路线
             </h2>
-            <p className="map-board-sub">
+            <p className={styles.boardSub}>
               {nextIds.length > 0
                 ? '先在地图上点亮一个前方节点，再从下方确认行动。'
                 : '这一层的路线已经走到尽头。'}
             </p>
-            <div className="map-legend" aria-label="地图图例">
-              <div className="map-legend-row">
-                <span className="map-legend-title">节点</span>
-                <ul className="map-legend-list">
+            <div className={styles.legend} aria-label="地图图例">
+              <div className={styles.legendRow}>
+                <span className={styles.legendTitle}>节点</span>
+                <ul className={styles.legendList}>
                   {MAP_LEGEND.map(({ kind, label }) => (
-                    <li key={kind} className="map-legend-item">
-                      <span className={`map-legend-glyph map-legend-glyph--${kind}`} aria-hidden>
-                        <MapNodeIcon kind={kind} className="map-legend-icon" />
+                    <li key={kind} className={styles.legendItem}>
+                      <span className={cx(styles.legendGlyphBase, styles.legendGlyphTone[kind])} aria-hidden>
+                        <MapNodeIcon kind={kind} className={styles.legendIcon} />
                       </span>
-                      <span className="map-legend-label">{label}</span>
+                      <span className={styles.legendLabel}>{label}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="map-legend-row">
-                <span className="map-legend-title">连线</span>
-                <ul className="map-legend-list map-legend-list--edges">
-                  <li className="map-legend-item map-legend-item--edge">
-                    <span
-                      className="map-legend-edge-swatch map-legend-edge-swatch--bright"
-                      aria-hidden
-                    />
-                    <span className="map-legend-label">
+              <div className={styles.legendRow}>
+                <span className={styles.legendTitle}>连线</span>
+                <ul className={styles.legendEdgeList}>
+                  <li className={styles.legendEdgeItem}>
+                    <span className={styles.edgeSwatchBright} aria-hidden />
+                    <span className={styles.legendLabel}>
                       亮色：经过当前格，或两端仍在「仍可前进」范围内的边
                     </span>
                   </li>
-                  <li className="map-legend-item map-legend-item--edge">
-                    <span
-                      className="map-legend-edge-swatch map-legend-edge-swatch--dim"
-                      aria-hidden
-                    />
-                    <span className="map-legend-label">
+                  <li className={styles.legendEdgeItem}>
+                    <span className={styles.edgeSwatchDim} aria-hidden />
+                    <span className={styles.legendLabel}>
                       灰色：已剪枝、不再能走到的分支
                     </span>
                   </li>
@@ -163,7 +163,7 @@ export function MapPage() {
               </div>
             </div>
           </div>
-          <div className="map-board-route">
+          <div className={styles.boardRoute}>
             <MapRoute
               map={map}
               currentNodeId={curId}
@@ -177,14 +177,18 @@ export function MapPage() {
           </div>
         </section>
 
-        <section className="map-actions-panel">
-          <div className="map-toolbar">
-            <button type="button" className="map-tool-btn" onClick={returnToMainMenu}>
+        <section className={styles.actionsPanel}>
+          <div className={styles.toolbar}>
+            <button
+              type="button"
+              className={cx(styles.toolButtonBase, styles.toolButtonTone.default)}
+              onClick={returnToMainMenu}
+            >
               返回主菜单
             </button>
             <button
               type="button"
-              className="map-tool-btn map-tool-btn--danger"
+              className={cx(styles.toolButtonBase, styles.toolButtonTone.danger)}
               onClick={() => {
                 clearSavedRun();
                 initRun(createMapRun(Date.now() & 0xffff_ffff));
@@ -194,31 +198,31 @@ export function MapPage() {
             </button>
           </div>
           {nextIds.length === 0 ? (
-            <p className="map-done">本层线路已清空。</p>
+            <p className={styles.done}>本层线路已清空。</p>
           ) : !selectedNode ? (
-            <p className="map-selection-prompt">在地图上选择一个前方节点，继续你的路线。</p>
+            <p className={styles.selectionPrompt}>在地图上选择一个前方节点，继续你的路线。</p>
           ) : (
-            <div className="map-decision-panel">
-              <div className="map-decision-head">
-                <div className="map-decision-copy">
-                  <p className="map-decision-kicker">当前抉择</p>
-                  <h3 className="map-decision-title">
+            <div className={styles.decisionPanel}>
+              <div className={styles.decisionHead}>
+                <div className={styles.decisionCopy}>
+                  <p className={styles.decisionKicker}>当前抉择</p>
+                  <h3 className={styles.decisionTitle}>
                     {laneLabelForNode(selectedNode, nextNodes)} · {nodeTitle(selectedNode)}
                   </h3>
-                  <p className="map-decision-desc">{decisionHintForNode(selectedNode)}</p>
+                  <p className={styles.decisionDesc}>{decisionHintForNode(selectedNode)}</p>
                 </div>
-                <div className="map-decision-badges">
-                  <span className={`map-decision-badge map-decision-badge--${selectedNode.type}`}>
+                <div className={styles.decisionBadges}>
+                  <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone[selectedNode.type])}>
                     {typeLabel(selectedNode.type)}
                   </span>
-                  <span className="map-decision-badge map-decision-badge--lane">
+                  <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone.lane)}>
                     {laneLabelForNode(selectedNode, nextNodes)}
                   </span>
                 </div>
               </div>
               <button
                 type="button"
-                className={`map-decision-cta map-decision-cta--${selectedNode.type}`}
+                className={cx(styles.decisionCtaBase, styles.decisionCtaTone[selectedNode.type])}
                 onClick={() => dispatchCommand({ type: 'CHOOSE_MAP_NODE', nodeId: selectedNode.id })}
               >
                 前往 {nodeTitle(selectedNode)}
