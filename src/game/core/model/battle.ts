@@ -37,6 +37,7 @@ export type MonsterIntent =
   | { type: 'reduce_status'; statusId: string; value: number }
   | { type: 'summon'; enemyId: string; count: number }
   | { type: 'split_on_death'; enemyId: string; count: number; hpPercent: number }
+  | { type: 'death_burst'; damage: number }
   | { type: 'revive'; charges: number; hpPercent: number }
   | { type: 'thorns'; damage: number }
   | { type: 'reactive'; damage: number }
@@ -64,6 +65,7 @@ export interface MonsterRuntimeState {
   reviveCharges?: number;
   reviveHpPercent?: number;
   splitOnDeath?: { enemyId: string; count: number; hpPercent: number };
+  deathBurst?: { damage: number };
   reactiveDamage?: number;
   thorns?: number;
   counterThreshold?: number;

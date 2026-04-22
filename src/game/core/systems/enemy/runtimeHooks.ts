@@ -126,9 +126,13 @@ function finalizeEnemyDeath(
   if (reviveEnemyIfNeeded(battle, enemyUnitId)) {
     return;
   }
+  if (monster.runtime.deathResolved) {
+    events.push({ type: 'UNIT_DIED', unitId: enemyUnitId });
+    return;
+  }
+  monster.runtime.deathResolved = true;
   const split = monster.runtime.splitOnDeath;
-  if (split && !monster.runtime.deathResolved) {
-    monster.runtime.deathResolved = true;
+  if (split) {
     for (let index = 0; index < split.count; index += 1) {
       const spawnedId = spawnEnemyUnit(battle, split.enemyId);
       if (!spawnedId) continue;
@@ -136,7 +140,43 @@ function finalizeEnemyDeath(
       spawned.hp = Math.max(1, Math.floor(spawned.maxHp * split.hpPercent));
     }
   }
+  const deathBurst = monster.runtime.deathBurst;
+  if (deathBurst) {
+    const targetIds = [battle.playerUnitId, ...battle.enemyUnitIds]
+      .filter((unitId) => unitId !== enemyUnitId)
+      .filter((unitId, index, ids) => ids.indexOf(unitId) === index);
+    for (const targetId of targetIds) {
+      dealRawDamageToUnit(battle, enemyUnitId, targetId, deathBurst.damage, events);
+    }
+  }
   events.push({ type: 'UNIT_DIED', unitId: enemyUnitId });
+}
+
+function dealRawDamageToUnit(
+  battle: BattleState,
+  sourceId: string,
+  targetUnitId: string,
+  amount: number,
+  events: GameEvent[],
+): void {
+  const target = battle.units[targetUnitId];
+  if (!target?.alive) return;
+  const blockAbsorb = Math.min(target.block, amount);
+  if (blockAbsorb > 0) {
+    target.block -= blockAbsorb;
+  }
+  const hpLoss = Math.min(target.hp, amount - blockAbsorb);
+  target.hp -= hpLoss;
+  if (hpLoss > 0) {
+    events.push({ type: 'DAMAGE_DEALT', sourceUnitId: sourceId, targetUnitId, value: hpLoss });
+  }
+  target.alive = target.hp > 0;
+  if (!target.alive && target.side === 'enemy') {
+    finalizeEnemyDeath(battle, targetUnitId, events);
+  }
+  if (!target.alive && target.side === 'player') {
+    events.push({ type: 'UNIT_DIED', unitId: targetUnitId });
+  }
 }
 
 export function dealDamageToUnit(
@@ -289,6 +329,8 @@ export function applyEnemyPassiveIntent(
   if (!monster) return;
   if (intent.type === 'split_on_death') {
     monster.runtime.splitOnDeath = { enemyId: intent.enemyId, count: intent.count, hpPercent: intent.hpPercent };
+  } else if (intent.type === 'death_burst') {
+    monster.runtime.deathBurst = { damage: intent.damage };
   } else if (intent.type === 'revive') {
     monster.runtime.reviveCharges = intent.charges;
     monster.runtime.reviveHpPercent = intent.hpPercent;

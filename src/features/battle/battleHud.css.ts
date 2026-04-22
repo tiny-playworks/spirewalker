@@ -1,26 +1,26 @@
 import { globalStyle, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
-import { infoChip, panelSurface } from '@/styles/uiPrimitives.css';
+import { infoChip } from '@/styles/uiPrimitives.css';
 
 const tablet = '(max-width: 900px)';
 
 export const root = style({
   flexShrink: 0,
   width: '100%',
-  maxWidth: '72rem',
-  margin: '0 auto',
-  padding: '0.4rem clamp(0.65rem, 2vw, 1rem)',
+  padding: '0 0 0.45rem',
 });
 
-export const inner = style([
-  panelSurface,
-  {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.4rem',
-    padding: '0.55rem 0.8rem 0.5rem',
-  },
-]);
+export const inner = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.35rem',
+  padding: '0.45rem 0.65rem 0.4rem',
+  borderRadius: sceneVars.radii.md,
+  background: 'linear-gradient(180deg, rgba(40, 35, 28, 0.78) 0%, rgba(31, 28, 23, 0.46) 100%)',
+  border: '1px solid rgba(84, 72, 57, 0.58)',
+  boxShadow: '0 8px 22px rgba(0, 0, 0, 0.14)',
+  backdropFilter: 'blur(8px)',
+});
 
 export const row = style({
   display: 'flex',
@@ -42,7 +42,7 @@ export const rowTone = styleVariants({
     alignItems: 'flex-end',
     gap: '0.55rem',
     paddingTop: '0.25rem',
-    borderTop: '1px solid rgba(61, 53, 40, 0.85)',
+    borderTop: '1px solid rgba(61, 53, 40, 0.55)',
   },
 });
 
@@ -136,8 +136,8 @@ export const metaGroup = style({
   gap: '0.6rem',
   padding: '0.3rem 0.45rem',
   borderRadius: '10px',
-  background: 'rgba(20, 18, 16, 0.34)',
-  border: '1px solid rgba(61, 53, 40, 0.78)',
+  background: 'rgba(20, 18, 16, 0.24)',
+  border: '1px solid rgba(61, 53, 40, 0.48)',
   '@media': {
     [tablet]: {
       minWidth: '100%',
@@ -164,7 +164,8 @@ export const buttons = style({
 });
 
 export const actionButton = style({
-  padding: '0.5rem 1.05rem',
+  padding: '0.46rem 0.95rem',
+  fontSize: '0.84rem',
   fontWeight: 600,
   cursor: 'pointer',
   borderRadius: sceneVars.radii.sm,

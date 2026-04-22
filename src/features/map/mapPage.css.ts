@@ -8,10 +8,10 @@ export const page = style({
   flex: 1,
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
+  alignItems: 'stretch',
   minHeight: 0,
   overflow: 'auto',
-  padding: 'clamp(0.75rem, 2vw, 1.25rem) clamp(0.85rem, 3vw, 1.5rem) 1.25rem',
+  padding: 'clamp(0.45rem, 1.4vw, 0.85rem)',
   background:
     'radial-gradient(ellipse 90% 55% at 50% 0%, rgba(192, 132, 87, 0.1) 0%, transparent 52%), radial-gradient(ellipse 60% 45% at 100% 60%, rgba(90, 111, 78, 0.06) 0%, transparent 42%), linear-gradient(175deg, #131210 0%, #1a1814 42%, #161412 100%)',
   selectors: {
@@ -37,16 +37,15 @@ globalStyle(`${page} > *`, {
 export const hud = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.65rem',
+  gap: '0.45rem',
   width: '100%',
-  maxWidth: 'min(56rem, 100%)',
-  marginInline: 'auto',
-  marginBottom: '1rem',
-  padding: '0.85rem 1rem 0.75rem',
+  marginBottom: '0.45rem',
+  padding: '0.45rem 0.65rem 0.35rem',
   borderRadius: sceneVars.radii.md,
-  background: 'linear-gradient(180deg, #2e2a22 0%, #252119 100%)',
-  border: `1px solid rgba(74, 67, 54, 0.95)`,
-  boxShadow: sceneVars.shadow.panel,
+  background: 'linear-gradient(180deg, rgba(40, 35, 28, 0.78) 0%, rgba(31, 28, 23, 0.46) 100%)',
+  border: '1px solid rgba(84, 72, 57, 0.58)',
+  boxShadow: '0 8px 22px rgba(0, 0, 0, 0.14)',
+  backdropFilter: 'blur(8px)',
 });
 
 export const hudTop = style({
@@ -55,6 +54,14 @@ export const hudTop = style({
   alignItems: 'flex-start',
   justifyContent: 'space-between',
   gap: '0.75rem 1rem',
+});
+
+export const hudAside = style({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'flex-end',
+  gap: '0.5rem',
+  marginLeft: 'auto',
 });
 
 export const hudChips = style({
@@ -102,11 +109,18 @@ export const hudCurrent = style({
   flexDirection: 'column',
   alignItems: 'flex-end',
   gap: '0.15rem',
-  padding: '0.35rem 0.65rem',
+  padding: '0.3rem 0.55rem',
   borderRadius: '10px',
-  border: '1px solid rgba(192, 132, 87, 0.35)',
-  background: 'rgba(192, 132, 87, 0.08)',
+  border: '1px solid rgba(192, 132, 87, 0.24)',
+  background: 'rgba(192, 132, 87, 0.05)',
   minWidth: '8rem',
+});
+
+export const systemToolbar = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+  gap: '0.45rem',
 });
 
 export const hudCurrentKey = style({
@@ -137,9 +151,9 @@ export const hudRelics = style({
   flexWrap: 'wrap',
   gap: '0.35rem 0.5rem',
   alignItems: 'baseline',
-  paddingTop: '0.45rem',
+  paddingTop: '0.3rem',
   marginTop: '0.15rem',
-  borderTop: '1px solid rgba(61, 53, 40, 0.85)',
+  borderTop: '1px solid rgba(61, 53, 40, 0.55)',
   fontSize: '0.8rem',
   lineHeight: 1.45,
   color: sceneVars.color.textMuted,
@@ -155,54 +169,107 @@ export const body = style({
   flex: 1,
   display: 'flex',
   flexDirection: 'column',
-  gap: '1rem',
+  gap: '0.25rem',
   width: '100%',
-  maxWidth: 'min(56rem, 100%)',
-  marginInline: 'auto',
   minHeight: 0,
 });
 
 export const board = style({
-  padding: '1rem 1.05rem 1.1rem',
-  borderRadius: sceneVars.radii.md,
-  border: '1px solid rgba(74, 67, 54, 0.9)',
-  background: 'linear-gradient(180deg, rgba(44, 40, 32, 0.65) 0%, rgba(30, 28, 22, 0.5) 100%)',
-  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+  flex: 1,
+  display: 'grid',
+  gridTemplateColumns: '15rem minmax(0, 1fr)',
+  gap: '1rem',
+  alignItems: 'stretch',
+  minHeight: 'calc(100vh - 8.25rem)',
+  '@media': {
+    [tablet]: {
+      gridTemplateColumns: '1fr',
+      gap: '0.6rem',
+      minHeight: 'auto',
+    },
+  },
 });
 
-export const boardHead = style({
-  marginBottom: '0.85rem',
+export const sidePanel = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.85rem',
+  alignSelf: 'start',
+  paddingTop: '0.3rem',
+  '@media': {
+    [tablet]: {
+      order: 2,
+    },
+  },
+});
+
+export const routeIntro = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.3rem',
+  padding: '0.8rem 0.9rem',
+  borderRadius: sceneVars.radii.md,
+  background: 'linear-gradient(180deg, rgba(22, 19, 16, 0.52) 0%, rgba(22, 19, 16, 0.22) 100%)',
+  border: '1px solid rgba(84, 72, 57, 0.32)',
 });
 
 export const boardTitle = style({
-  margin: '0 0 0.35rem',
-  fontSize: '0.82rem',
+  margin: 0,
+  fontSize: '0.76rem',
   fontWeight: 700,
-  letterSpacing: '0.22em',
+  letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: sceneVars.color.textSubtle,
 });
 
 export const boardSub = style({
   margin: 0,
-  fontSize: '0.92rem',
-  lineHeight: 1.55,
+  fontSize: '0.84rem',
+  lineHeight: 1.5,
   color: sceneVars.color.textMuted,
 });
 
 export const boardRoute = style({
-  padding: '0.35rem 0 0.15rem',
+  flex: 1,
+  minWidth: 0,
+  minHeight: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
+export const stage = style({
+  position: 'relative',
+  minWidth: 0,
+  minHeight: 0,
+  display: 'flex',
+  alignItems: 'stretch',
+});
+
+export const stageRoute = style({
+  position: 'relative',
+  flex: 1,
+  minHeight: 'calc(100vh - 9.5rem)',
+  padding: '0.5rem 0.2rem 0.35rem',
+  borderRadius: '20px',
+  background:
+    'radial-gradient(circle at 50% 42%, rgba(192, 132, 87, 0.08), transparent 34%), radial-gradient(circle at 84% 48%, rgba(85, 117, 160, 0.06), transparent 24%)',
+  overflow: 'hidden',
+  '@media': {
+    [tablet]: {
+      minHeight: '32rem',
+    },
+  },
 });
 
 export const legend = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '0.5rem',
-  marginTop: '0.65rem',
-  padding: '0.45rem 0.65rem',
+  padding: '0.7rem 0.8rem',
   borderRadius: sceneVars.radii.sm,
-  background: 'rgba(0, 0, 0, 0.18)',
-  border: '1px solid rgba(74, 67, 54, 0.55)',
+  background: 'rgba(13, 12, 10, 0.26)',
+  border: '1px solid rgba(74, 67, 54, 0.34)',
 });
 
 export const legendRow = style({
@@ -246,7 +313,7 @@ export const legendEdgeList = style([
     flexDirection: 'column',
     alignItems: 'stretch',
     gap: '0.35rem',
-    minWidth: 'min(100%, 12rem)',
+    minWidth: 0,
   },
 ]);
 
@@ -304,6 +371,34 @@ export const legendLabel = style({
   color: '#a69f94',
 });
 
+export const objectiveCard = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.25rem',
+  padding: '0.8rem 0.9rem',
+  borderRadius: sceneVars.radii.md,
+  background: 'rgba(24, 21, 18, 0.34)',
+  border: '1px solid rgba(109, 89, 60, 0.35)',
+});
+
+export const objectiveKey = style({
+  fontSize: '0.72rem',
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: '#9b9286',
+});
+
+export const objectiveValue = style({
+  fontSize: '1.02rem',
+  color: sceneVars.color.accentGlow,
+});
+
+export const objectiveText = style({
+  fontSize: '0.82rem',
+  lineHeight: 1.45,
+  color: '#b6ab9a',
+});
+
 const edgeSwatchBase = style({
   display: 'inline-block',
   width: '2rem',
@@ -344,8 +439,8 @@ export const toolbar = style({
 });
 
 export const toolButtonBase = style({
-  padding: '0.45rem 0.75rem',
-  fontSize: '0.82rem',
+  padding: '0.42rem 0.72rem',
+  fontSize: '0.78rem',
   fontWeight: 600,
   cursor: 'pointer',
   color: '#d4cfc4',

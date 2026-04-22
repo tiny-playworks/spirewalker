@@ -66,14 +66,17 @@ const reducedMotion = '(prefers-reduced-motion: reduce)';
 export const route = style({
   margin: 0,
   width: '100%',
+  height: '100%',
+  display: 'flex',
+  alignItems: 'center',
   overflowX: 'auto',
 });
 
 export const routeSvg = style({
   display: 'block',
   width: '100%',
-  minHeight: '11rem',
-  maxHeight: '22rem',
+  height: '100%',
+  minHeight: 'clamp(32rem, calc(100vh - 12rem), 52rem)',
 });
 
 export const routeEdgeBase = style({

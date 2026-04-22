@@ -25,6 +25,8 @@ export function formatMonsterIntentText(intent: MonsterIntent | null | undefined
       return `召唤 ${intent.count} 个援军`;
     case 'split_on_death':
       return `死亡后分裂`;
+    case 'death_burst':
+      return `死亡时爆炸 ${intent.damage}`;
     case 'revive':
       return `复活 ${intent.charges} 次`;
     case 'thorns':

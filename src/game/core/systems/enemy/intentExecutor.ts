@@ -82,7 +82,16 @@ export function executeMonsterIntent(
     }
     return;
   }
-  if (intent.type === 'split_on_death' || intent.type === 'revive' || intent.type === 'thorns' || intent.type === 'reactive' || intent.type === 'counter' || intent.type === 'countdown' || intent.type === 'double_action') {
+  if (
+    intent.type === 'split_on_death'
+    || intent.type === 'death_burst'
+    || intent.type === 'revive'
+    || intent.type === 'thorns'
+    || intent.type === 'reactive'
+    || intent.type === 'counter'
+    || intent.type === 'countdown'
+    || intent.type === 'double_action'
+  ) {
     applyEnemyPassiveIntent(battle, enemyUnitId, intent);
     return;
   }

@@ -7,8 +7,9 @@ export async function startNewRun(page: Page) {
 }
 
 export async function chooseFirstReachableNode(page: Page) {
-  await page.locator('[data-testid^="map-node-"][data-cursor-target="true"]').first().click();
-  await page.getByTestId('decision-cta').click();
+  const node = page.locator('[data-testid^="map-node-"][data-cursor-target="true"]').first();
+  await node.click();
+  await node.click();
 }
 
 export async function openDebugPanel(page: Page) {

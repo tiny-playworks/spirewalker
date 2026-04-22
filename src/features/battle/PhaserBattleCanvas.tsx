@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Game } from 'phaser';
 import { createBattleGame } from '@/game/phaser/gameFactory';
 
-export function PhaserBattleCanvas() {
+export function PhaserBattleCanvas({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -23,5 +23,5 @@ export function PhaserBattleCanvas() {
     };
   }, []);
 
-  return <div className="phaser-wrap" ref={containerRef} />;
+  return <div className={className} ref={containerRef} />;
 }

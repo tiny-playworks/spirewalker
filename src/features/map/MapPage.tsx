@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
@@ -60,7 +60,7 @@ export function MapPage() {
   const curId = map.currentNodeId;
   const locationName = cur && curId ? nodeTitle(cur) : '—';
   const character = getCharacterDefinition(meta.characterId);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(nextIds[0] ?? null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,25 +69,29 @@ export function MapPage() {
       setHoveredNodeId(null);
       return;
     }
-    if (!selectedNodeId || !nextIds.includes(selectedNodeId)) {
-      setSelectedNodeId(nextIds[0] ?? null);
+    if (selectedNodeId && !nextIds.includes(selectedNodeId)) {
+      setSelectedNodeId(null);
     }
     if (hoveredNodeId && !nextIds.includes(hoveredNodeId)) {
       setHoveredNodeId(null);
     }
   }, [nextIds, selectedNodeId, hoveredNodeId]);
 
-  const nextNodes = useMemo(
-    () => nextIds.map((id) => map.nodes[id]).filter((node): node is MapNode => Boolean(node)),
-    [nextIds, map.nodes],
-  );
   const hoveredNode = hoveredNodeId ? map.nodes[hoveredNodeId] ?? null : null;
   const selectedNode = selectedNodeId ? map.nodes[selectedNodeId] ?? null : null;
+  const handleSelectNode = (nodeId: string) => {
+    if (!nextIds.includes(nodeId)) return;
+    if (selectedNodeId === nodeId) {
+      dispatchCommand({ type: 'CHOOSE_MAP_NODE', nodeId });
+      return;
+    }
+    setSelectedNodeId(nodeId);
+  };
 
   return (
     <div className={`${sceneThemeClass} ${styles.page}`}>
       <header className={styles.hud}>
-          <div className={styles.hudTop}>
+        <div className={styles.hudTop}>
           <div className={styles.hudChips} aria-label="冒险状态">
             <div className={styles.chipFloor}>Act {meta.act}</div>
             <div className={styles.chip}>本章第 <strong>{meta.actFloor}</strong> 层</div>
@@ -111,14 +115,35 @@ export function MapPage() {
               角色 <strong>{character.name}</strong>
             </div>
           </div>
-          <div className={styles.hudCurrent}>
-            <span className={styles.hudCurrentKey}>当前位置</span>
-            <span className={styles.hudCurrentValue}>{locationName}</span>
-            <span className={styles.hudCurrentSub}>
-              {meta.actFloor === 19 || meta.actFloor === 23 || meta.actFloor === 25
-                ? '下一层就是 Boss，先决定要不要在这里修整。'
-                : '发光营地就是你所在的位置。'}
-            </span>
+          <div className={styles.hudAside}>
+            <div className={styles.systemToolbar}>
+              <button
+                type="button"
+                className={cx(styles.toolButtonBase, styles.toolButtonTone.default)}
+                onClick={returnToMainMenu}
+              >
+                返回主菜单
+              </button>
+              <button
+                type="button"
+                className={cx(styles.toolButtonBase, styles.toolButtonTone.danger)}
+                onClick={() => {
+                  clearSavedRun();
+                  initRun(createMapRun(Date.now() & 0xffff_ffff));
+                }}
+              >
+                新游戏
+              </button>
+            </div>
+            <div className={styles.hudCurrent}>
+              <span className={styles.hudCurrentKey}>当前位置</span>
+              <span className={styles.hudCurrentValue}>{locationName}</span>
+              <span className={styles.hudCurrentSub}>
+                {meta.actFloor === 19 || meta.actFloor === 23 || meta.actFloor === 25
+                  ? '下一层就是 Boss，先决定要不要在这里修整。'
+                  : '发光营地就是你所在的位置。'}
+              </span>
+            </div>
           </div>
         </div>
         {meta.relics.length > 0 ? (
@@ -133,20 +158,25 @@ export function MapPage() {
 
       <div className={styles.body}>
         <section className={styles.board} aria-labelledby="map-board-title">
-          <div className={styles.boardHead}>
-            <h2 id="map-board-title" className={styles.boardTitle}>
-              本层路线
-            </h2>
-            <p className={styles.boardSub}>
-              {nextIds.length > 0
-                ? hoveredNode
-                  ? `悬停预览：${hoverPreviewHint(hoveredNode)}`
-                  : '先在地图上点亮一个前方节点，再从下方确认行动。'
-                : '这一层的路线已经走到尽头。'}
-            </p>
+          <aside className={styles.sidePanel}>
+            <div className={styles.routeIntro}>
+              <h2 id="map-board-title" className={styles.boardTitle}>
+                本层路线
+              </h2>
+              <p className={styles.boardSub}>
+                {nextIds.length > 0
+                  ? hoveredNode
+                    ? `悬停预览：${hoverPreviewHint(hoveredNode)}`
+                    : selectedNode
+                      ? `已选中：${nodeTitle(selectedNode)}。再点一次该节点直接进入。`
+                      : '先点亮一个前方节点，再点一次同一节点直接进入。'
+                  : '这一层的路线已经走到尽头。'}
+              </p>
+            </div>
+
             <div className={styles.legend} aria-label="地图图例">
               <div className={styles.legendRow}>
-                <span className={styles.legendTitle}>节点</span>
+                <span className={styles.legendTitle}>节点图例</span>
                 <ul className={styles.legendList}>
                   {MAP_LEGEND.map(({ kind, label }) => (
                     <li key={kind} className={styles.legendItem}>
@@ -159,141 +189,51 @@ export function MapPage() {
                 </ul>
               </div>
               <div className={styles.legendRow}>
-                <span className={styles.legendTitle}>连线</span>
+                <span className={styles.legendTitle}>路线说明</span>
                 <ul className={styles.legendEdgeList}>
                   <li className={styles.legendEdgeItem}>
                     <span className={styles.edgeSwatchBright} aria-hidden />
-                    <span className={styles.legendLabel}>
-                      亮色：经过当前格，或两端仍在「仍可前进」范围内的边
-                    </span>
+                    <span className={styles.legendLabel}>亮色：当前可达，或仍属于可前进路径的边</span>
                   </li>
                   <li className={styles.legendEdgeItem}>
                     <span className={styles.edgeSwatchDim} aria-hidden />
-                    <span className={styles.legendLabel}>
-                      灰色：已剪枝、不再能走到的分支
-                    </span>
+                    <span className={styles.legendLabel}>灰色：已经剪枝，后续不会再走到的分支</span>
                   </li>
                 </ul>
               </div>
             </div>
-          </div>
-          <div className={styles.boardRoute}>
-            <MapRoute
-              map={map}
-              currentNodeId={curId}
-              act={meta.act}
-              selectedNodeId={selectedNodeId}
-              hoveredNodeId={hoveredNodeId}
-              selectableNodeIds={new Set(nextIds)}
-              onSelectNode={(id) => {
-                if (nextIds.includes(id)) setSelectedNodeId(id);
-              }}
-              onHoverNode={setHoveredNodeId}
-            />
-          </div>
-        </section>
 
-        <section className={styles.actionsPanel}>
-          <div className={styles.toolbar}>
-            <button
-              type="button"
-              className={cx(styles.toolButtonBase, styles.toolButtonTone.default)}
-              onClick={returnToMainMenu}
-            >
-              返回主菜单
-            </button>
-            <button
-              type="button"
-              className={cx(styles.toolButtonBase, styles.toolButtonTone.danger)}
-              onClick={() => {
-                clearSavedRun();
-                initRun(createMapRun(Date.now() & 0xffff_ffff));
-              }}
-            >
-              新游戏（清存档）
-            </button>
-          </div>
-          {nextIds.length === 0 ? (
-            <p className={styles.done}>本层线路已清空。</p>
-          ) : !selectedNode ? (
-            <p className={styles.selectionPrompt}>在地图上选择一个前方节点，继续你的路线。</p>
-          ) : (
-            <div className={styles.decisionPanel}>
-              <div className={styles.decisionHead}>
-                <div className={styles.decisionCopy}>
-                  <p className={styles.decisionKicker}>当前抉择</p>
-                  <h3 className={styles.decisionTitle}>
-                    {laneLabelForNode(selectedNode, nextNodes)} · {nodeTitle(selectedNode)}
-                  </h3>
-                  <p className={styles.decisionDesc}>
-                    {decisionHintForNode(selectedNode)} {routeBiasHint(selectedNode.routeBias)}
-                  </p>
-                </div>
-                <div className={styles.decisionBadges}>
-                  <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone[selectedNode.type])}>
-                    {typeLabel(selectedNode.type)}
-                  </span>
-                  <span className={cx(styles.decisionBadgeBase, styles.decisionBadgeTone.lane)}>
-                    {laneLabelForNode(selectedNode, nextNodes)}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                className={cx(styles.decisionCtaBase, styles.decisionCtaTone[selectedNode.type])}
-                data-testid="decision-cta"
-                onClick={() => dispatchCommand({ type: 'CHOOSE_MAP_NODE', nodeId: selectedNode.id })}
-              >
-                前往 {nodeTitle(selectedNode)}
-              </button>
+            <div className={styles.objectiveCard}>
+              <span className={styles.objectiveKey}>当前位置</span>
+              <strong className={styles.objectiveValue}>{locationName}</strong>
+              <span className={styles.objectiveText}>
+                {meta.actFloor === 19 || meta.actFloor === 23 || meta.actFloor === 25
+                  ? '下一层就是 Boss，先决定要不要在这里修整。'
+                  : '发光营地就是你所在的位置。'}
+              </span>
             </div>
-          )}
+          </aside>
+
+          <div className={styles.stage}>
+            <div className={styles.stageRoute}>
+              <div className={styles.boardRoute}>
+                <MapRoute
+                  map={map}
+                  currentNodeId={curId}
+                  act={meta.act}
+                  selectedNodeId={selectedNodeId}
+                  hoveredNodeId={hoveredNodeId}
+                  selectableNodeIds={new Set(nextIds)}
+                  onSelectNode={handleSelectNode}
+                  onHoverNode={setHoveredNodeId}
+                />
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </div>
   );
-}
-
-function laneLabelForNode(node: MapNode, peers: MapNode[]): string {
-  const ordered = [...peers].sort((a, b) => a.y - b.y);
-  if (ordered.length <= 1) return '唯一路线';
-  const index = ordered.findIndex((peer) => peer.id === node.id);
-  if (index <= 0) return '上路';
-  if (index === ordered.length - 1) return '下路';
-  if (ordered.length === 3 && index === 1) return '中路';
-  return `第 ${index + 1} 路`;
-}
-
-function decisionHintForNode(node: MapNode): string {
-  switch (node.type) {
-    case 'battle':
-      return '正面战斗，拿下这一战后继续向前推进。';
-    case 'elite':
-      return '危险更高，但回报也更重，适合状态稳定时出手。';
-    case 'boss':
-      return `这一战会决定 Act ${node.act} 的终点，确认状态再踏进去。`;
-    case 'shop':
-      return '用金币换取节奏，补牌、补药水或找关键资源。';
-    case 'rest':
-      return '这是固定修整点，通常意味着 Boss 已经很近。';
-    case 'event':
-      return '未知会带来岔路，可能是机遇，也可能是代价。';
-    case 'treasure':
-      return '拿走奖励，再决定这份收益要如何转化成优势。';
-    default:
-      return '选择这条路线，继续向尖塔深处推进。';
-  }
-}
-
-function routeBiasHint(bias: MapNode['routeBias']): string {
-  switch (bias) {
-    case 'risk':
-      return '短期走势偏高风险，后续更容易接到硬仗。';
-    case 'safe':
-      return '短期走势偏稳健，更容易拿到修整窗口。';
-    default:
-      return '短期走势比较平衡，方便后续再转向。';
-  }
 }
 
 function hoverPreviewHint(node: MapNode): string {
@@ -304,26 +244,5 @@ function hoverPreviewHint(node: MapNode): string {
       return '这条路线偏稳健，短期更容易接到补给或恢复窗口。';
     default:
       return '这条路线比较平衡，方便再观察后续转向。';
-  }
-}
-
-function typeLabel(t: string): string {
-  switch (t) {
-    case 'battle':
-      return '普通战';
-    case 'elite':
-      return '精英';
-    case 'boss':
-      return 'Boss';
-    case 'shop':
-      return '商店';
-    case 'rest':
-      return '休息';
-    case 'event':
-      return '事件';
-    case 'treasure':
-      return '宝箱';
-    default:
-      return t;
   }
 }

@@ -66,6 +66,48 @@ function buildRuntimeRun(battle: ReturnType<typeof buildInitialBattle>): RunStat
 }
 
 describe('enemy system runtime', () => {
+  test('甲虫死亡时造成 5 点全场爆炸伤害，但不会继续分裂', () => {
+    const engine = new GameEngine();
+    const battle = buildInitialBattle(
+      7000,
+      { currentHp: 40, maxHp: 40 },
+      'beetle_burst_test',
+      ['strike', 'defend', 'strike', 'defend', 'strike'],
+      [
+        { unitId: 'u_enemy_0', name: '甲虫', maxHp: 5, monsterId: 'buff_beetle' },
+        { unitId: 'u_enemy_1', name: '破盾步兵', maxHp: 10, monsterId: 'slime_shell' },
+      ],
+      [],
+    );
+    battle.units[PLAYER_UNIT_ID]!.block = 2;
+    battle.units.u_enemy_1!.block = 3;
+    const strikeId = 'test_beetle_finisher';
+    battle.player.cards[strikeId] = {
+      instanceId: strikeId,
+      definitionId: 'strike',
+      baseCost: 1,
+      costForTurn: 1,
+      upgraded: false,
+    };
+    battle.player.hand.unshift(strikeId);
+    const run = buildRuntimeRun(battle);
+
+    const { nextRun } = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: strikeId,
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: 'u_enemy_0',
+    });
+
+    expect(nextRun.battle!.units[PLAYER_UNIT_ID]!.hp).toBe(37);
+    expect(nextRun.battle!.units[PLAYER_UNIT_ID]!.block).toBe(0);
+    expect(nextRun.battle!.units.u_enemy_0!.alive).toBe(false);
+    expect(nextRun.battle!.units.u_enemy_1!.hp).toBe(8);
+    expect(nextRun.battle!.units.u_enemy_1!.block).toBe(0);
+    expect(nextRun.battle!.enemyUnitIds).toHaveLength(2);
+    expect(nextRun.battle!.enemyUnitIds.filter((unitId) => nextRun.battle!.units[unitId]!.alive)).toEqual(['u_enemy_1']);
+  });
+
   test('summon 意图会生成新敌人', () => {
     const engine = new GameEngine();
     const battle = buildInitialBattle(

@@ -41,6 +41,8 @@ function formatIntentDebugText(
       return `summon ${intent.enemyId} x${intent.count}`;
     case "split_on_death":
       return `split ${intent.enemyId} x${intent.count}`;
+    case "death_burst":
+      return `death burst ${intent.damage}`;
     case "revive":
       return `revive ${intent.charges}`;
     case "thorns":

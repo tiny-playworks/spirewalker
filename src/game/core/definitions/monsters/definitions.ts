@@ -83,6 +83,7 @@ const split = (enemyId: string, count: number, hpPercent: number): MonsterIntent
   count,
   hpPercent,
 });
+const deathBurst = (damage: number): MonsterIntent => ({ type: 'death_burst', damage });
 const thorns = (damage: number): MonsterIntent => ({ type: 'thorns', damage });
 const reactive = (damage: number): MonsterIntent => ({ type: 'reactive', damage });
 const counter = (threshold: number, damage: number): MonsterIntent => ({ type: 'counter', threshold, damage });
@@ -125,7 +126,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
   { id: 'bone_crow', name: '碎骨鸦', chapter: 1, tier: 'normal', role: 'backliner', hpRange: [24, 30], archetype: 'reactive', rotation: [reactive(2), multi(3, 2), atk(6)], tags: ['evasive', 'reactive'] },
   { id: 'parasite', name: '寄生体', chapter: 1, tier: 'normal', role: 'disruptor', hpRange: [28, 32], archetype: 'disruptor', rotation: [pollute(2, 'junk_burn'), drawPressure(1), atk(7)], tags: ['pollution', 'draw_pressure'] },
   { id: 'axe_raider', name: '斧兵', chapter: 1, tier: 'normal', role: 'frontliner', hpRange: [32, 38], archetype: 'heavy', rotation: [block(6), heavy(14, 1)], tags: ['heavy', 'execution_check'] },
-  { id: 'buff_beetle', name: '甲虫', chapter: 1, tier: 'normal', role: 'support', hpRange: [30, 36], archetype: 'trickster', rotation: [buff(STATUS_METALLICIZE, 1), atk(5), split('buff_beetle', 1, 0.5)], tags: ['death_trigger', 'support'] },
+  { id: 'buff_beetle', name: '甲虫', chapter: 1, tier: 'normal', role: 'support', hpRange: [30, 36], archetype: 'trickster', rotation: [buff(STATUS_METALLICIZE, 1), atk(5), deathBurst(5)], tags: ['death_trigger', 'support'] },
 
   { id: 'slime_elite', name: '黏核母体', chapter: 1, tier: 'elite', role: 'tank', hpRange: [56, 60], archetype: 'splitter', rotation: [atk(8), reduce(STATUS_MOMENTUM, 3)], tags: ['split', 'elite', 'snowball'] },
   { id: 'act1_executioner', name: '执行者', chapter: 1, tier: 'elite', role: 'frontliner', hpRange: [58, 64], archetype: 'heavy', rotation: [thorns(3), heavy(18, 1), atk(10)], tags: ['heavy', 'elite', 'execution_check'] },
@@ -315,6 +316,7 @@ export function buildInitialMonsterRuntime(def: EnemyDefinition): MonsterRuntime
   const intents = [...(def.ai.rotation ?? []), ...(def.ai.phases?.flatMap((phase) => phase.rotation) ?? [])];
   for (const intent of intents) {
     if (intent.type === 'split_on_death') runtime.splitOnDeath = { enemyId: intent.enemyId, count: intent.count, hpPercent: intent.hpPercent };
+    if (intent.type === 'death_burst') runtime.deathBurst = { damage: intent.damage };
     if (intent.type === 'revive') {
       runtime.reviveCharges = intent.charges;
       runtime.reviveHpPercent = intent.hpPercent;
