@@ -1,5 +1,6 @@
 import type { RewardEncounterTier } from '@/game/core/engine/generateRewardChoices';
 import type { GameCommand } from '@/game/core/commands/types';
+import type { PressureProfile } from '@/game/core/definitions/encounters';
 import type { BattleState, MonsterIntent } from '@/game/core/model/battle';
 import type { MapNode } from '@/game/core/model/map';
 import type { RewardState } from '@/game/core/model/reward';
@@ -15,6 +16,34 @@ export type SimulationSummary = {
   defenseBranchRate: number;
   burstBranchRate: number;
   pollutedDeckRate: number;
+};
+
+export type Act1StageMetric = {
+  attempts: number;
+  wins: number;
+  winRate: number;
+  avgTurns: number;
+  avgHpLoss: number;
+};
+
+export type Act1PressureMetric = {
+  profile: PressureProfile;
+  fights: number;
+  wins: number;
+  winRate: number;
+  avgTurns: number;
+  avgHpLoss: number;
+};
+
+export type Act1ValidationSummary = {
+  policyId: string;
+  totalRuns: number;
+  normal: Act1StageMetric;
+  firstElite: Act1StageMetric;
+  boss: Act1StageMetric;
+  avgTurns: number;
+  avgHpLoss: number;
+  pressureProfileBreakdown: Act1PressureMetric[];
 };
 
 export type SimulationPlayableCommand = {

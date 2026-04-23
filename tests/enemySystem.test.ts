@@ -1,10 +1,15 @@
 import { describe, expect, test } from '@rstest/core';
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { buildInitialBattle, PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
+import { pressureProfileHint, pressureProfileLabel } from '@/game/core/battleUiText';
 import { listMonsterDefinitions } from '@/game/core/definitions/monsters';
 import { listEncountersByPool, resolveEncounterTemplate } from '@/game/core/definitions/encounters';
 import { createEmptyEncounterHistory, type RunState } from '@/game/core/model/run';
 import { RUN_SAVE_VERSION } from '@/game/core/persistence/saveVersion';
+
+function historyFromIds(ids: string[]) {
+  return { ids, tags: [], archetypes: [] };
+}
 
 describe('enemy system content', () => {
   test('敌人池满足 36 普通 / 12 精英 / 6 Boss', () => {
@@ -33,13 +38,144 @@ describe('enemy system content', () => {
   });
 
   test('selector 避免立刻重复同一 encounterId', () => {
-    const first = resolveEncounterTemplate(1, 'act_1_normal', 'node_a', 42, createEmptyEncounterHistory());
+    const first = resolveEncounterTemplate(1, 'act_1_normal', 'node_a', 42, createEmptyEncounterHistory(), 2);
     const second = resolveEncounterTemplate(1, 'act_1_normal', 'node_b', 42, {
       ids: [first.id],
       tags: [...first.tags],
       archetypes: [],
-    });
+    }, 3);
     expect(second.id).not.toBe(first.id);
+  });
+
+  test('Act1 普通战按阶段开放 pressureProfile', () => {
+    const second = resolveEncounterTemplate(1, 'act_1_normal', 'node_second', 42, historyFromIds(['act1_normal_press']), 3);
+    expect(['frontload', 'attrition']).toContain(second.pressureProfile);
+
+    const fourth = resolveEncounterTemplate(
+      1,
+      'act_1_normal',
+      'node_fourth',
+      42,
+      historyFromIds(['act1_normal_press', 'act1_normal_shell', 'act1_normal_multi']),
+      5,
+    );
+    expect(['frontload', 'attrition', 'disruption']).toContain(fourth.pressureProfile);
+    expect(['snowball', 'execution_check']).not.toContain(fourth.pressureProfile);
+
+    const seeds = Array.from({ length: 240 }, (_, index) => index + 1);
+    const sixthProfiles = new Set(
+      seeds.map((seed) =>
+        resolveEncounterTemplate(
+          1,
+          'act_1_normal',
+          `node_sixth_${seed}`,
+          seed,
+          historyFromIds([
+            'act1_normal_press',
+            'act1_normal_shell',
+            'act1_normal_multi',
+            'act1_normal_tax',
+            'act1_normal_reactive',
+          ]),
+          8,
+        ).pressureProfile,
+      ),
+    );
+    expect(sixthProfiles.has('snowball') || sixthProfiles.has('execution_check')).toBe(true);
+  });
+
+  test('Act1 前 6 层 disruption 最多两次且不连续', () => {
+    const nonConsecutive = Array.from({ length: 120 }, (_, index) =>
+      resolveEncounterTemplate(
+        1,
+        'act_1_normal',
+        `node_no_chain_${index}`,
+        index + 1,
+        historyFromIds(['act1_normal_press', 'act1_normal_shell', 'act1_normal_drain']),
+        6,
+      ).pressureProfile,
+    );
+    expect(nonConsecutive.every((profile) => profile !== 'disruption')).toBe(true);
+
+    const capped = Array.from({ length: 120 }, (_, index) =>
+      resolveEncounterTemplate(
+        1,
+        'act_1_normal',
+        `node_capped_${index}`,
+        index + 400,
+        historyFromIds([
+          'act1_normal_press',
+          'act1_normal_drain',
+          'act1_normal_shell',
+          'act1_normal_tax',
+        ]),
+        7,
+      ).pressureProfile,
+    );
+    expect(capped.every((profile) => profile !== 'disruption')).toBe(true);
+  });
+
+  test('execution_check 在 Act1 普通战中不早于第 6 场且最多出现两次', () => {
+    const earlyProfiles = Array.from({ length: 120 }, (_, index) =>
+      resolveEncounterTemplate(
+        1,
+        'act_1_normal',
+        `node_early_exec_${index}`,
+        index + 1,
+        historyFromIds(['act1_normal_press', 'act1_normal_shell', 'act1_normal_multi', 'act1_normal_tax']),
+        6,
+      ).pressureProfile,
+    );
+    expect(earlyProfiles.every((profile) => profile !== 'execution_check')).toBe(true);
+
+    const cappedProfiles = Array.from({ length: 120 }, (_, index) =>
+      resolveEncounterTemplate(
+        1,
+        'act_1_normal',
+        `node_exec_cap_${index}`,
+        index + 900,
+        historyFromIds([
+          'act1_normal_press',
+          'act1_normal_heavy',
+          'act1_normal_shell',
+          'act1_normal_heavy',
+          'act1_normal_multi',
+        ]),
+        8,
+      ).pressureProfile,
+    );
+    expect(cappedProfiles.every((profile) => profile !== 'execution_check')).toBe(true);
+  });
+
+  test('Act1 首个精英不会抽到 elite_open，之后恢复进入池子', () => {
+    const firstEliteProfiles = Array.from({ length: 180 }, (_, index) =>
+      resolveEncounterTemplate(1, 'act_1_elite', `elite_first_${index}`, index + 1, createEmptyEncounterHistory(), 6).id,
+    );
+    expect(firstEliteProfiles.every((id) => id !== 'act1_elite_open')).toBe(true);
+
+    const laterEliteIds = new Set(
+      Array.from({ length: 400 }, (_, index) =>
+        resolveEncounterTemplate(
+          1,
+          'act_1_elite',
+          `elite_later_${index}`,
+          index + 2000,
+          historyFromIds(['act1_elite_heavy']),
+          8,
+        ).id,
+      ),
+    );
+    expect(laterEliteIds.has('act1_elite_open')).toBe(true);
+  });
+
+  test('pressureProfile 文案映射稳定', () => {
+    expect(pressureProfileLabel('frontload')).toBe('前压');
+    expect(pressureProfileLabel('attrition')).toBe('消耗');
+    expect(pressureProfileLabel('snowball')).toBe('滚雪球');
+    expect(pressureProfileLabel('disruption')).toBe('干扰');
+    expect(pressureProfileLabel('execution_check')).toBe('爆发检定');
+    expect(pressureProfileHint('frontload')).toContain('前两回合');
+    expect(pressureProfileHint('execution_check')).toContain('危险窗口');
   });
 });
 

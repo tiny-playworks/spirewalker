@@ -142,8 +142,8 @@ const ENEMY_SEEDS: EnemySeed[] = [
     hpRange: [96, 104],
     archetype: 'summoner',
     phases: [
-      { label: '孵化', rotation: [atk(6), atk(9)] },
-      { label: '溢巢', threshold: 0.55, rotation: [phaseShift('溢巢', 2), summon('slime_splitter', 2), multi(4, 3)] },
+      { label: '孵化', rotation: [atk(6), atk(9), buff(STATUS_STRENGTH, 1)] },
+      { label: '溢巢', threshold: 0.72, rotation: [phaseShift('溢巢', 2), summon('slime_splitter', 1), multi(4, 3), attackBuff(10, STATUS_STRENGTH, 1)] },
     ],
     tags: ['boss', 'summoner', 'phase'],
   },
@@ -156,7 +156,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
     hpRange: [110, 118],
     archetype: 'heavy',
     phases: [
-      { label: '稳压', rotation: [phaseShift('稳压', 1), block(16), heavy(16, 1), atk(10)] },
+      { label: '稳压', rotation: [phaseShift('稳压', 1), block(14), counter(2, 5), heavy(16, 1), atk(10)] },
       { label: '碾压', threshold: 0.5, rotation: [phaseShift('碾压', 2), thorns(4), heavy(22, 1), maxHpDown(3)] },
     ],
     tags: ['boss', 'heavy', 'phase'],

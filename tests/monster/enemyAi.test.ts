@@ -2,7 +2,7 @@ import { describe, expect, test } from '@rstest/core';
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { buildInitialBattle, createMvpRun, ENEMY_UNIT_ID, lineupGuard, lineupSapper, lineupShell } from '@/game/core/engine/createMvpRun';
 import { MONSTER_DEFINITIONS } from '@/game/core/definitions/monsters';
-import { STATUS_MOMENTUM } from '@/game/core/definitions/statuses';
+import { STATUS_MOMENTUM, STATUS_STRENGTH } from '@/game/core/definitions/statuses';
 import { computeIntentForMonster } from '@/game/core/systems/enemy/enemyAi';
 import { createEmptyEncounterHistory, type RunState } from '@/game/core/model/run';
 import { RUN_SAVE_VERSION } from '@/game/core/persistence/saveVersion';
@@ -27,7 +27,11 @@ describe('monster/enemyAi', () => {
       statusId: STATUS_MOMENTUM,
       value: 3,
     });
-    expect(computeIntentForMonster('slime_boss', 3).intent).toEqual({ type: 'attack', value: 9 });
+    expect(computeIntentForMonster('slime_boss', 2).intent).toEqual({
+      type: 'buff',
+      statusId: STATUS_STRENGTH,
+      value: 1,
+    });
     expect(computeIntentForMonster('slime_sapper', 0).intent).toEqual({ type: 'attack', value: 5 });
     expect(computeIntentForMonster('slime_sapper', 1).intent).toEqual({
       type: 'reduce_status',
@@ -152,5 +156,17 @@ describe('monster/enemyAi', () => {
     const m1 = run.battle!.monsters[ENEMY_UNIT_ID]!;
     expect(m1.intent).toEqual({ type: 'block', value: 10 });
     expect(m1.aiTrace).toContain('block=10');
+  });
+
+  test('Act1 Boss 定义符合新的双核压力校准', () => {
+    const hivePhases = MONSTER_DEFINITIONS.slime_boss.ai.phases;
+    const gatePhases = MONSTER_DEFINITIONS.act1_boss_gate.ai.phases;
+    expect(hivePhases?.[1]?.threshold).toBe(0.72);
+    expect(hivePhases?.[0]?.rotation[2]).toEqual({
+      type: 'buff',
+      statusId: STATUS_STRENGTH,
+      value: 1,
+    });
+    expect(gatePhases?.[0]?.rotation).toContainEqual({ type: 'counter', threshold: 2, damage: 5 });
   });
 });

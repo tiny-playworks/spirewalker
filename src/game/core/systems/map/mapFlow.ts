@@ -39,10 +39,11 @@ export function chooseMapNodeFlow(
 
   if (node.type === 'battle' || node.type === 'elite' || node.type === 'boss') {
     const encounter = node.encounterId
-      ? getEncounterById(node.encounterId)
-      : selectEncounterForNode({
+        ? getEncounterById(node.encounterId)
+        : selectEncounterForNode({
           runSeed: run.seed,
           nodeId,
+          nodeDepth: node.depth,
           act: node.act,
           encounterPoolId: node.encounterPoolId,
           runHistory: run.meta.encounterHistory,
@@ -51,18 +52,18 @@ export function chooseMapNodeFlow(
       throw new Error(`mapFlow: encounter not found for node=${nodeId}`);
     }
     node.encounterId = encounter.id;
-    run.meta.encounterHistory.ids = [...run.meta.encounterHistory.ids.slice(-5), encounter.id];
+    run.meta.encounterHistory.ids = [...run.meta.encounterHistory.ids.slice(-11), encounter.id];
     run.meta.encounterHistory.tags = [
-      ...run.meta.encounterHistory.tags.slice(-8),
+      ...run.meta.encounterHistory.tags.slice(-15),
       ...encounter.tags,
-    ].slice(-8);
+    ].slice(-16);
     const archetypes = encounter.lineup
       .map((entry) => getMonsterDefinition(entry.enemyId)?.ai.archetype)
       .filter(Boolean) as string[];
     run.meta.encounterHistory.archetypes = [
-      ...run.meta.encounterHistory.archetypes.slice(-8),
+      ...run.meta.encounterHistory.archetypes.slice(-15),
       ...archetypes,
-    ].slice(-8);
+    ].slice(-16);
     run.battle = buildInitialBattle(
       run.seed,
       { currentHp: run.player.currentHp, maxHp: run.player.maxHp },

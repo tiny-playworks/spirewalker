@@ -30,6 +30,7 @@ export interface EncounterTemplate {
 interface EncounterSelectionInput {
   runSeed: number;
   nodeId: string;
+  nodeDepth?: number;
   act: MapAct;
   encounterPoolId: string | null;
   runHistory: EncounterHistoryState;
@@ -65,12 +66,15 @@ function encounterPoolIdFor(chapter: MapAct, tier: BattleEncounterTier): Encount
 }
 
 const ENCOUNTERS: EncounterTemplate[] = [
-  { id: 'act1_normal_press', chapter: 1, tier: 'normal', weight: 8, name: '前压巡猎', tags: ['frontload'], pressureProfile: 'frontload', lineup: lineup(['slime']) },
+  { id: 'act1_normal_press', chapter: 1, tier: 'normal', weight: 6, name: '前压巡猎', tags: ['frontload'], pressureProfile: 'frontload', lineup: lineup(['slime']) },
   { id: 'act1_normal_split', chapter: 1, tier: 'normal', weight: 6, name: '分裂巢穴', tags: ['split', 'snowball'], pressureProfile: 'snowball', lineup: lineup(['slime_splitter', 'slime']) },
-  { id: 'act1_normal_multi', chapter: 1, tier: 'normal', weight: 6, name: '鼠群突脸', tags: ['multi_hit'], pressureProfile: 'frontload', lineup: lineup(['fang_rat', 'fang_rat'], [28, 28]) },
-  { id: 'act1_normal_drain', chapter: 1, tier: 'normal', weight: 6, name: '污染渗蚀', tags: ['pollution', 'disruption'], pressureProfile: 'disruption', lineup: lineup(['slime_sapper', 'parasite']) },
-  { id: 'act1_normal_shell', chapter: 1, tier: 'normal', weight: 5, name: '壳甲防线', tags: ['armor', 'reactive'], pressureProfile: 'attrition', lineup: lineup(['slime_shell', 'buff_beetle']) },
-  { id: 'act1_normal_scale', chapter: 1, tier: 'normal', weight: 5, name: '狂热围压', tags: ['scaler'], pressureProfile: 'snowball', lineup: lineup(['zealot_recruit', 'mire_toad']) },
+  { id: 'act1_normal_multi', chapter: 1, tier: 'normal', weight: 5, name: '鼠群突脸', tags: ['multi_hit'], pressureProfile: 'frontload', lineup: lineup(['fang_rat', 'fang_rat'], [28, 28]) },
+  { id: 'act1_normal_drain', chapter: 1, tier: 'normal', weight: 7, name: '污染渗蚀', tags: ['pollution', 'disruption'], pressureProfile: 'disruption', lineup: lineup(['slime_sapper', 'parasite']) },
+  { id: 'act1_normal_shell', chapter: 1, tier: 'normal', weight: 7, name: '壳甲防线', tags: ['armor', 'reactive'], pressureProfile: 'attrition', lineup: lineup(['slime_shell', 'buff_beetle']) },
+  { id: 'act1_normal_scale', chapter: 1, tier: 'normal', weight: 6, name: '狂热围压', tags: ['scaler'], pressureProfile: 'snowball', lineup: lineup(['zealot_recruit', 'mire_toad']) },
+  { id: 'act1_normal_tax', chapter: 1, tier: 'normal', weight: 6, name: '拾荒抽税', tags: ['resource_tax', 'disruption'], pressureProfile: 'disruption', lineup: lineup(['slime_guard', 'slime']) },
+  { id: 'act1_normal_heavy', chapter: 1, tier: 'normal', weight: 5, name: '重压前哨', tags: ['heavy', 'execution_check'], pressureProfile: 'execution_check', lineup: lineup(['axe_raider', 'buff_beetle']) },
+  { id: 'act1_normal_reactive', chapter: 1, tier: 'normal', weight: 6, name: '反制泥沼', tags: ['reactive', 'attrition'], pressureProfile: 'attrition', lineup: lineup(['bone_crow', 'mire_toad']) },
 
   { id: 'act1_elite_open', chapter: 1, tier: 'elite', weight: 8, name: '黏核母体', tags: ['elite', 'split'], pressureProfile: 'snowball', lineup: lineup(['slime_elite'], [56]) },
   { id: 'act1_elite_heavy', chapter: 1, tier: 'elite', weight: 7, name: '执行者', tags: ['elite', 'heavy'], pressureProfile: 'execution_check', lineup: lineup(['act1_executioner']) },
@@ -124,6 +128,64 @@ function archetypesForEncounter(template: EncounterTemplate): EnemyArchetype[] {
     .filter(Boolean) as EnemyArchetype[];
 }
 
+function historyEncounters(history: EncounterHistoryState): EncounterTemplate[] {
+  return history.ids
+    .map((id) => ENCOUNTER_BY_ID[id])
+    .filter(Boolean) as EncounterTemplate[];
+}
+
+function historyForActTier(
+  history: EncounterHistoryState,
+  act: MapAct,
+  tier: BattleEncounterTier,
+): EncounterTemplate[] {
+  return historyEncounters(history).filter((encounter) => encounter.chapter === act && encounter.tier === tier);
+}
+
+function act1AllowedNormalProfiles(nextBattleIndex: number): PressureProfile[] {
+  if (nextBattleIndex <= 3) return ['frontload', 'attrition'];
+  if (nextBattleIndex <= 5) return ['frontload', 'attrition', 'disruption'];
+  return ['frontload', 'attrition', 'disruption', 'snowball', 'execution_check'];
+}
+
+function applyAct1NormalConstraints(
+  pool: EncounterTemplate[],
+  history: EncounterHistoryState,
+  nodeDepth?: number,
+): EncounterTemplate[] {
+  const normalHistory = historyForActTier(history, 1, 'normal');
+  const nextBattleIndex = normalHistory.length + 1;
+  const allowedProfiles = act1AllowedNormalProfiles(nextBattleIndex);
+  const stagePool = pool.filter((encounter) => allowedProfiles.includes(encounter.pressureProfile));
+  const disruptionCount = normalHistory.filter((encounter) => encounter.pressureProfile === 'disruption').length;
+  const executionCount = normalHistory.filter((encounter) => encounter.pressureProfile === 'execution_check').length;
+  const lastProfile = normalHistory.at(-1)?.pressureProfile;
+  const earlyDepth = nodeDepth !== undefined && nodeDepth <= 7;
+
+  const constrained = stagePool.filter((encounter) => {
+    if (encounter.pressureProfile === 'disruption' && earlyDepth) {
+      if (disruptionCount >= 2) return false;
+      if (lastProfile === 'disruption') return false;
+    }
+    if (encounter.pressureProfile === 'execution_check' && executionCount >= 2) {
+      return false;
+    }
+    return true;
+  });
+
+  return constrained.length > 0 ? constrained : stagePool;
+}
+
+function applyAct1EliteConstraints(
+  pool: EncounterTemplate[],
+  history: EncounterHistoryState,
+): EncounterTemplate[] {
+  const eliteHistory = historyForActTier(history, 1, 'elite');
+  if (eliteHistory.length > 0) return pool;
+  const firstElitePool = pool.filter((encounter) => encounter.id !== 'act1_elite_open');
+  return firstElitePool.length > 0 ? firstElitePool : pool;
+}
+
 function scoreEncounter(template: EncounterTemplate, history: EncounterHistoryState): number {
   const lastId = history.ids.at(-1);
   if (lastId === template.id) return 0;
@@ -160,6 +222,7 @@ export function hydrateEncounterEnemySlots(encounter: EncounterTemplate): Battle
 export function selectEncounterForNode({
   runSeed,
   nodeId,
+  nodeDepth,
   act,
   encounterPoolId,
   runHistory,
@@ -167,7 +230,12 @@ export function selectEncounterForNode({
   if (runHistory.ids.length === 0 && encounterPoolId === 'act_1_normal') {
     return ENCOUNTER_BY_ID.act1_normal_press!;
   }
-  const pool = listEncountersByPool(encounterPoolId).filter((encounter) => encounter.chapter === act);
+  let pool = listEncountersByPool(encounterPoolId).filter((encounter) => encounter.chapter === act);
+  if (act === 1 && encounterPoolId === 'act_1_normal') {
+    pool = applyAct1NormalConstraints(pool, runHistory, nodeDepth);
+  } else if (act === 1 && encounterPoolId === 'act_1_elite') {
+    pool = applyAct1EliteConstraints(pool, runHistory);
+  }
   if (pool.length === 0) {
     throw new Error(`No encounter templates for act=${act}, pool=${encounterPoolId}`);
   }
@@ -193,10 +261,12 @@ export function resolveEncounterTemplate(
   nodeId: string,
   seed: number,
   runHistory: EncounterHistoryState = { ids: [], tags: [], archetypes: [] },
+  nodeDepth?: number,
 ): EncounterTemplate {
   return selectEncounterForNode({
     runSeed: seed,
     nodeId,
+    nodeDepth,
     act,
     encounterPoolId,
     runHistory,

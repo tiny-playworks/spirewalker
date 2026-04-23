@@ -1,4 +1,5 @@
 import { getStatusMeta, STATUS_MOMENTUM } from './definitions/statuses';
+import type { PressureProfile } from './definitions/encounters';
 import type { MonsterIntent } from './model/battle';
 import type { CardDefinition } from './model/card';
 
@@ -63,6 +64,40 @@ export function formatMonsterIntentText(intent: MonsterIntent | null | undefined
       return `攻击 ${intent.attack}，并获得 ${getStatusMeta(intent.statusId).name} ${intent.value}`;
     default:
       return '暂无意图';
+  }
+}
+
+export function pressureProfileLabel(profile: PressureProfile): string {
+  switch (profile) {
+    case 'frontload':
+      return '前压';
+    case 'attrition':
+      return '消耗';
+    case 'snowball':
+      return '滚雪球';
+    case 'disruption':
+      return '干扰';
+    case 'execution_check':
+      return '爆发检定';
+    default:
+      return profile;
+  }
+}
+
+export function pressureProfileHint(profile: PressureProfile): string {
+  switch (profile) {
+    case 'frontload':
+      return '开场就会给压力，前两回合别太贪。';
+    case 'attrition':
+      return '拖回合会越来越亏，注意持续损耗。';
+    case 'snowball':
+      return '若不尽快处理，敌方会越打越强。';
+    case 'disruption':
+      return '会打断你的连势或手牌节奏。';
+    case 'execution_check':
+      return '会给出明确危险窗口，需要及时解题。';
+    default:
+      return '';
   }
 }
 

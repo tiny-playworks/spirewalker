@@ -1103,17 +1103,17 @@ describe('GameEngine 战斗修正', () => {
     expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(3);
   });
 
-  test('精英节点为精英单敌，且具备反制 momentum 的意图', () => {
+  test('首个精英节点不会抽到 elite_open，且仍是单敌构筑检定', () => {
     const engine = new GameEngine();
     let run = createMapRun(8);
     let eliteId = '';
-    for (let seed = 8; seed < 40; seed += 1) {
+    for (let seed = 8; seed < 60; seed += 1) {
       const candidate = createMapRun(seed);
       const target = Object.values(candidate.map.nodes).find(
         (n) =>
           n.type === 'elite' &&
           n.floor === 1 &&
-          resolveEncounterTemplate(n.act, n.encounterPoolId, n.id, candidate.seed).id === 'act1_elite_open',
+          resolveEncounterTemplate(n.act, n.encounterPoolId, n.id, candidate.seed, createEmptyEncounterHistory(), n.depth).id !== 'act1_elite_open',
       );
       if (target) {
         run = candidate;
@@ -1121,19 +1121,14 @@ describe('GameEngine 战斗修正', () => {
         break;
       }
     }
-    if (!eliteId) throw new Error('elite_open not found');
+    if (!eliteId) throw new Error('act1 first elite not found');
     jumpToBeforeNode(run, eliteId);
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: eliteId }).nextRun;
     expect(run.map.nodes[eliteId].type).toBe('elite');
+    expect(run.map.nodes[eliteId].encounterId).not.toBe('act1_elite_open');
     expect(run.battle?.enemyUnitIds.length).toBe(1);
-    expect(run.battle?.units[ENEMY_UNIT_ID].maxHp).toBeGreaterThanOrEqual(56);
-    expect(run.battle?.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 8 });
-    run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
-    expect(run.battle?.monsters[ENEMY_UNIT_ID]?.intent).toEqual({
-      type: 'reduce_status',
-      statusId: STATUS_MOMENTUM,
-      value: 3,
-    });
+    const encounterId = run.map.nodes[eliteId].encounterId;
+    expect(['act1_elite_heavy', 'act1_elite_double', 'act1_elite_control']).toContain(encounterId);
   });
 
   test('商店金币不足无法购买', () => {

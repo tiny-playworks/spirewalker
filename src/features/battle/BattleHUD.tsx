@@ -1,5 +1,5 @@
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
-import { formatMonsterIntentText } from '@/game/core/battleUiText';
+import { formatMonsterIntentText, pressureProfileHint, pressureProfileLabel } from '@/game/core/battleUiText';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { getStatusMeta } from '@/game/core/definitions/statuses';
@@ -102,6 +102,9 @@ export function BattleHUD() {
   const bossPhaseMonster = battle.enemyUnitIds
     .map((id) => battle.monsters[id])
     .find((monster) => monster?.bossPhase);
+  const pressureProfile = battle.encounter.pressureProfile;
+  const pressureLabel = pressureProfile ? pressureProfileLabel(pressureProfile) : null;
+  const pressureHint = pressureProfile ? pressureProfileHint(pressureProfile) : null;
 
   return (
     <header className={cx(sceneThemeClass, styles.root)} data-testid="battle-hud">
@@ -117,6 +120,14 @@ export function BattleHUD() {
           <span className={cx(styles.chip, styles.chipTone.default)}>
             标签 <strong>{battle.encounter.tags.join(' / ')}</strong>
           </span>
+          {pressureLabel ? (
+            <span
+              className={cx(styles.chip, styles.chipTone.accent)}
+              title={pressureHint ?? undefined}
+            >
+              压力 · <strong>{pressureLabel}</strong>
+            </span>
+          ) : null}
           <span className={cx(styles.chip, styles.chipTone.default)}>
             能量 <strong>{playerStats?.energy ?? battle.player.energy}</strong> /{' '}
             {playerStats?.maxEnergy ?? battle.player.maxEnergy}
