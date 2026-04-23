@@ -104,7 +104,7 @@ export function chooseMapNodeFlow(
   if (node.type === 'treasure') {
     const salt = (run.seed ^ run.meta.gold ^ 0x7e5afe ^ hashMapNodeId(nodeId)) >>> 0;
     const tier = 'treasure' as const;
-    const cards = generateCardRewardChoices(run.seed, salt, tier, run.meta.characterId, run.meta.act);
+    const cards = generateCardRewardChoices(run.seed, salt, tier, run.meta.characterId, run.meta.act, run.meta.actFloor, run.masterDeck);
     const tr = mulberry32((salt ^ 0xc4e123) >>> 0);
     const bonusChestGold = 20 + Math.floor(tr() * 11);
     const items: RewardItem[] = [

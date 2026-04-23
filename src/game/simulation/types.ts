@@ -146,6 +146,9 @@ export type Act1ValidationSummary = {
   normal: Act1StageMetric;
   elite: Act1StageMetric;
   firstElite: Act1StageMetric;
+  firstEliteDeathsByMonsterId: Record<string, number>;
+  firstEliteAttemptsByMonsterId: Record<string, number>;
+  firstEliteWinRateByMonsterId: Record<string, number>;
   boss: Act1StageMetric;
   anyEliteRuns: number;
   anyEliteRate: number;

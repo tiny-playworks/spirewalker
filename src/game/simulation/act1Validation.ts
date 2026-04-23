@@ -1,9 +1,16 @@
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import {
+  DEFENSE_LINE_CARD_IDS,
+  MOMENTUM_PAYOFF_CARD_IDS,
+  MOMENTUM_SETUP_CARD_IDS,
+  TEMPO_RECOVERY_CARD_IDS,
+} from '@/game/core/definitions/cards/starter';
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
 import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
 import { createMapRun } from '@/game/core/engine/createMapRun';
+import { getEncounterById } from '@/game/core/definitions/encounters';
 import type { PressureProfile } from '@/game/core/definitions/encounters';
 import type { GameCommand } from '@/game/core/commands/types';
 import { isLegalMapStep } from '@/game/core/model/mapGraph';
@@ -43,6 +50,7 @@ const NO_PROGRESS_STATE_REPEAT_LIMIT = 12;
 const NO_PROGRESS_COMBAT_REPEAT_LIMIT = 60;
 const MAX_SCREENS_PER_RUN = 500;
 const TRACE_HISTORY_LIMIT = 6;
+const ACT1_FIRST_ELITE_MONSTER_IDS = ['act1_executioner', 'act1_twin_hunter', 'act1_debt_monk'] as const;
 
 type Act1ValidationInput = {
   seed: number;
@@ -86,6 +94,78 @@ type Act1RunDetail = {
   endReason?: Act1NonBattleEndReason;
   endTrace?: Act1NonBattleTrace;
   summaryInvariantTrace?: Act1SummaryInvariantTrace;
+  firstEliteDeckSnapshot?: FirstEliteDeckSnapshot;
+  firstEliteFailureTrace?: FirstEliteFailureTrace;
+  firstEliteExecutionerFailureTrace?: FirstEliteExecutionerFailureTrace;
+};
+
+type FirstEliteDeckSnapshot = {
+  deckSize: number;
+  setupCount: number;
+  payoffCount: number;
+  bridgeCount: number;
+  defenseCoreCount: number;
+  momentumRelatedCount: number;
+};
+
+type FirstEliteTurnTrace = {
+  turn: number;
+  hpBeforeTurn: number;
+  blockBeforeTurn: number;
+  hpAfterActions: number;
+  blockAfterActions: number;
+  counterTriggeredByPlayerAction: boolean;
+  heavyExecutedOnEnemyTurn: boolean;
+};
+
+type FirstEliteFailureTrace = {
+  deathTurn: number;
+  heavyInLastThreeTurns: boolean;
+  counterTriggeredInLastThreeTurns: boolean;
+  recentTurns: FirstEliteTurnTrace[];
+};
+
+type FirstEliteExecutionerFailureTrace = {
+  deathTurn: number;
+  enemyHpAtDeath: number;
+  enemyEffectiveHpAtDeath: number;
+  playerHpAtDeath: number;
+  playerBlockAtDeath: number;
+};
+
+type FirstEliteExecutionerSnapshot = {
+  enemyHp: number;
+  enemyEffectiveHp: number;
+  playerHp: number;
+  playerBlock: number;
+};
+
+export type Act1GuardFirstEliteDiagnosis = {
+  policyId: string;
+  totalRuns: number;
+  firstEliteAttempts: number;
+  firstEliteFailures: number;
+  arrivalDeckAverages: {
+    deckSize: number;
+    setupCount: number;
+    payoffCount: number;
+    bridgeCount: number;
+    defenseCoreCount: number;
+    momentumRelatedCount: number;
+  };
+  failureLastTurns: {
+    heavySeenRate: number;
+    counterTriggeredRate: number;
+    avgDeathTurn: number;
+  };
+  executionerFailures: {
+    count: number;
+    avgDeathTurn: number;
+    avgEnemyHpAtDeath: number;
+    avgEnemyEffectiveHpAtDeath: number;
+    avgPlayerHpAtDeath: number;
+    avgPlayerBlockAtDeath: number;
+  };
 };
 
 function asPlayCardCommand(
@@ -381,6 +461,47 @@ function finalizeRunDetail(detail: Act1RunDetail): Act1RunDetail {
   };
 }
 
+function countCardsByIds(deck: string[], ids: readonly string[]): number {
+  const set = new Set(ids);
+  return deck.reduce((sum, cardId) => sum + (set.has(cardId) ? 1 : 0), 0);
+}
+
+function createFirstEliteDeckSnapshot(deck: string[]): FirstEliteDeckSnapshot {
+  const setupCount = countCardsByIds(deck, MOMENTUM_SETUP_CARD_IDS);
+  const payoffCount = countCardsByIds(deck, MOMENTUM_PAYOFF_CARD_IDS);
+  const bridgeCount = countCardsByIds(deck, TEMPO_RECOVERY_CARD_IDS);
+  const defenseCoreCount = countCardsByIds(deck, DEFENSE_LINE_CARD_IDS);
+  const momentumRelatedSet = new Set<string>([
+    ...MOMENTUM_SETUP_CARD_IDS,
+    ...MOMENTUM_PAYOFF_CARD_IDS,
+  ]);
+  const momentumRelatedCount = deck.reduce((sum, cardId) => sum + (momentumRelatedSet.has(cardId) ? 1 : 0), 0);
+  return {
+    deckSize: deck.length,
+    setupCount,
+    payoffCount,
+    bridgeCount,
+    defenseCoreCount,
+    momentumRelatedCount,
+  };
+}
+
+function captureExecutionerSnapshot(run: RunState): FirstEliteExecutionerSnapshot | undefined {
+  const battle = run.battle;
+  if (!battle || battle.encounter.id !== 'act1_elite_heavy') return undefined;
+  const enemyUnitId = battle.enemyUnitIds[0];
+  if (!enemyUnitId) return undefined;
+  const enemy = battle.units[enemyUnitId];
+  const player = battle.units[battle.playerUnitId];
+  if (!enemy || !player) return undefined;
+  return {
+    enemyHp: enemy.hp,
+    enemyEffectiveHp: enemy.hp + enemy.block,
+    playerHp: player.hp,
+    playerBlock: player.block,
+  };
+}
+
 function battleFingerprint(run: RunState): string {
   const battle = run.battle;
   if (!battle) return 'no_battle';
@@ -476,8 +597,18 @@ function simulateSingleAct1(
   const battleTimeline: Act1BattleTimelineEntry[] = [];
   let firstEliteEncounterId: string | null = null;
   let firstEliteBattleIndex: number | null = null;
+  let firstEliteDeckSnapshot: FirstEliteDeckSnapshot | undefined;
+  let firstEliteFailureTrace: FirstEliteFailureTrace | undefined;
+  let firstEliteExecutionerFailureTrace: FirstEliteExecutionerFailureTrace | undefined;
+  let firstEliteExecutionerLastSnapshot: FirstEliteExecutionerSnapshot | undefined;
   let deathEncounterTier: 'normal' | 'elite' | 'boss' | null = null;
   let deathEncounterId: string | null = null;
+  let firstEliteTurnTraces: FirstEliteTurnTrace[] = [];
+  let firstEliteCurrentTurn = 0;
+  let firstEliteHpBeforeTurn = 0;
+  let firstEliteBlockBeforeTurn = 0;
+  let firstEliteCounterTriggeredByPlayerAction = false;
+  let firstEliteHeavyExecutedOnEnemyTurn = false;
   const guardrail = guardrailConfig(guardrailMode);
 
   const advanceScreenCounter = () => {
@@ -496,6 +627,9 @@ function simulateSingleAct1(
     battleTimeline,
     firstEliteEncounterId,
     firstEliteBattleIndex,
+    firstEliteDeckSnapshot,
+    firstEliteFailureTrace,
+    firstEliteExecutionerFailureTrace,
     deathEncounterTier,
     deathEncounterId,
     endStage,
@@ -514,6 +648,25 @@ function simulateSingleAct1(
       hpLoss,
       firstElite: activeBattleTier === 'elite' && !eliteResolved,
     };
+    if (record.firstElite && !record.won) {
+      const recentTurns = firstEliteTurnTraces.slice(-3);
+      firstEliteFailureTrace = {
+        deathTurn: activeBattleTurn,
+        heavyInLastThreeTurns: recentTurns.some((item) => item.heavyExecutedOnEnemyTurn),
+        counterTriggeredInLastThreeTurns: recentTurns.some((item) => item.counterTriggeredByPlayerAction),
+        recentTurns,
+      };
+      if (activeBattleEncounterId === 'act1_elite_heavy') {
+        const snapshot = firstEliteExecutionerLastSnapshot ?? captureExecutionerSnapshot(run);
+        firstEliteExecutionerFailureTrace = {
+          deathTurn: activeBattleTurn,
+          enemyHpAtDeath: snapshot?.enemyHp ?? 0,
+          enemyEffectiveHpAtDeath: snapshot?.enemyEffectiveHp ?? 0,
+          playerHpAtDeath: snapshot?.playerHp ?? 0,
+          playerBlockAtDeath: snapshot?.playerBlock ?? 0,
+        };
+      }
+    }
     records.push(record);
     if (activeBattleTier === 'elite' && !eliteResolved) eliteResolved = true;
     const timelineEntry = battleTimeline.find((entry) => entry.battleIndex === activeBattleIndex);
@@ -523,6 +676,7 @@ function simulateSingleAct1(
     activeBattleEncounterId = null;
     activeBattleTier = null;
     activeProfile = null;
+    firstEliteTurnTraces = [];
     return isBoss;
   };
 
@@ -651,6 +805,9 @@ function simulateSingleAct1(
           if (battle.encounter.tier === 'elite' && firstEliteEncounterId === null) {
             firstEliteEncounterId = battle.encounter.id;
             firstEliteBattleIndex = activeBattleIndex;
+            firstEliteDeckSnapshot = createFirstEliteDeckSnapshot(run.masterDeck);
+            firstEliteTurnTraces = [];
+            firstEliteExecutionerLastSnapshot = captureExecutionerSnapshot(run);
           }
           battleCommands = 0;
           lastBattleFingerprint = battleFingerprint(run);
@@ -658,6 +815,17 @@ function simulateSingleAct1(
           stagnantBattleStateSteps = 0;
           stagnantCombatSteps = 0;
           stagnantPlayableSteps = 0;
+        }
+        if (activeBattleTier === 'elite' && !eliteResolved && activeBattleEncounterId === 'act1_elite_heavy') {
+          firstEliteExecutionerLastSnapshot = captureExecutionerSnapshot(run) ?? firstEliteExecutionerLastSnapshot;
+        }
+        if (activeBattleTier === 'elite' && !eliteResolved && battle.turn !== firstEliteCurrentTurn) {
+          const playerUnit = battle.units[battle.playerUnitId];
+          firstEliteCurrentTurn = battle.turn;
+          firstEliteHpBeforeTurn = playerUnit?.hp ?? 0;
+          firstEliteBlockBeforeTurn = playerUnit?.block ?? 0;
+          firstEliteCounterTriggeredByPlayerAction = false;
+          firstEliteHeavyExecutedOnEnemyTurn = false;
         }
         activeBattleTurn = battle.turn;
 
@@ -722,9 +890,50 @@ function simulateSingleAct1(
           const command = policy.chooseBattleCommand(
             buildBattleContext(run, stagnantBattleStateSteps, stagnantCombatSteps),
           );
+          const preDispatchExecutionerSnapshot = captureExecutionerSnapshot(run);
+          const wasFirstEliteBattle = activeBattleTier === 'elite' && !eliteResolved;
+          const beforePlayerHp = run.battle?.units[run.battle.playerUnitId]?.hp ?? 0;
+          const beforeEnemyIds = run.battle?.enemyUnitIds ?? [];
+          const beforeMoveHistoryLens = new Map(
+            beforeEnemyIds.map((enemyUnitId) => [enemyUnitId, run.battle?.monsters[enemyUnitId]?.moveHistory.length ?? 0]),
+          );
           const beforeScreen = run.screen.type;
           const beforeNodeId = run.map.currentNodeId;
           run = dispatchWithGuard(engine, run, command);
+          firstEliteExecutionerLastSnapshot = captureExecutionerSnapshot(run)
+            ?? preDispatchExecutionerSnapshot
+            ?? firstEliteExecutionerLastSnapshot;
+          if (wasFirstEliteBattle && run.battle) {
+            const events = run.battle.lastResolvedEvents;
+            if (command.type === 'PLAY_CARD') {
+              const tookEnemyDamage = events.some((event) =>
+                event.type === 'DAMAGE_DEALT'
+                && event.targetUnitId === run.battle!.playerUnitId
+                && run.battle!.enemyUnitIds.includes(event.sourceUnitId),
+              );
+              if (tookEnemyDamage) firstEliteCounterTriggeredByPlayerAction = true;
+            }
+            if (command.type === 'END_TURN') {
+              for (const enemyUnitId of run.battle.enemyUnitIds) {
+                const beforeLen = beforeMoveHistoryLens.get(enemyUnitId) ?? 0;
+                const history = run.battle.monsters[enemyUnitId]?.moveHistory ?? [];
+                if (history.length > beforeLen && history[history.length - 1] === 'heavy_charge') {
+                  firstEliteHeavyExecutedOnEnemyTurn = true;
+                }
+              }
+              const player = run.battle.units[run.battle.playerUnitId];
+              firstEliteTurnTraces.push({
+                turn: firstEliteCurrentTurn || activeBattleTurn,
+                hpBeforeTurn: firstEliteHpBeforeTurn,
+                blockBeforeTurn: firstEliteBlockBeforeTurn,
+                hpAfterActions: player?.hp ?? beforePlayerHp,
+                blockAfterActions: player?.block ?? 0,
+                counterTriggeredByPlayerAction: firstEliteCounterTriggeredByPlayerAction,
+                heavyExecutedOnEnemyTurn: firstEliteHeavyExecutedOnEnemyTurn,
+              });
+              if (firstEliteTurnTraces.length > TRACE_HISTORY_LIMIT) firstEliteTurnTraces.shift();
+            }
+          }
           const nextFingerprint = battleFingerprint(run);
           const nextCombatFingerprint = combatProgressFingerprint(run);
           const noCombatProgress = nextCombatFingerprint === lastCombatFingerprint;
@@ -938,6 +1147,20 @@ function simulateSingleAct1(
           const defeatTier = activeBattleTier;
           deathEncounterTier = activeBattleTier;
           deathEncounterId = activeBattleEncounterId;
+          if (
+            activeBattleTier === 'elite'
+            && !eliteResolved
+            && activeBattleEncounterId === 'act1_elite_heavy'
+          ) {
+            const snapshot = firstEliteExecutionerLastSnapshot ?? captureExecutionerSnapshot(run);
+            firstEliteExecutionerFailureTrace = {
+              deathTurn: activeBattleTurn,
+              enemyHpAtDeath: snapshot?.enemyHp ?? 0,
+              enemyEffectiveHpAtDeath: snapshot?.enemyEffectiveHp ?? 0,
+              playerHpAtDeath: snapshot?.playerHp ?? 0,
+              playerBlockAtDeath: snapshot?.playerBlock ?? 0,
+            };
+          }
           if (activeBattleId) finalizeBattle(false);
           return finishRun(defeatTier ?? 'non_battle');
         }
@@ -1072,6 +1295,50 @@ function summarizeSummaryInvariants(details: Act1RunDetail[]): Act1SummaryInvari
   }];
 }
 
+function summarizeFirstEliteByMonsterId(
+  firstEliteRecords: Act1BattleRecord[],
+): {
+  attemptsByMonsterId: Record<string, number>;
+  deathsByMonsterId: Record<string, number>;
+  winRateByMonsterId: Record<string, number>;
+} {
+  const attemptsByMonsterId: Record<string, number> = {};
+  const deathsByMonsterId: Record<string, number> = {};
+  const winRateByMonsterId: Record<string, number> = {};
+
+  for (const monsterId of ACT1_FIRST_ELITE_MONSTER_IDS) {
+    attemptsByMonsterId[monsterId] = 0;
+    deathsByMonsterId[monsterId] = 0;
+    winRateByMonsterId[monsterId] = 0;
+  }
+
+  for (const record of firstEliteRecords) {
+    const encounter = getEncounterById(record.encounterId);
+    const monsterId = encounter?.lineup[0]?.enemyId ?? record.encounterId;
+    attemptsByMonsterId[monsterId] = (attemptsByMonsterId[monsterId] ?? 0) + 1;
+    if (!record.won) {
+      deathsByMonsterId[monsterId] = (deathsByMonsterId[monsterId] ?? 0) + 1;
+    } else if (!(monsterId in deathsByMonsterId)) {
+      deathsByMonsterId[monsterId] = 0;
+    }
+  }
+
+  for (const [monsterId, attempts] of Object.entries(attemptsByMonsterId)) {
+    if (attempts <= 0) {
+      winRateByMonsterId[monsterId] = 0;
+      continue;
+    }
+    const deaths = deathsByMonsterId[monsterId] ?? 0;
+    winRateByMonsterId[monsterId] = (attempts - deaths) / attempts;
+  }
+
+  return {
+    attemptsByMonsterId,
+    deathsByMonsterId,
+    winRateByMonsterId,
+  };
+}
+
 export function runAct1Validation(input: Act1ValidationInput): Act1ValidationSummary {
   const {
     seed,
@@ -1095,6 +1362,7 @@ export function runAct1Validation(input: Act1ValidationInput): Act1ValidationSum
   const firstEliteRecords = details
     .map((detail) => detail.records.find((record) => record.firstElite))
     .filter((record): record is Act1BattleRecord => Boolean(record));
+  const firstEliteByMonster = summarizeFirstEliteByMonsterId(firstEliteRecords);
   const bossRecords = allRecords.filter((record) => record.tier === 'boss');
   const overall = summarizeStage(allRecords);
   const anyEliteRuns = details.filter((detail) =>
@@ -1108,6 +1376,9 @@ export function runAct1Validation(input: Act1ValidationInput): Act1ValidationSum
     normal: summarizeStage(normalRecords),
     elite: summarizeStage(eliteRecords),
     firstElite: summarizeStage(firstEliteRecords),
+    firstEliteDeathsByMonsterId: firstEliteByMonster.deathsByMonsterId,
+    firstEliteAttemptsByMonsterId: firstEliteByMonster.attemptsByMonsterId,
+    firstEliteWinRateByMonsterId: firstEliteByMonster.winRateByMonsterId,
     boss: summarizeStage(bossRecords),
     anyEliteRuns,
     anyEliteRate: runs > 0 ? anyEliteRuns / runs : 0,
@@ -1127,6 +1398,67 @@ export function runAct1Validation(input: Act1ValidationInput): Act1ValidationSum
     summaryInvariantTraces: details
       .map((detail) => detail.summaryInvariantTrace)
       .filter((trace): trace is Act1SummaryInvariantTrace => Boolean(trace)),
+  };
+}
+
+export function runAct1GuardFirstEliteDiagnosis(input: {
+  seed: number;
+  runs: number;
+  guardrailMode?: BattleGuardrailMode;
+}): Act1GuardFirstEliteDiagnosis {
+  const policy = walkerBasePolicies.find((item) => item.id === 'walker-guard');
+  if (!policy) throw new Error('walker-guard policy not found');
+  const guardrailMode = input.guardrailMode ?? 'progress_guard';
+  const details: Act1RunDetail[] = [];
+  for (let index = 0; index < input.runs; index += 1) {
+    details.push(simulateSingleAct1((input.seed + index) >>> 0, policy, 'walker', guardrailMode));
+  }
+
+  const firstEliteDetails = details.filter((detail) => detail.firstEliteEncounterId !== null);
+  const firstEliteFailures = firstEliteDetails.filter((detail) =>
+    detail.records.some((record) => record.firstElite && !record.won),
+  );
+  const deckSnapshots = firstEliteDetails
+    .map((detail) => detail.firstEliteDeckSnapshot)
+    .filter((item): item is FirstEliteDeckSnapshot => Boolean(item));
+  const failureTraces = firstEliteFailures
+    .map((detail) => detail.firstEliteFailureTrace)
+    .filter((item): item is FirstEliteFailureTrace => Boolean(item));
+  const executionerFailures = firstEliteFailures
+    .filter((detail) => detail.firstEliteEncounterId === 'act1_elite_heavy')
+    .map((detail) => detail.firstEliteExecutionerFailureTrace)
+    .filter((item): item is FirstEliteExecutionerFailureTrace => Boolean(item));
+
+  const avg = (values: number[]): number => (values.length > 0
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : 0);
+
+  return {
+    policyId: policy.id,
+    totalRuns: input.runs,
+    firstEliteAttempts: firstEliteDetails.length,
+    firstEliteFailures: firstEliteFailures.length,
+    arrivalDeckAverages: {
+      deckSize: avg(deckSnapshots.map((item) => item.deckSize)),
+      setupCount: avg(deckSnapshots.map((item) => item.setupCount)),
+      payoffCount: avg(deckSnapshots.map((item) => item.payoffCount)),
+      bridgeCount: avg(deckSnapshots.map((item) => item.bridgeCount)),
+      defenseCoreCount: avg(deckSnapshots.map((item) => item.defenseCoreCount)),
+      momentumRelatedCount: avg(deckSnapshots.map((item) => item.momentumRelatedCount)),
+    },
+    failureLastTurns: {
+      heavySeenRate: avg(failureTraces.map((item) => (item.heavyInLastThreeTurns ? 1 : 0))),
+      counterTriggeredRate: avg(failureTraces.map((item) => (item.counterTriggeredInLastThreeTurns ? 1 : 0))),
+      avgDeathTurn: avg(failureTraces.map((item) => item.deathTurn)),
+    },
+    executionerFailures: {
+      count: executionerFailures.length,
+      avgDeathTurn: avg(executionerFailures.map((item) => item.deathTurn)),
+      avgEnemyHpAtDeath: avg(executionerFailures.map((item) => item.enemyHpAtDeath)),
+      avgEnemyEffectiveHpAtDeath: avg(executionerFailures.map((item) => item.enemyEffectiveHpAtDeath)),
+      avgPlayerHpAtDeath: avg(executionerFailures.map((item) => item.playerHpAtDeath)),
+      avgPlayerBlockAtDeath: avg(executionerFailures.map((item) => item.playerBlockAtDeath)),
+    },
   };
 }
 

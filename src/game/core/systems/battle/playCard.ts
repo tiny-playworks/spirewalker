@@ -8,6 +8,7 @@ import type {
   EffectDefinition,
   MomentumBurstDamageParams,
   MomentumBurstDrawParams,
+  MomentumConditionalDrawParams,
   MomentumGuardByStacksParams,
 } from '../../model/card';
 import type { RunState } from '../../model/run';
@@ -59,6 +60,17 @@ function readMomentumGuardByStacksParams(params: unknown): MomentumGuardByStacks
   const raw = params as Partial<MomentumGuardByStacksParams>;
   if (typeof raw.baseBlock !== 'number' || typeof raw.blockPerStack !== 'number') return null;
   return raw as MomentumGuardByStacksParams;
+}
+
+function readMomentumConditionalDrawParams(params: unknown): MomentumConditionalDrawParams | null {
+  if (!params || typeof params !== 'object') return null;
+  const raw = params as Partial<MomentumConditionalDrawParams>;
+  if (typeof raw.drawIfNoMomentumConsume !== 'number') return null;
+  if (
+    raw.momentumIfNoMomentumConsume !== undefined
+    && typeof raw.momentumIfNoMomentumConsume !== 'number'
+  ) return null;
+  return raw as MomentumConditionalDrawParams;
 }
 
 function consumePrimedBreakBonus(
@@ -262,6 +274,21 @@ function applyEffects(
         const params = readMomentumGuardByStacksParams(e.params);
         if (!params) continue;
         applyMomentumGuardByStacks(battle, sourceUnitId, params, events);
+      } else if (e.scriptId === 'momentum_conditional_draw') {
+        const params = readMomentumConditionalDrawParams(e.params);
+        if (!params) continue;
+        if (!battle.playerConsumedMomentumThisTurn) {
+          drawAdditionalCards(battle, params.drawIfNoMomentumConsume, events, random);
+          if ((params.momentumIfNoMomentumConsume ?? 0) > 0) {
+            addStatusStacks(battle.units[battle.playerUnitId]!, STATUS_MOMENTUM, params.momentumIfNoMomentumConsume!);
+            events.push({
+              type: 'STATUS_APPLIED',
+              unitId: battle.playerUnitId,
+              statusId: STATUS_MOMENTUM,
+              value: getStatusStacks(battle.units[battle.playerUnitId]!, STATUS_MOMENTUM),
+            });
+          }
+        }
       }
     }
   }

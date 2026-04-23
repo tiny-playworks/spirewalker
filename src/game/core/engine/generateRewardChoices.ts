@@ -5,10 +5,11 @@ import {
 import { mulberry32 } from '../utils/rng';
 
 export type RewardEncounterTier = 'normal' | 'elite' | 'boss' | 'treasure';
+const ANCHOR_SLASH_ID = 'anchor_slash';
 
 const ACT_CARD_POOLS = {
   early: ['prime_rhythm', 'brace_rhythm', 'soft_step', 'held_breath', 'survey_field', 'measured_rest'],
-  core: ['momentum', 'tempo_guard', 'anchored_breath', 'patient_cut', 'break_opening', 'quick_release'],
+  core: ['momentum', 'tempo_guard', 'anchored_breath', 'patient_cut', 'guard_strike', 'anchor_slash', 'stable_mind', 'break_opening', 'quick_release'],
   amplifier: ['burst_strike', 'snap_strike', 'follow_through', 'cash_flow', 'release_flow'],
   finisher: ['patient_cut', 'burst_strike', 'follow_through', 'full_release', 'cash_flow'],
 } as const;
@@ -57,10 +58,16 @@ export function generateCardRewardChoices(
   tier: RewardEncounterTier = 'normal',
   characterId = DEFAULT_CHARACTER_ID,
   act: 1 | 2 | 3 = 1,
+  _actFloor?: number,
+  ownedCardIds: readonly string[] = [],
 ): string[] {
   const rng = mulberry32((seed ^ salt ^ 0x51eed) >>> 0);
   const random = () => rng();
-  const characterPool = new Set(getCharacterDefinition(characterId).rewardCardPool);
+  const alreadyOwnedAnchorSlash = ownedCardIds.includes(ANCHOR_SLASH_ID);
+  const characterPool = new Set(
+    getCharacterDefinition(characterId).rewardCardPool
+      .filter((cardId) => !(alreadyOwnedAnchorSlash && cardId === ANCHOR_SLASH_ID)),
+  );
   const pools = weightedPoolsFor(act, tier);
   const fallbackPool = [...characterPool];
   const picks: string[] = [];

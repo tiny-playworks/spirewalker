@@ -365,6 +365,56 @@ export const PATIENT_CUT: CardDefinition = {
   ],
 };
 
+/** 防守流专项桥梁：承压回合仍可推进并为后续回合留稳势。 */
+export const ANCHOR_SLASH: CardDefinition = {
+  id: 'anchor_slash',
+  name: '定锋',
+  description: '造成 6 点伤害，获得 4 点格挡，并获得 1 层稳势。',
+  type: 'attack',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    { type: 'damage', value: 6, target: 'selected' },
+    { type: 'block', value: 4, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_STEADY_GUARD, stacks: 1, target: 'self' },
+  ],
+};
+
+/** guard 专项：承压回合补足手牌质量，稳定过 execution_check 中段。 */
+export const STABLE_MIND: CardDefinition = {
+  id: 'stable_mind',
+  name: '定心',
+  description: '获得 7 点格挡。若本回合未主动消耗连势，再抽 1 张牌并获得 1 层连势。',
+  type: 'skill',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 7, target: 'self' },
+    {
+      type: 'custom',
+      scriptId: 'momentum_conditional_draw',
+      params: { drawIfNoMomentumConsume: 1, momentumIfNoMomentumConsume: 1 },
+    },
+  ],
+};
+
+/** 前期桥梁：在承压回合同时推进收束与防守。 */
+export const GUARD_STRIKE: CardDefinition = {
+  id: 'guard_strike',
+  name: '护锋',
+  description: '造成 6 点伤害，获得 4 点格挡。',
+  type: 'attack',
+  rarity: 'common',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    { type: 'damage', value: 6, target: 'selected' },
+    { type: 'block', value: 4, target: 'self' },
+  ],
+};
+
 /** 兑现补强：小额连势也能立刻换成伤害。 */
 export const QUICK_RELEASE: CardDefinition = {
   id: 'quick_release',
@@ -540,6 +590,9 @@ export const TEMPO_RECOVERY_CARD_IDS = [
   SECOND_WIND.id,
   SURVEY_FIELD.id,
   MEASURED_REST.id,
+  ANCHOR_SLASH.id,
+  STABLE_MIND.id,
+  GUARD_STRIKE.id,
 ] as const;
 
 export const DEFENSE_LINE_CARD_IDS = [
@@ -548,7 +601,10 @@ export const DEFENSE_LINE_CARD_IDS = [
   SOFT_STEP.id,
   HELD_BREATH.id,
   ANCHORED_BREATH.id,
+  STABLE_MIND.id,
   PATIENT_CUT.id,
+  ANCHOR_SLASH.id,
+  GUARD_STRIKE.id,
 ] as const;
 
 export const BURST_LINE_CARD_IDS = [
@@ -602,6 +658,9 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [ANCHORED_BREATH.id]: ANCHORED_BREATH,
   [HELD_BREATH.id]: HELD_BREATH,
   [PATIENT_CUT.id]: PATIENT_CUT,
+  [ANCHOR_SLASH.id]: ANCHOR_SLASH,
+  [STABLE_MIND.id]: STABLE_MIND,
+  [GUARD_STRIKE.id]: GUARD_STRIKE,
   [QUICK_RELEASE.id]: QUICK_RELEASE,
   [FOLLOW_THROUGH.id]: FOLLOW_THROUGH,
   [BREAK_OPENING.id]: BREAK_OPENING,

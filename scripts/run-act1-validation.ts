@@ -1,5 +1,5 @@
 import {
-  formatAct1ValidationTable,
+  runAct1GuardFirstEliteDiagnosis,
   runAct1ValidationSuite,
 } from '../src/game/simulation/act1Validation';
 import {
@@ -13,6 +13,28 @@ type CliOptions = {
   includeElitePriority: boolean;
   nonBattleTop: number;
   compareBattleGuards: boolean;
+};
+
+const PERSONA_CN: Record<string, string> = {
+  'walker-guard': '防守流',
+  'walker-burst': '爆发流',
+  'walker-mixed': '混合流',
+};
+
+const MONSTER_CN: Record<string, string> = {
+  act1_executioner: '执行者',
+  act1_twin_hunter: '双刃猎手',
+  act1_debt_monk: '收债修士',
+};
+
+const NODE_TYPE_CN: Record<string, string> = {
+  battle: '普通战',
+  elite: '精英战',
+  event: '事件',
+  shop: '商店',
+  rest: '营火',
+  treasure: '宝箱',
+  boss: 'Boss',
 };
 
 function parseArgs(argv: string[]): CliOptions {
@@ -84,6 +106,32 @@ function formatDeathStages(summary: Awaited<ReturnType<typeof runAct1ValidationS
     .join(', ');
 }
 
+function formatNodeChoicesCn(summary: Awaited<ReturnType<typeof runAct1ValidationSuite>>[number]): string {
+  return summary.nodeChoiceBreakdown
+    .map((item) => `${NODE_TYPE_CN[item.type] ?? item.type}=${(item.rate * 100).toFixed(1)}%(${item.count})`)
+    .join(', ');
+}
+
+function formatFirstEliteMonsterCounts(summary: Awaited<ReturnType<typeof runAct1ValidationSuite>>[number], field: 'attempts' | 'deaths'): string {
+  const source = field === 'attempts'
+    ? summary.firstEliteAttemptsByMonsterId
+    : summary.firstEliteDeathsByMonsterId;
+  return Object.entries(source)
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([monsterId, count]) => `${monsterId}=${count}`)
+    .join(', ');
+}
+
+function formatFirstEliteMonsterRates(summary: Awaited<ReturnType<typeof runAct1ValidationSuite>>[number]): string {
+  return Object.entries(summary.firstEliteWinRateByMonsterId)
+    .sort((left, right) => {
+      if (right[1] !== left[1]) return right[1] - left[1];
+      return left[0].localeCompare(right[0]);
+    })
+    .map(([monsterId, rate]) => `${monsterId}=${(rate * 100).toFixed(1)}%`)
+    .join(', ');
+}
+
 function formatTrace(summary: Awaited<ReturnType<typeof runAct1ValidationSuite>>[number], seed: number): string[] {
   const trace = summary.nonBattleTraces.find((item) => item.seed === seed);
   if (!trace) return [`  - seed=${seed}: trace missing`];
@@ -118,16 +166,110 @@ function topNonBattleReason(summary: Awaited<ReturnType<typeof runAct1Validation
   return summary.nonBattleBreakdown[0]?.reason ?? 'none';
 }
 
+function personaName(policyId: string): string {
+  return PERSONA_CN[policyId] ?? policyId;
+}
+
+function monsterName(monsterId: string): string {
+  return MONSTER_CN[monsterId] ?? monsterId;
+}
+
+function sortedFirstEliteRate(
+  summaries: Awaited<ReturnType<typeof runAct1ValidationSuite>>,
+): Array<{ policyId: string; label: string; rate: number; attempts: number }> {
+  return summaries
+    .map((summary) => ({
+      policyId: summary.policyId,
+      label: personaName(summary.policyId),
+      rate: summary.firstElite.winRate,
+      attempts: summary.firstElite.attempts,
+    }))
+    .sort((a, b) => b.rate - a.rate || b.attempts - a.attempts || a.policyId.localeCompare(b.policyId));
+}
+
+function primarySuppressionMonster(summary: Awaited<ReturnType<typeof runAct1ValidationSuite>>[number]): {
+  monsterId: string;
+  deaths: number;
+  attempts: number;
+  winRate: number;
+} | null {
+  const candidates = Object.entries(summary.firstEliteDeathsByMonsterId)
+    .map(([monsterId, deaths]) => ({
+      monsterId,
+      deaths,
+      attempts: summary.firstEliteAttemptsByMonsterId[monsterId] ?? 0,
+      winRate: summary.firstEliteWinRateByMonsterId[monsterId] ?? 0,
+    }))
+    .filter((item) => item.attempts > 0)
+    .sort((a, b) => b.deaths - a.deaths || a.winRate - b.winRate || a.monsterId.localeCompare(b.monsterId));
+  return candidates[0] ?? null;
+}
+
+function printChineseQuickView(
+  summaries: Awaited<ReturnType<typeof runAct1ValidationSuite>>,
+  guardDiagnosis: ReturnType<typeof runAct1GuardFirstEliteDiagnosis>,
+): void {
+  console.log('中文速览');
+  console.log('');
+  console.log('首精英通过率（路线强弱）');
+  for (const item of sortedFirstEliteRate(summaries)) {
+    console.log(`- ${item.label}: ${(item.rate * 100).toFixed(1)}%（遭遇 ${item.attempts}）`);
+  }
+  console.log('');
+
+  for (const summary of summaries) {
+    const label = personaName(summary.policyId);
+    console.log(`[${label}]`);
+    console.log(`- 首精英遭遇次数: ${summary.firstElite.attempts}`);
+    console.log(`- 首精英通过率: ${(summary.firstElite.winRate * 100).toFixed(1)}%`);
+    console.log(`- 路线选择倾向: ${formatNodeChoicesCn(summary)}`);
+    console.log('- 首精英按怪物拆分:');
+    const breakdown = Object.entries(summary.firstEliteAttemptsByMonsterId)
+      .filter(([, attempts]) => attempts > 0)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    for (const [monsterId, attempts] of breakdown) {
+      const deaths = summary.firstEliteDeathsByMonsterId[monsterId] ?? 0;
+      const rate = (summary.firstEliteWinRateByMonsterId[monsterId] ?? 0) * 100;
+      console.log(`  - ${monsterName(monsterId)}: 遭遇=${attempts}, 死亡=${deaths}, 通过率=${rate.toFixed(1)}%`);
+    }
+    const primary = primarySuppressionMonster(summary);
+    if (primary) {
+      console.log(`- 主要压制来源: ${monsterName(primary.monsterId)}（死亡 ${primary.deaths}/${primary.attempts}）`);
+    }
+    console.log('');
+  }
+
+  const guardSummary = summaries.find((item) => item.policyId === 'walker-guard');
+  if (guardSummary) {
+    const primary = primarySuppressionMonster(guardSummary);
+    if (primary) {
+      console.log(`下一步优先建议: 先小幅回调 ${monsterName(primary.monsterId)}（防守流卡点最集中）`);
+      console.log('');
+    }
+  }
+
+  console.log('防守流首精英前成型诊断（只读）');
+  console.log(`- 首精英遭遇: ${guardDiagnosis.firstEliteAttempts}/${guardDiagnosis.totalRuns}，失败: ${guardDiagnosis.firstEliteFailures}`);
+  console.log(
+    `- 到达首精英时平均 deck: 总牌数=${guardDiagnosis.arrivalDeckAverages.deckSize.toFixed(2)}, 保势=${guardDiagnosis.arrivalDeckAverages.setupCount.toFixed(2)}, 兑现=${guardDiagnosis.arrivalDeckAverages.payoffCount.toFixed(2)}, 桥梁=${guardDiagnosis.arrivalDeckAverages.bridgeCount.toFixed(2)}`,
+  );
+  console.log(
+    `- 到达首精英时平均战斗资源: 关键防御牌=${guardDiagnosis.arrivalDeckAverages.defenseCoreCount.toFixed(2)}, momentum 相关牌=${guardDiagnosis.arrivalDeckAverages.momentumRelatedCount.toFixed(2)}`,
+  );
+  console.log(
+    `- 首精英失败局（死亡前 2-3 回合）: 吃到 heavy 比例=${(guardDiagnosis.failureLastTurns.heavySeenRate * 100).toFixed(1)}%, 触发 counter 比例=${(guardDiagnosis.failureLastTurns.counterTriggeredRate * 100).toFixed(1)}%, 平均死亡拍=${guardDiagnosis.failureLastTurns.avgDeathTurn.toFixed(2)}`,
+  );
+  console.log(
+    `- executioner 失败专项: 样本=${guardDiagnosis.executionerFailures.count}, 平均死亡拍=${guardDiagnosis.executionerFailures.avgDeathTurn.toFixed(2)}, 死亡前敌方剩余血量=${guardDiagnosis.executionerFailures.avgEnemyHpAtDeath.toFixed(2)}, 敌方有效血量(含格挡)=${guardDiagnosis.executionerFailures.avgEnemyEffectiveHpAtDeath.toFixed(2)}, 玩家死亡时 hp/block=${guardDiagnosis.executionerFailures.avgPlayerHpAtDeath.toFixed(2)}/${guardDiagnosis.executionerFailures.avgPlayerBlockAtDeath.toFixed(2)}`,
+  );
+  console.log('');
+}
+
 function printSummaryBlock(
   summaries: Awaited<ReturnType<typeof runAct1ValidationSuite>>,
   options: CliOptions,
   label: string,
 ) {
-  console.log(label);
-  console.log('');
-  console.log(formatAct1ValidationTable(summaries));
-  console.log('');
-
   for (const summary of summaries) {
     console.log(`[${summary.policyId}] route exposure`);
     console.log(`  - guardrailMode=${summary.guardrailMode}`);
@@ -135,6 +277,9 @@ function printSummaryBlock(
     console.log(`  - eliteFights=${summary.elite.attempts}, eliteWinRate=${(summary.elite.winRate * 100).toFixed(1)}%, avgEliteHpLoss=${summary.elite.avgHpLoss.toFixed(2)}`);
     console.log(`  - avgEliteFightsPerRun=${summary.avgEliteFightsPerRun.toFixed(2)}`);
     console.log(`  - avgNormalBeforeBoss=${summary.avgNormalBeforeBoss.toFixed(2)}, avgEliteBeforeBoss=${summary.avgEliteBeforeBoss.toFixed(2)}`);
+    console.log(`  - firstEliteAttemptsByMonsterId: ${formatFirstEliteMonsterCounts(summary, 'attempts')}`);
+    console.log(`  - firstEliteDeathsByMonsterId: ${formatFirstEliteMonsterCounts(summary, 'deaths')}`);
+    console.log(`  - firstEliteWinRateByMonsterId: ${formatFirstEliteMonsterRates(summary)}`);
     console.log(`  - nodeChoices: ${formatNodeChoices(summary)}`);
     console.log(`  - endStages: ${formatDeathStages(summary)}`);
     if (summary.nonBattleBreakdown.length > 0) {
@@ -205,6 +350,11 @@ function main() {
     characterId: 'walker',
     guardrailMode: 'progress_guard',
   });
+  const guardDiagnosis = runAct1GuardFirstEliteDiagnosis({
+    seed: options.seed,
+    runs: options.runsPerPolicy,
+    guardrailMode: 'progress_guard',
+  });
 
   console.log(`Act1 validation | seed=${options.seed} | runsPerPolicy=${options.runsPerPolicy}`);
   console.log('');
@@ -217,9 +367,8 @@ function main() {
       guardrailMode: 'baseline_200',
     });
     printCompareBlock(baseline, summaries);
-    printSummaryBlock(baseline, options, 'Baseline | command limit 200');
   }
-  printSummaryBlock(summaries, options, 'Improved | high command limit + no-progress guard');
+  printChineseQuickView(summaries, guardDiagnosis);
 }
 
 main();

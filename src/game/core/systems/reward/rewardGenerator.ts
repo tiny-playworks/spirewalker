@@ -9,12 +9,14 @@ export function generateBattleRewards(input: {
   salt: number;
   tier: RewardEncounterTier;
   act: 1 | 2 | 3;
+  actFloor?: number;
+  ownedCardIds: string[];
   ownedRelicIds: string[];
   potionCount: number;
   characterId: string;
 }): RewardItem[] {
-  const { seed, salt, tier, act, ownedRelicIds, potionCount, characterId } = input;
-  const cards = generateCardRewardChoices(seed, salt, tier, characterId, act);
+  const { seed, salt, tier, act, actFloor, ownedCardIds, ownedRelicIds, potionCount, characterId } = input;
+  const cards = generateCardRewardChoices(seed, salt, tier, characterId, act, actFloor, ownedCardIds);
   const items: RewardItem[] = [{ type: 'card_choice', cards }];
   const rng = ((seed ^ salt ^ 0x4455aa) >>> 0) % 100;
   if (tier === 'normal') {

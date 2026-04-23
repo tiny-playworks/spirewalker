@@ -24,6 +24,11 @@ export interface MomentumGuardByStacksParams {
   blockPerStack: number;
 }
 
+export interface MomentumConditionalDrawParams {
+  drawIfNoMomentumConsume: number;
+  momentumIfNoMomentumConsume?: number;
+}
+
 export type CustomEffectDefinition =
   | {
       type: 'custom';
@@ -39,6 +44,11 @@ export type CustomEffectDefinition =
       type: 'custom';
       scriptId: 'momentum_guard_by_stacks';
       params: MomentumGuardByStacksParams;
+    }
+  | {
+      type: 'custom';
+      scriptId: 'momentum_conditional_draw';
+      params: MomentumConditionalDrawParams;
     }
   | { type: 'custom'; scriptId: string; params?: Record<string, unknown> };
 
