@@ -9,6 +9,7 @@ import {
 
 type CliOptions = {
   seed: number;
+  seeds: number[] | null;
   runsPerPolicy: number;
   includeElitePriority: boolean;
   nonBattleTop: number;
@@ -40,6 +41,7 @@ const NODE_TYPE_CN: Record<string, string> = {
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     seed: 1001,
+    seeds: null,
     runsPerPolicy: 50,
     includeElitePriority: false,
     nonBattleTop: 3,
@@ -51,6 +53,14 @@ function parseArgs(argv: string[]): CliOptions {
     const next = argv[index + 1];
     if (arg === '--seed' && next) {
       options.seed = Number(next);
+      index += 1;
+      continue;
+    }
+    if (arg === '--seeds' && next) {
+      options.seeds = next
+        .split(',')
+        .map((part) => Number(part.trim()))
+        .filter((value) => Number.isFinite(value));
       index += 1;
       continue;
     }
@@ -73,6 +83,9 @@ function parseArgs(argv: string[]): CliOptions {
 
   if (!Number.isFinite(options.seed)) {
     throw new Error('invalid --seed');
+  }
+  if (options.seeds && options.seeds.length === 0) {
+    throw new Error('invalid --seeds');
   }
   if (!Number.isFinite(options.runsPerPolicy) || options.runsPerPolicy <= 0) {
     throw new Error('invalid --runs');
@@ -265,6 +278,67 @@ function printChineseQuickView(
   console.log('');
 }
 
+type SeedRunResult = {
+  seed: number;
+  summaries: Awaited<ReturnType<typeof runAct1ValidationSuite>>;
+};
+
+function avg(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function min(values: number[]): number {
+  return values.length === 0 ? 0 : Math.min(...values);
+}
+
+function max(values: number[]): number {
+  return values.length === 0 ? 0 : Math.max(...values);
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function printAggregateSummary(results: SeedRunResult[]): void {
+  if (results.length === 0) return;
+  const policyIds = ['walker-guard', 'walker-burst', 'walker-mixed'] as const;
+  console.log('多 Seed 聚合汇总');
+  console.log('');
+  for (const policyId of policyIds) {
+    const rates = results
+      .map((result) => result.summaries.find((item) => item.policyId === policyId)?.firstElite.winRate ?? 0);
+    console.log(
+      `- ${personaName(policyId)} firstEliteWin: 平均=${formatPercent(avg(rates))}, 最低=${formatPercent(min(rates))}, 最高=${formatPercent(max(rates))}`,
+    );
+  }
+  const mixedSummaries = results
+    .map((result) => result.summaries.find((item) => item.policyId === 'walker-mixed'))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const mixedAttempts = mixedSummaries.map((item) => item.firstElite.attempts);
+  const mixedNonBattleRates = mixedSummaries.map((item) =>
+    item.deathStageBreakdown.find((entry) => entry.stage === 'non_battle')?.rate ?? 0,
+  );
+  console.log(
+    `- 混合流样本: 首精英样本平均=${avg(mixedAttempts).toFixed(2)}, non-battle 平均占比=${formatPercent(avg(mixedNonBattleRates))}`,
+  );
+  console.log('');
+
+  const monsterIds = ['act1_executioner', 'act1_twin_hunter', 'act1_debt_monk'] as const;
+  console.log('按路线拆分的首精英怪物通过率均值');
+  for (const policyId of policyIds) {
+    const summaries = results
+      .map((result) => result.summaries.find((item) => item.policyId === policyId))
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+    const pieces = monsterIds.map((monsterId) => {
+      const rates = summaries.map((summary) => summary.firstEliteWinRateByMonsterId[monsterId] ?? 0);
+      return `${monsterName(monsterId)}=${formatPercent(avg(rates))}`;
+    });
+    console.log(`- ${personaName(policyId)}: ${pieces.join('，')}`);
+  }
+  console.log('');
+}
+
 function printSummaryBlock(
   summaries: Awaited<ReturnType<typeof runAct1ValidationSuite>>,
   options: CliOptions,
@@ -340,35 +414,42 @@ function printCompareBlock(
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
+  const seedList = options.seeds ?? [options.seed];
   const policies = options.includeElitePriority
     ? [...walkerBasePolicies, ...walkerElitePriorityPolicies]
     : [...walkerBasePolicies];
-  const summaries = runAct1ValidationSuite({
-    seed: options.seed,
-    runsPerPolicy: options.runsPerPolicy,
-    policies,
-    characterId: 'walker',
-    guardrailMode: 'progress_guard',
-  });
-  const guardDiagnosis = runAct1GuardFirstEliteDiagnosis({
-    seed: options.seed,
-    runs: options.runsPerPolicy,
-    guardrailMode: 'progress_guard',
-  });
-
-  console.log(`Act1 validation | seed=${options.seed} | runsPerPolicy=${options.runsPerPolicy}`);
-  console.log('');
-  if (options.compareBattleGuards) {
-    const baseline = runAct1ValidationSuite({
-      seed: options.seed,
+  const results: SeedRunResult[] = [];
+  for (const seed of seedList) {
+    const summaries = runAct1ValidationSuite({
+      seed,
       runsPerPolicy: options.runsPerPolicy,
       policies,
       characterId: 'walker',
-      guardrailMode: 'baseline_200',
+      guardrailMode: 'progress_guard',
     });
-    printCompareBlock(baseline, summaries);
+    const guardDiagnosis = runAct1GuardFirstEliteDiagnosis({
+      seed,
+      runs: options.runsPerPolicy,
+      guardrailMode: 'progress_guard',
+    });
+    results.push({ seed, summaries });
+    console.log(`Act1 validation | seed=${seed} | runsPerPolicy=${options.runsPerPolicy}`);
+    console.log('');
+    if (options.compareBattleGuards) {
+      const baseline = runAct1ValidationSuite({
+        seed,
+        runsPerPolicy: options.runsPerPolicy,
+        policies,
+        characterId: 'walker',
+        guardrailMode: 'baseline_200',
+      });
+      printCompareBlock(baseline, summaries);
+    }
+    printChineseQuickView(summaries, guardDiagnosis);
   }
-  printChineseQuickView(summaries, guardDiagnosis);
+  if (seedList.length > 1) {
+    printAggregateSummary(results);
+  }
 }
 
 main();
