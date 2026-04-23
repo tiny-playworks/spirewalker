@@ -9,6 +9,7 @@ export interface MomentumBurstDamageParams {
   consumeValue?: number;
   baseDamage: number;
   damagePerStack: number;
+  gainEnergyIfConsumed?: number;
 }
 
 export interface MomentumBurstDrawParams {
@@ -16,6 +17,11 @@ export interface MomentumBurstDrawParams {
   consumeValue?: number;
   baseDraw: number;
   drawPerStack: number;
+}
+
+export interface MomentumGuardByStacksParams {
+  baseBlock: number;
+  blockPerStack: number;
 }
 
 export type CustomEffectDefinition =
@@ -28,6 +34,11 @@ export type CustomEffectDefinition =
       type: 'custom';
       scriptId: 'momentum_burst_draw';
       params: MomentumBurstDrawParams;
+    }
+  | {
+      type: 'custom';
+      scriptId: 'momentum_guard_by_stacks';
+      params: MomentumGuardByStacksParams;
     }
   | { type: 'custom'; scriptId: string; params?: Record<string, unknown> };
 

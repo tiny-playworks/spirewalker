@@ -116,6 +116,7 @@ export interface BattleState {
   encounter: BattleEncounterMeta;
   turn: number;
   playerCardsPlayedThisTurn: number;
+  playerConsumedMomentumThisTurn: boolean;
   phase: BattlePhase;
   inputMode: InputMode;
   playerUnitId: string;

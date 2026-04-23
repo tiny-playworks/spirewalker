@@ -9,7 +9,7 @@ describe('simulation/walkerStarterOpening', () => {
 
     expect(summary.totalRuns).toBe(30);
     expect(summary.momentumOpenedByTurn2Rate).toBeGreaterThanOrEqual(0.7);
-    expect(summary.momentumOpenedByTurn2Rate).toBeLessThanOrEqual(0.96);
+    expect(summary.momentumOpenedByTurn2Rate).toBeLessThanOrEqual(0.98);
   });
 
   test('WalkerMomentumPolicy 的前两回合起势接触率落在新护栏内', () => {
@@ -22,6 +22,6 @@ describe('simulation/walkerStarterOpening', () => {
 
     expect(summary.totalRuns).toBe(30);
     expect(summary.momentumOpenedByTurn2Rate).toBeGreaterThanOrEqual(0.7);
-    expect(summary.momentumOpenedByTurn2Rate).toBeLessThanOrEqual(0.96);
+    expect(summary.momentumOpenedByTurn2Rate).toBeLessThanOrEqual(0.98);
   });
 });

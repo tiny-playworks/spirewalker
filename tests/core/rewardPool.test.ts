@@ -26,11 +26,10 @@ describe('core/rewardPool', () => {
     }
   });
 
-  test('角色遗物池拿空后回落到公共 Boss 遗物池', () => {
+  test('角色遗物池拿空后，本轮不再回落到额外遗物池', () => {
     const walker = getCharacterDefinition('walker');
     const relicId = rollBossRelicReward(42, 99, [...walker.rewardRelicPool], 'walker');
 
-    expect(relicId).not.toBeNull();
-    expect(walker.rewardRelicPool).not.toContain(relicId!);
+    expect(relicId).toBeNull();
   });
 });

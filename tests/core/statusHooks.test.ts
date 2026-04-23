@@ -6,6 +6,8 @@ import {
 import {
   STATUS_METALLICIZE,
   STATUS_MOMENTUM,
+  STATUS_PRIMED_BREAK,
+  STATUS_STEADY_GUARD,
   STATUS_VULNERABLE,
   STATUS_WEAK,
 } from "@/game/core/definitions/statuses";
@@ -65,5 +67,40 @@ describe("core/statusHooks", () => {
     runOnTurnEnd(battle);
 
     expect(enemy.block).toBe(2);
+  });
+
+  test("稳势在本回合未主动消耗连势时，回合结束给格挡并回 1 层连势", () => {
+    const battle = buildInitialBattle(15);
+    const player = battle.units[PLAYER_UNIT_ID]!;
+    addStatusStacks(player, STATUS_STEADY_GUARD, 1);
+
+    runOnTurnEnd(battle);
+
+    expect(player.block).toBe(4);
+    expect(getStatusStacks(player, STATUS_MOMENTUM)).toBe(1);
+    expect(getStatusStacks(player, STATUS_STEADY_GUARD)).toBe(0);
+  });
+
+  test("稳势在本回合已经主动消耗连势时只衰减，不给额外收益", () => {
+    const battle = buildInitialBattle(16);
+    const player = battle.units[PLAYER_UNIT_ID]!;
+    addStatusStacks(player, STATUS_STEADY_GUARD, 1);
+    battle.playerConsumedMomentumThisTurn = true;
+
+    runOnTurnEnd(battle);
+
+    expect(player.block).toBe(0);
+    expect(getStatusStacks(player, STATUS_MOMENTUM)).toBe(0);
+    expect(getStatusStacks(player, STATUS_STEADY_GUARD)).toBe(0);
+  });
+
+  test("破势预热在回合结束时会清空剩余层数", () => {
+    const battle = buildInitialBattle(17);
+    const player = battle.units[PLAYER_UNIT_ID]!;
+    addStatusStacks(player, STATUS_PRIMED_BREAK, 2);
+
+    runOnTurnEnd(battle);
+
+    expect(getStatusStacks(player, STATUS_PRIMED_BREAK)).toBe(0);
   });
 });

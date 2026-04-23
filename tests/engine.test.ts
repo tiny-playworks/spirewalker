@@ -823,7 +823,7 @@ describe('GameEngine MVP', () => {
     expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
   });
 
-  test('观势会抽牌并随机弃 1 张牌', () => {
+  test('观势会抽牌并立刻补 1 层连势', () => {
     const engine = new GameEngine();
     let run = createMvpRun(1403);
     const refillIds = ['sv_a', 'sv_b', 'sv_c'].map((id) => `test_${id}`);
@@ -845,16 +845,16 @@ describe('GameEngine MVP', () => {
       upgraded: false,
     };
     run.battle!.player.hand.unshift('test_survey_field');
-    const discardBefore = run.battle!.player.discardPile.length;
-
     run = engine.dispatch(run, {
       type: 'PLAY_CARD',
       cardInstanceId: 'test_survey_field',
       sourceUnitId: PLAYER_UNIT_ID,
     }).nextRun;
 
-    expect(run.battle!.player.discardPile.length).toBe(discardBefore + 2);
+    expect(run.battle!.player.discardPile).toContain('test_survey_field');
     expect(run.battle!.player.hand.length).toBeGreaterThanOrEqual(6);
+    expect(run.battle!.units[PLAYER_UNIT_ID].block).toBe(1);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(0);
   });
 
   test('结束回合触发状态钩子：玩家虚弱与敌人易伤衰减', () => {
@@ -913,15 +913,18 @@ describe('GameEngine 战斗修正', () => {
     expect(stacks).toBe(3);
   });
 
-  test('遗物定心核：开场获得 1 层金属化', () => {
+  test('遗物定心核：开场获得 1 层金属化与 1 层稳势', () => {
     const engine = new GameEngine();
     let run = createMapRun(511);
     run.meta.relics.push('still_core');
     const battleId = firstBattleFromCamp(run);
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: battleId }).nextRun;
-    const stacks =
+    const metallicize =
       run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === 'metallicize')?.stacks ?? 0;
-    expect(stacks).toBe(1);
+    const steadyGuard =
+      run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === 'steady_guard')?.stacks ?? 0;
+    expect(metallicize).toBe(1);
+    expect(steadyGuard).toBe(1);
   });
 
   test('遗物缓护符：开场获得 4 点格挡', () => {
@@ -953,7 +956,7 @@ describe('GameEngine 战斗修正', () => {
     expect(run.battle!.player.hand.length).toBe(6);
   });
 
-  test('遗物裂响纹章：主动消耗 momentum 的伤害牌额外 +2 伤害', () => {
+  test('遗物裂响纹章：主动消耗 momentum 的伤害牌额外 +2 伤害，且首次额外抽 1 张牌', () => {
     const engine = new GameEngine();
     let run = createMvpRun(53);
     run.meta.relics.push('burst_emblem');
@@ -970,6 +973,7 @@ describe('GameEngine 战斗修正', () => {
     run.battle!.player.hand.unshift(burstStrikeId);
 
     const enemyHpBefore = run.battle!.units[ENEMY_UNIT_ID].hp;
+    const handBefore = run.battle!.player.hand.length;
     run = engine
       .dispatch(run, {
         type: 'PLAY_CARD',
@@ -979,6 +983,7 @@ describe('GameEngine 战斗修正', () => {
       })
       .nextRun;
     expect(run.battle!.units[ENEMY_UNIT_ID].hp).toBe(enemyHpBefore - 12);
+    expect(run.battle!.player.hand.length).toBe(handBefore);
   });
 
   test('遗物疾燃引线：主动消耗 momentum 的伤害牌结算后返还 1 点能量', () => {
@@ -1095,7 +1100,7 @@ describe('GameEngine 战斗修正', () => {
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
-    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(3);
   });
 
   test('精英节点为精英单敌，且具备反制 momentum 的意图', () => {
@@ -1335,9 +1340,11 @@ describe('GameEngine 地图', () => {
     run.battle!.phase = 'victory';
     run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
     expect(run.reward?.items.some((i) => i.type === 'gold' && i.amount === 33)).toBe(true);
-    expect(run.reward?.items.some((i) => i.type === 'potion' && i.potionId === 'healing_dew')).toBe(
-      true,
-    );
+    expect(
+      run.reward?.items.some(
+        (i) => i.type === 'potion' && ['stillwater_tonic', 'flash_powder'].includes(i.potionId),
+      ),
+    ).toBe(true);
     const cardChoice = run.reward!.items.find((i) => i.type === 'card_choice');
     if (!cardChoice || cardChoice.type !== 'card_choice') throw new Error('expected card_choice');
     const potionsBefore = run.meta.potions.length;
@@ -1357,9 +1364,11 @@ describe('GameEngine 地图', () => {
     run.battle!.phase = 'victory';
     run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
     expect(run.reward?.items.some((i) => i.type === 'gold' && i.amount === 56)).toBe(true);
-    expect(run.reward?.items.some((i) => i.type === 'potion' && i.potionId === 'healing_dew')).toBe(
-      true,
-    );
+    expect(
+      run.reward?.items.some(
+        (i) => i.type === 'potion' && ['stillwater_tonic', 'flash_powder'].includes(i.potionId),
+      ),
+    ).toBe(true);
     const relicEntry = run.reward!.items.find((i) => i.type === 'relic');
     expect(relicEntry?.type).toBe('relic');
     const relicId = relicEntry && relicEntry.type === 'relic' ? relicEntry.relicId : '';
@@ -1373,11 +1382,8 @@ describe('GameEngine 地图', () => {
     expect(run.meta.gold).toBe(56);
     expect(run.meta.potions.length).toBe(bossPotionsBefore + 1);
     expect(run.meta.relics).toContain(relicId);
-    if (relicId === 'anchor') {
-      expect(run.player.maxHp).toBe(55);
-    } else {
-      expect(run.player.maxHp).toBe(50);
-    }
+    expect(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']).toContain(relicId);
+    expect(run.player.maxHp).toBe(50);
     expect(run.meta.act).toBe(2);
     expect(run.meta.actFloor).toBe(1);
     expect(run.meta.floor).toBe(globalFloorFor(2, 1));
@@ -1527,7 +1533,7 @@ describe('GameEngine 地图', () => {
     expect(run.masterDeck.filter((id) => id === 'defend').length).toBe(defendBefore - 1);
   });
 
-  test('商店购买遗物（船锚加生命）', () => {
+  test('商店购买遗物会加入持有列表，并落在双核遗物池内', () => {
     const engine = new GameEngine();
     let run = createMapRun(31);
     const shopId = findNodeId(run, (n) => n.type === 'shop' && n.floor === 1);
@@ -1535,14 +1541,9 @@ describe('GameEngine 地图', () => {
     run.meta.gold = 500;
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: shopId }).nextRun;
     const offer = run.shop!.relics[0]!;
-    const hpBefore = run.player.maxHp;
     run = engine.dispatch(run, { type: 'BUY_SHOP_RELIC', relicId: offer.relicId }).nextRun;
     expect(run.meta.relics).toContain(offer.relicId);
-    if (offer.relicId === 'anchor') {
-      expect(run.player.maxHp).toBe(hpBefore + 5);
-    } else {
-      expect(run.player.maxHp).toBe(hpBefore);
-    }
+    expect(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']).toContain(offer.relicId);
   });
 
   test('商店删牌扣费且遵守牌组下限', () => {
@@ -1641,7 +1642,7 @@ describe('postBattleExtras', () => {
     for (let i = 0; i < 256; i++) {
       const salt = (i * 0x9e3779b9) >>> 0;
       const r = rollPostBattlePotionOffer(i, salt, 'normal', 0);
-      if (r === 'healing_dew') sawPotion = true;
+      if (r === 'stillwater_tonic' || r === 'flash_powder') sawPotion = true;
       if (r === null) sawNone = true;
       if (sawPotion && sawNone) break;
     }

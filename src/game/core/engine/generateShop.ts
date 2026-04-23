@@ -12,18 +12,13 @@ export const SHOP_MIN_MASTER_DECK_SIZE = 5;
 
 /** 商店可刷出的遗物（未持有才会上架） */
 const SHOP_RELIC_POOL = [
-  'vajra',
-  'anchor',
-  'wind_chime',
-  'tactical_gloves',
-  'burst_emblem',
-  'insight_lens',
   'guard_knot',
   'still_core',
-  'soft_guard',
+  'burst_emblem',
   'quick_fuse',
-  'sighted_edge',
 ] as const;
+
+const SHOP_POTION_POOL = ['stillwater_tonic', 'flash_powder'] as const;
 
 function pickOne<T>(pool: readonly T[], random: () => number): T {
   return pool[Math.floor(random() * pool.length)]!;
@@ -60,7 +55,7 @@ export function generateShop(
       { definitionId: recoveryOffer, price: 60 + f * 7 + jitter },
     ],
     relics,
-    potions: [{ potionId: 'healing_dew', price: 60 + f * 5 + jitter }],
+    potions: [{ potionId: pickOne(SHOP_POTION_POOL, random), price: 60 + f * 5 + jitter }],
     removeCardPrice: 96 + f * 9,
   };
 }

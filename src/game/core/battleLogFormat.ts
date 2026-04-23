@@ -60,7 +60,9 @@ export function formatBattleLogLine(run: RunState, e: GameEvent): string {
     case 'EVENT_RESOLVED':
       return `事件已结算：${e.optionId}`;
     case 'POTION_USED':
-      return `使用 ${POTION_DEFINITIONS[e.potionId]?.name ?? e.potionId}，回复 ${e.value} 点生命`;
+      return e.value > 0
+        ? `使用 ${POTION_DEFINITIONS[e.potionId]?.name ?? e.potionId}，回复 ${e.value} 点生命`
+        : `使用 ${POTION_DEFINITIONS[e.potionId]?.name ?? e.potionId}：${POTION_DEFINITIONS[e.potionId]?.description ?? ''}`;
     default:
       return '未知事件';
   }

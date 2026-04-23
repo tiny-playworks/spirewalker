@@ -1,7 +1,7 @@
 import { addStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
-import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STRENGTH } from '../definitions/statuses';
+import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STEADY_GUARD, STATUS_STRENGTH } from '../definitions/statuses';
 import type { BattleEncounterMeta, BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
 import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
@@ -165,6 +165,10 @@ export function buildInitialBattle(
   }
   if (relicIds.includes('still_core')) {
     addStatusStacks(units[PLAYER_UNIT_ID], STATUS_METALLICIZE, 1);
+    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STEADY_GUARD, 1);
+  }
+  if (relicIds.includes('guard_knot')) {
+    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STEADY_GUARD, 1);
   }
   if (relicIds.includes('soft_guard')) {
     units[PLAYER_UNIT_ID].block += 4;
@@ -178,6 +182,7 @@ export function buildInitialBattle(
     encounter,
     turn: 1,
     playerCardsPlayedThisTurn: 0,
+    playerConsumedMomentumThisTurn: false,
     phase: 'player_action',
     inputMode: 'idle',
     playerUnitId: PLAYER_UNIT_ID,

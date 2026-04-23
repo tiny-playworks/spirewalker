@@ -2,6 +2,7 @@ import type { GameObjects, Input } from 'phaser';
 import { Geom, Scene, Scenes } from 'phaser';
 import { buildCardKeywordHints, cardTargetLabel, cardTypeLabel, formatMonsterIntentText } from '@/game/core/battleUiText';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import type { BattleState } from '@/game/core/model/battle';
 import type { CardTarget } from '@/game/core/model/card';
 import { PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
@@ -352,7 +353,12 @@ export class BattleScene extends Scene {
       } else if (e.type === 'BATTLE_LOST') {
         this.spawnFloater(480, 80, '失败', '#888888');
       } else if (e.type === 'POTION_USED') {
-        this.spawnFloater(110, 180, `+${e.value} 生命`, '#7dffb3');
+        this.spawnFloater(
+          110,
+          180,
+          e.value > 0 ? `+${e.value} 生命` : `${POTION_DEFINITIONS[e.potionId]?.name ?? e.potionId}`,
+          '#7dffb3',
+        );
       }
     }
     if (battle?.inputMode === 'animation_lock' && this.floatGroup.getLength() === 0) {

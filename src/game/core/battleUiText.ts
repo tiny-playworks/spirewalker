@@ -107,6 +107,9 @@ export function buildCardKeywordHints(def: CardDefinition): string[] {
     if (effect.type === 'custom' && effect.scriptId === 'momentum_burst_draw') {
       lines.push('连势转过牌：主动消耗连势层数，换取更多抽牌。');
     }
+    if (effect.type === 'custom' && effect.scriptId === 'momentum_guard_by_stacks') {
+      lines.push('借势成防：按当前连势层数获得格挡，不消耗连势。');
+    }
     if (effect.type === 'gain_energy') {
       lines.push('能量：本回合可继续打出更多卡牌。');
     }

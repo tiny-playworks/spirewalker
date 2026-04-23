@@ -27,6 +27,7 @@ describe('reward/rewardFlow', () => {
   test('v0.5 两条构筑都满足 2 张核心牌 + 1 个核心遗物', () => {
     const walker = getCharacterDefinition('walker');
     expect(walker.buildBranches).toHaveLength(2);
+    expect(walker.rewardRelicPool).toEqual(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']);
     for (const branch of walker.buildBranches) {
       expect(branch.coreCardIds).toHaveLength(2);
       expect(walker.rewardCardPool).toContain(branch.coreCardIds[0]);

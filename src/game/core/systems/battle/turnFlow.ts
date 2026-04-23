@@ -92,6 +92,7 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   }
 
   battle.playerCardsPlayedThisTurn = 0;
+  battle.playerConsumedMomentumThisTurn = false;
   battle.turn += 1;
   runOnTurnStart(battle);
   events.push({ type: 'TURN_STARTED', turn: battle.turn, unitId: battle.playerUnitId });
