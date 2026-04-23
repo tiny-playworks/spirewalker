@@ -80,6 +80,7 @@ export function debugJumpScreen(
         salt: (run.seed ^ run.meta.floor ^ 0xd3b6) >>> 0,
         tier: 'normal',
         act: run.meta.act,
+        ownedCardIds: run.masterDeck,
         ownedRelicIds: run.meta.relics,
         potionCount: run.meta.potions.length,
         characterId: run.meta.characterId,

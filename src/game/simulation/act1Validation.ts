@@ -97,6 +97,7 @@ type Act1RunDetail = {
   firstEliteDeckSnapshot?: FirstEliteDeckSnapshot;
   firstEliteFailureTrace?: FirstEliteFailureTrace;
   firstEliteExecutionerFailureTrace?: FirstEliteExecutionerFailureTrace;
+  bossFailureTrace?: BossFailureTrace;
 };
 
 type FirstEliteDeckSnapshot = {
@@ -140,6 +141,16 @@ type FirstEliteExecutionerSnapshot = {
   playerBlock: number;
 };
 
+type BossFailureTrace = {
+  bossEncounterId: string;
+  bossMonsterId: string;
+  phaseLabel: string | null;
+  playerHpAtDeath: number;
+  playerBlockAtDeath: number;
+  enemyHpAtDeath: number;
+  enemyEffectiveHpAtDeath: number;
+};
+
 export type Act1GuardFirstEliteDiagnosis = {
   policyId: string;
   totalRuns: number;
@@ -166,6 +177,40 @@ export type Act1GuardFirstEliteDiagnosis = {
     avgPlayerHpAtDeath: number;
     avgPlayerBlockAtDeath: number;
   };
+};
+
+type Act1BossAttributionInput = {
+  seed: number;
+  runsPerPolicy: number;
+  policies?: SimulationPolicy[];
+  characterId?: 'walker';
+  guardrailMode?: BattleGuardrailMode;
+};
+
+export type Act1BossAttributionLine = {
+  bossMonsterId: string;
+  bossEncounterId: string;
+  deaths: number;
+  killShare: number;
+  phaseBreakdown: Array<{
+    phase: string;
+    count: number;
+    rate: number;
+  }>;
+  avgPlayerHpAtDeath: number;
+  avgPlayerBlockAtDeath: number;
+  avgEnemyHpAtDeath: number;
+  avgEnemyEffectiveHpAtDeath: number;
+};
+
+export type Act1BossAttributionSummary = {
+  policyId: string;
+  totalRuns: number;
+  bossReachCount: number;
+  bossReachRate: number;
+  bossDefeatCount: number;
+  bossDefeatRate: number;
+  killShareByBoss: Act1BossAttributionLine[];
 };
 
 function asPlayCardCommand(
@@ -502,6 +547,37 @@ function captureExecutionerSnapshot(run: RunState): FirstEliteExecutionerSnapsho
   };
 }
 
+function captureBossFailureTrace(run: RunState): BossFailureTrace | undefined {
+  const battle = run.battle;
+  if (!battle || battle.encounter.tier !== 'boss') return undefined;
+  const enemyUnitId = battle.enemyUnitIds[0];
+  if (!enemyUnitId) return undefined;
+  const enemy = battle.units[enemyUnitId];
+  const monster = battle.monsters[enemyUnitId];
+  const player = battle.units[battle.playerUnitId];
+  if (!enemy || !monster || !player) return undefined;
+  return {
+    bossEncounterId: battle.encounter.id,
+    bossMonsterId: monster.monsterId,
+    phaseLabel: monster.bossPhaseLabel ?? null,
+    playerHpAtDeath: player.hp,
+    playerBlockAtDeath: player.block,
+    enemyHpAtDeath: enemy.hp,
+    enemyEffectiveHpAtDeath: enemy.hp + enemy.block,
+  };
+}
+
+function mergeBossFailureTrace(
+  snapshot: BossFailureTrace | undefined,
+  run: RunState,
+): BossFailureTrace | undefined {
+  if (!snapshot) return undefined;
+  return {
+    ...snapshot,
+    playerHpAtDeath: run.player.currentHp,
+  };
+}
+
 function battleFingerprint(run: RunState): string {
   const battle = run.battle;
   if (!battle) return 'no_battle';
@@ -601,6 +677,8 @@ function simulateSingleAct1(
   let firstEliteFailureTrace: FirstEliteFailureTrace | undefined;
   let firstEliteExecutionerFailureTrace: FirstEliteExecutionerFailureTrace | undefined;
   let firstEliteExecutionerLastSnapshot: FirstEliteExecutionerSnapshot | undefined;
+  let bossFailureTrace: BossFailureTrace | undefined;
+  let bossFailureLastSnapshot: BossFailureTrace | undefined;
   let deathEncounterTier: 'normal' | 'elite' | 'boss' | null = null;
   let deathEncounterId: string | null = null;
   let firstEliteTurnTraces: FirstEliteTurnTrace[] = [];
@@ -630,6 +708,7 @@ function simulateSingleAct1(
     firstEliteDeckSnapshot,
     firstEliteFailureTrace,
     firstEliteExecutionerFailureTrace,
+    bossFailureTrace,
     deathEncounterTier,
     deathEncounterId,
     endStage,
@@ -676,6 +755,7 @@ function simulateSingleAct1(
     activeBattleEncounterId = null;
     activeBattleTier = null;
     activeProfile = null;
+    bossFailureLastSnapshot = undefined;
     firstEliteTurnTraces = [];
     return isBoss;
   };
@@ -818,6 +898,9 @@ function simulateSingleAct1(
         }
         if (activeBattleTier === 'elite' && !eliteResolved && activeBattleEncounterId === 'act1_elite_heavy') {
           firstEliteExecutionerLastSnapshot = captureExecutionerSnapshot(run) ?? firstEliteExecutionerLastSnapshot;
+        }
+        if (activeBattleTier === 'boss') {
+          bossFailureLastSnapshot = captureBossFailureTrace(run) ?? bossFailureLastSnapshot;
         }
         if (activeBattleTier === 'elite' && !eliteResolved && battle.turn !== firstEliteCurrentTurn) {
           const playerUnit = battle.units[battle.playerUnitId];
@@ -1147,6 +1230,12 @@ function simulateSingleAct1(
           const defeatTier = activeBattleTier;
           deathEncounterTier = activeBattleTier;
           deathEncounterId = activeBattleEncounterId;
+          if (activeBattleTier === 'boss') {
+            bossFailureTrace = mergeBossFailureTrace(
+              captureBossFailureTrace(run) ?? bossFailureLastSnapshot,
+              run,
+            );
+          }
           if (
             activeBattleTier === 'elite'
             && !eliteResolved
@@ -1293,6 +1382,48 @@ function summarizeSummaryInvariants(details: Act1RunDetail[]): Act1SummaryInvari
     rate: details.length > 0 ? traces.length / details.length : 0,
     exampleSeeds: traces.slice(0, 3).map((trace) => trace.seed),
   }];
+}
+
+function summarizeBossFailureTraces(
+  traces: BossFailureTrace[],
+): Act1BossAttributionLine[] {
+  const avg = (values: number[]): number => (values.length > 0
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : 0);
+  const grouped = new Map<string, BossFailureTrace[]>();
+  for (const trace of traces) {
+    const key = `${trace.bossMonsterId}::${trace.bossEncounterId}`;
+    const current = grouped.get(key) ?? [];
+    current.push(trace);
+    grouped.set(key, current);
+  }
+  return [...grouped.entries()]
+    .map(([key, items]) => {
+      const [bossMonsterId, bossEncounterId] = key.split('::');
+      const phaseCounts = new Map<string, number>();
+      for (const item of items) {
+        const phase = item.phaseLabel ?? 'unknown';
+        phaseCounts.set(phase, (phaseCounts.get(phase) ?? 0) + 1);
+      }
+      return {
+        bossMonsterId: bossMonsterId!,
+        bossEncounterId: bossEncounterId!,
+        deaths: items.length,
+        killShare: traces.length > 0 ? items.length / traces.length : 0,
+        phaseBreakdown: [...phaseCounts.entries()]
+          .map(([phase, count]) => ({
+            phase,
+            count,
+            rate: items.length > 0 ? count / items.length : 0,
+          }))
+          .sort((left, right) => right.count - left.count || left.phase.localeCompare(right.phase)),
+        avgPlayerHpAtDeath: avg(items.map((item) => item.playerHpAtDeath)),
+        avgPlayerBlockAtDeath: avg(items.map((item) => item.playerBlockAtDeath)),
+        avgEnemyHpAtDeath: avg(items.map((item) => item.enemyHpAtDeath)),
+        avgEnemyEffectiveHpAtDeath: avg(items.map((item) => item.enemyEffectiveHpAtDeath)),
+      };
+    })
+    .sort((left, right) => right.deaths - left.deaths || left.bossMonsterId.localeCompare(right.bossMonsterId));
 }
 
 function summarizeFirstEliteByMonsterId(
@@ -1460,6 +1591,39 @@ export function runAct1GuardFirstEliteDiagnosis(input: {
       avgPlayerBlockAtDeath: avg(executionerFailures.map((item) => item.playerBlockAtDeath)),
     },
   };
+}
+
+export function runAct1BossAttributionSuite(input: Act1BossAttributionInput): Act1BossAttributionSummary[] {
+  const {
+    seed,
+    runsPerPolicy,
+    policies = walkerBasePolicies,
+    characterId = 'walker',
+    guardrailMode = 'progress_guard',
+  } = input;
+  if (runsPerPolicy <= 0) throw new Error('runsPerPolicy must be positive');
+
+  return policies.map((policy, policyIndex) => {
+    const details = Array.from({ length: runsPerPolicy }, (_, runIndex) =>
+      simulateSingleAct1((seed + policyIndex * 10000 + runIndex) >>> 0, policy, characterId, guardrailMode),
+    );
+    const bossReachCount = details.filter((detail) =>
+      detail.records.some((record) => record.tier === 'boss'),
+    ).length;
+    const bossFailureTraces = details
+      .map((detail) => detail.bossFailureTrace)
+      .filter((trace): trace is BossFailureTrace => Boolean(trace));
+
+    return {
+      policyId: policy.id,
+      totalRuns: runsPerPolicy,
+      bossReachCount,
+      bossReachRate: bossReachCount / runsPerPolicy,
+      bossDefeatCount: bossFailureTraces.length,
+      bossDefeatRate: bossFailureTraces.length / runsPerPolicy,
+      killShareByBoss: summarizeBossFailureTraces(bossFailureTraces),
+    };
+  });
 }
 
 export function runAct1ValidationSuite(input: Act1ValidationSuiteInput): Act1ValidationSummary[] {
