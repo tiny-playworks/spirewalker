@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@rstest/core';
 import { addStatusStacks } from '@/game/core/combat/statusCombat';
 import { GameEngine } from '@/game/core/engine/GameEngine';
-import { buildActNodes, buildFloor2Nodes, createMapRun } from '@/game/core/engine/createMapRun';
+import { buildAct2EntryNodes, buildActNodes, buildFloor2Nodes, createMapRun } from '@/game/core/engine/createMapRun';
 import {
   BURST_ALTAR_EVENT_ID,
   generateBranchingFloorMap,
@@ -1370,6 +1370,8 @@ describe('GameEngine 地图', () => {
     expect(Boolean(RELIC_DEFINITIONS[relicId])).toBe(true);
     const cardChoice = run.reward!.items.find((i) => i.type === 'card_choice');
     if (!cardChoice || cardChoice.type !== 'card_choice') throw new Error('expected card_choice');
+    run.player.currentHp = 27;
+    const deckSizeBefore = run.masterDeck.length;
     const bossPotionsBefore = run.meta.potions.length;
     run = engine
       .dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: cardChoice.cards[0]! })
@@ -1379,15 +1381,50 @@ describe('GameEngine 地图', () => {
     expect(run.meta.relics).toContain(relicId);
     expect(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']).toContain(relicId);
     expect(run.player.maxHp).toBe(50);
+    expect(run.player.currentHp).toBe(27);
+    expect(run.masterDeck.length).toBe(deckSizeBefore + 1);
     expect(run.meta.act).toBe(2);
     expect(run.meta.actFloor).toBe(1);
     expect(run.meta.floor).toBe(globalFloorFor(2, 1));
+    expect(run.meta.validationSegment).toBe('act2_entry');
+    expect(run.meta.validationCompleted).toBe(false);
+    expect(run.meta.enteredAct2EliteBranch).toBe(false);
     const f2Camp = Object.keys(run.map.nodes).find((id) => run.map.nodes[id]!.depth === 1);
     expect(run.map.currentNodeId).toBe(f2Camp);
-    expect(Object.values(run.map.nodes).some((n) => n.type === 'battle' && n.act === 2)).toBe(
-      true,
-    );
+    expect(run.map.nodes.a2v_battle_a).toBeDefined();
+    expect(run.map.nodes.a2v_risk_elite?.encounterId).toBe('act2_elite_lock');
     expect(run.screen.type).toBe('map');
+  });
+
+  test('Act2 验证段进入 elite 分支会被记录，最后一战奖励后标记验证完成', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(313);
+    run.meta.act = 2;
+    run.meta.actFloor = 1;
+    run.meta.floor = globalFloorFor(2, 1);
+    run.meta.validationSegment = 'act2_entry';
+    run.meta.validationCompleted = false;
+    run.meta.enteredAct2EliteBranch = false;
+    run.map = {
+      nodes: buildAct2EntryNodes(313),
+      currentNodeId: 'a2v_battle_c',
+    };
+    run.map.nodes.a2v_battle_c!.visited = true;
+
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: 'a2v_risk_elite' }).nextRun;
+    expect(run.meta.enteredAct2EliteBranch).toBe(true);
+
+    run.map.currentNodeId = 'a2v_battle_d';
+    run.map.nodes.a2v_battle_d!.visited = true;
+    run.screen = { type: 'reward' };
+    run.reward = {
+      items: [{ type: 'card_choice', cards: ['strike', 'defend', 'bash'] }],
+      claimed: false,
+    };
+
+    run = engine.dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: 'strike' }).nextRun;
+    expect(run.meta.validationCompleted).toBe(true);
+    expect(run.screen.type).toBe('victory');
   });
 
   test('第三章 Boss 战后选牌进入通关界面', () => {

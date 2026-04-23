@@ -13,6 +13,8 @@ describe('normalizeRunState / 新存档版本', () => {
     expect(run!.meta.act).toBe(1);
     expect(run!.meta.actFloor).toBe(1);
     expect(run!.meta.floor).toBe(1);
+    expect(run!.meta.validationCompleted).toBe(false);
+    expect(run!.meta.enteredAct2EliteBranch).toBe(false);
   });
 
   test('旧版本存档直接判定为无效，不做迁移', () => {

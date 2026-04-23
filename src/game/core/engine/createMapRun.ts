@@ -3,6 +3,7 @@ import type { MapAct, MapNode } from '../model/map';
 import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
 import { resetIdCounter } from '../utils/id';
+import { buildAct2EntryValidationMap } from './buildAct2EntryValidationMap';
 import { ACT_FLOOR_COUNTS, generateActMap, globalFloorFor } from './generateBranchingFloor';
 import { createStarterMasterDeck } from './starterDeck';
 
@@ -12,6 +13,10 @@ export function buildActNodes(act: MapAct, seed = 0): Record<string, MapNode> {
 
 export function buildFloor2Nodes(seed = 0): Record<string, MapNode> {
   return buildActNodes(2, seed);
+}
+
+export function buildAct2EntryNodes(seed = 0): Record<string, MapNode> {
+  return buildAct2EntryValidationMap(seed);
 }
 
 export function createMapRun(seed: number): RunState {
@@ -39,6 +44,8 @@ export function createMapRun(seed: number): RunState {
       relics: [...character.startingRelics],
       potions: [...character.startingPotions],
       encounterHistory: createEmptyEncounterHistory(),
+      validationCompleted: false,
+      enteredAct2EliteBranch: false,
     },
   };
 }

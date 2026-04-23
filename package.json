@@ -27,6 +27,7 @@
     "lint": "rslint",
     "check": "pnpm lint && pnpm test",
     "simulate:act1": "tsx scripts/run-act1-validation.ts",
+    "simulate:act2-entry": "tsx scripts/run-act2-entry-validation.ts",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

@@ -52,5 +52,8 @@ export interface RunState {
     relics: string[];
     potions: string[];
     encounterHistory: EncounterHistoryState;
+    validationSegment?: 'act2_entry';
+    validationCompleted?: boolean;
+    enteredAct2EliteBranch?: boolean;
   };
 }

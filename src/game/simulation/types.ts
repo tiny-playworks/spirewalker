@@ -18,6 +18,37 @@ export type SimulationSummary = {
   pollutedDeckRate: number;
 };
 
+export type Act2EntryEncounterMetric = {
+  encounterId: string;
+  attempts: number;
+  survives: number;
+  surviveRate: number;
+  avgHpLoss: number;
+  avgTurns: number;
+};
+
+export type Act2EntryPolicySummary = {
+  policyId: string;
+  totalRuns: number;
+  act1BossReachCount: number;
+  act1BossReachRate: number;
+  act1BossDefeatCount: number;
+  act1BossDefeatRate: number;
+  act2EntrySamples: number;
+  act2Floor13SurviveCount: number;
+  act2Floor13SurviveRate: number;
+  act2Floor15SurviveCount: number;
+  act2Floor15SurviveRate: number;
+  act2FrontWinRate: number;
+  act2AvgHpLoss: number;
+  act2AvgTurns: number;
+  act2EliteBranchEnterCount: number;
+  act2EliteBranchEnterRate: number;
+  act2EliteBranchSamples: number;
+  act2EliteBranchSurviveRate: number;
+  encounterBreakdown: Act2EntryEncounterMetric[];
+};
+
 export type Act1StageMetric = {
   attempts: number;
   wins: number;

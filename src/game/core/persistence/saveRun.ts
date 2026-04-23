@@ -34,6 +34,9 @@ export function normalizeRunState(raw: unknown): RunState | null {
   if (typeof run.meta.characterId !== 'string' || run.meta.characterId.length === 0) {
     run.meta.characterId = DEFAULT_CHARACTER_ID;
   }
+  if (run.meta.validationSegment !== 'act2_entry') delete run.meta.validationSegment;
+  if (typeof run.meta.validationCompleted !== 'boolean') run.meta.validationCompleted = false;
+  if (typeof run.meta.enteredAct2EliteBranch !== 'boolean') run.meta.enteredAct2EliteBranch = false;
   if (typeof run.meta.act !== 'number' || typeof run.meta.actFloor !== 'number') return null;
   return run as RunState;
 }

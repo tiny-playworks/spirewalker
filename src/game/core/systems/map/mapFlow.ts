@@ -35,6 +35,9 @@ export function chooseMapNodeFlow(
   run.meta.act = node.act;
   run.meta.actFloor = node.depth;
   run.meta.floor = globalFloorFor(node.act, node.depth);
+  if (run.meta.validationSegment === 'act2_entry' && node.type === 'elite') {
+    run.meta.enteredAct2EliteBranch = true;
+  }
   pruneMapEdgesToAlive(map);
 
   if (node.type === 'battle' || node.type === 'elite' || node.type === 'boss') {

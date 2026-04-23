@@ -2,6 +2,7 @@ import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
 import { MAX_POTIONS, POTION_DEFINITIONS } from '../../definitions/potions';
 import { applyRelicPickupEffect, RELIC_DEFINITIONS } from '../../definitions/relics';
 import type { GameEvent } from '../../events/types';
+import { buildAct2EntryNodes } from '../../engine/createMapRun';
 import type { RunState } from '../../model/run';
 import { buildActNodes, isLastAct } from '../../engine/createMapRun';
 import { globalFloorFor } from '../../engine/generateBranchingFloor';
@@ -51,13 +52,37 @@ export function resolveRewardPick(
   const mapNodeId = run.map.currentNodeId;
   const mapNode = mapNodeId ? run.map.nodes[mapNodeId] : undefined;
   const beatBoss = mapNode?.type === 'boss';
+  const validationSegmentEnded = Boolean(
+    run.meta.validationSegment === 'act2_entry'
+      && mapNode
+      && mapNode.type === 'battle'
+      && mapNode.nextNodeIds.length === 0,
+  );
+  if (validationSegmentEnded) {
+    run.meta.validationCompleted = true;
+    run.screen = { type: 'victory' };
+    events.push({ type: 'RETURNED_TO_MAP_FROM_BATTLE' });
+    return;
+  }
   if (beatBoss && !isLastAct(run.meta.act)) {
     const nextAct = (run.meta.act + 1) as 2 | 3;
     run.meta.act = nextAct;
     run.meta.actFloor = 1;
-    const nextMap = buildActNodes(nextAct, (run.seed ^ nextAct * 0xaced) >>> 0);
+    const enteringAct2Validation = nextAct === 2;
+    const nextMap = enteringAct2Validation
+      ? buildAct2EntryNodes((run.seed ^ nextAct * 0xaced) >>> 0)
+      : buildActNodes(nextAct, (run.seed ^ nextAct * 0xaced) >>> 0);
     const nextStart = Object.keys(nextMap).find((id) => nextMap[id]!.depth === 1) ?? Object.keys(nextMap)[0]!;
     run.meta.floor = globalFloorFor(nextAct, 1);
+    if (enteringAct2Validation) {
+      run.meta.validationSegment = 'act2_entry';
+      run.meta.validationCompleted = false;
+      run.meta.enteredAct2EliteBranch = false;
+    } else {
+      delete run.meta.validationSegment;
+      run.meta.validationCompleted = false;
+      run.meta.enteredAct2EliteBranch = false;
+    }
     run.map = { nodes: nextMap, currentNodeId: nextStart };
     run.screen = { type: 'map' };
   } else if (beatBoss && isLastAct(run.meta.act)) {
