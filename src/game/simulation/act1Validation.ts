@@ -12,6 +12,7 @@ import type { RunState } from '@/game/core/model/run';
 import type {
   Act1DeathStage,
   Act1DeathStageMetric,
+  Act1BattleTimelineEntry,
   BattleGuardrailMode,
   Act1NonBattleEndReason,
   Act1NonBattleReasonMetric,
@@ -19,6 +20,8 @@ import type {
   Act1NodeChoiceMetric,
   Act1PressureMetric,
   Act1StageMetric,
+  Act1SummaryInvariantMetric,
+  Act1SummaryInvariantTrace,
   Act1TraceNode,
   Act1TraceScreenTransition,
   Act1ValidationSummary,
@@ -58,6 +61,8 @@ type Act1ValidationSuiteInput = {
 };
 
 type Act1BattleRecord = {
+  battleIndex: number;
+  encounterId: string;
   tier: 'normal' | 'elite' | 'boss';
   pressureProfile: PressureProfile;
   won: boolean;
@@ -72,9 +77,15 @@ type Act1RunDetail = {
   guardrailMode: BattleGuardrailMode;
   records: Act1BattleRecord[];
   nodeChoices: MapNodeType[];
+  battleTimeline: Act1BattleTimelineEntry[];
+  firstEliteEncounterId: string | null;
+  firstEliteBattleIndex: number | null;
+  deathEncounterTier: 'normal' | 'elite' | 'boss' | null;
+  deathEncounterId: string | null;
   endStage: Act1DeathStage;
   endReason?: Act1NonBattleEndReason;
   endTrace?: Act1NonBattleTrace;
+  summaryInvariantTrace?: Act1SummaryInvariantTrace;
 };
 
 function asPlayCardCommand(
@@ -244,6 +255,11 @@ function finishNonBattleRun(
   guardrailMode: BattleGuardrailMode,
   records: Act1BattleRecord[],
   nodeChoices: MapNodeType[],
+  battleTimeline: Act1BattleTimelineEntry[],
+  firstEliteEncounterId: string | null,
+  firstEliteBattleIndex: number | null,
+  deathEncounterTier: 'normal' | 'elite' | 'boss' | null,
+  deathEncounterId: string | null,
   nodeHistory: Act1TraceNode[],
   screenHistory: Act1TraceScreenTransition[],
   reason: Act1NonBattleEndReason,
@@ -268,13 +284,24 @@ function finishNonBattleRun(
       return unit?.alive ? sum + unit.hp : sum;
     }, 0)
     : null;
+  const enemyTotalEffectiveHp = battle
+    ? battle.enemyUnitIds.reduce((sum, unitId) => {
+      const unit = battle.units[unitId];
+      return unit?.alive ? sum + unit.hp + unit.block : sum;
+    }, 0)
+    : null;
 
-  return {
+  return finalizeRunDetail({
     seed,
     policyId,
     guardrailMode,
     records,
     nodeChoices,
+    battleTimeline,
+    firstEliteEncounterId,
+    firstEliteBattleIndex,
+    deathEncounterTier,
+    deathEncounterId,
     endStage: 'non_battle',
     endReason: reason,
     endTrace: {
@@ -290,11 +317,67 @@ function finishNonBattleRun(
       aliveEnemyCount,
       playerHp: playerUnit?.hp ?? null,
       enemyTotalHp,
+      enemyTotalEffectiveHp,
       assertions,
       recentNodeHistory: cloneNodeHistory(nodeHistory),
       recentScreenTransitions: cloneScreenHistory(screenHistory),
       nextNodes,
     },
+  });
+}
+
+function buildSummaryInvariantTrace(detail: Act1RunDetail): Act1SummaryInvariantTrace | undefined {
+  const assertions: string[] = [];
+  const eliteTimeline = detail.battleTimeline.filter((entry) => entry.tier === 'elite');
+  const anyEliteRun = eliteTimeline.length > 0;
+  const firstEliteRecord = detail.records.find((record) => record.firstElite);
+  const firstEliteTimeline = eliteTimeline[0] ?? null;
+
+  if (detail.endStage === 'elite' && !anyEliteRun) {
+    assertions.push('endStage=elite 但该 run 没有 elite timeline');
+  }
+  if (detail.firstEliteBattleIndex !== null && !anyEliteRun) {
+    assertions.push('存在 firstElite，但 anyEliteRun 为 false');
+  }
+  if (firstEliteRecord && !anyEliteRun) {
+    assertions.push('存在 firstElite record，但 anyEliteRun 为 false');
+  }
+  if (detail.firstEliteBattleIndex !== null && firstEliteTimeline && detail.firstEliteBattleIndex !== firstEliteTimeline.battleIndex) {
+    assertions.push('firstEliteBattleIndex 不是首个 elite battle');
+  }
+  if (detail.firstEliteEncounterId !== null && firstEliteTimeline && detail.firstEliteEncounterId !== firstEliteTimeline.encounterId) {
+    assertions.push('firstEliteEncounterId 与首个 elite battle 不一致');
+  }
+  if (firstEliteTimeline && !firstEliteRecord) {
+    assertions.push('首个 elite battle 已发生，但没有 firstElite record');
+  }
+  if (detail.deathEncounterTier === 'elite' && !detail.records.some((record) => record.tier === 'elite' && !record.won)) {
+    assertions.push('死于 elite，但没有对应失败 elite battle record');
+  }
+  if (detail.deathEncounterTier === 'boss' && !detail.records.some((record) => record.tier === 'boss' && !record.won)) {
+    assertions.push('死于 boss，但没有对应失败 boss battle record');
+  }
+
+  if (assertions.length === 0) return undefined;
+  return {
+    seed: detail.seed,
+    policyId: detail.policyId,
+    guardrailMode: detail.guardrailMode,
+    reason: 'summary_invariant_failed',
+    assertions,
+    encounterTiersVisited: detail.battleTimeline.map((entry) => entry.tier),
+    firstEliteEncounterId: detail.firstEliteEncounterId,
+    firstEliteBattleIndex: detail.firstEliteBattleIndex,
+    deathEncounterTier: detail.deathEncounterTier,
+    deathEncounterId: detail.deathEncounterId,
+    battleTimeline: detail.battleTimeline.map((entry) => ({ ...entry })),
+  };
+}
+
+function finalizeRunDetail(detail: Act1RunDetail): Act1RunDetail {
+  return {
+    ...detail,
+    summaryInvariantTrace: buildSummaryInvariantTrace(detail),
   };
 }
 
@@ -306,6 +389,10 @@ function battleFingerprint(run: RunState): string {
   const enemyTotalHp = battle.enemyUnitIds.reduce((sum, unitId) => {
     const unit = battle.units[unitId];
     return unit?.alive ? sum + unit.hp : sum;
+  }, 0);
+  const enemyTotalEffectiveHp = battle.enemyUnitIds.reduce((sum, unitId) => {
+    const unit = battle.units[unitId];
+    return unit?.alive ? sum + unit.hp + unit.block : sum;
   }, 0);
   return [
     battle.turn,
@@ -319,6 +406,7 @@ function battleFingerprint(run: RunState): string {
     battle.player.discardPile.length,
     aliveEnemyCount,
     enemyTotalHp,
+    enemyTotalEffectiveHp,
   ].join('|');
 }
 
@@ -327,14 +415,14 @@ function combatProgressFingerprint(run: RunState): string {
   if (!battle) return 'no_battle';
   const player = battle.units[battle.playerUnitId];
   const aliveEnemyCount = battle.enemyUnitIds.filter((unitId) => battle.units[unitId]?.alive).length;
-  const enemyTotalHp = battle.enemyUnitIds.reduce((sum, unitId) => {
+  const enemyTotalEffectiveHp = battle.enemyUnitIds.reduce((sum, unitId) => {
     const unit = battle.units[unitId];
-    return unit?.alive ? sum + unit.hp : sum;
+    return unit?.alive ? sum + unit.hp + unit.block : sum;
   }, 0);
   return [
     player?.hp ?? 0,
     aliveEnemyCount,
-    enemyTotalHp,
+    enemyTotalEffectiveHp,
   ].join('|');
 }
 
@@ -371,16 +459,25 @@ function simulateSingleAct1(
   const screenHistory: Act1TraceScreenTransition[] = [];
   let screenTransitions = 0;
   let activeBattleId: string | null = null;
+  let activeBattleEncounterId: string | null = null;
+  let activeBattleIndex = 0;
   let activeBattleTurn = 0;
   let activeBattleStartHp = 0;
   let activeBattleTier: 'normal' | 'elite' | 'boss' | null = null;
   let activeProfile: PressureProfile | null = null;
+  let battleIndexSeq = 0;
   let eliteResolved = false;
   let battleCommands = 0;
   let lastBattleFingerprint: string | null = null;
   let lastCombatFingerprint: string | null = null;
   let stagnantBattleStateSteps = 0;
   let stagnantCombatSteps = 0;
+  let stagnantPlayableSteps = 0;
+  const battleTimeline: Act1BattleTimelineEntry[] = [];
+  let firstEliteEncounterId: string | null = null;
+  let firstEliteBattleIndex: number | null = null;
+  let deathEncounterTier: 'normal' | 'elite' | 'boss' | null = null;
+  let deathEncounterId: string | null = null;
   const guardrail = guardrailConfig(guardrailMode);
 
   const advanceScreenCounter = () => {
@@ -390,30 +487,40 @@ function simulateSingleAct1(
 
   const finishRun = (
     endStage: Act1RunDetail['endStage'],
-  ): Act1RunDetail => ({
+  ): Act1RunDetail => finalizeRunDetail({
     seed,
     policyId: policy.id,
     guardrailMode,
     records,
     nodeChoices,
+    battleTimeline,
+    firstEliteEncounterId,
+    firstEliteBattleIndex,
+    deathEncounterTier,
+    deathEncounterId,
     endStage,
   });
 
   const finalizeBattle = (won: boolean) => {
-    if (!run.battle || !activeBattleTier || !activeProfile) return false;
-    const playerUnit = run.battle.units[run.battle.playerUnitId];
-    const hpLoss = Math.max(0, activeBattleStartHp - (playerUnit?.hp ?? 0));
-    records.push({
+    if (!activeBattleEncounterId || !activeBattleTier || !activeProfile) return false;
+    const hpLoss = Math.max(0, activeBattleStartHp - run.player.currentHp);
+    const record: Act1BattleRecord = {
+      battleIndex: activeBattleIndex,
+      encounterId: activeBattleEncounterId,
       tier: activeBattleTier,
       pressureProfile: activeProfile,
       won,
       turns: activeBattleTurn,
       hpLoss,
       firstElite: activeBattleTier === 'elite' && !eliteResolved,
-    });
+    };
+    records.push(record);
     if (activeBattleTier === 'elite' && !eliteResolved) eliteResolved = true;
+    const timelineEntry = battleTimeline.find((entry) => entry.battleIndex === activeBattleIndex);
+    if (timelineEntry) timelineEntry.won = won;
     const isBoss = activeBattleTier === 'boss';
     activeBattleId = null;
+    activeBattleEncounterId = null;
     activeBattleTier = null;
     activeProfile = null;
     return isBoss;
@@ -430,6 +537,11 @@ function simulateSingleAct1(
             guardrailMode,
             records,
             nodeChoices,
+            battleTimeline,
+            firstEliteEncounterId,
+            firstEliteBattleIndex,
+            deathEncounterTier,
+            deathEncounterId,
             nodeHistory,
             screenHistory,
             'screen_limit_map',
@@ -445,6 +557,11 @@ function simulateSingleAct1(
             guardrailMode,
             records,
             nodeChoices,
+            battleTimeline,
+            firstEliteEncounterId,
+            firstEliteBattleIndex,
+            deathEncounterTier,
+            deathEncounterId,
             nodeHistory,
             screenHistory,
             'map_no_legal_nodes_before_boss',
@@ -461,6 +578,11 @@ function simulateSingleAct1(
             guardrailMode,
             records,
             nodeChoices,
+            battleTimeline,
+            firstEliteEncounterId,
+            firstEliteBattleIndex,
+            deathEncounterTier,
+            deathEncounterId,
             nodeHistory,
             screenHistory,
             'invalid_map_choice',
@@ -501,6 +623,11 @@ function simulateSingleAct1(
               guardrailMode,
               records,
               nodeChoices,
+              battleTimeline,
+              firstEliteEncounterId,
+              firstEliteBattleIndex,
+              deathEncounterTier,
+              deathEncounterId,
               nodeHistory,
               screenHistory,
               'screen_limit_battle',
@@ -508,15 +635,29 @@ function simulateSingleAct1(
             );
           }
           activeBattleId = battle.id;
+          activeBattleEncounterId = battle.encounter.id;
+          activeBattleIndex = battleIndexSeq;
+          battleIndexSeq += 1;
           activeBattleTurn = battle.turn;
           activeBattleStartHp = battle.units[battle.playerUnitId]?.hp ?? run.player.currentHp;
           activeBattleTier = battle.encounter.tier;
           activeProfile = battle.encounter.pressureProfile ?? 'frontload';
+          battleTimeline.push({
+            battleIndex: activeBattleIndex,
+            encounterId: battle.encounter.id,
+            tier: battle.encounter.tier,
+            won: null,
+          });
+          if (battle.encounter.tier === 'elite' && firstEliteEncounterId === null) {
+            firstEliteEncounterId = battle.encounter.id;
+            firstEliteBattleIndex = activeBattleIndex;
+          }
           battleCommands = 0;
           lastBattleFingerprint = battleFingerprint(run);
           lastCombatFingerprint = combatProgressFingerprint(run);
           stagnantBattleStateSteps = 0;
           stagnantCombatSteps = 0;
+          stagnantPlayableSteps = 0;
         }
         activeBattleTurn = battle.turn;
 
@@ -566,6 +707,11 @@ function simulateSingleAct1(
               guardrailMode,
               records,
               nodeChoices,
+              battleTimeline,
+              firstEliteEncounterId,
+              firstEliteBattleIndex,
+              deathEncounterTier,
+              deathEncounterId,
               nodeHistory,
               screenHistory,
               'battle_command_limit',
@@ -581,14 +727,27 @@ function simulateSingleAct1(
           run = dispatchWithGuard(engine, run, command);
           const nextFingerprint = battleFingerprint(run);
           const nextCombatFingerprint = combatProgressFingerprint(run);
+          const noCombatProgress = nextCombatFingerprint === lastCombatFingerprint;
           stagnantBattleStateSteps = nextFingerprint === lastBattleFingerprint ? stagnantBattleStateSteps + 1 : 0;
-          stagnantCombatSteps = nextCombatFingerprint === lastCombatFingerprint ? stagnantCombatSteps + 1 : 0;
+          stagnantCombatSteps = noCombatProgress ? stagnantCombatSteps + 1 : 0;
+          if (noCombatProgress) {
+            if (command.type === 'END_TURN') {
+              stagnantPlayableSteps = 0;
+            } else {
+              stagnantPlayableSteps += 1;
+            }
+          } else {
+            stagnantPlayableSteps = 0;
+          }
           lastBattleFingerprint = nextFingerprint;
           lastCombatFingerprint = nextCombatFingerprint;
           if (
             stagnantBattleStateSteps >= guardrail.noProgressStateRepeatLimit
             || stagnantCombatSteps >= guardrail.noProgressCombatRepeatLimit
           ) {
+            const noProgressReason = stagnantPlayableSteps > 0
+              ? 'no_progress_loop_playable'
+              : 'no_progress_loop_endturn';
             return finishNonBattleRun(
               run,
               seed,
@@ -596,10 +755,18 @@ function simulateSingleAct1(
               guardrailMode,
               records,
               nodeChoices,
+              battleTimeline,
+              firstEliteEncounterId,
+              firstEliteBattleIndex,
+              deathEncounterTier,
+              deathEncounterId,
               nodeHistory,
               screenHistory,
-              'battle_no_progress',
+              noProgressReason,
               [
+                noProgressReason === 'no_progress_loop_endturn'
+                  ? '连续空过回合仍无推进'
+                  : '仍有可行动作但局面未推进',
                 stagnantBattleStateSteps >= guardrail.noProgressStateRepeatLimit
                   ? 'battle 状态无变化'
                   : 'battle 长时间无有效进展',
@@ -629,6 +796,11 @@ function simulateSingleAct1(
             guardrailMode,
             records,
             nodeChoices,
+            battleTimeline,
+            firstEliteEncounterId,
+            firstEliteBattleIndex,
+            deathEncounterTier,
+            deathEncounterId,
             nodeHistory,
             screenHistory,
             'screen_limit_reward',
@@ -661,6 +833,11 @@ function simulateSingleAct1(
             guardrailMode,
             records,
             nodeChoices,
+            battleTimeline,
+            firstEliteEncounterId,
+            firstEliteBattleIndex,
+            deathEncounterTier,
+            deathEncounterId,
             nodeHistory,
             screenHistory,
             'screen_limit_shop',
@@ -693,6 +870,11 @@ function simulateSingleAct1(
             guardrailMode,
             records,
             nodeChoices,
+            battleTimeline,
+            firstEliteEncounterId,
+            firstEliteBattleIndex,
+            deathEncounterTier,
+            deathEncounterId,
             nodeHistory,
             screenHistory,
             'screen_limit_event',
@@ -724,6 +906,11 @@ function simulateSingleAct1(
             guardrailMode,
             records,
             nodeChoices,
+            battleTimeline,
+            firstEliteEncounterId,
+            firstEliteBattleIndex,
+            deathEncounterTier,
+            deathEncounterId,
             nodeHistory,
             screenHistory,
             'screen_limit_rest',
@@ -749,6 +936,8 @@ function simulateSingleAct1(
       case 'game_over':
         {
           const defeatTier = activeBattleTier;
+          deathEncounterTier = activeBattleTier;
+          deathEncounterId = activeBattleEncounterId;
           if (activeBattleId) finalizeBattle(false);
           return finishRun(defeatTier ?? 'non_battle');
         }
@@ -764,6 +953,11 @@ function simulateSingleAct1(
     guardrailMode,
     records,
     nodeChoices,
+    battleTimeline,
+    firstEliteEncounterId,
+    firstEliteBattleIndex,
+    deathEncounterTier,
+    deathEncounterId,
     nodeHistory,
     screenHistory,
     'screen_limit_map',
@@ -865,6 +1059,19 @@ function summarizeNonBattle(details: Act1RunDetail[]): Act1NonBattleReasonMetric
     .sort((a, b) => b.count - a.count);
 }
 
+function summarizeSummaryInvariants(details: Act1RunDetail[]): Act1SummaryInvariantMetric[] {
+  const traces = details
+    .map((detail) => detail.summaryInvariantTrace)
+    .filter((trace): trace is Act1SummaryInvariantTrace => Boolean(trace));
+  if (traces.length === 0) return [];
+  return [{
+    reason: 'summary_invariant_failed',
+    count: traces.length,
+    rate: details.length > 0 ? traces.length / details.length : 0,
+    exampleSeeds: traces.slice(0, 3).map((trace) => trace.seed),
+  }];
+}
+
 export function runAct1Validation(input: Act1ValidationInput): Act1ValidationSummary {
   const {
     seed,
@@ -885,11 +1092,13 @@ export function runAct1Validation(input: Act1ValidationInput): Act1ValidationSum
 
   const normalRecords = allRecords.filter((record) => record.tier === 'normal');
   const eliteRecords = allRecords.filter((record) => record.tier === 'elite');
-  const firstEliteRecords = allRecords.filter((record) => record.firstElite);
+  const firstEliteRecords = details
+    .map((detail) => detail.records.find((record) => record.firstElite))
+    .filter((record): record is Act1BattleRecord => Boolean(record));
   const bossRecords = allRecords.filter((record) => record.tier === 'boss');
   const overall = summarizeStage(allRecords);
   const anyEliteRuns = details.filter((detail) =>
-    detail.records.some((record) => record.tier === 'elite'),
+    detail.battleTimeline.some((record) => record.tier === 'elite'),
   ).length;
 
   return {
@@ -914,6 +1123,10 @@ export function runAct1Validation(input: Act1ValidationInput): Act1ValidationSum
     nonBattleTraces: details
       .map((detail) => detail.endTrace)
       .filter((trace): trace is Act1NonBattleTrace => Boolean(trace)),
+    summaryInvariantBreakdown: summarizeSummaryInvariants(details),
+    summaryInvariantTraces: details
+      .map((detail) => detail.summaryInvariantTrace)
+      .filter((trace): trace is Act1SummaryInvariantTrace => Boolean(trace)),
   };
 }
 

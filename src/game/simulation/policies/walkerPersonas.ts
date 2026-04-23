@@ -51,6 +51,8 @@ type PersonaStyle = 'guard' | 'burst' | 'mixed';
 type ScoredBattleOption = {
   option: SimulationPlayableCommand;
   damage: number;
+  progressDamage: number;
+  killWindowGain: number;
   block: number;
   safetyGain: number;
   setupGain: number;
@@ -100,6 +102,18 @@ function dangerLevel(ctx: SimulationBattleContext): number {
   return Math.max(0, ctx.projectedIncomingDamage - player.block);
 }
 
+function aliveEnemies(ctx: SimulationBattleContext) {
+  return ctx.battle.enemyUnitIds
+    .map((unitId) => ctx.battle.units[unitId])
+    .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit?.alive));
+}
+
+function lowestEnemyEffectiveHp(ctx: SimulationBattleContext): number {
+  const enemies = aliveEnemies(ctx);
+  if (enemies.length === 0) return 0;
+  return Math.min(...enemies.map((unit) => unit.hp + unit.block));
+}
+
 function estimateImmediateBlock(cardId: string): number {
   const def = CARD_DEFINITIONS[cardId];
   if (!def) return 0;
@@ -138,30 +152,70 @@ function scoreDefinitionId(definitionId: string): number {
 function estimateImmediateDamage(ctx: SimulationBattleContext, option: SimulationPlayableCommand): number {
   const momentum = playerMomentum(ctx);
   const primedBreak = playerPrimedBreak(ctx) > 0 ? 4 : 0;
-  const targetHp = option.command.targetUnitId
-    ? (ctx.battle.units[option.command.targetUnitId]?.hp ?? 999)
-    : 999;
+  const targetUnit = option.command.targetUnitId
+    ? ctx.battle.units[option.command.targetUnitId]
+    : null;
+  const targetHp = targetUnit?.hp ?? 999;
+  const targetBlock = targetUnit?.block ?? 0;
+  const effectiveSingle = (rawDamage: number) => Math.max(0, rawDamage - targetBlock);
+  const effectiveAll = (rawDamage: number) => aliveEnemies(ctx)
+    .reduce((sum, enemy) => sum + Math.max(0, rawDamage - enemy.block), 0);
   switch (option.card.id) {
     case QUICK_RELEASE.id:
-      return 3 + Math.min(momentum, 1) * 5 + (momentum > 0 ? primedBreak : 0);
+      return effectiveSingle(3 + Math.min(momentum, 1) * 5 + (momentum > 0 ? primedBreak : 0));
     case FOLLOW_THROUGH.id:
-      return 4 + Math.min(momentum, 2) * 3 + (momentum > 0 ? primedBreak : 0);
+      return effectiveSingle(4 + Math.min(momentum, 2) * 3 + (momentum > 0 ? primedBreak : 0));
     case FULL_RELEASE.id:
-      return 6 + momentum * 3 + (momentum > 0 ? primedBreak : 0);
+      return effectiveSingle(6 + momentum * 3 + (momentum > 0 ? primedBreak : 0));
     case 'burst_strike':
-      return 4 + momentum * 3 + (momentum > 0 ? primedBreak : 0);
+      return effectiveSingle(4 + momentum * 3 + (momentum > 0 ? primedBreak : 0));
     case 'snap_strike':
-      return 5 + Math.min(momentum, 2) * 4 + (momentum > 0 ? primedBreak : 0);
+      return effectiveSingle(5 + Math.min(momentum, 2) * 4 + (momentum > 0 ? primedBreak : 0));
     case PATIENT_CUT.id:
-      return 6;
+      return effectiveSingle(6);
     case 'strike':
-      return 6;
+      return effectiveSingle(6);
     case 'bash':
-      return 7;
+      return effectiveSingle(7);
     case 'cleave':
-      return 8;
+      return effectiveAll(8);
     default:
-      return targetHp <= 6 && option.card.type === 'attack' ? 6 : 0;
+      return targetHp + targetBlock <= 6 && option.card.type === 'attack' ? effectiveSingle(6) : 0;
+  }
+}
+
+function estimateProgressDamage(ctx: SimulationBattleContext, option: SimulationPlayableCommand): number {
+  const momentum = playerMomentum(ctx);
+  const primedBreak = playerPrimedBreak(ctx) > 0 ? 4 : 0;
+  const targetUnit = option.command.targetUnitId
+    ? ctx.battle.units[option.command.targetUnitId]
+    : null;
+  const targetEffectiveHp = targetUnit ? targetUnit.hp + targetUnit.block : 999;
+  const progressSingle = (rawDamage: number) => Math.max(0, Math.min(rawDamage, targetEffectiveHp));
+  const progressAll = (rawDamage: number) => aliveEnemies(ctx)
+    .reduce((sum, enemy) => sum + Math.max(0, Math.min(rawDamage, enemy.hp + enemy.block)), 0);
+
+  switch (option.card.id) {
+    case QUICK_RELEASE.id:
+      return progressSingle(3 + Math.min(momentum, 1) * 5 + (momentum > 0 ? primedBreak : 0));
+    case FOLLOW_THROUGH.id:
+      return progressSingle(4 + Math.min(momentum, 2) * 3 + (momentum > 0 ? primedBreak : 0));
+    case FULL_RELEASE.id:
+      return progressSingle(6 + momentum * 3 + (momentum > 0 ? primedBreak : 0));
+    case 'burst_strike':
+      return progressSingle(4 + momentum * 3 + (momentum > 0 ? primedBreak : 0));
+    case 'snap_strike':
+      return progressSingle(5 + Math.min(momentum, 2) * 4 + (momentum > 0 ? primedBreak : 0));
+    case PATIENT_CUT.id:
+      return progressSingle(6);
+    case 'strike':
+      return progressSingle(6);
+    case 'bash':
+      return progressSingle(7);
+    case 'cleave':
+      return progressAll(8);
+    default:
+      return option.card.type === 'attack' ? progressSingle(6) : 0;
   }
 }
 
@@ -205,21 +259,29 @@ function evaluateBattleOption(
 ): ScoredBattleOption {
   const danger = dangerLevel(ctx);
   const damage = estimateImmediateDamage(ctx, option);
+  const progressDamage = estimateProgressDamage(ctx, option);
   const block = estimateImmediateBlock(option.card.id);
   const hasFollowupBurstPayoff = ctx.playableCommands.some(
     (item) => burstCards.has(item.card.id) && item.card.id !== option.card.id,
   );
-  const targetHp = option.command.targetUnitId
-    ? (ctx.battle.units[option.command.targetUnitId]?.hp ?? 999)
-    : 999;
+  const targetUnit = option.command.targetUnitId
+    ? ctx.battle.units[option.command.targetUnitId]
+    : null;
+  const targetHp = targetUnit?.hp ?? 999;
+  const targetEffectiveHp = targetUnit ? targetUnit.hp + targetUnit.block : 999;
   const lethal = Boolean(option.command.targetUnitId) && damage >= targetHp;
   const safetyGain = danger > 0 ? Math.min(danger, block) : 0;
   const setupGain = estimateSetupValue(ctx, option);
-  let score = damage * 1.6 + safetyGain * 1.8 + setupGain + (lethal ? 14 : 0);
+  const killWindowGain = progressDamage > 0
+    ? Math.max(0, Math.min(6, (lowestEnemyEffectiveHp(ctx) - Math.max(0, lowestEnemyEffectiveHp(ctx) - progressDamage)) / 2))
+    : 0;
+  let score = progressDamage * 1.6 + killWindowGain * 2 + safetyGain * 1.8 + setupGain + (lethal ? 14 : 0);
 
   if (persona === 'guard') {
     score += guardCards.has(option.card.id) ? 2 : 0;
     score += option.card.id === PATIENT_CUT.id ? playerMomentum(ctx) : 0;
+    if (ctx.stagnantCombatSteps >= 2 && progressDamage > 0) score += progressDamage * 0.8 + killWindowGain;
+    if (ctx.stagnantCombatSteps >= 2 && damage === 0 && safetyGain === 0 && setupGain < 5) score -= 8;
   }
   if (persona === 'burst') {
     score += burstCards.has(option.card.id) ? 2.5 : 0;
@@ -227,12 +289,15 @@ function evaluateBattleOption(
   }
   if (persona === 'mixed') {
     score += option.card.type === 'attack' ? 1.5 : 0;
+    if (ctx.stagnantCombatSteps >= 2 && progressDamage > 0) score += progressDamage + killWindowGain * 1.5;
+    if (damage === 0 && safetyGain === 0 && setupGain < 8) score -= 6;
   }
 
   if (danger === 0 && damage === 0 && block > 0 && setupGain < 2.5) score -= 6;
   if (damage === 0 && safetyGain === 0 && setupGain < 2.5) score -= 8;
   if (setupCards.has(option.card.id) && playerMomentum(ctx) >= 3 && damage === 0) score -= 5;
   if (option.card.id === BREAK_OPENING.id && !hasFollowupBurstPayoff) score -= 5;
+  if (option.command.targetUnitId && targetEffectiveHp > 0 && progressDamage > 0 && progressDamage < Math.ceil(targetEffectiveHp / 3) && ctx.stagnantCombatSteps >= 2) score -= 3;
   if (ctx.stagnantCombatSteps >= 4 && damage === 0 && safetyGain < 3 && setupGain < 3.5) score -= 8;
   if (ctx.stagnantCombatSteps >= 4 && option.card.id === BREAK_OPENING.id && !hasFollowupBurstPayoff) score -= 8;
   if (ctx.stagnantBattleStateSteps >= 2 && damage < 4 && safetyGain < 3 && setupGain < 3.5) score -= 4;
@@ -241,12 +306,14 @@ function evaluateBattleOption(
   return {
     option,
     damage,
+    progressDamage,
+    killWindowGain,
     block,
     safetyGain,
     setupGain,
     score,
     lethal,
-    lowImpact: !lethal && damage < 5 && safetyGain < 4 && setupGain < 3.5,
+    lowImpact: !lethal && progressDamage < 5 && safetyGain < 4 && setupGain < 3.5,
   };
 }
 
@@ -273,6 +340,7 @@ function bestEvaluatedOption(
 function shouldEndTurn(
   ctx: SimulationBattleContext,
   options: ScoredBattleOption[],
+  persona: PersonaStyle,
 ): boolean {
   const best = options[0];
   if (!best) return true;
@@ -280,15 +348,25 @@ function shouldEndTurn(
 
   const danger = dangerLevel(ctx);
   const usefulCount = options.filter((option) => !option.lowImpact).length;
+  const damagingChoices = options.filter((option) => option.progressDamage > 0);
   const bestImprovesSafety = best.safetyGain >= Math.min(4, Math.max(1, danger));
   const bestImprovesSetup = best.setupGain >= 4;
+  const bestImprovesKillWindow = best.killWindowGain >= 2 || best.progressDamage >= Math.max(4, Math.ceil(lowestEnemyEffectiveHp(ctx) / 2));
+
+  if (persona === 'burst') {
+    if (ctx.stagnantCombatSteps >= 8 && damagingChoices.length === 0 && best.setupGain < 5) return true;
+    return false;
+  }
 
   if (ctx.stagnantCombatSteps >= 6 && best.lowImpact) return true;
   if (ctx.stagnantBattleStateSteps >= 3 && best.score < 7) return true;
   if (danger <= 0 && usefulCount === 0) return true;
-  if (danger <= 0 && ctx.stagnantCombatSteps >= 4 && best.damage === 0 && best.setupGain < 7) return true;
+  if (danger <= 0 && ctx.stagnantCombatSteps >= 4 && best.progressDamage === 0 && best.setupGain < 7) return true;
   if (danger <= 0 && ctx.battle.playerCardsPlayedThisTurn >= 2 && best.score < 6) return true;
-  if (danger > 0 && !bestImprovesSafety && best.damage < 5 && !bestImprovesSetup && usefulCount <= 1) return true;
+  if (danger > 0 && !bestImprovesSafety && best.progressDamage < 5 && !bestImprovesSetup && usefulCount <= 1) return true;
+  if (ctx.stagnantCombatSteps >= 2 && damagingChoices.length === 0 && best.setupGain < 6 && best.safetyGain < 4) return true;
+  if (persona === 'guard' && ctx.stagnantCombatSteps >= 2 && !bestImprovesSafety && !bestImprovesKillWindow && best.setupGain < 6) return true;
+  if (persona === 'mixed' && danger <= 0 && !bestImprovesKillWindow && best.setupGain < 8) return true;
 
   return false;
 }
@@ -375,6 +453,7 @@ function chooseGuardBattleCommand(ctx: SimulationBattleContext): GameCommand {
   const momentum = playerMomentum(ctx);
   const danger = dangerLevel(ctx);
   const options = evaluateBattleOptions(ctx, 'guard');
+  const pressureTurn = ctx.battle.turn >= 8 || ctx.stagnantCombatSteps >= 2;
   const guardPotionSlot = findPotionSlot(ctx, STILLWATER_TONIC.id);
   if (guardPotionSlot >= 0 && momentum <= 1 && danger > 0) {
     return { type: 'USE_POTION', slotIndex: guardPotionSlot };
@@ -387,13 +466,41 @@ function chooseGuardBattleCommand(ctx: SimulationBattleContext): GameCommand {
   );
   if (lethal) return lethal.option.command;
 
+  const pressureOption = bestEvaluatedOption(
+    options,
+    (option) => option.progressDamage > 0 || option.killWindowGain > 0,
+    (option) => option.progressDamage * 2.4 + option.killWindowGain * 3 + option.score,
+  );
+  if (
+    pressureTurn
+    && pressureOption
+    && (
+      danger <= pressureOption.safetyGain + 4
+      || playerHp(ctx) >= Math.max(18, danger * 2)
+      || pressureOption.progressDamage >= Math.ceil(lowestEnemyEffectiveHp(ctx) / 3)
+    )
+  ) {
+    return pressureOption.option.command;
+  }
+
   if (danger > 0) {
     const defense = bestEvaluatedOption(
       options,
       (option) => guardCards.has(option.option.card.id) || option.block > 0,
       (option) => option.safetyGain * 3 + option.setupGain + option.score,
     );
-    if (defense && defense.score >= 5) return defense.option.command;
+    if (
+      defense
+      && defense.score >= 5
+      && (
+        !pressureTurn
+        || !pressureOption
+        || defense.safetyGain >= Math.max(4, danger - 2)
+        || defense.score >= pressureOption.score + 4
+      )
+    ) {
+      return defense.option.command;
+    }
   }
 
   if (momentum <= 1) {
@@ -410,9 +517,15 @@ function chooseGuardBattleCommand(ctx: SimulationBattleContext): GameCommand {
     (option) => option.option.card.id === PATIENT_CUT.id || option.option.card.id === SURVEY_FIELD.id || option.option.card.id === HELD_BREATH.id || option.option.card.id === ANCHORED_BREATH.id,
     (option) => option.setupGain + option.safetyGain + option.score + momentum,
   );
-  if (keepMomentum && keepMomentum.score >= 4.5) return keepMomentum.option.command;
+  if (
+    keepMomentum
+    && keepMomentum.score >= 4.5
+    && (!pressureTurn || !pressureOption || keepMomentum.score >= pressureOption.score + 2)
+  ) {
+    return keepMomentum.option.command;
+  }
 
-  if (shouldEndTurn(ctx, options)) return { type: 'END_TURN' };
+  if (shouldEndTurn(ctx, options, 'guard')) return { type: 'END_TURN' };
 
   const anyPlayable = bestEvaluatedOption(
     options,
@@ -461,7 +574,7 @@ function chooseBurstBattleCommand(ctx: SimulationBattleContext): GameCommand {
     if (payoff && payoff.score >= 4) return payoff.option.command;
   }
 
-  if (shouldEndTurn(ctx, options)) return { type: 'END_TURN' };
+  if (shouldEndTurn(ctx, options, 'burst')) return { type: 'END_TURN' };
 
   const anyPlayable = bestEvaluatedOption(
     options,
@@ -477,7 +590,7 @@ function chooseMixedBattleCommand(ctx: SimulationBattleContext): GameCommand {
   if (healingPotionSlot >= 0 && playerHp(ctx) <= 14 && dangerLevel(ctx) > 0) {
     return { type: 'USE_POTION', slotIndex: healingPotionSlot };
   }
-  if (shouldEndTurn(ctx, options)) return { type: 'END_TURN' };
+  if (shouldEndTurn(ctx, options, 'mixed')) return { type: 'END_TURN' };
   const anyPlayable = bestEvaluatedOption(options, () => true, (option) => option.score);
   return anyPlayable?.option.command ?? { type: 'END_TURN' };
 }

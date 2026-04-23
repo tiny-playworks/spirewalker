@@ -59,7 +59,8 @@ export type Act1NonBattleEndReason =
   | 'screen_limit_event'
   | 'screen_limit_rest'
   | 'battle_command_limit'
-  | 'battle_no_progress';
+  | 'no_progress_loop_playable'
+  | 'no_progress_loop_endturn';
 
 export type BattleGuardrailMode = 'baseline_200' | 'progress_guard';
 
@@ -92,6 +93,7 @@ export type Act1NonBattleTrace = {
   aliveEnemyCount: number | null;
   playerHp: number | null;
   enemyTotalHp: number | null;
+  enemyTotalEffectiveHp: number | null;
   assertions: string[];
   recentNodeHistory: Act1TraceNode[];
   recentScreenTransitions: Act1TraceScreenTransition[];
@@ -104,6 +106,34 @@ export type Act1NonBattleTrace = {
 
 export type Act1NonBattleReasonMetric = {
   reason: Act1NonBattleEndReason;
+  count: number;
+  rate: number;
+  exampleSeeds: number[];
+};
+
+export type Act1BattleTimelineEntry = {
+  battleIndex: number;
+  encounterId: string;
+  tier: 'normal' | 'elite' | 'boss';
+  won: boolean | null;
+};
+
+export type Act1SummaryInvariantTrace = {
+  seed: number;
+  policyId: string;
+  guardrailMode: BattleGuardrailMode;
+  reason: 'summary_invariant_failed';
+  assertions: string[];
+  encounterTiersVisited: Array<'normal' | 'elite' | 'boss'>;
+  firstEliteEncounterId: string | null;
+  firstEliteBattleIndex: number | null;
+  deathEncounterTier: 'normal' | 'elite' | 'boss' | null;
+  deathEncounterId: string | null;
+  battleTimeline: Act1BattleTimelineEntry[];
+};
+
+export type Act1SummaryInvariantMetric = {
+  reason: 'summary_invariant_failed';
   count: number;
   rate: number;
   exampleSeeds: number[];
@@ -129,6 +159,8 @@ export type Act1ValidationSummary = {
   deathStageBreakdown: Act1DeathStageMetric[];
   nonBattleBreakdown: Act1NonBattleReasonMetric[];
   nonBattleTraces: Act1NonBattleTrace[];
+  summaryInvariantBreakdown: Act1SummaryInvariantMetric[];
+  summaryInvariantTraces: Act1SummaryInvariantTrace[];
 };
 
 export type SimulationPlayableCommand = {

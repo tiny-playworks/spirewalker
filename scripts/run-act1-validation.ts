@@ -97,6 +97,19 @@ function formatTrace(summary: Awaited<ReturnType<typeof runAct1ValidationSuite>>
   ];
 }
 
+function formatInvariantTrace(summary: Awaited<ReturnType<typeof runAct1ValidationSuite>>[number], seed: number): string[] {
+  const trace = summary.summaryInvariantTraces.find((item) => item.seed === seed);
+  if (!trace) return [`  - seed=${seed}: invariant trace missing`];
+  return [
+    `  - seed=${trace.seed}, mode=${trace.guardrailMode}, reason=${trace.reason}`,
+    `    assertions=${trace.assertions.join(' | ')}`,
+    `    tiers=${trace.encounterTiersVisited.join(' -> ') || 'none'}`,
+    `    firstElite=${trace.firstEliteEncounterId ?? 'null'}@${trace.firstEliteBattleIndex ?? 'null'}`,
+    `    deathEncounter=${trace.deathEncounterTier ?? 'null'}:${trace.deathEncounterId ?? 'null'}`,
+    `    battleTimeline=${trace.battleTimeline.map((item) => `#${item.battleIndex}:${item.tier}:${item.encounterId}:${item.won === null ? 'pending' : item.won ? 'win' : 'loss'}`).join(' | ') || 'none'}`,
+  ];
+}
+
 function nonBattleRate(summary: Awaited<ReturnType<typeof runAct1ValidationSuite>>[number]): number {
   return summary.deathStageBreakdown.find((item) => item.stage === 'non_battle')?.rate ?? 0;
 }
@@ -131,6 +144,17 @@ function printSummaryBlock(
           `    * ${item.reason}: ${(item.rate * 100).toFixed(1)}%(${item.count}), exampleSeeds=${item.exampleSeeds.join(', ')}`,
         );
         for (const line of item.exampleSeeds.flatMap((seed) => formatTrace(summary, seed))) {
+          console.log(line);
+        }
+      }
+    }
+    if (summary.summaryInvariantBreakdown.length > 0) {
+      console.log(`  - eliteSummaryMismatchTop${options.nonBattleTop}:`);
+      for (const item of summary.summaryInvariantBreakdown.slice(0, options.nonBattleTop)) {
+        console.log(
+          `    * ${item.reason}: ${(item.rate * 100).toFixed(1)}%(${item.count}), exampleSeeds=${item.exampleSeeds.join(', ')}`,
+        );
+        for (const line of item.exampleSeeds.flatMap((seed) => formatInvariantTrace(summary, seed))) {
           console.log(line);
         }
       }

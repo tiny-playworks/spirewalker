@@ -34,6 +34,8 @@ describe('simulation/act1Validation', () => {
     expect(summary.nodeChoiceBreakdown.length).toBeGreaterThan(0);
     expect(summary.deathStageBreakdown.length).toBeGreaterThan(0);
     expect(summary.nonBattleBreakdown.every((item) => item.exampleSeeds.length > 0)).toBe(true);
+    expect(summary.summaryInvariantBreakdown.length).toBe(0);
+    expect(summary.summaryInvariantTraces.length).toBe(0);
   });
 
   test('suite 会返回三种 persona，且同种子结果可复现', () => {

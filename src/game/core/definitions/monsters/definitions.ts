@@ -87,6 +87,11 @@ const deathBurst = (damage: number): MonsterIntent => ({ type: 'death_burst', da
 const thorns = (damage: number): MonsterIntent => ({ type: 'thorns', damage });
 const reactive = (damage: number): MonsterIntent => ({ type: 'reactive', damage });
 const counter = (threshold: number, damage: number): MonsterIntent => ({ type: 'counter', threshold, damage });
+const punishMulti = (threshold: number, blockValue: number): MonsterIntent => ({
+  type: 'punish_multi_play',
+  threshold,
+  block: blockValue,
+});
 const pollute = (count: number, cardId = 'junk_sludge'): MonsterIntent => ({ type: 'pollute_draw', count, cardId });
 const lockHand = (count: number): MonsterIntent => ({ type: 'lock_hand', count });
 const drawPressure = (value: number): MonsterIntent => ({ type: 'draw_pressure', value });
@@ -124,9 +129,9 @@ const ENEMY_SEEDS: EnemySeed[] = [
   { id: 'buff_beetle', name: '甲虫', chapter: 1, tier: 'normal', role: 'support', hpRange: [30, 36], archetype: 'trickster', rotation: [buff(STATUS_METALLICIZE, 1), atk(6), deathBurst(6)], tags: ['death_trigger', 'support'] },
 
   { id: 'slime_elite', name: '黏核母体', chapter: 1, tier: 'elite', role: 'tank', hpRange: [56, 60], archetype: 'splitter', rotation: [atk(8), reduce(STATUS_MOMENTUM, 3)], tags: ['split', 'elite', 'snowball'] },
-  { id: 'act1_executioner', name: '执行者', chapter: 1, tier: 'elite', role: 'frontliner', hpRange: [58, 64], archetype: 'heavy', rotation: [thorns(4), heavy(20, 1), attackBuff(10, STATUS_VULNERABLE, 1)], tags: ['heavy', 'elite', 'execution_check'] },
-  { id: 'act1_twin_hunter', name: '双刃猎手', chapter: 1, tier: 'elite', role: 'carry', hpRange: [56, 62], archetype: 'multi_hit', rotation: [doubleAction(1), multi(5, 2), counter(2, 4)], tags: ['double_action', 'elite', 'frontload'] },
-  { id: 'act1_debt_monk', name: '收债修士', chapter: 1, tier: 'elite', role: 'disruptor', hpRange: [60, 66], archetype: 'trickster', rotation: [lockHand(2), pollute(2), heavy(16, 1)], tags: ['resource_tax', 'elite', 'attrition'] },
+  { id: 'act1_executioner', name: '执行者', chapter: 1, tier: 'elite', role: 'frontliner', hpRange: [58, 64], archetype: 'heavy', rotation: [counter(2, 8), heavy(26, 1), attackBuff(12, STATUS_VULNERABLE, 2)], tags: ['heavy', 'elite', 'execution_check'] },
+  { id: 'act1_twin_hunter', name: '双刃猎手', chapter: 1, tier: 'elite', role: 'carry', hpRange: [56, 62], archetype: 'multi_hit', rotation: [counter(2, 7), multi(7, 2), punishMulti(3, 16)], tags: ['double_action', 'elite', 'frontload'] },
+  { id: 'act1_debt_monk', name: '收债修士', chapter: 1, tier: 'elite', role: 'disruptor', hpRange: [60, 66], archetype: 'trickster', rotation: [lockHand(2), heavy(22, 1), drawPressure(3)], tags: ['resource_tax', 'elite', 'attrition'] },
 
   {
     id: 'slime_boss',

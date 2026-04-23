@@ -170,4 +170,26 @@ describe('monster/enemyAi', () => {
     expect(gatePhases?.[0]?.rotation[4]).toEqual({ type: 'counter', threshold: 2, damage: 8 });
     expect(gatePhases?.[1]?.rotation[2]).toEqual({ type: 'thorns', damage: 4 });
   });
+
+  test('Act1 首精英 rotation 符合新的构筑检定设计', () => {
+    const executioner = MONSTER_DEFINITIONS.act1_executioner.ai.rotation;
+    const twinHunter = MONSTER_DEFINITIONS.act1_twin_hunter.ai.rotation;
+    const debtMonk = MONSTER_DEFINITIONS.act1_debt_monk.ai.rotation;
+
+    expect(executioner).toEqual([
+      { type: 'counter', threshold: 2, damage: 8 },
+      { type: 'heavy_charge', value: 26, charge: 1 },
+      { type: 'attack_buff', attack: 12, statusId: 'vulnerable', value: 2 },
+    ]);
+    expect(twinHunter).toEqual([
+      { type: 'counter', threshold: 2, damage: 7 },
+      { type: 'multi_hit', value: 7, hits: 2 },
+      { type: 'punish_multi_play', threshold: 3, block: 16 },
+    ]);
+    expect(debtMonk).toEqual([
+      { type: 'lock_hand', count: 2 },
+      { type: 'heavy_charge', value: 22, charge: 1 },
+      { type: 'draw_pressure', value: 3 },
+    ]);
+  });
 });
