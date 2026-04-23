@@ -1,11 +1,10 @@
 import type { GameEvent } from '../../events/types';
 import type { BattleState } from '../../model/battle';
 import type { RunState } from '../../model/run';
-import type { CombatUnit } from '../../model/unit';
-import { addStatusStacks, decayStatus, getStatusStacks } from '../../combat/statusCombat';
-import { STATUS_MOMENTUM } from '../../definitions/statuses';
-import { runOnBeforeDealDamage, runOnBeforeTakeDamage, runOnTurnEnd, runOnTurnStart } from '../status/statusHooks';
+import { runOnTurnEnd, runOnTurnStart } from '../status/statusHooks';
 import { refreshEnemyIntent } from '../enemy/enemyAi';
+import { executeMonsterIntent } from '../enemy/intentExecutor';
+import { applyStartOfPlayerTurnPressure, tickEnemyCountdown } from '../enemy/runtimeHooks';
 import { syncRunPlayerFromBattle } from '../common/runGuards';
 import { mulberry32 } from '../../utils/rng';
 import { shuffleInPlace } from '../../utils/shuffle';
@@ -30,6 +29,11 @@ function drawUpTo(
     events.push({ type: 'CARD_DRAWN', unitId: battle.playerUnitId, cardInstanceId: id });
     need -= 1;
   }
+  if (battle.player.pendingHandLocks > 0) {
+    const candidates = battle.player.hand.filter((cardId) => !battle.player.lockedCardInstanceIds.includes(cardId));
+    battle.player.lockedCardInstanceIds.push(...candidates.slice(0, battle.player.pendingHandLocks));
+    battle.player.pendingHandLocks = 0;
+  }
 }
 
 function discardHand(battle: BattleState): void {
@@ -38,29 +42,7 @@ function discardHand(battle: BattleState): void {
     const id = hand.shift();
     if (id) discardPile.push(id);
   }
-}
-
-function dealDamageTo(
-  battle: BattleState,
-  sourceId: string,
-  target: CombatUnit,
-  baseAmount: number,
-  events: GameEvent[],
-): void {
-  if (!target.alive) return;
-  const source = battle.units[sourceId];
-  let remaining = source ? runOnBeforeDealDamage(source, baseAmount) : baseAmount;
-  remaining = runOnBeforeTakeDamage(target, remaining);
-  const blockAbsorb = Math.min(target.block, remaining);
-  if (blockAbsorb > 0) {
-    target.block -= blockAbsorb;
-    remaining -= blockAbsorb;
-  }
-  const hpLoss = Math.min(target.hp, remaining);
-  target.hp -= hpLoss;
-  if (hpLoss > 0) events.push({ type: 'DAMAGE_DEALT', sourceUnitId: sourceId, targetUnitId: target.id, value: hpLoss });
-  target.alive = target.hp > 0;
-  if (!target.alive) events.push({ type: 'UNIT_DIED', unitId: target.id });
+  battle.player.lockedCardInstanceIds = [];
 }
 
 function applyEnemyIntent(
@@ -75,78 +57,8 @@ function applyEnemyIntent(
   if (!enemy?.alive || !monster?.intent || !player) return;
 
   const intent = monster.intent;
-  if (intent.type === 'attack') {
-    dealDamageTo(battle, enemyUnitId, player, intent.value, events);
-    monster.moveHistory.push('attack');
-    return;
-  }
-
-  if (intent.type === 'block') {
-    enemy.block += intent.value;
-    events.push({ type: 'BLOCK_GAINED', unitId: enemyUnitId, value: intent.value });
-    monster.moveHistory.push('block');
-    return;
-  }
-
-  if (intent.type === 'buff') {
-    addStatusStacks(enemy, intent.statusId, intent.value);
-    events.push({
-      type: 'STATUS_APPLIED',
-      unitId: enemyUnitId,
-      statusId: intent.statusId,
-      value: getStatusStacks(enemy, intent.statusId),
-    });
-    monster.moveHistory.push('buff');
-    return;
-  }
-
-  if (intent.type === 'debuff') {
-    addStatusStacks(player, intent.statusId, intent.value);
-    events.push({
-      type: 'STATUS_APPLIED',
-      unitId: battle.playerUnitId,
-      statusId: intent.statusId,
-      value: getStatusStacks(player, intent.statusId),
-    });
-    monster.moveHistory.push('debuff');
-    return;
-  }
-
-  if (intent.type === 'reduce_status') {
-    const reduction = intent.statusId === STATUS_MOMENTUM && relicIds.includes('guard_knot')
-      ? Math.max(0, intent.value - 1)
-      : intent.value;
-    decayStatus(player, intent.statusId, reduction);
-    events.push({
-      type: 'STATUS_APPLIED',
-      unitId: battle.playerUnitId,
-      statusId: intent.statusId,
-      value: getStatusStacks(player, intent.statusId),
-    });
-    monster.moveHistory.push('reduce_status');
-    return;
-  }
-
-  if (intent.type === 'punish_multi_play') {
-    if (battle.playerCardsPlayedThisTurn >= intent.threshold) {
-      enemy.block += intent.block;
-      events.push({ type: 'BLOCK_GAINED', unitId: enemyUnitId, value: intent.block });
-    }
-    monster.moveHistory.push('punish_multi_play');
-    return;
-  }
-
-  if (intent.type === 'attack_buff') {
-    dealDamageTo(battle, enemyUnitId, player, intent.attack, events);
-    addStatusStacks(enemy, intent.statusId, intent.value);
-    events.push({
-      type: 'STATUS_APPLIED',
-      unitId: enemyUnitId,
-      statusId: intent.statusId,
-      value: getStatusStacks(enemy, intent.statusId),
-    });
-    monster.moveHistory.push('attack_buff');
-  }
+  executeMonsterIntent(relicIds, battle, enemyUnitId, intent, events);
+  monster.moveHistory.push(intent.type);
 }
 
 export function endTurnFlow(run: RunState, events: GameEvent[]): void {
@@ -166,6 +78,7 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   const player = battle.units[battle.playerUnitId];
   if (!player) return;
   for (const eid of battle.enemyUnitIds) {
+    tickEnemyCountdown(battle, eid, events);
     applyEnemyIntent(run.meta.relics, battle, eid, events);
     if (!player.alive) break;
     refreshEnemyIntent(battle, eid);
@@ -179,14 +92,16 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   }
 
   battle.playerCardsPlayedThisTurn = 0;
+  battle.playerConsumedMomentumThisTurn = false;
   battle.turn += 1;
   runOnTurnStart(battle);
   events.push({ type: 'TURN_STARTED', turn: battle.turn, unitId: battle.playerUnitId });
   player.block = 0;
   battle.player.energy = battle.player.maxEnergy;
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
+  const drawPenalty = applyStartOfPlayerTurnPressure(battle);
   const rng = mulberry32(run.seed ^ battle.turn * 0x1bf58);
-  drawUpTo(battle, 5, events, () => rng());
+  drawUpTo(battle, Math.max(0, 5 - drawPenalty), events, () => rng());
   battle.phase = 'player_action';
 }
 

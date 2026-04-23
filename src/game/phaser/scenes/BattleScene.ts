@@ -2,6 +2,7 @@ import type { GameObjects, Input } from 'phaser';
 import { Geom, Scene, Scenes } from 'phaser';
 import { buildCardKeywordHints, cardTargetLabel, cardTypeLabel, formatMonsterIntentText } from '@/game/core/battleUiText';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import type { BattleState } from '@/game/core/model/battle';
 import type { CardTarget } from '@/game/core/model/card';
 import { PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
@@ -13,13 +14,13 @@ import {
   getBattleSnapshot,
   isFastModeEnabled,
 } from '../controllers/SceneBridge';
-import { getBattleCanvasTextResolution } from '../gameFactory';
+import { BATTLE_RENDER_SCALE, getBattleCanvasTextResolution, LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../gameFactory';
 
 /** 手牌区与敌人 AABB 分离，避免第 4～5 张默认就压在敌人命中盒上导致误判 / 输入抢优先级。 */
 const HAND_START_X = 200;
 const HAND_GAP_X = 96;
-/** 设计高度 520 时手牌行略上移，避免贴底裁切 */
-const HAND_Y = 400;
+/** 在 ENVELOP 铺满策略下预留底部安全区，避免手牌在宽屏比例下被裁切。 */
+const HAND_Y = 364;
 /** 高于敌人装饰（1），避免右侧牌叠在敌人矩形下抢不到拖拽。 */
 const HAND_DEPTH_BASE = 40;
 
@@ -92,17 +93,17 @@ export class BattleScene extends Scene {
   private drawStageBackdrop(): void {
     const g = this.add.graphics().setDepth(0);
     g.fillGradientStyle(0x141210, 0x141210, 0x1c1a16, 0x1c1a16, 1);
-    g.fillRect(0, 0, 920, 520);
+    g.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
     g.fillStyle(0xc08457, 0.04);
     g.fillCircle(120, 80, 220);
     g.fillStyle(0x5a6b4e, 0.045);
     g.fillCircle(780, 120, 260);
     g.lineStyle(1, 0x3d3528, 0.35);
-    for (let x = 0; x < 920; x += 40) {
-      g.lineBetween(x, 0, x, 520);
+    for (let x = 0; x < LOGICAL_WIDTH; x += 40) {
+      g.lineBetween(x, 0, x, LOGICAL_HEIGHT);
     }
-    for (let y = 0; y < 520; y += 40) {
-      g.lineBetween(0, y, 920, y);
+    for (let y = 0; y < LOGICAL_HEIGHT; y += 40) {
+      g.lineBetween(0, y, LOGICAL_WIDTH, y);
     }
   }
 
@@ -278,6 +279,8 @@ export class BattleScene extends Scene {
 
   create(): void {
     this.textRes = getBattleCanvasTextResolution();
+    this.cameras.main.setZoom(BATTLE_RENDER_SCALE);
+    this.cameras.main.centerOn(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2);
     this.drawStageBackdrop();
 
     this.txt(18, 10, '战域', {
@@ -350,7 +353,12 @@ export class BattleScene extends Scene {
       } else if (e.type === 'BATTLE_LOST') {
         this.spawnFloater(480, 80, '失败', '#888888');
       } else if (e.type === 'POTION_USED') {
-        this.spawnFloater(110, 180, `+${e.value} 生命`, '#7dffb3');
+        this.spawnFloater(
+          110,
+          180,
+          e.value > 0 ? `+${e.value} 生命` : `${POTION_DEFINITIONS[e.potionId]?.name ?? e.potionId}`,
+          '#7dffb3',
+        );
       }
     }
     if (battle?.inputMode === 'animation_lock' && this.floatGroup.getLength() === 0) {

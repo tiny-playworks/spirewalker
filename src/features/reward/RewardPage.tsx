@@ -5,6 +5,12 @@ import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
 import { useGameStore } from '@/game/store/gameStore';
+import { sceneThemeClass } from '@/styles/sceneTheme.css';
+import * as subscreenStyles from '@/styles/subscreen.css';
+
+function cx(...classNames: Array<string | false | null | undefined>) {
+  return classNames.filter(Boolean).join(' ');
+}
 
 function rewardTierLabel(t: ReturnType<typeof rewardEncounterTierFromRun>): string {
   if (t === 'boss') return 'Boss';
@@ -38,18 +44,22 @@ export function RewardPage() {
   });
 
   return (
-    <div className="boot reward-page">
-      <h2 className="subscreen-title">
+    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot)} data-testid="reward-page">
+      <h2 className={subscreenStyles.title}>
         {encounterTier === 'treasure' ? '宝箱' : '战后奖励'}
       </h2>
+      <p className={subscreenStyles.tip}>
+        Act <strong>{run.meta.act}</strong> · 本章第 <strong>{run.meta.actFloor}</strong> 层 · 全局第{' '}
+        <strong>{run.meta.floor}</strong> 层
+      </p>
       {relicItems.length > 0 ? (
-        <div className="reward-relic-banner">
+        <div className={cx(subscreenStyles.banner, subscreenStyles.bannerTone.reward)}>
           {relicItems.map((r) => {
             const def = RELIC_DEFINITIONS[r.relicId];
             if (!def) return null;
             return (
-              <p key={r.relicId} className="reward-relic-line">
-                <span className="reward-relic-tag">遗物</span>
+              <p key={r.relicId} className={subscreenStyles.bannerLine}>
+                <span className={cx(subscreenStyles.bannerTag, subscreenStyles.bannerTagTone.reward)}>遗物</span>
                 <strong>{def.name}</strong> — {def.description}
               </p>
             );
@@ -57,21 +67,21 @@ export function RewardPage() {
         </div>
       ) : null}
       {potionItems.length > 0 ? (
-        <div className="reward-relic-banner reward-potion-banner">
+        <div className={cx(subscreenStyles.banner, subscreenStyles.bannerTone.potion)}>
           {potionItems.map((p) => {
             const def = POTION_DEFINITIONS[p.potionId];
             if (!def) return null;
             return (
-              <p key={p.potionId} className="reward-relic-line">
-                <span className="reward-relic-tag reward-relic-tag--potion">药水</span>
+              <p key={p.potionId} className={subscreenStyles.bannerLine}>
+                <span className={cx(subscreenStyles.bannerTag, subscreenStyles.bannerTagTone.potion)}>药水</span>
                 <strong>{def.name}</strong> — {def.description}
-                <span className="reward-potion-note">（选牌或换金币后一并入包）</span>
+                <span className={subscreenStyles.bannerNote}>（选牌或换金币后一并入包）</span>
               </p>
             );
           })}
         </div>
       ) : null}
-      <p className="subscreen-tip">
+      <p className={subscreenStyles.tip}>
         当前节点：
         <strong>
           {encounterTier === 'treasure'
@@ -82,21 +92,21 @@ export function RewardPage() {
         {bonusGold > 0 ? (
           <>
             {' '}
-            （基础 +15，节点额外 +{bonusGold}）
+            （本次奖励额外 +{bonusGold}）
           </>
         ) : (
-          <>（基础奖励）</>
+          <>（这次没有额外金币条目）</>
         )}
         。
         {potionItems.length > 0 ? (
           <> 若有药水，会与卡牌奖励同时结算。</>
         ) : encounterTier === 'normal' ? (
-          <> 普通战有 <strong>25%</strong> 概率额外掉落一瓶药水（本局未触发则下方不显示药水栏）。</>
+          <> 普通战药水掉率已压低，本次未触发额外掉落。</>
         ) : encounterTier === 'treasure' ? (
-          <> 宝箱有约 <strong>55%</strong> 概率额外掉落一瓶药水（栏位未满时）。</>
+          <> 宝箱仍有机会额外掉药，但不会像旧版那样过于稳定。</>
         ) : null}
       </p>
-      <ul className="reward-choices">
+      <ul className={subscreenStyles.choiceList}>
         {cards.map((defId, index) => {
           const def = CARD_DEFINITIONS[defId];
           if (!def) return null;
@@ -104,36 +114,36 @@ export function RewardPage() {
             <li key={`${index}-${defId}`}>
               <button
                 type="button"
-                className="reward-card-btn"
+                className={subscreenStyles.choiceButton}
                 title={buildCardTooltipText(def)}
                 onClick={() => dispatchCommand({ type: 'SELECT_REWARD_CARD', definitionId: defId })}
               >
                 <strong>{def.name}</strong>
-                <span className="reward-card-desc">
+                <span className={subscreenStyles.choiceDesc}>
                   {def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · {def.cost} 费
                 </span>
-                <span className="reward-card-desc">{def.description}</span>
+                <span className={subscreenStyles.choiceDesc}>{def.description}</span>
               </button>
             </li>
           );
         })}
       </ul>
-      <div className="reward-skip-gold">
-        <p className="reward-skip-gold-label">不加入牌组</p>
+      <div className={subscreenStyles.skipSection}>
+        <p className={subscreenStyles.skipLabel}>不加入牌组</p>
         <button
           type="button"
-          className="reward-skip-gold-btn"
+          className={subscreenStyles.skipButton}
           onClick={() =>
             dispatchCommand({ type: 'TAKE_REWARD_GOLD', amount: skipGoldBase })
           }
         >
           换成金币 <strong>+{totalGoldOnSkip}</strong>
           {bonusGold > 0 ? (
-            <span className="reward-card-desc">
+            <span className={subscreenStyles.choiceDesc}>
               （放弃卡牌 {skipGoldBase}，另含节点额外 +{bonusGold}）
             </span>
           ) : (
-            <span className="reward-card-desc">（放弃卡牌，换取 {skipGoldBase} 金）</span>
+            <span className={subscreenStyles.choiceDesc}>（放弃卡牌，换取 {skipGoldBase} 金）</span>
           )}
         </button>
       </div>

@@ -1,7 +1,4 @@
 import { describe, expect, test } from '@rstest/core';
-import {
-  COMMON_REWARD_CARD_POOL,
-} from '@/game/core/definitions/cards/starter';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { generateCardRewardChoices } from '@/game/core/engine/generateRewardChoices';
 import { GameEngine } from '@/game/core/engine/GameEngine';
@@ -30,6 +27,7 @@ describe('reward/rewardFlow', () => {
   test('v0.5 两条构筑都满足 2 张核心牌 + 1 个核心遗物', () => {
     const walker = getCharacterDefinition('walker');
     expect(walker.buildBranches).toHaveLength(2);
+    expect(walker.rewardRelicPool).toEqual(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']);
     for (const branch of walker.buildBranches) {
       expect(branch.coreCardIds).toHaveLength(2);
       expect(walker.rewardCardPool).toContain(branch.coreCardIds[0]);
@@ -38,19 +36,14 @@ describe('reward/rewardFlow', () => {
     }
   });
 
-  test('奖励池按 75/25 混入角色牌与通用牌', () => {
-    const seen = new Set<string>();
+  test('奖励池按章节分层投放，仍限定在角色奖励池内', () => {
     const characterPool = new Set(getCharacterDefinition('walker').rewardCardPool);
-    const commonPool = new Set(COMMON_REWARD_CARD_POOL);
+    const act1 = generateCardRewardChoices(1, 0x1234, 'normal', 'walker', 1);
+    const act3 = generateCardRewardChoices(1, 0x1234, 'boss', 'walker', 3);
 
-    for (let seed = 1; seed <= 40; seed++) {
-      for (const card of generateCardRewardChoices(seed, seed ^ 0x1234, 'elite', 'walker')) {
-        seen.add(card);
-        expect(characterPool.has(card) || commonPool.has(card)).toBe(true);
-      }
+    for (const card of [...act1, ...act3]) {
+      expect(characterPool.has(card)).toBe(true);
     }
-
-    expect([...seen].some((id) => characterPool.has(id))).toBe(true);
-    expect([...seen].some((id) => commonPool.has(id))).toBe(true);
+    expect(act1).not.toEqual(act3);
   });
 });

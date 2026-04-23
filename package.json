@@ -22,8 +22,14 @@
     "preview": "wrangler dev",
     "test": "rstest run",
     "test:watch": "rstest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "lint": "rslint",
     "check": "pnpm lint && pnpm test",
+    "simulate:act1": "tsx scripts/run-act1-validation.ts",
+    "simulate:act1-boss": "tsx scripts/run-act1-boss-attribution.ts",
+    "simulate:act1-boss:validate": "tsx scripts/validate-act1-boss-change.ts",
+    "simulate:act2-entry": "tsx scripts/run-act2-entry-validation.ts",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
@@ -34,21 +40,25 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@rsbuild/core": "2.0.0-rc.3",
-    "@rsbuild/plugin-react": "2.0.0-rc.3",
+    "@playwright/test": "^1.54.2",
+    "@rsbuild/core": "2.0.0",
+    "@rsbuild/plugin-react": "2.0.0",
     "@rslint/core": "^0.4.2",
     "@rstest/adapter-rsbuild": "^0.2.6",
-    "@rstest/core": "^0.9.7",
+    "@rstest/core": "^0.9.8",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vanilla-extract/css": "^1.20.1",
+    "@vanilla-extract/webpack-plugin": "^2.3.27",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "wrangler": "^4.83.0"
   },
   "npmClient": "pnpm",
   "pnpm": {
     "overrides": {
-      "@rsbuild/core": "2.0.0-rc.3"
+      "@rsbuild/core": "2.0.0"
     }
   }
 }

@@ -1,4 +1,11 @@
-import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STRENGTH, STATUS_VULNERABLE } from '../statuses';
+import {
+  STATUS_METALLICIZE,
+  STATUS_MOMENTUM,
+  STATUS_PRIMED_BREAK,
+  STATUS_STEADY_GUARD,
+  STATUS_STRENGTH,
+  STATUS_VULNERABLE,
+} from '../statuses';
 import type { CardDefinition } from '../../model/card';
 
 export const STRIKE: CardDefinition = {
@@ -311,7 +318,7 @@ export const SOFT_STEP: CardDefinition = {
 export const ANCHORED_BREATH: CardDefinition = {
   id: 'anchored_breath',
   name: '定息',
-  description: '获得 5 点格挡，并获得 1 层金属化。',
+  description: '获得 5 点格挡，并获得 1 层金属化与 1 层稳势。',
   type: 'skill',
   rarity: 'uncommon',
   cost: 1,
@@ -319,6 +326,92 @@ export const ANCHORED_BREATH: CardDefinition = {
   effects: [
     { type: 'block', value: 5, target: 'self' },
     { type: 'apply_status', statusId: STATUS_METALLICIZE, stacks: 1, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_STEADY_GUARD, stacks: 1, target: 'self' },
+  ],
+};
+
+export const HELD_BREATH: CardDefinition = {
+  id: 'held_breath',
+  name: '屏息',
+  description: '获得 6 点格挡。获得 1 层稳势。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 6, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_STEADY_GUARD, stacks: 1, target: 'self' },
+  ],
+};
+
+export const PATIENT_CUT: CardDefinition = {
+  id: 'patient_cut',
+  name: '缓收',
+  description: '造成 6 点伤害。获得等同当前连势层数的格挡，不消耗连势。',
+  type: 'attack',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    { type: 'damage', value: 6, target: 'selected' },
+    {
+      type: 'custom',
+      scriptId: 'momentum_guard_by_stacks',
+      params: {
+        baseBlock: 0,
+        blockPerStack: 1,
+      },
+    },
+  ],
+};
+
+/** 防守流专项桥梁：承压回合仍可推进并为后续回合留稳势。 */
+export const ANCHOR_SLASH: CardDefinition = {
+  id: 'anchor_slash',
+  name: '定锋',
+  description: '造成 6 点伤害，获得 4 点格挡，并获得 1 层稳势。',
+  type: 'attack',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    { type: 'damage', value: 6, target: 'selected' },
+    { type: 'block', value: 4, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_STEADY_GUARD, stacks: 1, target: 'self' },
+  ],
+};
+
+/** guard 专项：承压回合补足手牌质量，稳定过 execution_check 中段。 */
+export const STABLE_MIND: CardDefinition = {
+  id: 'stable_mind',
+  name: '定心',
+  description: '获得 7 点格挡。若本回合未主动消耗连势，再抽 1 张牌并获得 1 层连势。',
+  type: 'skill',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 7, target: 'self' },
+    {
+      type: 'custom',
+      scriptId: 'momentum_conditional_draw',
+      params: { drawIfNoMomentumConsume: 1, momentumIfNoMomentumConsume: 1 },
+    },
+  ],
+};
+
+/** 前期桥梁：在承压回合同时推进收束与防守。 */
+export const GUARD_STRIKE: CardDefinition = {
+  id: 'guard_strike',
+  name: '护锋',
+  description: '造成 6 点伤害，获得 4 点格挡。',
+  type: 'attack',
+  rarity: 'common',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    { type: 'damage', value: 6, target: 'selected' },
+    { type: 'block', value: 4, target: 'self' },
   ],
 };
 
@@ -345,11 +438,25 @@ export const QUICK_RELEASE: CardDefinition = {
   ],
 };
 
+export const BREAK_OPENING: CardDefinition = {
+  id: 'break_opening',
+  name: '压锋',
+  description: '获得 2 层连势。获得 1 层破势预热。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 0,
+  target: 'none',
+  effects: [
+    { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 2, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_PRIMED_BREAK, stacks: 1, target: 'self' },
+  ],
+};
+
 /** 兑现补强：中段兑现后给一点后续行动空间。 */
 export const FOLLOW_THROUGH: CardDefinition = {
   id: 'follow_through',
   name: '追击',
-  description: '造成 4 点伤害，并消耗至多 2 层连势，每层额外造成 3 点伤害。获得 1 点能量。',
+  description: '造成 4 点伤害，并消耗至多 2 层连势，每层额外造成 3 点伤害。若实际消耗了连势，获得 1 点能量。',
   type: 'attack',
   rarity: 'uncommon',
   cost: 1,
@@ -363,9 +470,31 @@ export const FOLLOW_THROUGH: CardDefinition = {
         consumeValue: 2,
         baseDamage: 4,
         damagePerStack: 3,
+        gainEnergyIfConsumed: 1,
       },
     },
-    { type: 'gain_energy', value: 1 },
+  ],
+};
+
+export const FULL_RELEASE: CardDefinition = {
+  id: 'full_release',
+  name: '断流',
+  description: '造成 6 点伤害，并消耗全部连势，每层额外造成 3 点伤害。抽 1 张牌。',
+  type: 'attack',
+  rarity: 'rare',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [
+    {
+      type: 'custom',
+      scriptId: 'momentum_burst_damage',
+      params: {
+        consumeMode: 'all',
+        baseDamage: 6,
+        damagePerStack: 3,
+      },
+    },
+    { type: 'draw', value: 1 },
   ],
 };
 
@@ -373,14 +502,14 @@ export const FOLLOW_THROUGH: CardDefinition = {
 export const SURVEY_FIELD: CardDefinition = {
   id: 'survey_field',
   name: '观势',
-  description: '抽 2 张牌，弃 1 张牌。',
+  description: '抽 2 张牌。获得 1 层连势。',
   type: 'skill',
   rarity: 'common',
   cost: 0,
   target: 'none',
   effects: [
     { type: 'draw', value: 2 },
-    { type: 'discard', value: 1 },
+    { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 1, target: 'self' },
   ],
 };
 
@@ -388,15 +517,49 @@ export const SURVEY_FIELD: CardDefinition = {
 export const MEASURED_REST: CardDefinition = {
   id: 'measured_rest',
   name: '养息',
-  description: '回复 3 点生命，抽 1 张牌。',
+  description: '回复 3 点生命，获得 4 点格挡，并获得 1 层连势。',
   type: 'skill',
   rarity: 'common',
   cost: 1,
   target: 'none',
   effects: [
     { type: 'heal', value: 3, target: 'self' },
-    { type: 'draw', value: 1 },
+    { type: 'block', value: 4, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 1, target: 'self' },
   ],
+};
+
+export const JUNK_SLUDGE: CardDefinition = {
+  id: 'junk_sludge',
+  name: '淤泥',
+  description: '污染牌。没有任何效果。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [],
+};
+
+export const JUNK_BURN: CardDefinition = {
+  id: 'junk_burn',
+  name: '灼痕',
+  description: '污染牌。没有任何效果。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [],
+};
+
+export const JUNK_STATIC: CardDefinition = {
+  id: 'junk_static',
+  name: '噪讯',
+  description: '污染牌。没有任何效果。',
+  type: 'skill',
+  rarity: 'common',
+  cost: 1,
+  target: 'none',
+  effects: [],
 };
 
 export const MOMENTUM_SETUP_CARD_IDS = [
@@ -404,6 +567,9 @@ export const MOMENTUM_SETUP_CARD_IDS = [
   TEMPO_GUARD.id,
   PRIME_RHYTHM.id,
   BRACE_RHYTHM.id,
+  SOFT_STEP.id,
+  HELD_BREATH.id,
+  BREAK_OPENING.id,
 ] as const;
 
 export const MOMENTUM_PAYOFF_CARD_IDS = [
@@ -411,6 +577,10 @@ export const MOMENTUM_PAYOFF_CARD_IDS = [
   SNAP_STRIKE.id,
   CASH_FLOW.id,
   RELEASE_FLOW.id,
+  PATIENT_CUT.id,
+  QUICK_RELEASE.id,
+  FOLLOW_THROUGH.id,
+  FULL_RELEASE.id,
 ] as const;
 
 export const TEMPO_RECOVERY_CARD_IDS = [
@@ -420,13 +590,21 @@ export const TEMPO_RECOVERY_CARD_IDS = [
   SECOND_WIND.id,
   SURVEY_FIELD.id,
   MEASURED_REST.id,
+  ANCHOR_SLASH.id,
+  STABLE_MIND.id,
+  GUARD_STRIKE.id,
 ] as const;
 
 export const DEFENSE_LINE_CARD_IDS = [
   BRACE_RHYTHM.id,
   TEMPO_GUARD.id,
   SOFT_STEP.id,
+  HELD_BREATH.id,
   ANCHORED_BREATH.id,
+  STABLE_MIND.id,
+  PATIENT_CUT.id,
+  ANCHOR_SLASH.id,
+  GUARD_STRIKE.id,
 ] as const;
 
 export const BURST_LINE_CARD_IDS = [
@@ -434,6 +612,8 @@ export const BURST_LINE_CARD_IDS = [
   SNAP_STRIKE.id,
   QUICK_RELEASE.id,
   FOLLOW_THROUGH.id,
+  BREAK_OPENING.id,
+  FULL_RELEASE.id,
 ] as const;
 
 export const CORE_STAPLE_CARD_IDS = [
@@ -476,8 +656,18 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [SECOND_WIND.id]: SECOND_WIND,
   [SOFT_STEP.id]: SOFT_STEP,
   [ANCHORED_BREATH.id]: ANCHORED_BREATH,
+  [HELD_BREATH.id]: HELD_BREATH,
+  [PATIENT_CUT.id]: PATIENT_CUT,
+  [ANCHOR_SLASH.id]: ANCHOR_SLASH,
+  [STABLE_MIND.id]: STABLE_MIND,
+  [GUARD_STRIKE.id]: GUARD_STRIKE,
   [QUICK_RELEASE.id]: QUICK_RELEASE,
   [FOLLOW_THROUGH.id]: FOLLOW_THROUGH,
+  [BREAK_OPENING.id]: BREAK_OPENING,
+  [FULL_RELEASE.id]: FULL_RELEASE,
   [SURVEY_FIELD.id]: SURVEY_FIELD,
   [MEASURED_REST.id]: MEASURED_REST,
+  [JUNK_SLUDGE.id]: JUNK_SLUDGE,
+  [JUNK_BURN.id]: JUNK_BURN,
+  [JUNK_STATIC.id]: JUNK_STATIC,
 };

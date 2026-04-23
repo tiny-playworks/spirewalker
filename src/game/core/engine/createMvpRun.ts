@@ -1,12 +1,13 @@
 import { addStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
-import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STRENGTH } from '../definitions/statuses';
-import type { BattleState } from '../model/battle';
+import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STEADY_GUARD, STATUS_STRENGTH } from '../definitions/statuses';
+import type { BattleEncounterMeta, BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
 import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
-import type { RunState } from '../model/run';
+import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
+import { buildInitialMonsterRuntime, getMonsterDefinition } from '../definitions/monsters';
 import { setInitialEnemyIntent } from '../systems/enemy/enemyAi';
 import { createInstanceId, resetIdCounter } from '../utils/id';
 import { mulberry32 } from '../utils/rng';
@@ -86,6 +87,13 @@ export function buildInitialBattle(
   enemySlots: BattleEnemySlot[] = DEFAULT_ENEMY_LINEUP,
   relicIds: string[] = [],
   characterId?: string,
+  encounter: BattleEncounterMeta = {
+    id: battleKey,
+    poolId: 'debug',
+    tier: 'normal' as const,
+    name: '调试战斗',
+    tags: ['普通战'],
+  },
 ): BattleState {
   assertMonsterSlotsResolved(enemySlots);
   const character = characterId ? getCharacterDefinition(characterId) : null;
@@ -143,8 +151,9 @@ export function buildInitialBattle(
       monsterId: slot.monsterId,
       intent: null,
       moveHistory: [],
+      runtime: buildInitialMonsterRuntime(getMonsterDefinition(slot.monsterId)!),
+      scriptState: {},
     };
-    setInitialEnemyIntent(monsterState);
     monsters[slot.unitId] = monsterState;
   }
 
@@ -156,6 +165,10 @@ export function buildInitialBattle(
   }
   if (relicIds.includes('still_core')) {
     addStatusStacks(units[PLAYER_UNIT_ID], STATUS_METALLICIZE, 1);
+    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STEADY_GUARD, 1);
+  }
+  if (relicIds.includes('guard_knot')) {
+    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STEADY_GUARD, 1);
   }
   if (relicIds.includes('soft_guard')) {
     units[PLAYER_UNIT_ID].block += 4;
@@ -166,8 +179,10 @@ export function buildInitialBattle(
 
   const battle: BattleState = {
     id: battleKey,
+    encounter,
     turn: 1,
     playerCardsPlayedThisTurn: 0,
+    playerConsumedMomentumThisTurn: false,
     phase: 'player_action',
     inputMode: 'idle',
     playerUnitId: PLAYER_UNIT_ID,
@@ -182,11 +197,19 @@ export function buildInitialBattle(
       discardPile: [],
       exhaustPile: [],
       cards,
+      lockedCardInstanceIds: [],
+      pendingHandLocks: 0,
+      drawPressure: 0,
     },
     monsters,
+    nextEnemyUnitSeq: enemySlots.length,
     pendingAction: null,
     lastResolvedEvents: [],
   };
+
+  for (const enemyUnitId of enemyUnitIds) {
+    setInitialEnemyIntent(battle, enemyUnitId);
+  }
 
   return battle;
 }
@@ -204,6 +227,15 @@ export function createMvpRun(seed: number): RunState {
     map: { nodes: {}, currentNodeId: null },
     screen: { type: 'battle' },
     battle,
-    meta: { floor: 1, gold: 0, characterId: DEFAULT_CHARACTER_ID, relics: [], potions: [] },
+    meta: {
+      act: 1,
+      actFloor: 1,
+      floor: 1,
+      gold: 0,
+      characterId: DEFAULT_CHARACTER_ID,
+      relics: [],
+      potions: [],
+      encounterHistory: createEmptyEncounterHistory(),
+    },
   };
 }

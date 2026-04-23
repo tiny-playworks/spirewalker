@@ -1,11 +1,12 @@
 import { useGameStore } from '@/game/store/gameStore';
+import * as styles from './battlePage.css';
 
 export function FastModeToggle() {
   const fastMode = useGameStore((s) => s.fastMode);
   const setFastMode = useGameStore((s) => s.setFastMode);
 
   return (
-    <label className="fast-mode-toggle">
+    <label className={styles.fastModeToggle}>
       <input
         type="checkbox"
         checked={fastMode}

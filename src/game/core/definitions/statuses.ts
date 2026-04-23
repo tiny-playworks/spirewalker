@@ -6,6 +6,10 @@ export const STATUS_VULNERABLE = 'vulnerable';
 export const STATUS_MOMENTUM = 'momentum';
 /** 金属化：回合结束时获得等同层数的格挡。 */
 export const STATUS_METALLICIZE = 'metallicize';
+/** 稳势：本回合未主动消耗连势时，回合结束获得格挡并回 1 层连势。 */
+export const STATUS_STEADY_GUARD = 'steady_guard';
+/** 破势预热：下一次主动消耗连势时额外强化收益。 */
+export const STATUS_PRIMED_BREAK = 'primed_break';
 
 export interface StatusDefinitionMeta {
   id: string;
@@ -50,6 +54,20 @@ export const STATUS_DEFINITIONS: Record<string, StatusDefinitionMeta> = {
     shortLabel: '钢',
     description: '回合结束时获得等同层数的格挡。',
     battleHint: '通常通过持续类效果获得；会稳定提升防守。',
+  },
+  [STATUS_STEADY_GUARD]: {
+    id: STATUS_STEADY_GUARD,
+    name: '稳势',
+    shortLabel: '稳',
+    description: '回合结束时，若本回合未主动消耗连势，则获得 4 点格挡并回 1 层连势。',
+    battleHint: '偏向保势路线；适合把连势留到下一回合继续滚动。',
+  },
+  [STATUS_PRIMED_BREAK]: {
+    id: STATUS_PRIMED_BREAK,
+    name: '破势预热',
+    shortLabel: '破',
+    description: '本回合下次主动消耗连势时额外强化收益，随后移除。',
+    battleHint: '偏向兑现路线；适合把下一张消耗连势的牌做成爆发回合。',
   },
 };
 

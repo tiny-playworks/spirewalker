@@ -32,7 +32,7 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
   burst_emblem: {
     id: 'burst_emblem',
     name: '裂响纹章',
-    description: '主动消耗连势的伤害牌额外造成 2 点伤害。',
+    description: '主动消耗连势的伤害牌额外造成 2 点伤害；若是本回合第一次主动消耗，再抽 1 张牌。',
   },
   insight_lens: {
     id: 'insight_lens',
@@ -42,12 +42,12 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
   guard_knot: {
     id: 'guard_knot',
     name: '稳势结',
-    description: '你的连势被削减时，少失去 1 层。',
+    description: '敌人效果会减少你的连势时，少失去 1 层。战斗开始时获得 1 层稳势。',
   },
   still_core: {
     id: 'still_core',
     name: '定心核',
-    description: '每场战斗开始时获得 1 层金属化。',
+    description: '每场战斗开始时获得 1 层金属化与 1 层稳势。',
   },
   soft_guard: {
     id: 'soft_guard',
@@ -57,7 +57,7 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
   quick_fuse: {
     id: 'quick_fuse',
     name: '疾燃引线',
-    description: '主动消耗连势的伤害牌结算后获得 1 点能量。',
+    description: '每回合第一次主动消耗连势时，获得 1 点能量。',
   },
   sighted_edge: {
     id: 'sighted_edge',
@@ -66,13 +66,13 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
   },
 };
 
-export const MOMENTUM_BURST_RELIC_IDS = ['wind_chime', 'burst_emblem', 'quick_fuse', 'sighted_edge'] as const;
-export const MOMENTUM_FLOW_RELIC_IDS = ['tactical_gloves', 'insight_lens'] as const;
-export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'anchor', 'still_core', 'soft_guard'] as const;
-export const COMMON_RELIC_POOL = ['vajra', 'anchor', 'wind_chime', 'tactical_gloves', 'insight_lens'] as const;
+export const MOMENTUM_BURST_RELIC_IDS = ['burst_emblem', 'quick_fuse'] as const;
+export const MOMENTUM_FLOW_RELIC_IDS = ['guard_knot', 'still_core'] as const;
+export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'still_core'] as const;
+export const COMMON_RELIC_POOL = ['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse'] as const;
 
 /** Boss 战后随机其一（已拥有的不再出现） */
-const BOSS_RELIC_POOL = [...COMMON_RELIC_POOL, 'burst_emblem', 'guard_knot', 'still_core', 'soft_guard', 'quick_fuse', 'sighted_edge'] as const;
+const BOSS_RELIC_POOL = [...COMMON_RELIC_POOL] as const;
 
 export function rollBossRelicReward(
   seed: number,

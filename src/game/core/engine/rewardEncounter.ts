@@ -5,8 +5,8 @@ import type { RewardEncounterTier } from './generateRewardChoices';
 export function rewardEncounterTierFromRun(run: RunState): RewardEncounterTier {
   const id = run.map.currentNodeId;
   const node = id ? run.map.nodes[id] : undefined;
-  if (node?.type === 'boss') return 'boss';
-  if (node?.type === 'elite') return 'elite';
-  if (node?.type === 'treasure') return 'treasure';
+  if (node?.encounterTier === 'boss') return 'boss';
+  if (node?.encounterTier === 'elite') return 'elite';
+  if (node?.encounterTier === 'treasure') return 'treasure';
   return 'normal';
 }

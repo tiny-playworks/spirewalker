@@ -19,6 +19,16 @@ export interface PlayerRunState {
   currentHp: number;
 }
 
+export interface EncounterHistoryState {
+  ids: string[];
+  tags: string[];
+  archetypes: string[];
+}
+
+export function createEmptyEncounterHistory(): EncounterHistoryState {
+  return { ids: [], tags: [], archetypes: [] };
+}
+
 export interface RunState {
   /** 存档结构版本，便于迁移（见 persistence/saveRun） */
   saveVersion?: number;
@@ -34,10 +44,16 @@ export interface RunState {
   /** 商店库存（进入商店节点时生成） */
   shop?: ShopState;
   meta: {
+    act: 1 | 2 | 3;
+    actFloor: number;
     floor: number;
     gold: number;
     characterId: string;
     relics: string[];
     potions: string[];
+    encounterHistory: EncounterHistoryState;
+    validationSegment?: 'act2_entry';
+    validationCompleted?: boolean;
+    enteredAct2EliteBranch?: boolean;
   };
 }

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { pressureProfileLabel } from '../core/battleUiText';
 import { formatBattleLogLine } from '../core/battleLogFormat';
 import { GameEngine } from '../core/engine/GameEngine';
 import type { GameCommand } from '../core/commands/types';
@@ -46,7 +47,14 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     if (!run) return;
 
     const result = engine.dispatch(run, command);
-    const lines = result.events.map((event) => formatBattleLogLine(run, event));
+    const lines = result.events.flatMap((event) => {
+      const nextLines = [formatBattleLogLine(run, event)];
+      if (event.type === 'ENTERED_BATTLE_FROM_MAP') {
+        const profile = result.nextRun.battle?.encounter.pressureProfile;
+        if (profile) nextLines.push(`本战题型：${pressureProfileLabel(profile)}`);
+      }
+      return nextLines;
+    });
 
     set({
       run: result.nextRun,

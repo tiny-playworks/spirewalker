@@ -1,10 +1,9 @@
 import { createStarterMasterDeck } from '../engine/starterDeck';
 import { DEFAULT_CHARACTER_ID } from '../definitions/characters';
-import type { RunState } from '../model/run';
-import { isLegacyLinearMap, migrateLegacyLinearMapInPlace } from './migrateLegacyMap';
+import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from './saveVersion';
 
-const KEY = 'sljt_run_v1';
+const KEY = 'sljt_run_v3';
 
 export { RUN_SAVE_VERSION } from './saveVersion';
 
@@ -16,32 +15,30 @@ export function saveRunToLocalStorage(run: RunState): void {
   }
 }
 
-/** 兼容旧存档缺少 masterDeck 等字段 */
 export function normalizeRunState(raw: unknown): RunState | null {
   if (!raw || typeof raw !== 'object') return null;
-  const r = raw as Partial<RunState>;
-  if (typeof r.seed !== 'number' || !r.player || !r.map || !r.screen || !r.meta) return null;
-  if (!Array.isArray(r.masterDeck) || r.masterDeck.length === 0) {
-    r.masterDeck = createStarterMasterDeck();
+  const run = raw as Partial<RunState>;
+  if (run.saveVersion !== RUN_SAVE_VERSION) return null;
+  if (typeof run.seed !== 'number' || !run.player || !run.map || !run.screen || !run.meta) return null;
+  if (!Array.isArray(run.masterDeck) || run.masterDeck.length === 0) {
+    run.masterDeck = createStarterMasterDeck(DEFAULT_CHARACTER_ID);
   }
-  if (typeof r.saveVersion !== 'number' || r.saveVersion < 1) {
-    r.saveVersion = 1;
+  if (!Array.isArray(run.meta.relics)) run.meta.relics = [];
+  if (!Array.isArray(run.meta.potions)) run.meta.potions = [];
+  if (!run.meta.encounterHistory || typeof run.meta.encounterHistory !== 'object') {
+    run.meta.encounterHistory = createEmptyEncounterHistory();
   }
-  if (!Array.isArray(r.meta.potions)) {
-    r.meta.potions = [];
+  if (!Array.isArray(run.meta.encounterHistory.ids)) run.meta.encounterHistory.ids = [];
+  if (!Array.isArray(run.meta.encounterHistory.tags)) run.meta.encounterHistory.tags = [];
+  if (!Array.isArray(run.meta.encounterHistory.archetypes)) run.meta.encounterHistory.archetypes = [];
+  if (typeof run.meta.characterId !== 'string' || run.meta.characterId.length === 0) {
+    run.meta.characterId = DEFAULT_CHARACTER_ID;
   }
-  if (typeof r.meta.characterId !== 'string' || r.meta.characterId.length === 0) {
-    r.meta.characterId = DEFAULT_CHARACTER_ID;
-  }
-
-  const run = r as RunState;
-  if (isLegacyLinearMap(run.map.nodes)) {
-    migrateLegacyLinearMapInPlace(run);
-  } else if ((run.saveVersion ?? 1) < RUN_SAVE_VERSION) {
-    run.saveVersion = RUN_SAVE_VERSION;
-  }
-
-  return run;
+  if (run.meta.validationSegment !== 'act2_entry') delete run.meta.validationSegment;
+  if (typeof run.meta.validationCompleted !== 'boolean') run.meta.validationCompleted = false;
+  if (typeof run.meta.enteredAct2EliteBranch !== 'boolean') run.meta.enteredAct2EliteBranch = false;
+  if (typeof run.meta.act !== 'number' || typeof run.meta.actFloor !== 'number') return null;
+  return run as RunState;
 }
 
 export function loadRunFromLocalStorage(): RunState | null {
@@ -54,7 +51,6 @@ export function loadRunFromLocalStorage(): RunState | null {
   }
 }
 
-/** 是否存在可恢复的存档（用于主菜单「继续」） */
 export function hasSavedRun(): boolean {
   return loadRunFromLocalStorage() !== null;
 }

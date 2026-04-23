@@ -1,17 +1,16 @@
 import { describe, expect, test } from '@rstest/core';
-import { buildInitialBattle } from '@/game/core/engine/createMvpRun';
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import { createStarterMasterDeck } from '@/game/core/engine/starterDeck';
 
 describe('startRun', () => {
-  test('行者 starter 固定为 v0.5 版高密度起势套牌', () => {
+  test('行者 starter 固定为三章制版本的 10 张起始套牌', () => {
     const deck = createStarterMasterDeck();
     expect(deck).toHaveLength(10);
     expect(deck.filter((id) => id === 'strike')).toHaveLength(3);
-    expect(deck.filter((id) => id === 'defend')).toHaveLength(3);
-    expect(deck.filter((id) => id === 'prime_rhythm')).toHaveLength(2);
+    expect(deck.filter((id) => id === 'defend')).toHaveLength(4);
+    expect(deck.filter((id) => id === 'prime_rhythm')).toHaveLength(1);
     expect(deck).toContain('brace_rhythm');
-    expect(deck).toContain('soft_step');
+    expect(deck).toContain('measured_rest');
   });
 
   test('createMapRun 会从角色定义读取生命、starter 与起始药水', () => {
@@ -24,17 +23,12 @@ describe('startRun', () => {
     expect(run.meta.relics).toEqual([]);
   });
 
-  test('固定种子下前两回合一定能接触到起势牌', () => {
-    for (let seed = 1; seed <= 120; seed++) {
-      const battle = buildInitialBattle(seed);
-      const seenInFirstTwoTurns = [...battle.player.hand, ...battle.player.drawPile].map(
-        (instanceId) => battle.player.cards[instanceId]?.definitionId,
-      );
-      const coreCount = seenInFirstTwoTurns.filter(
-        (id) => id === 'prime_rhythm' || id === 'brace_rhythm' || id === 'soft_step',
-      ).length;
-      expect(coreCount).toBe(4);
-    }
+  test('starter 中只保留 3 张前期节奏牌，不再写死前两回合必接触', () => {
+    const deck = createStarterMasterDeck();
+    const coreCount = deck.filter(
+      (id) => id === 'prime_rhythm' || id === 'brace_rhythm' || id === 'measured_rest',
+    ).length;
+    expect(coreCount).toBe(3);
   });
 
   test('第一步候选节点只提供 battle', () => {

@@ -1,6 +1,6 @@
 import type { MapNodeType } from '@/game/core/model/map';
 
-export type RouteTone = 'hazard' | 'fortune' | 'mystery' | 'relief';
+export type RouteTone = 'neutral' | 'hazard' | 'fortune' | 'mystery' | 'relief';
 export type GlowLevel = 'soft' | 'medium' | 'strong' | 'intense';
 
 export type RoutePresentation = {
@@ -11,17 +11,17 @@ export type RoutePresentation = {
 
 export function routePresentationForNodeType(type: MapNodeType): RoutePresentation {
   switch (type) {
-    case 'battle':
-      return { tone: 'hazard', glow: 'strong', lineStyle: 'solid' };
     case 'elite':
     case 'boss':
-      return { tone: 'hazard', glow: 'intense', lineStyle: 'solid' };
+      return { tone: 'hazard', glow: 'medium', lineStyle: 'solid' };
     case 'shop':
     case 'treasure':
-      return { tone: 'fortune', glow: 'medium', lineStyle: 'solid' };
+      return { tone: 'fortune', glow: 'soft', lineStyle: 'solid' };
     case 'event':
-      return { tone: 'mystery', glow: 'medium', lineStyle: 'solid' };
+      return { tone: 'mystery', glow: 'soft', lineStyle: 'solid' };
     case 'rest':
       return { tone: 'relief', glow: 'soft', lineStyle: 'solid' };
+    case 'battle':
+      return { tone: 'neutral', glow: 'soft', lineStyle: 'solid' };
   }
 }

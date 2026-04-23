@@ -5,6 +5,12 @@ import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { getStatusMeta } from '@/game/core/definitions/statuses';
 import type { RunState } from '@/game/core/model/run';
+import { sceneThemeClass } from '@/styles/sceneTheme.css';
+import * as styles from './runOverview.css';
+
+function cx(...classNames: Array<string | false | null | undefined>) {
+  return classNames.filter(Boolean).join(' ');
+}
 
 function deckRows(deck: string[]) {
   const counts = new Map<string, number>();
@@ -89,53 +95,55 @@ export function RunOverviewPanel({
     <>
       <button
         type="button"
-        className="run-overview-toggle"
+        className={cx(sceneThemeClass, styles.toggle)}
         aria-expanded={open}
         onClick={onToggle}
       >
         总览
       </button>
-      {open ? <button type="button" className="run-overview-backdrop" aria-label="关闭总览" onClick={onClose} /> : null}
-      <aside className={`run-overview-panel${open ? ' is-open' : ''}`} aria-hidden={!open}>
-        <div className="run-overview-head">
+      {open ? <button type="button" className={styles.backdrop} aria-label="关闭总览" onClick={onClose} /> : null}
+      <aside className={cx(sceneThemeClass, styles.panel, open && styles.panelOpen)} aria-hidden={!open}>
+        <div className={styles.head}>
           <div>
-            <p className="run-overview-kicker">当前构筑</p>
-            <h2 className="run-overview-title">冒险总览</h2>
+            <p className={styles.kicker}>当前构筑</p>
+            <h2 className={styles.title}>冒险总览</h2>
           </div>
-          <button type="button" className="run-overview-close" onClick={onClose}>
+          <button type="button" className={styles.closeButton} onClick={onClose}>
             关闭
           </button>
         </div>
 
-        <section className="run-overview-section">
-          <h3>角色</h3>
-          <p className="run-overview-hero-line">
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>角色</h3>
+          <p className={styles.heroLine}>
             <strong>{character.name}</strong> · {character.title}
           </p>
-          <p className="run-overview-desc">{character.description}</p>
-          <p className="run-overview-desc">
+          <p className={styles.desc}>{character.description}</p>
+          <p className={styles.desc}>
             被动 <strong>{character.passiveName}</strong>：{character.passiveDescription}
           </p>
         </section>
 
-        <section className="run-overview-section">
-          <h3>当前状态</h3>
-          <div className="run-overview-stats">
-            <span>楼层 {run.meta.floor}</span>
-            <span>界面 {screenLabel(run)}</span>
-            <span>节点 {currentNodeLabel(run)}</span>
-            <span>金币 {run.meta.gold}</span>
-            <span>
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>当前状态</h3>
+          <div className={styles.stats}>
+            <span className={styles.statChip}>Act {run.meta.act}</span>
+            <span className={styles.statChip}>章内 {run.meta.actFloor} 层</span>
+            <span className={styles.statChip}>全局 {run.meta.floor} 层</span>
+            <span className={styles.statChip}>界面 {screenLabel(run)}</span>
+            <span className={styles.statChip}>节点 {currentNodeLabel(run)}</span>
+            <span className={styles.statChip}>金币 {run.meta.gold}</span>
+            <span className={styles.statChip}>
               生命 {currentHp(run)} / {run.player.maxHp}
             </span>
-            <span>牌组 {run.masterDeck.length} 张</span>
+            <span className={styles.statChip}>牌组 {run.masterDeck.length} 张</span>
           </div>
         </section>
 
         {battleStatuses.length > 0 ? (
-          <section className="run-overview-section">
-            <h3>当前战斗状态</h3>
-            <ul className="run-overview-list">
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>当前战斗状态</h3>
+            <ul className={styles.list}>
               {battleStatuses.map((status) => {
                 const meta = getStatusMeta(status.id);
                 return (
@@ -143,7 +151,7 @@ export function RunOverviewPanel({
                     <strong>
                       {meta.name} {status.stacks}
                     </strong>
-                    <span>{meta.battleHint}</span>
+                    <span className={styles.listMeta}>{meta.battleHint}</span>
                   </li>
                 );
               })}
@@ -151,18 +159,18 @@ export function RunOverviewPanel({
           </section>
         ) : null}
 
-        <section className="run-overview-section">
-          <h3>遗物</h3>
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>遗物</h3>
           {run.meta.relics.length === 0 ? (
-            <p className="run-overview-empty">暂无遗物</p>
+            <p className={styles.empty}>暂无遗物</p>
           ) : (
-            <ul className="run-overview-list">
+            <ul className={styles.list}>
               {run.meta.relics.map((relicId) => {
                 const def = RELIC_DEFINITIONS[relicId];
                 return (
                   <li key={relicId}>
                     <strong>{def?.name ?? relicId}</strong>
-                    <span>{def?.description ?? '暂无说明'}</span>
+                    <span className={styles.listMeta}>{def?.description ?? '暂无说明'}</span>
                   </li>
                 );
               })}
@@ -170,18 +178,18 @@ export function RunOverviewPanel({
           )}
         </section>
 
-        <section className="run-overview-section">
-          <h3>药水</h3>
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>药水</h3>
           {run.meta.potions.length === 0 ? (
-            <p className="run-overview-empty">暂无药水</p>
+            <p className={styles.empty}>暂无药水</p>
           ) : (
-            <ul className="run-overview-list">
+            <ul className={styles.list}>
               {run.meta.potions.map((potionId, index) => {
                 const def = POTION_DEFINITIONS[potionId];
                 return (
                   <li key={`${potionId}-${index}`}>
                     <strong>{def?.name ?? potionId}</strong>
-                    <span>{def?.description ?? '暂无说明'}</span>
+                    <span className={styles.listMeta}>{def?.description ?? '暂无说明'}</span>
                   </li>
                 );
               })}
@@ -189,17 +197,17 @@ export function RunOverviewPanel({
           )}
         </section>
 
-        <section className="run-overview-section">
-          <h3>牌组</h3>
-          <ul className="run-overview-list run-overview-list--deck">
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>牌组</h3>
+          <ul className={styles.list}>
             {deck.map((row) => {
               const def = CARD_DEFINITIONS[row.definitionId];
               return (
                 <li key={row.definitionId}>
-                  <strong>
+                  <strong className={styles.deckStrong}>
                     {def?.name ?? row.definitionId} ×{row.count}
                   </strong>
-                  <span>{def?.description ?? '暂无说明'}</span>
+                  <span className={styles.listMeta}>{def?.description ?? '暂无说明'}</span>
                 </li>
               );
             })}

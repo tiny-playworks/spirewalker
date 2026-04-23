@@ -11,6 +11,12 @@ import { RewardPage } from '@/features/reward/RewardPage';
 import { ShopPage } from '@/features/shop/ShopPage';
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import { useGameStore } from '@/game/store/gameStore';
+import { sceneThemeClass } from '@/styles/sceneTheme.css';
+import * as subscreenStyles from '@/styles/subscreen.css';
+
+function cx(...classNames: Array<string | false | null | undefined>) {
+  return classNames.filter(Boolean).join(' ');
+}
 
 export function App() {
   const run = useGameStore((s) => s.run);
@@ -68,17 +74,21 @@ function GameOverScreen() {
   const initRun = useGameStore((s) => s.initRun);
   const returnToMainMenu = useGameStore((s) => s.returnToMainMenu);
   return (
-    <div className="boot game-over">
+    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenStack)}>
       <p>本次探索结束</p>
-      <div className="end-screen-actions">
+      <div className={subscreenStyles.actionsRow}>
         <button
           type="button"
-          className="btn-end-turn"
+          className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.primary)}
           onClick={() => initRun(createMapRun(Date.now() & 0xffff_ffff))}
         >
           再来一局
         </button>
-        <button type="button" className="btn-end-turn btn-end-turn--ghost" onClick={returnToMainMenu}>
+        <button
+          type="button"
+          className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.ghost)}
+          onClick={returnToMainMenu}
+        >
           返回主菜单
         </button>
       </div>
@@ -90,18 +100,22 @@ function VictoryScreen() {
   const initRun = useGameStore((s) => s.initRun);
   const returnToMainMenu = useGameStore((s) => s.returnToMainMenu);
   return (
-    <div className="boot game-over">
-      <h2 className="subscreen-title">试玩通关</h2>
-      <p className="subscreen-tip">你已击败第二层 Boss，本局试玩路线完结。</p>
-      <div className="end-screen-actions">
+    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenStack)}>
+      <h2 className={subscreenStyles.title}>试玩通关</h2>
+      <p className={subscreenStyles.tip}>你已击败第二层 Boss，本局试玩路线完结。</p>
+      <div className={subscreenStyles.actionsRow}>
         <button
           type="button"
-          className="btn-end-turn"
+          className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.primary)}
           onClick={() => initRun(createMapRun(Date.now() & 0xffff_ffff))}
         >
           再来一局
         </button>
-        <button type="button" className="btn-end-turn btn-end-turn--ghost" onClick={returnToMainMenu}>
+        <button
+          type="button"
+          className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.ghost)}
+          onClick={returnToMainMenu}
+        >
           返回主菜单
         </button>
       </div>
