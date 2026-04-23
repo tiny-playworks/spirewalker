@@ -102,11 +102,6 @@ const phaseShift = (label: string, phase: number): MonsterIntent => ({ type: 'ph
 const maxHpDown = (value: number): MonsterIntent => ({ type: 'max_hp_down', value });
 const reset = (mode: 'momentum' | 'statuses' | 'all'): MonsterIntent => ({ type: 'mechanic_reset', mode });
 const echo = (enemyId?: string, count = 1): MonsterIntent => ({ type: 'copy_echo', enemyId, count });
-const punish = (threshold: number, blockValue: number): MonsterIntent => ({
-  type: 'punish_multi_play',
-  threshold,
-  block: blockValue,
-});
 const attackBuff = (attack: number, statusId: string, value: number): MonsterIntent => ({
   type: 'attack_buff',
   attack,
@@ -115,23 +110,23 @@ const attackBuff = (attack: number, statusId: string, value: number): MonsterInt
 });
 
 const ENEMY_SEEDS: EnemySeed[] = [
-  { id: 'slime', name: '黏液', chapter: 1, tier: 'normal', role: 'frontliner', hpRange: [34, 40], archetype: 'attacker', rotation: [atk(6), atk(9)], tags: ['basic', 'frontload'] },
+  { id: 'slime', name: '黏液', chapter: 1, tier: 'normal', role: 'frontliner', hpRange: [34, 40], archetype: 'attacker', rotation: [atk(8), atk(11)], tags: ['basic', 'frontload'] },
   { id: 'slime_splitter', name: '分裂黏液', chapter: 1, tier: 'normal', role: 'frontliner', hpRange: [30, 36], archetype: 'splitter', rotation: [split('slime', 2, 0.45), atk(5)], tags: ['split', 'snowball'] },
-  { id: 'fang_rat', name: '獠牙鼠', chapter: 1, tier: 'normal', role: 'carry', hpRange: [26, 32], archetype: 'multi_hit', rotation: [multi(2, 3), atk(7)], tags: ['multi_hit', 'frontload'] },
-  { id: 'slime_sapper', name: '盗火小鬼', chapter: 1, tier: 'normal', role: 'disruptor', hpRange: [28, 34], archetype: 'disruptor', rotation: [atk(5), reduce(STATUS_MOMENTUM, 2)], tags: ['pollution', 'disruption'] },
-  { id: 'slime_guard', name: '拾荒者', chapter: 1, tier: 'normal', role: 'disruptor', hpRange: [34, 38], archetype: 'disruptor', rotation: [atk(5), punish(3, 8)], tags: ['resource_tax', 'counter'] },
-  { id: 'slime_shell', name: '破盾步兵', chapter: 1, tier: 'normal', role: 'tank', hpRange: [38, 42], archetype: 'defender', rotation: [atk(4), block(10)], tags: ['armor', 'reactive'] },
-  { id: 'zealot_recruit', name: '狂信新兵', chapter: 1, tier: 'normal', role: 'carry', hpRange: [28, 34], archetype: 'scaler', rotation: [scale('strength', 1), atk(7), atk(9)], tags: ['scaler', 'snowball'] },
-  { id: 'mire_toad', name: '病沼蛙', chapter: 1, tier: 'normal', role: 'backliner', hpRange: [30, 34], archetype: 'debuffer', rotation: [debuff(STATUS_WEAK, 2), atk(6), debuff(STATUS_VULNERABLE, 1)], tags: ['debuff', 'attrition'] },
-  { id: 'bone_crow', name: '碎骨鸦', chapter: 1, tier: 'normal', role: 'backliner', hpRange: [24, 30], archetype: 'reactive', rotation: [reactive(2), multi(3, 2), atk(6)], tags: ['evasive', 'reactive'] },
-  { id: 'parasite', name: '寄生体', chapter: 1, tier: 'normal', role: 'disruptor', hpRange: [28, 32], archetype: 'disruptor', rotation: [pollute(2, 'junk_burn'), drawPressure(1), atk(7)], tags: ['pollution', 'draw_pressure'] },
-  { id: 'axe_raider', name: '斧兵', chapter: 1, tier: 'normal', role: 'frontliner', hpRange: [32, 38], archetype: 'heavy', rotation: [block(6), heavy(14, 1)], tags: ['heavy', 'execution_check'] },
-  { id: 'buff_beetle', name: '甲虫', chapter: 1, tier: 'normal', role: 'support', hpRange: [30, 36], archetype: 'trickster', rotation: [buff(STATUS_METALLICIZE, 1), atk(5), deathBurst(5)], tags: ['death_trigger', 'support'] },
+  { id: 'fang_rat', name: '獠牙鼠', chapter: 1, tier: 'normal', role: 'carry', hpRange: [26, 32], archetype: 'multi_hit', rotation: [multi(3, 3), atk(9)], tags: ['multi_hit', 'frontload'] },
+  { id: 'slime_sapper', name: '盗火小鬼', chapter: 1, tier: 'normal', role: 'disruptor', hpRange: [28, 34], archetype: 'disruptor', rotation: [atk(6), reduce(STATUS_MOMENTUM, 3)], tags: ['pollution', 'disruption'] },
+  { id: 'slime_guard', name: '拾荒者', chapter: 1, tier: 'normal', role: 'disruptor', hpRange: [34, 38], archetype: 'disruptor', rotation: [atk(6), counter(2, 5)], tags: ['resource_tax', 'counter'] },
+  { id: 'slime_shell', name: '破盾步兵', chapter: 1, tier: 'normal', role: 'tank', hpRange: [38, 42], archetype: 'defender', rotation: [atk(6), block(12)], tags: ['armor', 'reactive'] },
+  { id: 'zealot_recruit', name: '狂信新兵', chapter: 1, tier: 'normal', role: 'carry', hpRange: [28, 34], archetype: 'scaler', rotation: [scale('strength', 2), atk(8), atk(10)], tags: ['scaler', 'snowball'] },
+  { id: 'mire_toad', name: '病沼蛙', chapter: 1, tier: 'normal', role: 'backliner', hpRange: [30, 34], archetype: 'debuffer', rotation: [debuff(STATUS_WEAK, 2), atk(8), debuff(STATUS_VULNERABLE, 2)], tags: ['debuff', 'attrition'] },
+  { id: 'bone_crow', name: '碎骨鸦', chapter: 1, tier: 'normal', role: 'backliner', hpRange: [24, 30], archetype: 'reactive', rotation: [reactive(4), multi(4, 2), atk(8)], tags: ['evasive', 'reactive'] },
+  { id: 'parasite', name: '寄生体', chapter: 1, tier: 'normal', role: 'disruptor', hpRange: [28, 32], archetype: 'disruptor', rotation: [pollute(3, 'junk_burn'), drawPressure(2), atk(8)], tags: ['pollution', 'draw_pressure'] },
+  { id: 'axe_raider', name: '斧兵', chapter: 1, tier: 'normal', role: 'frontliner', hpRange: [32, 38], archetype: 'heavy', rotation: [block(8), heavy(16, 1)], tags: ['heavy', 'execution_check'] },
+  { id: 'buff_beetle', name: '甲虫', chapter: 1, tier: 'normal', role: 'support', hpRange: [30, 36], archetype: 'trickster', rotation: [buff(STATUS_METALLICIZE, 1), atk(6), deathBurst(6)], tags: ['death_trigger', 'support'] },
 
   { id: 'slime_elite', name: '黏核母体', chapter: 1, tier: 'elite', role: 'tank', hpRange: [56, 60], archetype: 'splitter', rotation: [atk(8), reduce(STATUS_MOMENTUM, 3)], tags: ['split', 'elite', 'snowball'] },
-  { id: 'act1_executioner', name: '执行者', chapter: 1, tier: 'elite', role: 'frontliner', hpRange: [58, 64], archetype: 'heavy', rotation: [thorns(3), heavy(18, 1), atk(10)], tags: ['heavy', 'elite', 'execution_check'] },
-  { id: 'act1_twin_hunter', name: '双刃猎手', chapter: 1, tier: 'elite', role: 'carry', hpRange: [56, 62], archetype: 'multi_hit', rotation: [doubleAction(1), multi(4, 2), atk(9)], tags: ['double_action', 'elite', 'frontload'] },
-  { id: 'act1_debt_monk', name: '收债修士', chapter: 1, tier: 'elite', role: 'disruptor', hpRange: [60, 66], archetype: 'trickster', rotation: [lockHand(2), pollute(2), maxHpDown(2)], tags: ['resource_tax', 'elite', 'attrition'] },
+  { id: 'act1_executioner', name: '执行者', chapter: 1, tier: 'elite', role: 'frontliner', hpRange: [58, 64], archetype: 'heavy', rotation: [thorns(4), heavy(20, 1), attackBuff(10, STATUS_VULNERABLE, 1)], tags: ['heavy', 'elite', 'execution_check'] },
+  { id: 'act1_twin_hunter', name: '双刃猎手', chapter: 1, tier: 'elite', role: 'carry', hpRange: [56, 62], archetype: 'multi_hit', rotation: [doubleAction(1), multi(5, 2), counter(2, 4)], tags: ['double_action', 'elite', 'frontload'] },
+  { id: 'act1_debt_monk', name: '收债修士', chapter: 1, tier: 'elite', role: 'disruptor', hpRange: [60, 66], archetype: 'trickster', rotation: [lockHand(2), pollute(2), heavy(16, 1)], tags: ['resource_tax', 'elite', 'attrition'] },
 
   {
     id: 'slime_boss',
@@ -142,8 +137,8 @@ const ENEMY_SEEDS: EnemySeed[] = [
     hpRange: [96, 104],
     archetype: 'summoner',
     phases: [
-      { label: '孵化', rotation: [atk(6), atk(9), buff(STATUS_STRENGTH, 1)] },
-      { label: '溢巢', threshold: 0.72, rotation: [phaseShift('溢巢', 2), summon('slime_splitter', 1), multi(4, 3), attackBuff(10, STATUS_STRENGTH, 1)] },
+      { label: '孵化', rotation: [atk(7), atk(10), buff(STATUS_STRENGTH, 1)] },
+      { label: '溢巢', threshold: 0.65, rotation: [phaseShift('溢巢', 2), summon('slime_splitter', 1), multi(4, 2), atk(11)] },
     ],
     tags: ['boss', 'summoner', 'phase'],
   },
@@ -156,8 +151,8 @@ const ENEMY_SEEDS: EnemySeed[] = [
     hpRange: [110, 118],
     archetype: 'heavy',
     phases: [
-      { label: '稳压', rotation: [phaseShift('稳压', 1), block(14), counter(2, 5), heavy(16, 1), atk(10)] },
-      { label: '碾压', threshold: 0.5, rotation: [phaseShift('碾压', 2), thorns(4), heavy(22, 1), maxHpDown(3)] },
+      { label: '稳压', rotation: [phaseShift('稳压', 1), block(16), heavy(18, 1), atk(11), counter(2, 8)] },
+      { label: '碾压', threshold: 0.55, rotation: [phaseShift('碾压', 2), heavy(22, 1), thorns(4), maxHpDown(3)] },
     ],
     tags: ['boss', 'heavy', 'phase'],
   },

@@ -202,7 +202,7 @@ function buildRuntimeRun(battle: ReturnType<typeof buildInitialBattle>): RunStat
 }
 
 describe('enemy system runtime', () => {
-  test('甲虫死亡时造成 5 点全场爆炸伤害，但不会继续分裂', () => {
+  test('甲虫死亡时造成 6 点全场爆炸伤害，但不会继续分裂', () => {
     const engine = new GameEngine();
     const battle = buildInitialBattle(
       7000,
@@ -235,10 +235,10 @@ describe('enemy system runtime', () => {
       targetUnitId: 'u_enemy_0',
     });
 
-    expect(nextRun.battle!.units[PLAYER_UNIT_ID]!.hp).toBe(37);
+    expect(nextRun.battle!.units[PLAYER_UNIT_ID]!.hp).toBe(36);
     expect(nextRun.battle!.units[PLAYER_UNIT_ID]!.block).toBe(0);
     expect(nextRun.battle!.units.u_enemy_0!.alive).toBe(false);
-    expect(nextRun.battle!.units.u_enemy_1!.hp).toBe(8);
+    expect(nextRun.battle!.units.u_enemy_1!.hp).toBe(7);
     expect(nextRun.battle!.units.u_enemy_1!.block).toBe(0);
     expect(nextRun.battle!.enemyUnitIds).toHaveLength(2);
     expect(nextRun.battle!.enemyUnitIds.filter((unitId) => nextRun.battle!.units[unitId]!.alive)).toEqual(['u_enemy_1']);

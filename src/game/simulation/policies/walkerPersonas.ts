@@ -23,6 +23,7 @@ import { MOMENTUM_BURST_RELIC_IDS, MOMENTUM_STABILITY_RELIC_IDS } from '@/game/c
 import { STATUS_MOMENTUM, STATUS_PRIMED_BREAK } from '@/game/core/definitions/statuses';
 import { getStatusStacks } from '@/game/core/combat/statusCombat';
 import type { GameCommand } from '@/game/core/commands/types';
+import type { MomentumBurstDrawParams, MomentumGuardByStacksParams } from '@/game/core/model/card';
 import type {
   SimulationBattleContext,
   SimulationMapContext,
@@ -44,9 +45,41 @@ const guardRelics = new Set<string>(MOMENTUM_STABILITY_RELIC_IDS);
 const burstRelics = new Set<string>(MOMENTUM_BURST_RELIC_IDS);
 
 type PersonaId = 'guard' | 'burst' | 'mixed';
+type PersonaMode = 'default' | 'elite_priority';
+type PersonaStyle = 'guard' | 'burst' | 'mixed';
+
+type ScoredBattleOption = {
+  option: SimulationPlayableCommand;
+  damage: number;
+  block: number;
+  safetyGain: number;
+  setupGain: number;
+  score: number;
+  lethal: boolean;
+  lowImpact: boolean;
+};
 
 function chooseFirst<T>(items: readonly T[]): T | null {
   return items[0] ?? null;
+}
+
+function asMomentumGuardParams(params: unknown): MomentumGuardByStacksParams | null {
+  if (!params || typeof params !== 'object') return null;
+  const candidate = params as Partial<MomentumGuardByStacksParams>;
+  return typeof candidate.baseBlock === 'number' && typeof candidate.blockPerStack === 'number'
+    ? candidate as MomentumGuardByStacksParams
+    : null;
+}
+
+function asMomentumBurstDrawParams(params: unknown): MomentumBurstDrawParams | null {
+  if (!params || typeof params !== 'object') return null;
+  const candidate = params as Partial<MomentumBurstDrawParams>;
+  const consumeModeOk = candidate.consumeMode === 'all' || candidate.consumeMode === 'fixed';
+  return consumeModeOk
+    && typeof candidate.baseDraw === 'number'
+    && typeof candidate.drawPerStack === 'number'
+    ? candidate as MomentumBurstDrawParams
+    : null;
 }
 
 function playerMomentum(ctx: SimulationBattleContext): number {
@@ -70,15 +103,21 @@ function dangerLevel(ctx: SimulationBattleContext): number {
 function estimateImmediateBlock(cardId: string): number {
   const def = CARD_DEFINITIONS[cardId];
   if (!def) return 0;
-  return def.effects.reduce((sum, effect) => {
+  const directBlock = def.effects.reduce((sum, effect) => {
     if (effect.type === 'block' && effect.target === 'self') return sum + effect.value;
     if (effect.type === 'heal' && effect.target === 'self') return sum + effect.value;
     if (effect.type === 'apply_status' && effect.target === 'self') {
       if (effect.statusId === 'steady_guard') return sum + effect.stacks * 4;
       if (effect.statusId === 'metallicize') return sum + effect.stacks * 2;
     }
+    if (effect.type === 'custom' && effect.scriptId === 'momentum_guard_by_stacks') {
+      const params = asMomentumGuardParams(effect.params);
+      return sum + (params?.baseBlock ?? 0);
+    }
     return sum;
   }, 0);
+  const momentumBlock = def.cost === 0 ? 0 : 0;
+  return directBlock + momentumBlock;
 }
 
 function scoreDefinitionId(definitionId: string): number {
@@ -126,30 +165,132 @@ function estimateImmediateDamage(ctx: SimulationBattleContext, option: Simulatio
   }
 }
 
-function estimateCardValue(ctx: SimulationBattleContext, option: SimulationPlayableCommand): number {
+function estimateSetupValue(ctx: SimulationBattleContext, option: SimulationPlayableCommand): number {
   const momentum = playerMomentum(ctx);
-  const block = estimateImmediateBlock(option.card.id);
-  const damage = estimateImmediateDamage(ctx, option);
-  const draw = option.card.effects.reduce((sum, effect) => effect.type === 'draw' ? sum + effect.value : sum, 0);
-  const energy = option.card.effects.reduce((sum, effect) => effect.type === 'gain_energy' ? sum + effect.value : sum, 0);
-  const momentumGain = option.card.effects.reduce((sum, effect) => {
-    if (effect.type === 'apply_status' && effect.statusId === STATUS_MOMENTUM) return sum + effect.stacks;
+  const hasBurstPayoff = ctx.playableCommands.some((item) => burstCards.has(item.card.id));
+  return option.card.effects.reduce((sum, effect) => {
+    if (effect.type === 'draw') return sum + effect.value * 1.6;
+    if (effect.type === 'gain_energy') return sum + effect.value * 2.5;
+    if (effect.type === 'apply_status') {
+      if (effect.statusId === STATUS_MOMENTUM) {
+        return sum + effect.stacks * (momentum <= 1 ? 2.4 : 0.8);
+      }
+      if (effect.statusId === 'steady_guard') {
+        return sum + effect.stacks * (ctx.battle.playerConsumedMomentumThisTurn ? 1.5 : 4.2);
+      }
+      if (effect.statusId === 'metallicize') return sum + effect.stacks * 3;
+      if (effect.statusId === STATUS_PRIMED_BREAK) {
+        return sum + effect.stacks * (hasBurstPayoff ? 4.5 : 1.5);
+      }
+      if (effect.statusId === 'strength' || effect.statusId === 'vulnerable') {
+        return sum + effect.stacks * 2;
+      }
+    }
+    if (effect.type === 'custom' && effect.scriptId === 'momentum_burst_draw') {
+      const params = asMomentumBurstDrawParams(effect.params);
+      if (!params) return sum;
+      const consumed = params.consumeMode === 'all'
+        ? momentum
+        : Math.min(momentum, params.consumeValue ?? 0);
+      return sum + params.baseDraw * 1.5 + consumed * params.drawPerStack * 1.8;
+    }
     return sum;
   }, 0);
-  const setupBonus = option.card.id === BREAK_OPENING.id ? 3 : 0;
-  const keepMomentumBonus = option.card.id === PATIENT_CUT.id ? momentum : 0;
-  const lethalBonus = option.command.targetUnitId && damage >= (ctx.battle.units[option.command.targetUnitId]?.hp ?? 999) ? 12 : 0;
-  return damage * 1.3 + block + draw * 2 + energy * 2.5 + momentumGain * 1.2 + setupBonus + keepMomentumBonus + lethalBonus;
 }
 
-function bestOption(
+function evaluateBattleOption(
   ctx: SimulationBattleContext,
-  predicate: (option: SimulationPlayableCommand) => boolean,
-  scorer: (option: SimulationPlayableCommand) => number,
-): SimulationPlayableCommand | null {
-  const candidates = ctx.playableCommands.filter(predicate);
+  option: SimulationPlayableCommand,
+  persona: PersonaStyle,
+): ScoredBattleOption {
+  const danger = dangerLevel(ctx);
+  const damage = estimateImmediateDamage(ctx, option);
+  const block = estimateImmediateBlock(option.card.id);
+  const hasFollowupBurstPayoff = ctx.playableCommands.some(
+    (item) => burstCards.has(item.card.id) && item.card.id !== option.card.id,
+  );
+  const targetHp = option.command.targetUnitId
+    ? (ctx.battle.units[option.command.targetUnitId]?.hp ?? 999)
+    : 999;
+  const lethal = Boolean(option.command.targetUnitId) && damage >= targetHp;
+  const safetyGain = danger > 0 ? Math.min(danger, block) : 0;
+  const setupGain = estimateSetupValue(ctx, option);
+  let score = damage * 1.6 + safetyGain * 1.8 + setupGain + (lethal ? 14 : 0);
+
+  if (persona === 'guard') {
+    score += guardCards.has(option.card.id) ? 2 : 0;
+    score += option.card.id === PATIENT_CUT.id ? playerMomentum(ctx) : 0;
+  }
+  if (persona === 'burst') {
+    score += burstCards.has(option.card.id) ? 2.5 : 0;
+    score += option.card.id === BREAK_OPENING.id ? 2 : 0;
+  }
+  if (persona === 'mixed') {
+    score += option.card.type === 'attack' ? 1.5 : 0;
+  }
+
+  if (danger === 0 && damage === 0 && block > 0 && setupGain < 2.5) score -= 6;
+  if (damage === 0 && safetyGain === 0 && setupGain < 2.5) score -= 8;
+  if (setupCards.has(option.card.id) && playerMomentum(ctx) >= 3 && damage === 0) score -= 5;
+  if (option.card.id === BREAK_OPENING.id && !hasFollowupBurstPayoff) score -= 5;
+  if (ctx.stagnantCombatSteps >= 4 && damage === 0 && safetyGain < 3 && setupGain < 3.5) score -= 8;
+  if (ctx.stagnantCombatSteps >= 4 && option.card.id === BREAK_OPENING.id && !hasFollowupBurstPayoff) score -= 8;
+  if (ctx.stagnantBattleStateSteps >= 2 && damage < 4 && safetyGain < 3 && setupGain < 3.5) score -= 4;
+  if (persona === 'mixed' && damage === 0 && safetyGain === 0 && setupGain < 7) score -= 3;
+
+  return {
+    option,
+    damage,
+    block,
+    safetyGain,
+    setupGain,
+    score,
+    lethal,
+    lowImpact: !lethal && damage < 5 && safetyGain < 4 && setupGain < 3.5,
+  };
+}
+
+function evaluateBattleOptions(
+  ctx: SimulationBattleContext,
+  persona: PersonaStyle,
+): ScoredBattleOption[] {
+  return ctx.playableCommands
+    .map((option) => evaluateBattleOption(ctx, option, persona))
+    .sort((a, b) => b.score - a.score);
+}
+
+function bestEvaluatedOption(
+  options: ScoredBattleOption[],
+  predicate: (option: ScoredBattleOption) => boolean,
+  scorer?: (option: ScoredBattleOption) => number,
+): ScoredBattleOption | null {
+  const candidates = options.filter(predicate);
   if (candidates.length === 0) return null;
+  if (!scorer) return candidates[0] ?? null;
   return [...candidates].sort((a, b) => scorer(b) - scorer(a))[0] ?? null;
+}
+
+function shouldEndTurn(
+  ctx: SimulationBattleContext,
+  options: ScoredBattleOption[],
+): boolean {
+  const best = options[0];
+  if (!best) return true;
+  if (best.lethal) return false;
+
+  const danger = dangerLevel(ctx);
+  const usefulCount = options.filter((option) => !option.lowImpact).length;
+  const bestImprovesSafety = best.safetyGain >= Math.min(4, Math.max(1, danger));
+  const bestImprovesSetup = best.setupGain >= 4;
+
+  if (ctx.stagnantCombatSteps >= 6 && best.lowImpact) return true;
+  if (ctx.stagnantBattleStateSteps >= 3 && best.score < 7) return true;
+  if (danger <= 0 && usefulCount === 0) return true;
+  if (danger <= 0 && ctx.stagnantCombatSteps >= 4 && best.damage === 0 && best.setupGain < 7) return true;
+  if (danger <= 0 && ctx.battle.playerCardsPlayedThisTurn >= 2 && best.score < 6) return true;
+  if (danger > 0 && !bestImprovesSafety && best.damage < 5 && !bestImprovesSetup && usefulCount <= 1) return true;
+
+  return false;
 }
 
 function findPotionSlot(ctx: SimulationBattleContext, potionId: string): number {
@@ -233,125 +374,127 @@ function chooseRouteShopAction(
 function chooseGuardBattleCommand(ctx: SimulationBattleContext): GameCommand {
   const momentum = playerMomentum(ctx);
   const danger = dangerLevel(ctx);
+  const options = evaluateBattleOptions(ctx, 'guard');
   const guardPotionSlot = findPotionSlot(ctx, STILLWATER_TONIC.id);
   if (guardPotionSlot >= 0 && momentum <= 1 && danger > 0) {
     return { type: 'USE_POTION', slotIndex: guardPotionSlot };
   }
 
-  const lethal = bestOption(
-    ctx,
-    (option) => option.card.type === 'attack' && Boolean(option.command.targetUnitId),
-    (option) => {
-      const targetHp = option.command.targetUnitId
-        ? (ctx.battle.units[option.command.targetUnitId]?.hp ?? 999)
-        : 999;
-      return estimateImmediateDamage(ctx, option) >= targetHp ? 1000 + targetHp : -1;
-    },
+  const lethal = bestEvaluatedOption(
+    options,
+    (option) => option.option.card.type === 'attack' && option.lethal,
+    (option) => option.score,
   );
-  if (lethal && estimateImmediateDamage(ctx, lethal) >= (lethal.command.targetUnitId ? (ctx.battle.units[lethal.command.targetUnitId]?.hp ?? 999) : 999)) {
-    return lethal.command;
-  }
+  if (lethal) return lethal.option.command;
 
   if (danger > 0) {
-    const defense = bestOption(
-      ctx,
-      (option) => guardCards.has(option.card.id) || estimateImmediateBlock(option.card.id) > 0,
-      (option) => estimateImmediateBlock(option.card.id) * 2 + estimateCardValue(ctx, option),
+    const defense = bestEvaluatedOption(
+      options,
+      (option) => guardCards.has(option.option.card.id) || option.block > 0,
+      (option) => option.safetyGain * 3 + option.setupGain + option.score,
     );
-    if (defense) return defense.command;
+    if (defense && defense.score >= 5) return defense.option.command;
   }
 
   if (momentum <= 1) {
-    const setup = bestOption(
-      ctx,
-      (option) => setupCards.has(option.card.id) || option.card.id === SURVEY_FIELD.id,
-      (option) => estimateCardValue(ctx, option) + (guardCards.has(option.card.id) ? 2 : 0),
+    const setup = bestEvaluatedOption(
+      options,
+      (option) => setupCards.has(option.option.card.id) || option.option.card.id === SURVEY_FIELD.id,
+      (option) => option.setupGain * 2 + option.score,
     );
-    if (setup) return setup.command;
+    if (setup && setup.score >= 5) return setup.option.command;
   }
 
-  const keepMomentum = bestOption(
-    ctx,
-    (option) => option.card.id === PATIENT_CUT.id || option.card.id === SURVEY_FIELD.id || option.card.id === HELD_BREATH.id || option.card.id === ANCHORED_BREATH.id,
-    (option) => estimateCardValue(ctx, option) + momentum,
+  const keepMomentum = bestEvaluatedOption(
+    options,
+    (option) => option.option.card.id === PATIENT_CUT.id || option.option.card.id === SURVEY_FIELD.id || option.option.card.id === HELD_BREATH.id || option.option.card.id === ANCHORED_BREATH.id,
+    (option) => option.setupGain + option.safetyGain + option.score + momentum,
   );
-  if (keepMomentum) return keepMomentum.command;
+  if (keepMomentum && keepMomentum.score >= 4.5) return keepMomentum.option.command;
 
-  const anyPlayable = bestOption(ctx, () => true, (option) => estimateCardValue(ctx, option) - (burstCards.has(option.card.id) ? 4 : 0));
-  return anyPlayable?.command ?? { type: 'END_TURN' };
+  if (shouldEndTurn(ctx, options)) return { type: 'END_TURN' };
+
+  const anyPlayable = bestEvaluatedOption(
+    options,
+    () => true,
+    (option) => option.score - (burstCards.has(option.option.card.id) ? 4 : 0),
+  );
+  return anyPlayable?.option.command ?? { type: 'END_TURN' };
 }
 
 function chooseBurstBattleCommand(ctx: SimulationBattleContext): GameCommand {
   const momentum = playerMomentum(ctx);
   const danger = dangerLevel(ctx);
+  const options = evaluateBattleOptions(ctx, 'burst');
   const burstPotionSlot = findPotionSlot(ctx, FLASH_POWDER.id);
   const hasPayoff = ctx.playableCommands.some((option) => burstCards.has(option.card.id));
   if (burstPotionSlot >= 0 && hasPayoff && momentum <= 1) {
     return { type: 'USE_POTION', slotIndex: burstPotionSlot };
   }
 
-  const lethal = bestOption(
-    ctx,
-    (option) => option.card.type === 'attack' && Boolean(option.command.targetUnitId),
-    (option) => {
-      const targetHp = option.command.targetUnitId
-        ? (ctx.battle.units[option.command.targetUnitId]?.hp ?? 999)
-        : 999;
-      const damage = estimateImmediateDamage(ctx, option);
-      return damage >= targetHp ? 1000 + damage : damage;
-    },
+  const lethal = bestEvaluatedOption(
+    options,
+    (option) => option.option.card.type === 'attack' && option.lethal,
+    (option) => option.score,
   );
-  if (lethal && estimateImmediateDamage(ctx, lethal) >= (lethal.command.targetUnitId ? (ctx.battle.units[lethal.command.targetUnitId]?.hp ?? 999) : 999)) {
-    return lethal.command;
-  }
+  if (lethal) return lethal.option.command;
 
   if (momentum <= 1) {
-    const setup = bestOption(
-      ctx,
-      (option) => option.card.id === BREAK_OPENING.id || option.card.id === PRIME_RHYTHM.id || option.card.id === SOFT_STEP.id || option.card.id === BRACE_RHYTHM.id,
-      (option) => estimateCardValue(ctx, option) + (option.card.id === BREAK_OPENING.id ? 4 : 0),
+    const setup = bestEvaluatedOption(
+      options,
+      (option) => option.option.card.id === BREAK_OPENING.id || option.option.card.id === PRIME_RHYTHM.id || option.option.card.id === SOFT_STEP.id || option.option.card.id === BRACE_RHYTHM.id,
+      (option) => option.setupGain * 2 + option.score + (option.option.card.id === BREAK_OPENING.id ? 2 : 0),
     );
-    if (setup) return setup.command;
+    if (setup && setup.score >= 4.5) return setup.option.command;
   }
 
   if (momentum > 0) {
-    const payoff = bestOption(
-      ctx,
-      (option) => burstCards.has(option.card.id),
+    const payoff = bestEvaluatedOption(
+      options,
+      (option) => burstCards.has(option.option.card.id),
       (option) => {
-        const base = estimateImmediateDamage(ctx, option) + estimateCardValue(ctx, option);
-        const isAllIn = option.card.id === FULL_RELEASE.id || option.card.id === 'burst_strike';
+        const base = option.damage * 2 + option.score;
+        const isAllIn = option.option.card.id === FULL_RELEASE.id || option.option.card.id === 'burst_strike';
         return base + (danger > 0 && isAllIn ? 6 : 0);
       },
     );
-    if (payoff) return payoff.command;
+    if (payoff && payoff.score >= 4) return payoff.option.command;
   }
 
-  const anyPlayable = bestOption(ctx, () => true, (option) => estimateCardValue(ctx, option) + (burstCards.has(option.card.id) ? 2 : 0));
-  return anyPlayable?.command ?? { type: 'END_TURN' };
+  if (shouldEndTurn(ctx, options)) return { type: 'END_TURN' };
+
+  const anyPlayable = bestEvaluatedOption(
+    options,
+    () => true,
+    (option) => option.score + (burstCards.has(option.option.card.id) ? 2 : 0),
+  );
+  return anyPlayable?.option.command ?? { type: 'END_TURN' };
 }
 
 function chooseMixedBattleCommand(ctx: SimulationBattleContext): GameCommand {
+  const options = evaluateBattleOptions(ctx, 'mixed');
   const healingPotionSlot = findPotionSlot(ctx, 'healing_dew');
   if (healingPotionSlot >= 0 && playerHp(ctx) <= 14 && dangerLevel(ctx) > 0) {
     return { type: 'USE_POTION', slotIndex: healingPotionSlot };
   }
-  const anyPlayable = bestOption(ctx, () => true, (option) => estimateCardValue(ctx, option));
-  return anyPlayable?.command ?? { type: 'END_TURN' };
+  if (shouldEndTurn(ctx, options)) return { type: 'END_TURN' };
+  const anyPlayable = bestEvaluatedOption(options, () => true, (option) => option.score);
+  return anyPlayable?.option.command ?? { type: 'END_TURN' };
 }
 
-function createWalkerPersonaPolicy(id: PersonaId): SimulationPolicy {
+function createWalkerPersonaPolicy(id: PersonaId, mode: PersonaMode = 'default'): SimulationPolicy {
+  const preferElite = mode === 'elite_priority';
+  const policyId = preferElite ? `walker-${id}-elite` : `walker-${id}`;
   if (id === 'guard') {
     return {
-      id: 'walker-guard',
+      id: policyId,
       chooseBattleCommand: chooseGuardBattleCommand,
       chooseMapNode(ctx) {
         return chooseNodeByPriority(ctx, {
           boss: 0,
-          battle: 1,
-          shop: 2,
-          rest: 3,
-          elite: 4,
+          ...(preferElite
+            ? { elite: 1, battle: 2, shop: 3, rest: 4 }
+            : { battle: 1, shop: 2, rest: 3, elite: 4 }),
           event: 5,
           treasure: 6,
         });
@@ -381,7 +524,7 @@ function createWalkerPersonaPolicy(id: PersonaId): SimulationPolicy {
 
   if (id === 'burst') {
     return {
-      id: 'walker-burst',
+      id: policyId,
       chooseBattleCommand: chooseBurstBattleCommand,
       chooseMapNode(ctx) {
         return chooseNodeByPriority(ctx, {
@@ -418,13 +561,14 @@ function createWalkerPersonaPolicy(id: PersonaId): SimulationPolicy {
   }
 
   return {
-    id: 'walker-mixed',
+    id: policyId,
     chooseBattleCommand: chooseMixedBattleCommand,
     chooseMapNode(ctx) {
       return chooseNodeByPriority(ctx, {
         boss: 0,
-        battle: 1,
-        elite: 2,
+        ...(preferElite
+          ? { elite: 1, battle: 2 }
+          : { battle: 1, elite: 2 }),
         shop: 3,
         event: 4,
         rest: 5,
@@ -474,3 +618,13 @@ function createWalkerPersonaPolicy(id: PersonaId): SimulationPolicy {
 export const walkerGuardPolicy = createWalkerPersonaPolicy('guard');
 export const walkerBurstPolicy = createWalkerPersonaPolicy('burst');
 export const walkerMixedPolicy = createWalkerPersonaPolicy('mixed');
+export const walkerGuardElitePolicy = createWalkerPersonaPolicy('guard', 'elite_priority');
+export const walkerBurstElitePolicy = createWalkerPersonaPolicy('burst', 'elite_priority');
+export const walkerMixedElitePolicy = createWalkerPersonaPolicy('mixed', 'elite_priority');
+
+export const walkerBasePolicies = [walkerGuardPolicy, walkerBurstPolicy, walkerMixedPolicy] as const;
+export const walkerElitePriorityPolicies = [
+  walkerGuardElitePolicy,
+  walkerBurstElitePolicy,
+  walkerMixedElitePolicy,
+] as const;

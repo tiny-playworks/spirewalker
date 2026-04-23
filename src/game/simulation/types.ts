@@ -2,7 +2,7 @@ import type { RewardEncounterTier } from '@/game/core/engine/generateRewardChoic
 import type { GameCommand } from '@/game/core/commands/types';
 import type { PressureProfile } from '@/game/core/definitions/encounters';
 import type { BattleState, MonsterIntent } from '@/game/core/model/battle';
-import type { MapNode } from '@/game/core/model/map';
+import type { MapNode, MapNodeType } from '@/game/core/model/map';
 import type { RewardState } from '@/game/core/model/reward';
 import type { RunState } from '@/game/core/model/run';
 import type { ShopState } from '@/game/core/model/shop';
@@ -35,15 +35,100 @@ export type Act1PressureMetric = {
   avgHpLoss: number;
 };
 
+export type Act1NodeChoiceMetric = {
+  type: MapNodeType;
+  count: number;
+  rate: number;
+};
+
+export type Act1DeathStage = 'normal' | 'elite' | 'boss' | 'non_battle' | 'survived';
+
+export type Act1DeathStageMetric = {
+  stage: Act1DeathStage;
+  count: number;
+  rate: number;
+};
+
+export type Act1NonBattleEndReason =
+  | 'map_no_legal_nodes_before_boss'
+  | 'invalid_map_choice'
+  | 'screen_limit_map'
+  | 'screen_limit_battle'
+  | 'screen_limit_reward'
+  | 'screen_limit_shop'
+  | 'screen_limit_event'
+  | 'screen_limit_rest'
+  | 'battle_command_limit'
+  | 'battle_no_progress';
+
+export type BattleGuardrailMode = 'baseline_200' | 'progress_guard';
+
+export type Act1TraceNode = {
+  id: string;
+  type: MapNodeType;
+  depth: number;
+  act: number;
+};
+
+export type Act1TraceScreenTransition = {
+  from: string;
+  to: string;
+  command: string;
+  actFloor: number;
+  nodeId: string | null;
+  nodeDepth: number | null;
+};
+
+export type Act1NonBattleTrace = {
+  seed: number;
+  policyId: string;
+  guardrailMode: BattleGuardrailMode;
+  reason: Act1NonBattleEndReason;
+  screen: string;
+  actFloor: number;
+  nodeId: string | null;
+  nodeDepth: number | null;
+  battleTurn: number | null;
+  aliveEnemyCount: number | null;
+  playerHp: number | null;
+  enemyTotalHp: number | null;
+  assertions: string[];
+  recentNodeHistory: Act1TraceNode[];
+  recentScreenTransitions: Act1TraceScreenTransition[];
+  nextNodes: Array<{
+    id: string;
+    type: MapNodeType;
+    depth: number;
+  }>;
+};
+
+export type Act1NonBattleReasonMetric = {
+  reason: Act1NonBattleEndReason;
+  count: number;
+  rate: number;
+  exampleSeeds: number[];
+};
+
 export type Act1ValidationSummary = {
   policyId: string;
+  guardrailMode: BattleGuardrailMode;
   totalRuns: number;
   normal: Act1StageMetric;
+  elite: Act1StageMetric;
   firstElite: Act1StageMetric;
   boss: Act1StageMetric;
+  anyEliteRuns: number;
+  anyEliteRate: number;
+  avgEliteFightsPerRun: number;
+  avgNormalBeforeBoss: number;
+  avgEliteBeforeBoss: number;
   avgTurns: number;
   avgHpLoss: number;
   pressureProfileBreakdown: Act1PressureMetric[];
+  nodeChoiceBreakdown: Act1NodeChoiceMetric[];
+  deathStageBreakdown: Act1DeathStageMetric[];
+  nonBattleBreakdown: Act1NonBattleReasonMetric[];
+  nonBattleTraces: Act1NonBattleTrace[];
 };
 
 export type SimulationPlayableCommand = {
@@ -57,6 +142,8 @@ export type SimulationBattleContext = {
   battle: BattleState;
   playableCommands: SimulationPlayableCommand[];
   projectedIncomingDamage: number;
+  stagnantBattleStateSteps: number;
+  stagnantCombatSteps: number;
 };
 
 export type SimulationMapContext = {

@@ -147,6 +147,8 @@ function buildBattleContext(run: RunState): SimulationBattleContext {
     battle: run.battle!,
     playableCommands: asPlayCardCommand(run.battle!),
     projectedIncomingDamage: projectedIncomingDamage(run),
+    stagnantBattleStateSteps: 0,
+    stagnantCombatSteps: 0,
   };
 }
 

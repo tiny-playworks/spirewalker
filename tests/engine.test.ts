@@ -401,11 +401,11 @@ describe('GameEngine MVP', () => {
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
 
-    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(1);
-    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 5 });
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(0);
+    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 6 });
   });
 
-  test('多打惩罚敌人在玩家本回合出牌达到阈值时获得格挡', () => {
+  test('反连打敌人在玩家本回合出牌达到阈值时会反击', () => {
     const engine = new GameEngine();
     const masterDeck = ['strike', 'defend', 'defend', 'strike', 'strike'];
     const battle = buildInitialBattle(304, undefined, 'guard_punish', masterDeck, lineupGuard(), []);
@@ -456,12 +456,12 @@ describe('GameEngine MVP', () => {
     }
 
     expect(run.battle!.playerCardsPlayedThisTurn).toBe(3);
+    expect(run.battle!.units[PLAYER_UNIT_ID].hp).toBe(34);
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
 
-    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(8);
     expect(run.battle!.playerCardsPlayedThisTurn).toBe(0);
-    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 5 });
+    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 6 });
   });
 
   test('拖延型敌人在敌方回合会获得格挡', () => {
@@ -491,8 +491,8 @@ describe('GameEngine MVP', () => {
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
 
-    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(10);
-    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 4 });
+    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(12);
+    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 6 });
   });
 
   test('整步作为节奏修复牌：获得格挡并抽 1 张牌', () => {
@@ -1100,7 +1100,7 @@ describe('GameEngine 战斗修正', () => {
     addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
-    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(3);
+    expect(run.battle!.units[PLAYER_UNIT_ID].statuses.find((s) => s.id === STATUS_MOMENTUM)?.stacks ?? 0).toBe(2);
   });
 
   test('首个精英节点不会抽到 elite_open，且仍是单敌构筑检定', () => {
