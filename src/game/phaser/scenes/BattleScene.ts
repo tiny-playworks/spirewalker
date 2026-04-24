@@ -4,8 +4,9 @@ import { buildCardKeywordHints, cardTargetLabel, cardTypeLabel, formatMonsterInt
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
 import { getCardArchetype, ARCHETYPE_DISPLAY } from '@/game/core/definitions/cards/archetypes';
 import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
+import { getStatusMeta } from '@/game/core/definitions/statuses';
 import type { BattleState } from '@/game/core/model/battle';
-import type { CardDefinition, CardTarget } from '@/game/core/model/card';
+import type { CardDefinition, CardTarget, EffectDefinition } from '@/game/core/model/card';
 import { PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
 import { useGameStore } from '@/game/store/gameStore';
 import { decidePlayCardCommand } from '../controllers/DragController';
@@ -21,19 +22,19 @@ import { UnitStatusBar } from './battle/UnitStatusBar';
 
 /** 手牌区与敌人 AABB 分离，避免第 4～5 张默认就压在敌人命中盒上导致误判 / 输入抢优先级。 */
 const HAND_START_X = 184;
-const HAND_GAP_X = 100;
+const HAND_GAP_X = 106;
 /** 手牌略高于底部牌堆，保证普通浏览器比例下所有文字完整可见。 */
-const HAND_Y = 374;
+const HAND_Y = 386;
 /** 高于敌人装饰（1），避免右侧牌叠在敌人矩形下抢不到拖拽。 */
 const HAND_DEPTH_BASE = 40;
 
-const ENEMY_SLOT_X0 = 760;
-const ENEMY_SLOT_DX = 168;
-const PLAYER_X = 128;
-const UNIT_Y = 210;
-const UNIT_STATUS_Y = 302;
-const CARD_W = 104;
-const CARD_H = 138;
+const ENEMY_SLOT_X0 = 764;
+const ENEMY_SLOT_DX = 176;
+const PLAYER_X = 150;
+const UNIT_Y = 206;
+const UNIT_STATUS_Y = 318;
+const CARD_W = 112;
+const CARD_H = 144;
 const CARD_R = 11;
 
 export class BattleScene extends Scene {
@@ -131,25 +132,25 @@ export class BattleScene extends Scene {
     g.fillRect(LOGICAL_WIDTH - 92, 0, 92, LOGICAL_HEIGHT);
 
     g.fillStyle(0x2a241a, 0.72);
-    g.fillRoundedRect(52, 72, LOGICAL_WIDTH - 104, 230, 18);
+    g.fillRoundedRect(42, 48, LOGICAL_WIDTH - 84, 274, 20);
     g.lineStyle(2, 0x6f5a3f, 0.36);
-    g.strokeRoundedRect(52, 72, LOGICAL_WIDTH - 104, 230, 18);
+    g.strokeRoundedRect(42, 48, LOGICAL_WIDTH - 84, 274, 20);
 
     g.fillGradientStyle(0x17130f, 0x17130f, 0x2e271c, 0x2b241a, 0.4, 0.4, 0.82, 0.82);
-    g.fillRect(0, 290, LOGICAL_WIDTH, LOGICAL_HEIGHT - 290);
+    g.fillRect(0, 314, LOGICAL_WIDTH, LOGICAL_HEIGHT - 314);
     g.lineStyle(2, 0xb4895e, 0.28);
-    g.lineBetween(58, 290, LOGICAL_WIDTH - 58, 290);
+    g.lineBetween(54, 314, LOGICAL_WIDTH - 54, 314);
     g.lineStyle(1, 0x463a2a, 0.35);
-    for (let y = 328; y < LOGICAL_HEIGHT; y += 36) {
+    for (let y = 350; y < LOGICAL_HEIGHT; y += 36) {
       g.lineBetween(36, y, LOGICAL_WIDTH - 36, y + 8);
     }
     for (let x = 104; x < LOGICAL_WIDTH; x += 108) {
-      g.lineBetween(x, 292, x - 58, LOGICAL_HEIGHT);
+      g.lineBetween(x, 316, x - 58, LOGICAL_HEIGHT);
     }
 
     g.fillStyle(0x000000, 0.2);
-    g.fillRect(0, 0, LOGICAL_WIDTH, 34);
-    g.fillRect(0, LOGICAL_HEIGHT - 28, LOGICAL_WIDTH, 28);
+    g.fillRect(0, 0, LOGICAL_WIDTH, 24);
+    g.fillRect(0, LOGICAL_HEIGHT - 20, LOGICAL_WIDTH, 20);
   }
 
   private unitHpBar(
@@ -162,8 +163,8 @@ export class BattleScene extends Scene {
     textColor: string,
   ): GameObjects.GameObject[] {
     const g = this.add.graphics();
-    const bw = 132;
-    const bh = 12;
+    const bw = 152;
+    const bh = 14;
     const x0 = cx - bw / 2;
     const ratio = maxHp > 0 ? hp / maxHp : 0;
     g.fillStyle(track, 1);
@@ -173,7 +174,7 @@ export class BattleScene extends Scene {
     g.lineStyle(1, 0x0b0a08, 0.7);
     g.strokeRoundedRect(x0, y, bw, bh, 5);
     const label = this.txt(cx, y + bh / 2, `${hp} / ${maxHp}`, {
-      fontSize: '9px',
+      fontSize: '10px',
       color: textColor,
       fontStyle: 'bold',
       align: 'center',
@@ -189,30 +190,72 @@ export class BattleScene extends Scene {
     const g = this.add.graphics();
     g.fillStyle(fill, 0.95);
     g.lineStyle(1.5, stroke, 0.9);
-    g.fillRoundedRect(cx - 28, y - 11, 56, 22, 8);
-    g.strokeRoundedRect(cx - 28, y - 11, 56, 22, 8);
+    g.fillRoundedRect(cx - 31, y - 12, 62, 24, 8);
+    g.strokeRoundedRect(cx - 31, y - 12, 62, 24, 8);
     const label = this.txt(cx, y, `盾 ${block}`, {
-      fontSize: '10px',
+      fontSize: '11px',
       color: text,
       fontStyle: 'bold',
     }).setOrigin(0.5, 0.5);
     return [g, label];
   }
 
+  private collectCardEffects(effects: readonly EffectDefinition[], repeatTimes = 1): EffectDefinition[] {
+    const flat: EffectDefinition[] = [];
+    for (const effect of effects) {
+      if (effect.type === 'repeat') {
+        flat.push(...this.collectCardEffects(effect.effects, repeatTimes * effect.times));
+        continue;
+      }
+      for (let i = 0; i < repeatTimes; i += 1) flat.push(effect);
+    }
+    return flat;
+  }
+
+  private cardFocus(def: CardDefinition): { value: string; label: string; tone: 'attack' | 'block' | 'utility' } {
+    const effects = this.collectCardEffects(def.effects);
+    const damage = effects.reduce((sum, effect) => {
+      if (effect.type === 'damage') return sum + effect.value;
+      if (effect.type === 'custom' && effect.scriptId === 'momentum_burst_damage') {
+        return sum + Number(effect.params?.baseDamage ?? 0);
+      }
+      return sum;
+    }, 0);
+    if (damage > 0) return { value: String(damage), label: '伤害', tone: 'attack' };
+
+    const block = effects.reduce((sum, effect) => {
+      if (effect.type === 'block') return sum + effect.value;
+      if (effect.type === 'custom' && effect.scriptId === 'momentum_guard_by_stacks') {
+        return sum + Number(effect.params?.baseBlock ?? 0);
+      }
+      return sum;
+    }, 0);
+    if (block > 0) return { value: String(block), label: '格挡', tone: 'block' };
+
+    const draw = effects.find((effect) => effect.type === 'draw');
+    if (draw?.type === 'draw') return { value: String(draw.value), label: '抽牌', tone: 'utility' };
+    const energy = effects.find((effect) => effect.type === 'gain_energy');
+    if (energy?.type === 'gain_energy') return { value: `+${energy.value}`, label: '能量', tone: 'utility' };
+    const status = effects.find((effect) => effect.type === 'apply_status');
+    if (status?.type === 'apply_status') return { value: String(status.stacks), label: getStatusMeta(status.statusId).shortLabel, tone: 'utility' };
+    if (def.type === 'power') return { value: '持', label: '能力', tone: 'utility' };
+    return { value: '技', label: cardTypeLabel(def.type), tone: 'utility' };
+  }
+
   private unitNamePlate(cx: number, y: number, name: string, tone: 'player' | 'enemy'): GameObjects.GameObject[] {
     const fill = tone === 'player' ? 0x172030 : 0x241914;
     const stroke = tone === 'player' ? 0x5a7ab0 : 0xa07858;
     const g = this.add.graphics();
-    g.fillStyle(fill, 0.9);
-    g.lineStyle(1, stroke, 0.7);
-    g.fillRoundedRect(cx - 48, y - 12, 96, 24, 8);
-    g.strokeRoundedRect(cx - 48, y - 12, 96, 24, 8);
+    g.fillStyle(fill, 0.72);
+    g.lineStyle(1, stroke, 0.34);
+    g.fillRoundedRect(cx - 60, y - 11, 120, 22, 9);
+    g.strokeRoundedRect(cx - 60, y - 11, 120, 22, 9);
     const label = this.txt(cx, y, name, {
-      fontSize: '11px',
+      fontSize: '12px',
       color: '#f0ebe3',
       fontStyle: 'bold',
       align: 'center',
-      wordWrap: { width: 88 },
+      wordWrap: { width: 108 },
     }).setOrigin(0.5, 0.5);
     return [g, label];
   }
@@ -225,31 +268,31 @@ export class BattleScene extends Scene {
     const dark = tone === 'player' ? 0x111926 : 0x21130f;
 
     g.fillStyle(0x000000, 0.34 * alpha);
-    g.fillEllipse(cx, cy + 66, 118, 24);
+    g.fillEllipse(cx, cy + 76, 144, 28);
     g.fillStyle(dark, 0.82 * alpha);
-    g.fillEllipse(cx, cy + 64, 92, 14);
+    g.fillEllipse(cx, cy + 74, 110, 16);
 
     g.fillStyle(fill, 0.96 * alpha);
     g.lineStyle(2, stroke, 0.9 * alpha);
     if (tone === 'player') {
-      g.fillRoundedRect(cx - 34, cy - 34, 68, 88, 20);
-      g.strokeRoundedRect(cx - 34, cy - 34, 68, 88, 20);
-      g.fillCircle(cx, cy - 58, 21);
-      g.strokeCircle(cx, cy - 58, 21);
+      g.fillRoundedRect(cx - 40, cy - 38, 80, 102, 22);
+      g.strokeRoundedRect(cx - 40, cy - 38, 80, 102, 22);
+      g.fillCircle(cx, cy - 68, 24);
+      g.strokeCircle(cx, cy - 68, 24);
       g.fillStyle(0x182235, 0.86 * alpha);
-      g.fillTriangle(cx - 50, cy + 2, cx - 24, cy + 60, cx - 8, cy + 34);
-      g.fillTriangle(cx + 50, cy + 2, cx + 24, cy + 60, cx + 8, cy + 34);
+      g.fillTriangle(cx - 58, cy + 2, cx - 28, cy + 70, cx - 10, cy + 40);
+      g.fillTriangle(cx + 58, cy + 2, cx + 28, cy + 70, cx + 10, cy + 40);
       g.lineStyle(2, 0xb8cceb, 0.52 * alpha);
-      g.lineBetween(cx - 18, cy - 8, cx + 18, cy - 8);
+      g.lineBetween(cx - 22, cy - 10, cx + 22, cy - 10);
     } else {
-      g.fillEllipse(cx, cy - 8, 78, 112);
-      g.strokeEllipse(cx, cy - 8, 78, 112);
-      g.fillCircle(cx, cy - 66, 24);
-      g.strokeCircle(cx, cy - 66, 24);
-      g.fillTriangle(cx - 22, cy - 72, cx - 48, cy - 88, cx - 34, cy - 58);
-      g.fillTriangle(cx + 22, cy - 72, cx + 48, cy - 88, cx + 34, cy - 58);
+      g.fillEllipse(cx, cy - 8, 92, 130);
+      g.strokeEllipse(cx, cy - 8, 92, 130);
+      g.fillCircle(cx, cy - 76, 27);
+      g.strokeCircle(cx, cy - 76, 27);
+      g.fillTriangle(cx - 24, cy - 82, cx - 56, cy - 102, cx - 40, cy - 64);
+      g.fillTriangle(cx + 24, cy - 82, cx + 56, cy - 102, cx + 40, cy - 64);
       g.lineStyle(2, 0xf0b08a, 0.48 * alpha);
-      g.lineBetween(cx - 20, cy - 28, cx + 20, cy - 28);
+      g.lineBetween(cx - 24, cy - 32, cx + 24, cy - 32);
     }
     return g;
   }
@@ -444,7 +487,7 @@ export class BattleScene extends Scene {
       padding: { x: 8, y: 4 },
     }).setOrigin(0.5, 0.5).setDepth(38).setVisible(false);
 
-    this.aoePlayRect = new Geom.Rectangle(346, 72, 540, 282);
+    this.aoePlayRect = new Geom.Rectangle(330, 50, 560, 288);
 
     // 底部三堆可视化：抽牌堆/弃牌堆在左下，消耗堆在右下角避免与结束回合按钮冲突。
     this.drawPile = new PileStack(this, 56, LOGICAL_HEIGHT - 90, 'draw', this.textRes);
@@ -530,10 +573,10 @@ export class BattleScene extends Scene {
     const cx = PLAYER_X;
     const cy = UNIT_Y;
     this.playerLayer.add([
+      ...this.unitNamePlate(cx, cy - 118, u.name, 'player'),
       this.unitToken(cx, cy, 'player', u.alive),
-      ...this.unitNamePlate(cx, cy - 104, u.name, 'player'),
-      ...this.unitHpBar(cx, cy + 70, u.hp, u.maxHp, 0x6a9dd4, 0x101722, '#eef6ff'),
-      ...this.blockBadge(cx, cy + 44, u.block, 'player'),
+      ...this.blockBadge(cx, cy + 58, u.block, 'player'),
+      ...this.unitHpBar(cx, cy + 82, u.hp, u.maxHp, 0x6a9dd4, 0x101722, '#eef6ff'),
     ]);
   }
 
@@ -548,11 +591,11 @@ export class BattleScene extends Scene {
       const cy = UNIT_Y;
       const intentLine = formatMonsterIntentText(monster?.intent);
       this.enemyLayer.add([
-        this.enemyIntentPill(cx, cy - 120, intentLine, monster?.intent?.type),
+        this.enemyIntentPill(cx, cy - 132, intentLine, monster?.intent?.type),
+        ...this.unitNamePlate(cx, cy - 112, u?.name ?? eid, 'enemy'),
         this.unitToken(cx, cy, 'enemy', u?.alive ?? true),
-        ...this.unitNamePlate(cx, cy - 92, u?.name ?? eid, 'enemy'),
-        ...(u ? this.unitHpBar(cx, cy + 70, u.hp, u.maxHp, 0xd4846a, 0x281915, '#fff0e6') : []),
-        ...(u ? this.blockBadge(cx, cy + 44, u.block, 'enemy') : []),
+        ...(u ? this.blockBadge(cx, cy + 58, u.block, 'enemy') : []),
+        ...(u ? this.unitHpBar(cx, cy + 82, u.hp, u.maxHp, 0xd4846a, 0x281915, '#fff0e6') : []),
       ]);
     });
   }
@@ -566,7 +609,7 @@ export class BattleScene extends Scene {
     }
     this.enemyHitRects = battle.enemyUnitIds.map((unitId, i) => {
       const cx = ENEMY_SLOT_X0 - i * ENEMY_SLOT_DX;
-      const rect = new Geom.Rectangle(cx - 76, 78, 152, 244);
+      const rect = new Geom.Rectangle(cx - 88, 54, 176, 278);
       const zone = this.add.zone(rect.centerX, rect.centerY, rect.width, rect.height);
       zone.setDepth(33);
       zone.setInteractive({ useHandCursor: true });
@@ -740,7 +783,15 @@ export class BattleScene extends Scene {
   }
 
   private compactCardDescription(text: string): string {
-    return text.length > 42 ? `${text.slice(0, 40)}...` : text;
+    const compact = text.replace(/\s+/g, '');
+    return compact.length > 12 ? `${compact.slice(0, 10)}...` : compact;
+  }
+
+  private compactTargetLabel(target: CardTarget): string {
+    if (target === 'single_enemy') return '单体';
+    if (target === 'all_enemies') return '全体';
+    if (target === 'self') return '自身';
+    return '无需目标';
   }
 
   private makeHandCardBg(def: CardDefinition, upgraded: boolean): GameObjects.Graphics {
@@ -753,18 +804,18 @@ export class BattleScene extends Scene {
     g.fillRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, CARD_R);
     g.strokeRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, CARD_R);
 
-    g.fillStyle(p.accent, 0.18);
-    g.fillRoundedRect(-CARD_W / 2 + 5, -CARD_H / 2 + 5, CARD_W - 10, 28, 8);
+    g.fillStyle(p.accent, 0.16);
+    g.fillRoundedRect(-CARD_W / 2 + 5, -CARD_H / 2 + 5, CARD_W - 10, 30, 8);
     g.lineStyle(1, p.accent, 0.35);
-    g.strokeRoundedRect(-CARD_W / 2 + 5, -CARD_H / 2 + 5, CARD_W - 10, 28, 8);
+    g.strokeRoundedRect(-CARD_W / 2 + 5, -CARD_H / 2 + 5, CARD_W - 10, 30, 8);
 
-    g.fillStyle(0x0d0b09, 0.48);
-    g.fillRoundedRect(-CARD_W / 2 + 9, -26, CARD_W - 18, 58, 7);
-    g.lineStyle(1, 0xd6c0a0, 0.13);
-    g.strokeRoundedRect(-CARD_W / 2 + 9, -26, CARD_W - 18, 58, 7);
+    g.fillStyle(0x0d0b09, 0.34);
+    g.fillRoundedRect(-CARD_W / 2 + 10, -24, CARD_W - 20, 54, 9);
+    g.lineStyle(1, p.accent, 0.18);
+    g.strokeRoundedRect(-CARD_W / 2 + 10, -24, CARD_W - 20, 54, 9);
 
-    g.fillStyle(0x0d0b09, 0.64);
-    g.fillRoundedRect(-CARD_W / 2 + 8, CARD_H / 2 - 27, CARD_W - 16, 18, 6);
+    g.fillStyle(0x0d0b09, 0.58);
+    g.fillRoundedRect(-CARD_W / 2 + 8, CARD_H / 2 - 26, CARD_W - 16, 18, 6);
     if (upgraded) {
       g.fillStyle(0xf4d58d, 0.95);
       g.fillTriangle(CARD_W / 2 - 24, -CARD_H / 2, CARD_W / 2, -CARD_H / 2, CARD_W / 2, -CARD_H / 2 + 24);
@@ -802,15 +853,16 @@ export class BattleScene extends Scene {
 
       const palette = this.cardPalette(def);
       const upgraded = inst.upgraded || inst.definitionId.includes('+');
+      const focus = this.cardFocus(def);
       const bg = this.makeHandCardBg(def, upgraded);
-      const title = this.txt(10, -56, def.name, {
+      const title = this.txt(12, -58, def.name, {
         fontSize: '12px',
         color: palette.text,
         fontStyle: 'bold',
         align: 'center',
-        wordWrap: { width: 66 },
+        wordWrap: { width: 72 },
       }).setOrigin(0.5, 0.5);
-      const cost = this.txt(-38, -54, `${inst.costForTurn}`, {
+      const cost = this.txt(-42, -56, `${inst.costForTurn}`, {
         fontSize: '17px',
         color: '#f4d58d',
         fontStyle: 'bold',
@@ -818,27 +870,41 @@ export class BattleScene extends Scene {
 
       const costBadge = this.add.graphics();
       costBadge.fillStyle(0x12100d, 0.92);
-      costBadge.fillCircle(-38, -54, 16);
+      costBadge.fillCircle(-42, -56, 16);
       costBadge.lineStyle(1.5, 0xf4d58d, 0.78);
-      costBadge.strokeCircle(-38, -54, 16);
+      costBadge.strokeCircle(-42, -56, 16);
 
-      const desc = this.txt(-40, -18, this.compactCardDescription(def.description), {
-        fontSize: '9px',
-        color: '#efe4d5',
-        lineSpacing: 1,
-        wordWrap: { width: 80 },
+      const focusColor = focus.tone === 'attack' ? '#ffd0bf' : focus.tone === 'block' ? '#c7ebff' : '#f4d58d';
+      const focusValue = this.txt(0, -8, focus.value, {
+        fontSize: focus.value.length > 2 ? '25px' : '34px',
+        color: focusColor,
+        fontStyle: 'bold',
+        align: 'center',
+      }).setOrigin(0.5, 0.5);
+      const focusLabel = this.txt(0, 19, focus.label, {
+        fontSize: '10px',
+        color: '#d7c9b7',
+        fontStyle: 'bold',
+        align: 'center',
+      }).setOrigin(0.5, 0.5);
+
+      const desc = this.txt(-43, 35, this.compactCardDescription(def.description), {
+        fontSize: '8px',
+        color: '#cfc2b1',
+        lineSpacing: 0,
+        wordWrap: { width: 86 },
       });
 
-      const bottomLabel = this.txt(-38, 52, `${palette.label} · ${cardTargetLabel(def.target)}`, {
+      const bottomLabel = this.txt(-42, 56, `${palette.label} · ${this.compactTargetLabel(def.target)}`, {
         fontSize: '8px',
         color: '#cdbfae',
-        wordWrap: { width: 64 },
+        wordWrap: { width: 72 },
       }).setOrigin(0, 0.5);
 
-      const nodes: GameObjects.GameObject[] = [bg, costBadge, cost, title, desc, bottomLabel];
+      const nodes: GameObjects.GameObject[] = [bg, costBadge, cost, title, focusValue, focusLabel, desc, bottomLabel];
       if (upgraded) {
         nodes.push(
-          this.txt(42, -58, '+', {
+          this.txt(46, -60, '+', {
             fontSize: '13px',
             color: '#21180c',
             fontStyle: 'bold',
@@ -853,9 +919,9 @@ export class BattleScene extends Scene {
         const dot = this.add.graphics();
         dot.fillStyle(meta.hexColor, 1);
         dot.lineStyle(1, 0x1a1814, 0.8);
-        dot.fillCircle(36, 52, 8);
-        dot.strokeCircle(36, 52, 8);
-        const dotLabel = this.txt(36, 52, meta.shortLabel, {
+        dot.fillCircle(40, 54, 8);
+        dot.strokeCircle(40, 54, 8);
+        const dotLabel = this.txt(40, 54, meta.shortLabel, {
           fontSize: '10px',
           color: '#1a1814',
           fontStyle: 'bold',

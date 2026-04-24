@@ -5,6 +5,7 @@ import { BattleHUD } from './BattleHUD';
 import { BattleLogPanel } from './BattleLogPanel';
 import { FastModeToggle } from './FastModeToggle';
 import { PhaserBattleCanvas } from './PhaserBattleCanvas';
+import { PotionBar } from './PotionBar';
 import * as styles from './battlePage.css';
 
 export function BattlePage() {
@@ -16,6 +17,7 @@ export function BattlePage() {
       <BattleHUD />
       <div className={styles.topBar}>
         <FastModeToggle />
+        <PotionBar />
         <button
           className={styles.logToggle}
           type="button"

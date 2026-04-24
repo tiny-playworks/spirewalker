@@ -7,17 +7,17 @@ const tablet = '(max-width: 900px)';
 export const root = style({
   flexShrink: 0,
   width: '100%',
-  padding: '0 0 0.4rem',
+  padding: '0 0 0.24rem',
 });
 
 export const inner = style({
   display: 'block',
-  padding: '0.38rem 5.2rem 0.38rem 0.55rem',
-  borderRadius: '12px',
+  padding: '0.26rem 5.1rem 0.26rem 0.46rem',
+  borderRadius: '10px',
   background:
-    'linear-gradient(180deg, rgba(38, 34, 28, 0.94) 0%, rgba(24, 22, 18, 0.9) 100%)',
-  border: '1px solid rgba(92, 78, 58, 0.72)',
-  boxShadow: '0 10px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(244, 213, 141, 0.06)',
+    'linear-gradient(180deg, rgba(31, 28, 23, 0.86) 0%, rgba(20, 18, 15, 0.8) 100%)',
+  border: '1px solid rgba(82, 70, 52, 0.56)',
+  boxShadow: '0 8px 18px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(244, 213, 141, 0.04)',
   '@media': {
     [tablet]: {
       paddingRight: '0.55rem',
@@ -28,8 +28,8 @@ export const inner = style({
 export const primaryRow = style({
   display: 'flex',
   alignItems: 'center',
-  gap: '0.42rem',
-  minHeight: '2.15rem',
+  gap: '0.36rem',
+  minHeight: '1.7rem',
   overflowX: 'auto',
   overflowY: 'hidden',
   scrollbarWidth: 'none',
@@ -74,17 +74,22 @@ export const chip = infoChip;
 
 globalStyle(`${chip}`, {
   flexShrink: 0,
-  padding: '0.27rem 0.52rem',
-  fontSize: '0.76rem',
-  background: 'rgba(12, 11, 9, 0.46)',
-  borderColor: 'rgba(82, 70, 52, 0.82)',
+  padding: '0.2rem 0.46rem',
+  fontSize: '0.72rem',
+  background: 'rgba(12, 11, 9, 0.32)',
+  borderColor: 'rgba(82, 70, 52, 0.58)',
 });
 
 export const chipTone = styleVariants({
   default: {},
+  energy: {
+    color: '#f2dfb6',
+    borderColor: 'rgba(212, 160, 100, 0.54)',
+    background: 'rgba(192, 132, 87, 0.1)',
+  },
   accent: {
-    borderColor: 'rgba(192, 132, 87, 0.55)',
-    background: 'rgba(192, 132, 87, 0.12)',
+    borderColor: 'rgba(192, 132, 87, 0.44)',
+    background: 'rgba(192, 132, 87, 0.1)',
   },
   win: {
     borderColor: 'rgba(90, 111, 78, 0.55)',
@@ -99,16 +104,32 @@ globalStyle(`${chipTone.accent} strong`, {
 });
 
 export const energyHint = style({
-  marginLeft: '0.25rem',
-  fontSize: '0.78rem',
+  marginLeft: '0.18rem',
+  fontSize: '0.66rem',
   fontWeight: 400,
-  color: '#9a9488',
+  color: '#d9a48b',
+});
+
+export const muted = style({
+  marginLeft: '-0.18rem',
+  color: '#8f877a',
+});
+
+export const blockText = style({
+  marginLeft: '0.12rem',
+  color: '#9ccfeb',
+  fontWeight: 700,
+});
+
+export const intentText = style({
+  marginLeft: '0.16rem',
+  color: '#a79d8e',
 });
 
 export const actions = style({
   marginLeft: 'auto',
   display: 'flex',
-  flexWrap: 'wrap',
+  flexWrap: 'nowrap',
   alignItems: 'center',
   justifyContent: 'flex-end',
   gap: '0.42rem',
@@ -116,11 +137,11 @@ export const actions = style({
 });
 
 export const actionButton = style({
-  padding: '0.36rem 0.8rem',
-  fontSize: '0.78rem',
+  padding: '0.28rem 0.66rem',
+  fontSize: '0.74rem',
   fontWeight: 600,
   cursor: 'pointer',
-  borderRadius: '8px',
+  borderRadius: '7px',
   border: '1px solid rgba(90, 60, 40, 0.45)',
   boxShadow: '0 2px 0 rgba(0, 0, 0, 0.18)',
   transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}, background ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,

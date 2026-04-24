@@ -9,7 +9,7 @@ export const page = style({
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
-  padding: 'clamp(0.4rem, 1.1vw, 0.7rem)',
+  padding: 'clamp(0.28rem, 0.8vw, 0.52rem)',
   background:
     'radial-gradient(ellipse 90% 55% at 50% 0%, rgba(192, 132, 87, 0.1) 0%, transparent 52%), radial-gradient(ellipse 60% 45% at 100% 60%, rgba(90, 111, 78, 0.06) 0%, transparent 42%), linear-gradient(175deg, #131210 0%, #1a1814 42%, #161412 100%)',
   selectors: {
@@ -51,15 +51,29 @@ export const mainExpanded = style({
 });
 
 export const topBar = style({
+  position: 'absolute',
+  top: '0.52rem',
+  right: '5.7rem',
+  zIndex: 3,
   display: 'flex',
   justifyContent: 'flex-end',
   alignItems: 'center',
   gap: '0.45rem',
-  marginBottom: '0.35rem',
-  paddingRight: '5.2rem',
+  marginBottom: 0,
+  paddingRight: 0,
+  opacity: 0.72,
+  transition: 'opacity 120ms ease',
+  selectors: {
+    '&:hover': {
+      opacity: 1,
+    },
+  },
   '@media': {
     [tablet]: {
-      paddingRight: '0.1rem',
+      position: 'static',
+      justifyContent: 'flex-start',
+      marginBottom: '0.22rem',
+      opacity: 1,
     },
   },
 });
@@ -94,15 +108,15 @@ export const stageColumn = style({
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.35rem',
+  gap: '0.18rem',
 });
 
 export const stageFrame = style({
   position: 'relative',
   flex: 1,
   minHeight: 0,
-  padding: '0.12rem',
-  borderRadius: '18px',
+  padding: '0.08rem',
+  borderRadius: '16px',
   background:
     'linear-gradient(135deg, rgba(192, 132, 87, 0.12), rgba(90, 111, 78, 0.05) 42%, rgba(12, 11, 9, 0.88))',
   overflow: 'hidden',
@@ -112,8 +126,8 @@ export const phaserWrap = style({
   position: 'relative',
   width: '100%',
   height: '100%',
-  minHeight: 'calc(100vh - 9.8rem)',
-  borderRadius: '16px',
+  minHeight: 'calc(100vh - 5.9rem)',
+  borderRadius: '14px',
   border: '1px solid rgba(74, 67, 54, 0.65)',
   background:
     'radial-gradient(ellipse 60% 70% at 50% 55%, rgba(192, 132, 87, 0.08) 0%, transparent 58%), repeating-linear-gradient(90deg, rgba(244, 213, 141, 0.035) 0 1px, transparent 1px 42px), linear-gradient(90deg, #15110d 0%, #211a13 8%, #16120e 18%, #12100d 50%, #16120e 82%, #211a13 92%, #15110d 100%)',
