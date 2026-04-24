@@ -3,14 +3,21 @@ import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
 import type { GameEvent } from '../../events/types';
 import type { RunState } from '../../model/run';
 import { generateBattleRewards } from './rewardGenerator';
-import { canResolveRewardCard, canResolveRewardGold, resolveRewardPick } from './rewardResolver';
+import {
+  canResolveRewardCard,
+  canResolveRewardGold,
+  canResolveRewardUpgrade,
+  resolveRewardPick,
+} from './rewardResolver';
 import { skipCardGoldAmount } from '../../engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '../../engine/rewardEncounter';
-import { hashMapNodeId } from '../common/runGuards';
+import { applyAct1BossPostVictoryFullHealIfEligible, hashMapNodeId } from '../common/runGuards';
 
 export function leaveBattleToRewardFlow(run: RunState, events: GameEvent[]): void {
   const battle = run.battle;
   if (!battle || battle.phase !== 'victory') return;
+  /** Act1 Boss 仅在此处满血，早于奖励 UI 与 `run.battle` 清空，失败路径不会进入本函数 */
+  applyAct1BossPostVictoryFullHealIfEligible(run);
   const curId = run.map.currentNodeId;
   const tier = rewardEncounterTierFromRun(run);
   const salt = (run.seed ^ run.meta.gold ^ 0xdec0de ^ hashMapNodeId(curId ?? '')) >>> 0;
@@ -51,4 +58,17 @@ export function takeRewardGoldFlow(
   if (command.amount !== skipCardGoldAmount(tier)) return;
   if (!canResolveRewardGold(run, command.amount)) return;
   resolveRewardPick(run, events, { kind: 'skip_card' });
+}
+
+/**
+ * 放弃战后三选一，转而升级 masterDeck 里某张可升级的卡。
+ * 不发金币，不加牌；仍会走正常的战后 -> 地图 / 章节过渡。
+ */
+export function takeRewardUpgradeCardFlow(
+  run: RunState,
+  command: Extract<GameCommand, { type: 'TAKE_REWARD_UPGRADE_CARD' }>,
+  events: GameEvent[],
+): void {
+  if (!canResolveRewardUpgrade(run, command.masterDeckIndex)) return;
+  resolveRewardPick(run, events, { kind: 'upgrade_card', masterDeckIndex: command.masterDeckIndex });
 }

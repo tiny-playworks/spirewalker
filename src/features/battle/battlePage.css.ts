@@ -9,7 +9,7 @@ export const page = style({
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
-  padding: 'clamp(0.45rem, 1.4vw, 0.85rem)',
+  padding: 'clamp(0.28rem, 0.8vw, 0.52rem)',
   background:
     'radial-gradient(ellipse 90% 55% at 50% 0%, rgba(192, 132, 87, 0.1) 0%, transparent 52%), radial-gradient(ellipse 60% 45% at 100% 60%, rgba(90, 111, 78, 0.06) 0%, transparent 42%), linear-gradient(175deg, #131210 0%, #1a1814 42%, #161412 100%)',
   selectors: {
@@ -33,11 +33,11 @@ globalStyle(`${page} > *`, {
 });
 
 export const main = style({
+  position: 'relative',
   flex: 1,
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr) 10.5rem',
-  gap: '0.7rem',
+  gridTemplateColumns: 'minmax(0, 1fr)',
   alignItems: 'stretch',
   '@media': {
     [tablet]: {
@@ -51,11 +51,31 @@ export const mainExpanded = style({
 });
 
 export const topBar = style({
+  position: 'absolute',
+  top: '0.52rem',
+  right: '5.7rem',
+  zIndex: 3,
   display: 'flex',
   justifyContent: 'flex-end',
   alignItems: 'center',
-  marginBottom: '0.35rem',
-  paddingRight: '0.1rem',
+  gap: '0.45rem',
+  marginBottom: 0,
+  paddingRight: 0,
+  opacity: 0.72,
+  transition: 'opacity 120ms ease',
+  selectors: {
+    '&:hover': {
+      opacity: 1,
+    },
+  },
+  '@media': {
+    [tablet]: {
+      position: 'static',
+      justifyContent: 'flex-start',
+      marginBottom: '0.22rem',
+      opacity: 1,
+    },
+  },
 });
 
 export const logToggle = style({
@@ -88,17 +108,17 @@ export const stageColumn = style({
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.45rem',
+  gap: '0.18rem',
 });
 
 export const stageFrame = style({
   position: 'relative',
   flex: 1,
   minHeight: 0,
-  padding: '0.15rem',
-  borderRadius: '20px',
+  padding: '0.08rem',
+  borderRadius: '16px',
   background:
-    'radial-gradient(circle at 34% 44%, rgba(192, 132, 87, 0.1), transparent 28%), radial-gradient(circle at 72% 38%, rgba(88, 112, 150, 0.08), transparent 24%)',
+    'linear-gradient(135deg, rgba(192, 132, 87, 0.12), rgba(90, 111, 78, 0.05) 42%, rgba(12, 11, 9, 0.88))',
   overflow: 'hidden',
 });
 
@@ -106,10 +126,11 @@ export const phaserWrap = style({
   position: 'relative',
   width: '100%',
   height: '100%',
-  minHeight: 'calc(100vh - 13rem)',
-  borderRadius: '18px',
+  minHeight: 'calc(100vh - 5.9rem)',
+  borderRadius: '14px',
   border: '1px solid rgba(74, 67, 54, 0.65)',
-  background: '#0b0a09',
+  background:
+    'radial-gradient(ellipse 60% 70% at 50% 55%, rgba(192, 132, 87, 0.08) 0%, transparent 58%), repeating-linear-gradient(90deg, rgba(244, 213, 141, 0.035) 0 1px, transparent 1px 42px), linear-gradient(90deg, #15110d 0%, #211a13 8%, #16120e 18%, #12100d 50%, #16120e 82%, #211a13 92%, #15110d 100%)',
   boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 16px 36px rgba(0, 0, 0, 0.24)',
   overflow: 'hidden',
   '@media': {
@@ -124,12 +145,20 @@ globalStyle(`${phaserWrap} canvas`, {
 });
 
 export const sidebar = style({
-  minHeight: 0,
+  position: 'absolute',
+  top: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 4,
+  width: 'min(19rem, calc(100% - 1.2rem))',
   display: 'flex',
   flexDirection: 'column',
   '@media': {
     [tablet]: {
-      maxHeight: '14rem',
+      top: 'auto',
+      left: 0,
+      width: '100%',
+      maxHeight: '18rem',
     },
   },
 });
@@ -144,6 +173,91 @@ export const logPanel = style({
   background: 'linear-gradient(180deg, rgba(30, 27, 23, 0.68) 0%, rgba(21, 19, 16, 0.36) 100%)',
   border: '1px solid rgba(74, 67, 54, 0.48)',
   backdropFilter: 'blur(6px)',
+});
+
+export const deckPanel = style({
+  flex: 1,
+  minHeight: 0,
+  overflow: 'auto',
+  padding: '0.8rem 0.75rem',
+  borderRadius: '16px',
+  background: 'linear-gradient(180deg, rgba(30, 27, 23, 0.82) 0%, rgba(18, 16, 13, 0.64) 100%)',
+  border: '1px solid rgba(92, 78, 58, 0.58)',
+  backdropFilter: 'blur(6px)',
+});
+
+export const deckTitle = style({
+  margin: 0,
+  fontSize: '0.95rem',
+  color: '#f0ebe3',
+});
+
+export const deckSummary = style({
+  margin: '0.16rem 0 0.7rem',
+  fontSize: '0.76rem',
+  color: '#9a9488',
+});
+
+export const deckGroup = style({
+  padding: '0.65rem 0',
+  borderTop: '1px solid rgba(61, 53, 40, 0.72)',
+  selectors: {
+    '&:first-of-type': {
+      borderTop: 0,
+      paddingTop: 0,
+    },
+  },
+});
+
+export const deckGroupTitle = style({
+  margin: '0 0 0.45rem',
+  fontSize: '0.78rem',
+  color: '#d9cbb4',
+});
+
+export const deckList = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.45rem',
+  margin: 0,
+  padding: 0,
+  listStyle: 'none',
+});
+
+export const deckCardRow = style({
+  padding: '0.5rem',
+  borderRadius: '8px',
+  border: '1px solid rgba(74, 67, 54, 0.58)',
+  background: 'rgba(12, 11, 9, 0.42)',
+});
+
+globalStyle(`${deckCardRow} p`, {
+  margin: '0.22rem 0 0',
+  fontSize: '0.72rem',
+  lineHeight: 1.35,
+  color: '#aaa195',
+});
+
+export const deckCardHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '0.4rem',
+  fontSize: '0.78rem',
+  color: '#f0ebe3',
+});
+
+globalStyle(`${deckCardHead} strong`, {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.26rem',
+  minWidth: 0,
+});
+
+globalStyle(`${deckCardHead} span`, {
+  flexShrink: 0,
+  color: '#d6b48c',
+  fontWeight: 700,
 });
 
 export const logTitle = style({
@@ -176,14 +290,11 @@ export const footer = style({
   flexWrap: 'wrap',
   alignItems: 'center',
   gap: '0.6rem 0.9rem',
-  padding: '0.05rem 0.15rem 0',
+  padding: '0.02rem 0.15rem 0',
 });
 
 export const footerHint = style({
-  margin: 0,
-  fontSize: '0.79rem',
-  lineHeight: 1.35,
-  color: '#a69f94',
+  display: 'none',
 });
 
 export const fastModeToggle = style({

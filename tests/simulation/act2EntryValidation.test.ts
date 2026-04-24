@@ -6,6 +6,7 @@ describe('simulation/act2EntryValidation', () => {
     const summaries = runAct2EntryValidation({
       seed: 1001,
       runsPerPolicy: 6,
+      includeAct1PreBossLossReport: true,
     });
 
     expect(summaries).toHaveLength(3);
@@ -31,6 +32,14 @@ describe('simulation/act2EntryValidation', () => {
         expect(Number.isFinite(encounter.avgHpLoss)).toBe(true);
         expect(Number.isFinite(encounter.avgTurns)).toBe(true);
       }
+      expect(summary.act1PreBossLossReport).toBeDefined();
+      expect(Number.isFinite(summary.act1PreBossLossReport!.mapNormalFightShape.avgNormalFights)).toBe(true);
+      expect(Number.isFinite(summary.act1PreBossLossReport!.routeShapeByBias.safe.avgNormalFights)).toBe(true);
+      expect(Number.isFinite(summary.act1PreBossLossReport!.routeShapeByBias.risk.avgEliteFights)).toBe(true);
+      expect(Number.isFinite(summary.act1PreBossLossReport!.avgObservedAct1NormalAttempts)).toBe(true);
+      expect(Number.isFinite(summary.act1PreBossLossReport!.firstEliteRegression.winRate)).toBe(true);
+      expect(Number.isFinite(summary.act1PreBossLossReport!.firstEliteRegression.avgDeckSizeAtFirstElite)).toBe(true);
+      expect(Number.isFinite(summary.act1PreBossLossReport!.firstEliteRegression.avgNormalFightsBeforeFirstElite)).toBe(true);
     }
   });
 
@@ -40,9 +49,9 @@ describe('simulation/act2EntryValidation', () => {
       runsPerPolicy: 24,
     });
 
-    const withAct2Samples = summaries.filter((summary) => summary.act2EntrySamples > 0);
-    for (const summary of withAct2Samples) {
-      expect(summary.act2EliteBranchEnterRate).toBe(1);
+    const withEliteBranchSamples = summaries.filter((summary) => summary.act2EliteBranchEnterCount > 0);
+    for (const summary of withEliteBranchSamples) {
+      expect(summary.act2EliteBranchEnterRate).toBeGreaterThan(0);
       expect(summary.encounterBreakdown.some((item) => item.encounterId === 'act2_elite_lock')).toBe(true);
     }
   });

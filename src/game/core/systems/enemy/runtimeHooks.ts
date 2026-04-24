@@ -202,6 +202,19 @@ export function dealDamageToUnit(
     events.push({ type: 'DAMAGE_DEALT', sourceUnitId: sourceId, targetUnitId, value: hpLoss });
   }
   target.alive = target.hp > 0;
+  if (
+    target.side === 'player'
+    && targetUnitId === battle.playerUnitId
+    && blockAbsorb > 0
+    && battle.relicIds.includes('counter_sigil')
+    && source?.side === 'enemy'
+  ) {
+    // Guard 纯度：仅按「实际被格挡吸收」的伤害做反击，不包含本次扣血部分。
+    const reflected = Math.floor(blockAbsorb * 0.3);
+    if (reflected > 0 && source.alive) {
+      dealDamageToUnit(battle, battle.playerUnitId, sourceId, reflected, events);
+    }
+  }
   if (!target.alive && target.side === 'enemy') {
     finalizeEnemyDeath(battle, targetUnitId, events);
   }

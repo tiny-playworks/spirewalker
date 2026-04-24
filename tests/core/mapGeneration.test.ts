@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@rstest/core';
 import { actFloorCount, buildActNodes } from '@/game/core/engine/createMapRun';
-import type { MapAct, MapRouteBias } from '@/game/core/model/map';
+import type { MapAct, MapNodeType, MapRouteBias } from '@/game/core/model/map';
 
 const ACTS: MapAct[] = [1, 2, 3];
 const SAMPLE_SEEDS = [3, 11, 27, 77];
@@ -16,7 +16,79 @@ function maxGapBetweenDepths(depths: number[], endDepth: number): number {
   return Math.max(maxGap, endDepth - previous);
 }
 
+type RouteShape = {
+  normalFights: number;
+  eliteFights: number;
+  bufferNodes: number;
+  maxBattleStreak: number;
+  nodeTypes: MapNodeType[];
+};
+
+function isBufferType(type: MapNodeType): boolean {
+  return type === 'event' || type === 'shop' || type === 'rest' || type === 'treasure';
+}
+
+function enumerateRouteShapes(act: MapAct, seed: number): RouteShape[] {
+  const nodes = buildActNodes(act, seed);
+  const start = Object.values(nodes).find((node) => node.depth === 1);
+  if (!start) return [];
+
+  const routes: RouteShape[] = [];
+  const stack: Array<{
+    nodeId: string;
+    normalFights: number;
+    eliteFights: number;
+    bufferNodes: number;
+    battleStreak: number;
+    maxBattleStreak: number;
+    nodeTypes: MapNodeType[];
+  }> = [{
+    nodeId: start.id,
+    normalFights: 0,
+    eliteFights: 0,
+    bufferNodes: 0,
+    battleStreak: 0,
+    maxBattleStreak: 0,
+    nodeTypes: [],
+  }];
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    const node = nodes[current.nodeId];
+    if (!node) continue;
+
+    const shouldCount = node.depth > 1 && node.type !== 'boss';
+    const normalFights = current.normalFights + (shouldCount && node.type === 'battle' ? 1 : 0);
+    const eliteFights = current.eliteFights + (shouldCount && node.type === 'elite' ? 1 : 0);
+    const bufferNodes = current.bufferNodes + (shouldCount && isBufferType(node.type) ? 1 : 0);
+    const battleStreak = shouldCount && node.type === 'battle' ? current.battleStreak + 1 : 0;
+    const maxBattleStreak = Math.max(current.maxBattleStreak, battleStreak);
+    const nodeTypes = shouldCount ? [...current.nodeTypes, node.type] : current.nodeTypes;
+
+    if (node.type === 'boss') {
+      routes.push({ normalFights, eliteFights, bufferNodes, maxBattleStreak, nodeTypes });
+      continue;
+    }
+
+    for (const nextNodeId of node.nextNodeIds) {
+      stack.push({ nodeId: nextNodeId, normalFights, eliteFights, bufferNodes, battleStreak, maxBattleStreak, nodeTypes });
+    }
+  }
+
+  return routes;
+}
+
 describe('core/mapGeneration', () => {
+  test('Act1 缩短为 12 层，Boss 前固定休息点在 11 层', () => {
+    expect(actFloorCount(1)).toBe(12);
+    const nodes = Object.values(buildActNodes(1, 19));
+
+    expect(nodes.filter((node) => node.depth === 11)).toHaveLength(1);
+    expect(nodes.filter((node) => node.depth === 11).every((node) => node.type === 'rest')).toBe(true);
+    expect(nodes.filter((node) => node.depth === 12)).toHaveLength(1);
+    expect(nodes.filter((node) => node.depth === 12).every((node) => node.type === 'boss')).toBe(true);
+  });
+
   test('首步至少分出三路，且非营地节点的出边不超过三条', () => {
     for (const act of ACTS) {
       for (const seed of SAMPLE_SEEDS) {
@@ -51,7 +123,7 @@ describe('core/mapGeneration', () => {
         const shopDepths = nodes.filter((node) => node.type === 'shop').map((node) => node.depth).sort((a, b) => a - b);
         const restDepths = nodes.filter((node) => node.type === 'rest').map((node) => node.depth).sort((a, b) => a - b);
 
-        expect(shopDepths.length).toBeGreaterThanOrEqual(2);
+        expect(shopDepths.length).toBeGreaterThanOrEqual(act === 1 ? 1 : 2);
         expect(restDepths.length).toBeGreaterThanOrEqual(2);
         expect(maxGapBetweenDepths(shopDepths, actFloorCount(act) - 1)).toBeLessThanOrEqual(8);
         expect(maxGapBetweenDepths(restDepths, actFloorCount(act) - 1)).toBeLessThanOrEqual(8);
@@ -123,8 +195,8 @@ describe('core/mapGeneration', () => {
     }
   });
 
-  test('后 20% 区间至少保留一个风险波峰', () => {
-    for (const act of ACTS) {
+  test('后 20% 区间至少保留一个风险波峰（Act2+）', () => {
+    for (const act of ACTS.filter((item) => item !== 1)) {
       for (const seed of SAMPLE_SEEDS) {
         const totalDepth = actFloorCount(act);
         const lateStart = Math.max(6, Math.ceil(totalDepth * 0.8));
@@ -133,6 +205,34 @@ describe('core/mapGeneration', () => {
         );
         expect(lateNodes.some((node) => node.type === 'elite')).toBe(true);
       }
+    }
+  });
+
+  test('短 Act1 仍保留补给、事件与风险路线', () => {
+    for (const seed of SAMPLE_SEEDS) {
+      const nodes = Object.values(buildActNodes(1, seed));
+      const mutableNodes = nodes.filter((node) => node.depth > 1 && node.depth < actFloorCount(1));
+
+      expect(mutableNodes.some((node) => node.type === 'shop')).toBe(true);
+      expect(mutableNodes.some((node) => node.type === 'rest')).toBe(true);
+      expect(mutableNodes.some((node) => node.type === 'event')).toBe(true);
+      expect(mutableNodes.some((node) => node.routeBias === 'risk' && node.type === 'elite')).toBe(true);
+    }
+  });
+
+  test('Act1 每张图都存在 0 精英安全路、1 精英均衡路、2+ 精英风险路', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const routes = enumerateRouteShapes(1, seed);
+
+      expect(routes.some((route) =>
+        route.eliteFights === 0
+        && route.normalFights >= 4
+        && route.normalFights <= 5
+        && route.bufferNodes >= 2
+        && route.maxBattleStreak <= 2,
+      )).toBe(true);
+      expect(routes.some((route) => route.eliteFights === 1)).toBe(true);
+      expect(routes.some((route) => route.eliteFights >= 2)).toBe(true);
     }
   });
 

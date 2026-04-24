@@ -6,6 +6,7 @@ import {
   resolveShopPotionPurchase,
   resolveShopRelicPurchase,
   resolveShopRemoveCard,
+  resolveShopUpgradeCard,
 } from './shopResolver';
 
 export function buyShopCardFlow(
@@ -48,4 +49,13 @@ export function buyShopPotionFlow(
 ): void {
   void events;
   resolveShopPotionPurchase(run, command.potionId);
+}
+
+export function buyShopUpgradeCardFlow(
+  run: RunState,
+  command: Extract<GameCommand, { type: 'BUY_SHOP_UPGRADE_CARD' }>,
+  events: GameEvent[],
+): void {
+  void events;
+  resolveShopUpgradeCard(run, command.masterDeckIndex);
 }

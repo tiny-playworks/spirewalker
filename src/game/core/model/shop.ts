@@ -19,4 +19,6 @@ export interface ShopState {
   relics: ShopOfferRelic[];
   potions: ShopOfferPotion[];
   removeCardPrice: number;
+  /** 升级服务价格；若为 undefined 代表本店暂不提供升级（兼容旧存档）。 */
+  upgradePrice?: number;
 }

@@ -1,68 +1,11 @@
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
-import { formatMonsterIntentText, pressureProfileHint, pressureProfileLabel } from '@/game/core/battleUiText';
-import { getCharacterDefinition } from '@/game/core/definitions/characters';
-import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
-import { getStatusMeta } from '@/game/core/definitions/statuses';
+import { formatMonsterIntentText } from '@/game/core/battleUiText';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectBattle, selectCurrentEnemyIntents, selectPlayerBattleStats } from '@/game/store/selectors/battleSelectors';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
-import { PotionBar } from './PotionBar';
 import * as styles from './battleHud.css';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
-}
-
-function buildRelicTooltip(relicId: string): string {
-  const def = RELIC_DEFINITIONS[relicId];
-  if (!def) return relicId;
-  const battleHint =
-    relicId === 'vajra' || relicId === 'wind_chime' || relicId === 'tactical_gloves'
-      ? '本战开局已自动生效。'
-      : relicId === 'burst_emblem' || relicId === 'insight_lens' || relicId === 'guard_knot'
-        ? '满足条件时会在本战中生效。'
-        : '当前战斗中持续提供它的效果。';
-  return `${def.name}\n${def.description}\n${battleHint}`;
-}
-
-function StatusStrip({
-  title,
-  statuses,
-}: {
-  title: string;
-  statuses: Array<{ id: string; stacks: number }>;
-}) {
-  if (statuses.length === 0) {
-    return (
-      <div className={styles.strip}>
-        <span className={styles.stripLabel}>{title}</span>
-        <span className={styles.stripEmpty}>暂无状态</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.strip}>
-      <span className={styles.stripLabel}>{title}</span>
-      <div className={styles.stripList}>
-        {statuses.map((status) => {
-          const meta = getStatusMeta(status.id);
-          return (
-            <span
-              key={`${title}-${status.id}`}
-              className={styles.statusPill}
-              title={`${meta.name}\n${meta.description}\n${meta.battleHint}`}
-            >
-              <span className={styles.statusPillKey}>{meta.shortLabel}</span>
-              <span className={styles.statusPillValue}>
-                {meta.name} {status.stacks}
-              </span>
-            </span>
-          );
-        })}
-      </div>
-    </div>
-  );
 }
 
 export function BattleHUD() {
@@ -79,132 +22,49 @@ export function BattleHUD() {
   const handCount = battle.player.hand.length;
   const outOfEnergy = canAct && battle.player.energy === 0 && handCount > 0;
   const selectingTarget = battle.inputMode === 'selecting_target' && battle.pendingAction?.type === 'play_card';
-  const pendingCardInstanceId = selectingTarget ? battle.pendingAction?.cardInstanceId ?? null : null;
-  const pendingCard = pendingCardInstanceId
-    ? battle.player.cards[pendingCardInstanceId]
-    : null;
-  const pendingCardName = pendingCard
-    ? CARD_DEFINITIONS[pendingCard.definitionId]?.name ?? pendingCard.definitionId
-    : null;
-  const playerStatuses = player?.statuses ?? [];
-  const character = getCharacterDefinition(run?.meta.characterId ?? 'walker');
-  const hasRelics = Boolean(run?.meta.relics.length);
-  const enemyStatusRows = enemyIntents
-    .map((enemy) => {
-      const unit = battle.units[enemy.unitId];
-      return {
-        unitId: enemy.unitId,
-        name: enemy.name,
-        statuses: unit?.statuses ?? [],
-      };
-    })
-    .filter((enemy) => enemy.statuses.length > 0);
-  const bossPhaseMonster = battle.enemyUnitIds
-    .map((id) => battle.monsters[id])
-    .find((monster) => monster?.bossPhase);
-  const pressureProfile = battle.encounter.pressureProfile;
-  const pressureLabel = pressureProfile ? pressureProfileLabel(pressureProfile) : null;
-  const pressureHint = pressureProfile ? pressureProfileHint(pressureProfile) : null;
+  const currentEnemy = enemyIntents.find((enemy) => battle.units[enemy.unitId]?.alive) ?? enemyIntents[0] ?? null;
 
   return (
     <header className={cx(sceneThemeClass, styles.root)} data-testid="battle-hud">
       <div className={styles.inner}>
-        <div className={cx(styles.row, styles.rowTone.stats)}>
+        <div className={styles.primaryRow}>
           <span className={cx(styles.chip, styles.chipTone.default)}>
             回合 <strong>{playerStats?.turn ?? battle.turn}</strong>
           </span>
-          <span className={cx(styles.chip, styles.chipTone.default)}>
-            {battle.encounter.tier === 'boss' ? 'Boss' : battle.encounter.tier === 'elite' ? '精英' : '普通战'} ·{' '}
-            <strong>{battle.encounter.name}</strong>
-          </span>
-          <span className={cx(styles.chip, styles.chipTone.default)}>
-            标签 <strong>{battle.encounter.tags.join(' / ')}</strong>
-          </span>
-          {pressureLabel ? (
-            <span
-              className={cx(styles.chip, styles.chipTone.accent)}
-              title={pressureHint ?? undefined}
-            >
-              压力 · <strong>{pressureLabel}</strong>
-            </span>
-          ) : null}
-          <span className={cx(styles.chip, styles.chipTone.default)}>
-            能量 <strong>{playerStats?.energy ?? battle.player.energy}</strong> /{' '}
-            {playerStats?.maxEnergy ?? battle.player.maxEnergy}
+          <span className={cx(styles.chip, styles.chipTone.energy)}>
+            能量 <strong>{playerStats?.energy ?? battle.player.energy}</strong>
+            <span className={styles.muted}>/{playerStats?.maxEnergy ?? battle.player.maxEnergy}</span>
             {outOfEnergy ? (
-              <span className={styles.energyHint}>（已用尽，请结束回合）</span>
+              <span className={styles.energyHint}>已空</span>
             ) : null}
           </span>
           {player ? (
             <span className={cx(styles.chip, styles.chipTone.default)}>
-              {player.name} HP <strong>{player.hp}</strong> / {player.maxHp} · 格挡{' '}
-              <strong>{player.block}</strong>
+              玩家 <strong>{player.hp}</strong>
+              <span className={styles.muted}>/{player.maxHp}</span>
+              {player.block > 0 ? <span className={styles.blockText}>盾 {player.block}</span> : null}
             </span>
           ) : null}
-          <span
-            className={cx(styles.chip, styles.chipTone.default)}
-            title={`${character.description}\n被动：${character.passiveDescription}`}
-          >
-            角色 <strong>{character.name}</strong> · {character.passiveName}
-          </span>
-          {enemyIntents.map((enemy) => {
-            const intentLabel = formatMonsterIntentText(enemy.intent);
-            return (
-              <span
-                key={enemy.unitId}
-                className={cx(styles.chip, styles.chipTone.accent)}
-                title={enemy.intent ? intentLabel : '当前没有已知意图。'}
-              >
-                {enemy.name} HP <strong>{enemy.hp}</strong> / {enemy.maxHp} · 意图{' '}
-                <strong>{intentLabel}</strong>
-              </span>
-            );
-          })}
+          {currentEnemy ? (
+            <span
+              className={cx(styles.chip, styles.chipTone.accent)}
+              title={formatMonsterIntentText(currentEnemy.intent)}
+            >
+              敌方 <strong>{currentEnemy.hp}</strong>
+              <span className={styles.muted}>/{currentEnemy.maxHp}</span>
+              <span className={styles.intentText}>意图 </span>
+              <strong>{formatMonsterIntentText(currentEnemy.intent)}</strong>
+            </span>
+          ) : null}
           {battle.phase === 'victory' ? (
             <span className={cx(styles.chip, styles.chipTone.win)}>胜利</span>
           ) : null}
-          {bossPhaseMonster?.bossPhaseLabel ? (
-            <span className={cx(styles.chip, styles.chipTone.accent)}>
-              Boss 阶段 <strong>{bossPhaseMonster.bossPhase}</strong> · {bossPhaseMonster.bossPhaseLabel}
-            </span>
-          ) : null}
           {selectingTarget ? (
             <span className={cx(styles.chip, styles.chipTone.accent)}>
-              已选中 {pendingCardName ?? '当前卡牌'}：点击敌人确认；再次点该牌或点“取消选目标”退出
+              选择目标中
             </span>
           ) : null}
-        </div>
-        {player ? <StatusStrip title={`${player.name} 状态`} statuses={playerStatuses} /> : null}
-        {enemyStatusRows.map((enemy) => (
-          <StatusStrip key={enemy.unitId} title={`${enemy.name} 状态`} statuses={enemy.statuses} />
-        ))}
-        {hasRelics ? (
-          <div className={cx(styles.row, styles.rowTone.meta)}>
-            <div className={styles.metaGroup}>
-              <span className={styles.metaLabel}>遗物</span>
-              {run?.meta.relics.length ? (
-                <div className={styles.metaList}>
-                  {run.meta.relics.map((relicId) => {
-                    const def = RELIC_DEFINITIONS[relicId];
-                    return (
-                      <span
-                        key={relicId}
-                        className={styles.metaPill}
-                        title={buildRelicTooltip(relicId)}
-                      >
-                        {def?.name ?? relicId}
-                      </span>
-                    );
-                  })}
-                </div>
-              ) : (
-                <span className={styles.stripEmpty}>暂无遗物</span>
-              )}
-            </div>
-          </div>
-        ) : null}
-        <div className={cx(styles.row, styles.rowTone.actions)}>
-          <div className={styles.buttons}>
+          <div className={styles.actions}>
             {battle.phase === 'victory' ? (
               <button
                 type="button"
@@ -235,7 +95,6 @@ export function BattleHUD() {
               </button>
             ) : null}
           </div>
-          <PotionBar />
         </div>
       </div>
     </header>

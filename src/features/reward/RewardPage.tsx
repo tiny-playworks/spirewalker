@@ -1,5 +1,7 @@
 import { buildCardTooltipText } from '@/game/core/battleUiText';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import '@/game/core/definitions/cards/upgradeRules';
+import { listUpgradableDeckIndices } from '@/game/core/definitions/cards/upgradeRules';
 import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
@@ -7,6 +9,8 @@ import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
 import { useGameStore } from '@/game/store/gameStore';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as subscreenStyles from '@/styles/subscreen.css';
+import { ArchetypeDot } from '../cards/ArchetypeDot';
+import { CardUpgradeList } from '../cards/CardUpgradeList';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
@@ -60,7 +64,10 @@ export function RewardPage() {
             return (
               <p key={r.relicId} className={subscreenStyles.bannerLine}>
                 <span className={cx(subscreenStyles.bannerTag, subscreenStyles.bannerTagTone.reward)}>遗物</span>
-                <strong>{def.name}</strong> — {def.description}
+                <strong>
+                  <ArchetypeDot relicId={r.relicId} />
+                  {def.name}
+                </strong> — {def.description}
               </p>
             );
           })}
@@ -118,7 +125,10 @@ export function RewardPage() {
                 title={buildCardTooltipText(def)}
                 onClick={() => dispatchCommand({ type: 'SELECT_REWARD_CARD', definitionId: defId })}
               >
-                <strong>{def.name}</strong>
+                <strong>
+                  <ArchetypeDot cardId={defId} />
+                  {def.name}
+                </strong>
                 <span className={subscreenStyles.choiceDesc}>
                   {def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · {def.cost} 费
                 </span>
@@ -147,6 +157,21 @@ export function RewardPage() {
           )}
         </button>
       </div>
+      {listUpgradableDeckIndices(run.masterDeck).length > 0 ? (
+        <div className={subscreenStyles.skipSection}>
+          <p className={subscreenStyles.skipLabel}>不加入牌组 · 改为升级一张</p>
+          <p className={subscreenStyles.tip}>
+            放弃本次卡牌奖励与金币，改成给已有的一张卡升级（+ 或 ++）。
+          </p>
+          <CardUpgradeList
+            masterDeck={run.masterDeck}
+            onUpgrade={(index) =>
+              dispatchCommand({ type: 'TAKE_REWARD_UPGRADE_CARD', masterDeckIndex: index })
+            }
+            emptyText="当前牌组里没有可升级的卡。"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

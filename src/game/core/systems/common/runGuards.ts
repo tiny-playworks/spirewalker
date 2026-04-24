@@ -19,6 +19,27 @@ export function syncRunPlayerFromBattle(run: RunState): void {
   }
 }
 
+/**
+ * Act1 Boss 战胜利后、进入战后奖励界面前的满血过渡。
+ *
+ * 仅在「当前章节为 Act1」且「当前地图节点为 Boss」且「战斗已处于胜利结算态」时生效；
+ * 将战斗内玩家单位与 Run 层 `player` 同步为满血，便于进入 Act2（或验证段）时状态一致。
+ * 不在失败、中止或非 Boss 节点调用；调用方应保证 `run.battle?.phase === 'victory'`。
+ */
+export function applyAct1BossPostVictoryFullHealIfEligible(run: RunState): void {
+  if (run.meta.act !== 1) return;
+  const curId = run.map.currentNodeId;
+  const mapNode = curId ? run.map.nodes[curId] : undefined;
+  if (mapNode?.type !== 'boss') return;
+  const battle = run.battle;
+  if (!battle || battle.phase !== 'victory') return;
+  const unit = battle.units[battle.playerUnitId];
+  if (!unit) return;
+  unit.hp = unit.maxHp;
+  run.player.maxHp = unit.maxHp;
+  run.player.currentHp = unit.maxHp;
+}
+
 export function applyGameOverIfDefeat(run: RunState, events: GameEvent[]): void {
   if (run.battle?.phase !== 'defeat') return;
   run.battle = undefined;

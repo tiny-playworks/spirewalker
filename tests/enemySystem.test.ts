@@ -84,7 +84,7 @@ describe('enemy system content', () => {
     expect(sixthProfiles.has('snowball') || sixthProfiles.has('execution_check')).toBe(true);
   });
 
-  test('Act1 前 6 层 disruption 最多两次且不连续', () => {
+  test('短 Act1 前 5 层 disruption 最多两次且不连续', () => {
     const nonConsecutive = Array.from({ length: 120 }, (_, index) =>
       resolveEncounterTemplate(
         1,
@@ -92,7 +92,7 @@ describe('enemy system content', () => {
         `node_no_chain_${index}`,
         index + 1,
         historyFromIds(['act1_normal_press', 'act1_normal_shell', 'act1_normal_drain']),
-        6,
+        5,
       ).pressureProfile,
     );
     expect(nonConsecutive.every((profile) => profile !== 'disruption')).toBe(true);
@@ -109,7 +109,7 @@ describe('enemy system content', () => {
           'act1_normal_shell',
           'act1_normal_tax',
         ]),
-        7,
+        5,
       ).pressureProfile,
     );
     expect(capped.every((profile) => profile !== 'disruption')).toBe(true);

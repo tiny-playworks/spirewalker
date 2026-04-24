@@ -29,7 +29,7 @@ import {
   SURVEY_FIELD,
   TEMPO_GUARD,
 } from '@/game/core/definitions/cards/starter';
-import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
+import { COMMON_RELIC_POOL, RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { resolveEncounterTemplate } from '@/game/core/definitions/encounters';
 import {
   STATUS_MOMENTUM,
@@ -456,7 +456,7 @@ describe('GameEngine MVP', () => {
     }
 
     expect(run.battle!.playerCardsPlayedThisTurn).toBe(3);
-    expect(run.battle!.units[PLAYER_UNIT_ID].hp).toBe(34);
+    expect(run.battle!.units[PLAYER_UNIT_ID].hp).toBe(38);
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
 
@@ -491,8 +491,8 @@ describe('GameEngine MVP', () => {
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
 
-    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(12);
-    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 6 });
+    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(2);
+    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 8 });
   });
 
   test('整步作为节奏修复牌：获得格挡并抽 1 张牌', () => {
@@ -1379,7 +1379,7 @@ describe('GameEngine 地图', () => {
     expect(run.meta.gold).toBe(56);
     expect(run.meta.potions.length).toBe(bossPotionsBefore + 1);
     expect(run.meta.relics).toContain(relicId);
-    expect(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']).toContain(relicId);
+    expect(COMMON_RELIC_POOL as readonly string[]).toContain(relicId);
     expect(run.player.maxHp).toBe(50);
     expect(run.player.currentHp).toBe(27);
     expect(run.masterDeck.length).toBe(deckSizeBefore + 1);
@@ -1394,6 +1394,33 @@ describe('GameEngine 地图', () => {
     expect(run.map.nodes.a2v_battle_a).toBeDefined();
     expect(run.map.nodes.a2v_risk_elite?.encounterId).toBe('act2_elite_lock');
     expect(run.screen.type).toBe('map');
+  });
+
+  test('Act1 Boss 战后进入奖励界面前将玩家血量回满', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(777);
+    const bossId = findNodeId(run, (n) => n.type === 'boss' && n.floor === 1);
+    jumpToBeforeNode(run, bossId);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: bossId }).nextRun;
+    const maxHp = run.player.maxHp;
+    run.battle!.units[PLAYER_UNIT_ID]!.hp = 12;
+    run.player.currentHp = 12;
+    run.battle!.phase = 'victory';
+    run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
+    expect(run.screen.type).toBe('reward');
+    expect(run.player.currentHp).toBe(maxHp);
+    expect(run.player.maxHp).toBe(maxHp);
+  });
+
+  test('Act1 普通战胜利离开战斗不会触发 Boss 满血', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(778);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: firstBattleFromCamp(run) }).nextRun;
+    run.battle!.units[PLAYER_UNIT_ID]!.hp = 15;
+    run.player.currentHp = 15;
+    run.battle!.phase = 'victory';
+    run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
+    expect(run.player.currentHp).toBe(15);
   });
 
   test('Act2 验证段进入 elite 分支会被记录，最后一战奖励后标记验证完成', () => {
@@ -1565,7 +1592,7 @@ describe('GameEngine 地图', () => {
     expect(run.masterDeck.filter((id) => id === 'defend').length).toBe(defendBefore - 1);
   });
 
-  test('商店购买遗物会加入持有列表，并落在双核遗物池内', () => {
+  test('商店购买遗物会加入持有列表，并落在正式遗物池内', () => {
     const engine = new GameEngine();
     let run = createMapRun(31);
     const shopId = findNodeId(run, (n) => n.type === 'shop' && n.floor === 1);
@@ -1575,7 +1602,7 @@ describe('GameEngine 地图', () => {
     const offer = run.shop!.relics[0]!;
     run = engine.dispatch(run, { type: 'BUY_SHOP_RELIC', relicId: offer.relicId }).nextRun;
     expect(run.meta.relics).toContain(offer.relicId);
-    expect(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']).toContain(offer.relicId);
+    expect(COMMON_RELIC_POOL as readonly string[]).toContain(offer.relicId);
   });
 
   test('商店删牌扣费且遵守牌组下限', () => {

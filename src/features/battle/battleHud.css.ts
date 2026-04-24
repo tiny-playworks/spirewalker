@@ -7,19 +7,43 @@ const tablet = '(max-width: 900px)';
 export const root = style({
   flexShrink: 0,
   width: '100%',
-  padding: '0 0 0.45rem',
+  padding: '0 0 0.24rem',
 });
 
 export const inner = style({
+  display: 'block',
+  padding: '0.26rem 5.1rem 0.26rem 0.46rem',
+  borderRadius: '10px',
+  background:
+    'linear-gradient(180deg, rgba(31, 28, 23, 0.86) 0%, rgba(20, 18, 15, 0.8) 100%)',
+  border: '1px solid rgba(82, 70, 52, 0.56)',
+  boxShadow: '0 8px 18px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(244, 213, 141, 0.04)',
+  '@media': {
+    [tablet]: {
+      paddingRight: '0.55rem',
+    },
+  },
+});
+
+export const primaryRow = style({
   display: 'flex',
-  flexDirection: 'column',
-  gap: '0.35rem',
-  padding: '0.45rem 0.65rem 0.4rem',
-  borderRadius: sceneVars.radii.md,
-  background: 'linear-gradient(180deg, rgba(40, 35, 28, 0.78) 0%, rgba(31, 28, 23, 0.46) 100%)',
-  border: '1px solid rgba(84, 72, 57, 0.58)',
-  boxShadow: '0 8px 22px rgba(0, 0, 0, 0.14)',
-  backdropFilter: 'blur(8px)',
+  alignItems: 'center',
+  gap: '0.36rem',
+  minHeight: '1.7rem',
+  overflowX: 'auto',
+  overflowY: 'hidden',
+  scrollbarWidth: 'none',
+  selectors: {
+    '&::-webkit-scrollbar': {
+      display: 'none',
+    },
+  },
+  '@media': {
+    [tablet]: {
+      flexWrap: 'wrap',
+      overflowX: 'visible',
+    },
+  },
 });
 
 export const row = style({
@@ -48,11 +72,24 @@ export const rowTone = styleVariants({
 
 export const chip = infoChip;
 
+globalStyle(`${chip}`, {
+  flexShrink: 0,
+  padding: '0.2rem 0.46rem',
+  fontSize: '0.72rem',
+  background: 'rgba(12, 11, 9, 0.32)',
+  borderColor: 'rgba(82, 70, 52, 0.58)',
+});
+
 export const chipTone = styleVariants({
   default: {},
+  energy: {
+    color: '#f2dfb6',
+    borderColor: 'rgba(212, 160, 100, 0.54)',
+    background: 'rgba(192, 132, 87, 0.1)',
+  },
   accent: {
-    borderColor: 'rgba(192, 132, 87, 0.38)',
-    background: 'rgba(192, 132, 87, 0.08)',
+    borderColor: 'rgba(192, 132, 87, 0.44)',
+    background: 'rgba(192, 132, 87, 0.1)',
   },
   win: {
     borderColor: 'rgba(90, 111, 78, 0.55)',
@@ -67,108 +104,44 @@ globalStyle(`${chipTone.accent} strong`, {
 });
 
 export const energyHint = style({
-  marginLeft: '0.25rem',
-  fontSize: '0.78rem',
+  marginLeft: '0.18rem',
+  fontSize: '0.66rem',
   fontWeight: 400,
-  color: '#9a9488',
+  color: '#d9a48b',
 });
 
-export const strip = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  gap: '0.32rem 0.45rem',
+export const muted = style({
+  marginLeft: '-0.18rem',
+  color: '#8f877a',
 });
 
-export const stripLabel = style({
-  minWidth: '4.5rem',
-  fontSize: '0.76rem',
-  color: '#8a8478',
-});
-
-export const stripEmpty = style({
-  fontSize: '0.78rem',
-  color: '#7d7669',
-});
-
-export const stripList = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.38rem',
-});
-
-const stripPillBase = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '0.35rem',
-  padding: '0.22rem 0.42rem',
-  borderRadius: sceneVars.radii.pill,
-  border: '1px solid rgba(108, 93, 72, 0.92)',
-  background: 'rgba(20, 18, 16, 0.48)',
-  color: '#d8d0c3',
-  fontSize: '0.74rem',
-  lineHeight: 1.2,
-});
-
-export const statusPill = stripPillBase;
-
-export const statusPillKey = style({
-  display: 'inline-grid',
-  placeItems: 'center',
-  width: '1.2rem',
-  height: '1.2rem',
-  borderRadius: sceneVars.radii.pill,
-  background: 'rgba(192, 132, 87, 0.18)',
-  color: sceneVars.color.accentGlow,
-  fontSize: '0.72rem',
+export const blockText = style({
+  marginLeft: '0.12rem',
+  color: '#9ccfeb',
   fontWeight: 700,
 });
 
-export const statusPillValue = style({
-  color: '#f0ebe3',
+export const intentText = style({
+  marginLeft: '0.16rem',
+  color: '#a79d8e',
 });
 
-export const metaGroup = style({
-  flex: 1,
-  minWidth: '15rem',
+export const actions = style({
+  marginLeft: 'auto',
   display: 'flex',
-  alignItems: 'flex-start',
-  gap: '0.6rem',
-  padding: '0.3rem 0.45rem',
-  borderRadius: '10px',
-  background: 'rgba(20, 18, 16, 0.24)',
-  border: '1px solid rgba(61, 53, 40, 0.48)',
-  '@media': {
-    [tablet]: {
-      minWidth: '100%',
-    },
-  },
-});
-
-export const metaLabel = stripLabel;
-
-export const metaList = stripList;
-
-export const metaPill = style([
-  stripPillBase,
-  {
-    borderColor: 'rgba(90, 111, 78, 0.32)',
-  },
-]);
-
-export const buttons = style({
-  display: 'flex',
-  flexWrap: 'wrap',
+  flexWrap: 'nowrap',
   alignItems: 'center',
-  gap: '0.5rem',
+  justifyContent: 'flex-end',
+  gap: '0.42rem',
+  flexShrink: 0,
 });
 
 export const actionButton = style({
-  padding: '0.46rem 0.95rem',
-  fontSize: '0.84rem',
+  padding: '0.28rem 0.66rem',
+  fontSize: '0.74rem',
   fontWeight: 600,
   cursor: 'pointer',
-  borderRadius: sceneVars.radii.sm,
+  borderRadius: '7px',
   border: '1px solid rgba(90, 60, 40, 0.45)',
   boxShadow: '0 2px 0 rgba(0, 0, 0, 0.18)',
   transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}, background ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
@@ -198,18 +171,16 @@ export const actionButtonTone = styleVariants({
 });
 
 export const potionBar = style({
-  flex: 1,
-  minWidth: 0,
+  flexShrink: 0,
   display: 'flex',
   flexWrap: 'wrap',
   alignItems: 'center',
   justifyContent: 'flex-end',
-  gap: '0.45rem 0.6rem',
+  gap: '0.35rem',
 });
 
 export const potionBarLabel = style({
-  fontSize: '0.8rem',
-  color: '#8a8478',
+  display: 'none',
 });
 
 export const potionList = style({
@@ -222,13 +193,13 @@ export const potionList = style({
 });
 
 export const potionButton = style({
-  padding: '0.3rem 0.55rem',
-  fontSize: '0.82rem',
+  padding: '0.32rem 0.58rem',
+  fontSize: '0.76rem',
   cursor: 'pointer',
-  color: '#c8e6ff',
-  background: '#2a3544',
-  border: '1px solid #4a5f78',
-  borderRadius: '6px',
+  color: '#d9e7f2',
+  background: 'rgba(42, 53, 68, 0.82)',
+  border: '1px solid rgba(95, 121, 150, 0.72)',
+  borderRadius: '8px',
   transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
   selectors: {
     '&:hover': {

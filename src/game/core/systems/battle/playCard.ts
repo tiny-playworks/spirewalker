@@ -5,6 +5,7 @@ import type { GameCommand } from '../../commands/types';
 import type { GameEvent } from '../../events/types';
 import type { BattleState } from '../../model/battle';
 import type {
+  CardType,
   EffectDefinition,
   MomentumBurstDamageParams,
   MomentumBurstDrawParams,
@@ -13,6 +14,24 @@ import type {
 } from '../../model/card';
 import type { RunState } from '../../model/run';
 import { applyEnemyReactionToPlayerCard, dealDamageToUnit } from '../enemy/runtimeHooks';
+
+function pickRandomLivingEnemyId(battle: BattleState, random: () => number): string | undefined {
+  const living = battle.enemyUnitIds.filter((id) => battle.units[id]?.alive);
+  if (living.length === 0) return undefined;
+  return living[Math.floor(random() * living.length)]!;
+}
+
+function notifyCardExhausted(battle: BattleState, relicIds: string[]): void {
+  battle.playerExhaustedCardThisTurn = true;
+  if (relicIds.includes('blaze_core')) {
+    battle.blazeCoreAttackBonus += 2;
+  }
+}
+
+export interface CardEffectContext {
+  cardType: CardType;
+  fractureDoubleAttack: boolean;
+}
 import { runOnAfterPlayCard } from '../status/statusHooks';
 import { mulberry32 } from '../../utils/rng';
 import { shuffleInPlace } from '../../utils/shuffle';
@@ -26,9 +45,15 @@ function drawAdditionalCards(
   for (let i = 0; i < n; i++) {
     if (battle.player.drawPile.length === 0) {
       if (battle.player.discardPile.length === 0) break;
+      const fromDiscardCount = battle.player.discardPile.length;
       battle.player.drawPile = [...battle.player.discardPile];
       battle.player.discardPile = [];
       shuffleInPlace(battle.player.drawPile, random);
+      events.push({
+        type: 'DRAWPILE_RESHUFFLED',
+        unitId: battle.playerUnitId,
+        fromDiscardCount,
+      });
     }
     const id = battle.player.drawPile.shift();
     if (!id) break;
@@ -104,6 +129,7 @@ function applyMomentumBurstDamage(
   relicIds: string[],
   events: GameEvent[],
   random: () => number,
+  effectCtx?: CardEffectContext,
 ): void {
   if (!targetUnitId) return;
   const source = battle.units[sourceUnitId];
@@ -125,7 +151,15 @@ function applyMomentumBurstDamage(
   const relicBonus =
     (relicIds.includes('burst_emblem') ? 2 : 0)
     + (relicIds.includes('sighted_edge') ? consumedStacks : 0);
-  const damage = params.baseDamage + consumedStacks * params.damagePerStack + primedBonus + relicBonus;
+  let damage = params.baseDamage + consumedStacks * params.damagePerStack + primedBonus + relicBonus;
+  if (effectCtx?.cardType === 'attack') {
+    damage += battle.blazeCoreAttackBonus;
+    if (effectCtx.fractureDoubleAttack) damage *= 2;
+    if (battle.twinCoreNextAttackBonus > 0) {
+      damage += battle.twinCoreNextAttackBonus;
+      battle.twinCoreNextAttackBonus = 0;
+    }
+  }
   dealDamageToUnit(battle, sourceUnitId, targetUnitId, damage, events);
 
   if (consumedStacks > 0 && relicIds.includes('burst_emblem') && firstConsumeThisTurn) {
@@ -175,15 +209,26 @@ function applyMomentumGuardByStacks(
   battle: BattleState,
   sourceUnitId: string,
   params: MomentumGuardByStacksParams,
+  relicIds: string[],
   events: GameEvent[],
 ): void {
   const source = battle.units[sourceUnitId];
   if (!source) return;
   const stacks = getStatusStacks(source, STATUS_MOMENTUM);
-  const blockGain = params.baseBlock + stacks * params.blockPerStack;
+  let blockGain = params.baseBlock + stacks * params.blockPerStack;
+  if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
+    blockGain += 2;
+  }
   if (blockGain <= 0) return;
   source.block += blockGain;
   events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
+  if (sourceUnitId === battle.playerUnitId) {
+    battle.playerGainedBlockThisTurn = true;
+    if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+      battle.twinCoreFirstBlockUsed = true;
+      battle.twinCoreNextAttackBonus = 5;
+    }
+  }
 }
 
 function applyEffects(
@@ -194,14 +239,29 @@ function applyEffects(
   targetUnitId: string | undefined,
   events: GameEvent[],
   random: () => number,
+  effectCtx?: CardEffectContext,
 ): void {
   const playerUnit = battle.units[battle.playerUnitId];
   for (const e of effects) {
     if (e.type === 'damage') {
+      let dmg = e.value;
+      if (effectCtx?.cardType === 'attack') {
+        dmg += battle.blazeCoreAttackBonus;
+        if (effectCtx.fractureDoubleAttack) dmg *= 2;
+        if (battle.twinCoreNextAttackBonus > 0) {
+          dmg += battle.twinCoreNextAttackBonus;
+          battle.twinCoreNextAttackBonus = 0;
+        }
+      } else if (effectCtx?.cardType === 'skill' || effectCtx?.cardType === 'power') {
+        if (battle.twinCoreNextSkillBonus > 0) {
+          dmg += battle.twinCoreNextSkillBonus;
+          battle.twinCoreNextSkillBonus = 0;
+        }
+      }
       if (e.target === 'all_enemies') {
         for (const enemyUnitId of battle.enemyUnitIds) {
           const target = battle.units[enemyUnitId];
-          if (target?.alive) dealDamageToUnit(battle, sourceUnitId, enemyUnitId, e.value, events);
+          if (target?.alive) dealDamageToUnit(battle, sourceUnitId, enemyUnitId, dmg, events);
         }
       } else {
         const targetId =
@@ -213,15 +273,35 @@ function applyEffects(
         if (!targetId) continue;
         const target = battle.units[targetId];
         if (!target) continue;
-        dealDamageToUnit(battle, sourceUnitId, targetId, e.value, events);
+        dealDamageToUnit(battle, sourceUnitId, targetId, dmg, events);
       }
     } else if (e.type === 'block') {
       const targetId = e.target === 'self' ? sourceUnitId : targetUnitId;
       if (!targetId) continue;
       const target = battle.units[targetId];
       if (!target) continue;
-      target.block += e.value;
-      events.push({ type: 'BLOCK_GAINED', unitId: targetId, value: e.value });
+      let amount = e.value;
+      if (targetId === battle.playerUnitId && relicIds.includes('iron_heart')) {
+        amount += 2;
+      }
+      if (
+        targetId === battle.playerUnitId
+        && battle.twinCoreNextSkillBonus > 0
+        && effectCtx
+        && (effectCtx.cardType === 'skill' || effectCtx.cardType === 'power')
+      ) {
+        amount += battle.twinCoreNextSkillBonus;
+        battle.twinCoreNextSkillBonus = 0;
+      }
+      target.block += amount;
+      events.push({ type: 'BLOCK_GAINED', unitId: targetId, value: amount });
+      if (targetId === battle.playerUnitId) {
+        battle.playerGainedBlockThisTurn = true;
+        if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+          battle.twinCoreFirstBlockUsed = true;
+          battle.twinCoreNextAttackBonus = 5;
+        }
+      }
     } else if (e.type === 'apply_status') {
       if (e.target === 'all_enemies') {
         for (const enemyUnitId of battle.enemyUnitIds) {
@@ -259,13 +339,13 @@ function applyEffects(
     } else if (e.type === 'repeat') {
       const times = Math.max(0, e.times | 0);
       for (let i = 0; i < times; i += 1) {
-        applyEffects(battle, e.effects, relicIds, sourceUnitId, targetUnitId, events, random);
+        applyEffects(battle, e.effects, relicIds, sourceUnitId, targetUnitId, events, random, effectCtx);
       }
     } else if (e.type === 'custom') {
       if (e.scriptId === 'momentum_burst_damage') {
         const params = readMomentumBurstParams(e.params);
         if (!params) continue;
-        applyMomentumBurstDamage(battle, sourceUnitId, targetUnitId, params, relicIds, events, random);
+        applyMomentumBurstDamage(battle, sourceUnitId, targetUnitId, params, relicIds, events, random, effectCtx);
       } else if (e.scriptId === 'momentum_burst_draw') {
         const params = readMomentumBurstDrawParams(e.params);
         if (!params) continue;
@@ -273,7 +353,66 @@ function applyEffects(
       } else if (e.scriptId === 'momentum_guard_by_stacks') {
         const params = readMomentumGuardByStacksParams(e.params);
         if (!params) continue;
-        applyMomentumGuardByStacks(battle, sourceUnitId, params, events);
+        applyMomentumGuardByStacks(battle, sourceUnitId, params, relicIds, events);
+      } else if (e.scriptId === 'overload_exhaust_attacks') {
+        const handIds = [...battle.player.hand];
+        for (const cid of handIds) {
+          const inst = battle.player.cards[cid];
+          if (!inst) continue;
+          const cdef = CARD_DEFINITIONS[inst.definitionId];
+          if (!cdef || cdef.type !== 'attack') continue;
+          battle.player.hand = battle.player.hand.filter((id) => id !== cid);
+          battle.player.exhaustPile.push(cid);
+          events.push({ type: 'CARD_EXHAUSTED', unitId: sourceUnitId, cardInstanceId: cid });
+          notifyCardExhausted(battle, relicIds);
+          const eid = pickRandomLivingEnemyId(battle, random);
+          if (eid) dealDamageToUnit(battle, sourceUnitId, eid, 8, events);
+        }
+      } else if (e.scriptId === 'blood_rush_strike') {
+        if (!targetUnitId) continue;
+        let dmg = battle.playerExhaustedCardThisTurn ? 16 : 6;
+        if (effectCtx?.cardType === 'attack') {
+          dmg += battle.blazeCoreAttackBonus;
+          if (effectCtx.fractureDoubleAttack) dmg *= 2;
+          if (battle.twinCoreNextAttackBonus > 0) {
+            dmg += battle.twinCoreNextAttackBonus;
+            battle.twinCoreNextAttackBonus = 0;
+          }
+        }
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+      } else if (e.scriptId === 'fortify_convert_flag') {
+        battle.pendingFortifyConvert = true;
+      } else if (e.scriptId === 'flow_shift') {
+        if (battle.prevTurnPlayerPlayedAttack) {
+          const player = battle.units[battle.playerUnitId];
+          if (player) {
+            let block = 12;
+            if (relicIds.includes('iron_heart')) block += 2;
+            player.block += block;
+            events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: block });
+            battle.playerGainedBlockThisTurn = true;
+            if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+              battle.twinCoreFirstBlockUsed = true;
+              battle.twinCoreNextAttackBonus = 5;
+            }
+          }
+        } else {
+          const eid = pickRandomLivingEnemyId(battle, random);
+          if (eid) dealDamageToUnit(battle, sourceUnitId, eid, 12, events);
+        }
+      } else if (e.scriptId === 'balance_edge') {
+        if (!targetUnitId) continue;
+        let dmg = 8;
+        if (battle.playerGainedBlockThisTurn) dmg += 8;
+        if (effectCtx?.cardType === 'attack') {
+          dmg += battle.blazeCoreAttackBonus;
+          if (effectCtx.fractureDoubleAttack) dmg *= 2;
+          if (battle.twinCoreNextAttackBonus > 0) {
+            dmg += battle.twinCoreNextAttackBonus;
+            battle.twinCoreNextAttackBonus = 0;
+          }
+        }
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
       } else if (e.scriptId === 'momentum_conditional_draw') {
         const params = readMomentumConditionalDrawParams(e.params);
         if (!params) continue;
@@ -342,14 +481,61 @@ export function playCardFlow(
   if (def.target === 'all_enemies' && targetUnitId) return;
 
   const eventStart = events.length;
+  const hadSkillBefore = battle.playerPlayedSkillThisTurn;
+  const hadAttackBefore = battle.playerPlayedAttackThisTurn;
+  const isAttack = def.type === 'attack';
+  const isFirstAttackThisTurn = isAttack && battle.playerAttacksPlayedThisTurn === 0;
+  const useFractureExhaust =
+    run.meta.relics.includes('fractured_blade') && isFirstAttackThisTurn;
+
   battle.player.energy -= card.costForTurn;
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
   battle.player.hand = battle.player.hand.filter((id) => id !== cardInstanceId);
-  battle.player.discardPile.push(cardInstanceId);
+  if (def.exhaustOnPlay || useFractureExhaust) {
+    battle.player.exhaustPile.push(cardInstanceId);
+    events.push({ type: 'CARD_EXHAUSTED', unitId: sourceUnitId, cardInstanceId });
+    notifyCardExhausted(battle, run.meta.relics);
+  } else {
+    battle.player.discardPile.push(cardInstanceId);
+  }
+
+  if (isAttack && run.meta.relics.includes('twin_core') && isFirstAttackThisTurn) {
+    battle.twinCoreFirstAttackUsed = true;
+    battle.twinCoreNextSkillBonus = 5;
+  }
+  if (isAttack) {
+    battle.playerAttacksPlayedThisTurn += 1;
+    battle.playerPlayedAttackThisTurn = true;
+  }
+  if (def.type === 'skill' || def.type === 'power') {
+    battle.playerPlayedSkillThisTurn = true;
+  }
+
   battle.playerCardsPlayedThisTurn += 1;
   events.push({ type: 'CARD_PLAYED', unitId: sourceUnitId, cardInstanceId, targetUnitId });
   const effectRng = mulberry32((run.seed ^ battle.turn * 0xc001d ^ cardInstanceId.length * 0x9e37) >>> 0);
-  applyEffects(battle, def.effects, run.meta.relics, sourceUnitId, targetUnitId, events, () => effectRng());
+  applyEffects(
+    battle,
+    def.effects,
+    run.meta.relics,
+    sourceUnitId,
+    targetUnitId,
+    events,
+    () => effectRng(),
+    { cardType: def.type, fractureDoubleAttack: useFractureExhaust },
+  );
+
+  if (
+    run.meta.relics.includes('harmony_emblem')
+    && !battle.harmonyEmblemTriggeredThisTurn
+    && ((def.type === 'attack' && hadSkillBefore)
+      || ((def.type === 'skill' || def.type === 'power') && hadAttackBefore))
+  ) {
+    battle.harmonyEmblemTriggeredThisTurn = true;
+    drawAdditionalCards(battle, 1, events, () => effectRng());
+    grantEnergy(battle, 1, events);
+  }
+
   runOnAfterPlayCard(battle, {
     card,
     sourceUnitId,

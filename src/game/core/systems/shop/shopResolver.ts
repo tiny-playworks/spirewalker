@@ -3,6 +3,7 @@ import { MAX_POTIONS, POTION_DEFINITIONS } from '../../definitions/potions';
 import { applyRelicPickupEffect, RELIC_DEFINITIONS } from '../../definitions/relics';
 import type { RunState } from '../../model/run';
 import { SHOP_MIN_MASTER_DECK_SIZE } from '../../engine/generateShop';
+import { canUpgradeCardId, upgradeMasterDeckAt } from '../../definitions/cards/upgradeRules';
 
 export function resolveShopCardPurchase(run: RunState, definitionId: string): boolean {
   if (run.screen.type !== 'shop' || !run.shop) return false;
@@ -53,5 +54,24 @@ export function resolveShopPotionPurchase(run: RunState, potionId: string): bool
   run.meta.gold -= offer.price;
   run.meta.potions.push(potionId);
   run.shop.potions.splice(idx, 1);
+  return true;
+}
+
+/**
+ * 商店升级 masterDeck 指定下标的卡：
+ * - 必须在商店屏且当前节点仍提供升级（`upgradePrice` 有效）
+ * - 该下标对应的卡当前可升级（存在规则、未达 ++）
+ * - 扣除 `upgradePrice`，成功后该槽位价格取消（同一商店只升级 1 次）
+ */
+export function resolveShopUpgradeCard(run: RunState, index: number): boolean {
+  if (run.screen.type !== 'shop' || !run.shop) return false;
+  const price = run.shop.upgradePrice;
+  if (typeof price !== 'number' || price <= 0) return false;
+  if (run.meta.gold < price) return false;
+  if (index < 0 || index >= run.masterDeck.length) return false;
+  if (!canUpgradeCardId(run.masterDeck[index]!)) return false;
+  if (!upgradeMasterDeckAt(run, index)) return false;
+  run.meta.gold -= price;
+  run.shop.upgradePrice = undefined;
   return true;
 }

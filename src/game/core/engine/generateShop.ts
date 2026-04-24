@@ -16,6 +16,12 @@ const SHOP_RELIC_POOL = [
   'still_core',
   'burst_emblem',
   'quick_fuse',
+  'blaze_core',
+  'fractured_blade',
+  'iron_heart',
+  'counter_sigil',
+  'twin_core',
+  'harmony_emblem',
 ] as const;
 
 const SHOP_POTION_POOL = ['stillwater_tonic', 'flash_powder'] as const;
@@ -57,5 +63,6 @@ export function generateShop(
     relics,
     potions: [{ potionId: pickOne(SHOP_POTION_POOL, random), price: 60 + f * 5 + jitter }],
     removeCardPrice: 96 + f * 9,
+    upgradePrice: 75 + f * 6,
   };
 }

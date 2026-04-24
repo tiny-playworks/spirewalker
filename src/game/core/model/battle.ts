@@ -117,6 +117,31 @@ export interface BattleState {
   turn: number;
   playerCardsPlayedThisTurn: number;
   playerConsumedMomentumThisTurn: boolean;
+  /** 本场战斗持有的遗物 id（与 `RunState.meta.relics` 同步，便于 `dealDamageToUnit` 等纯 battle 钩子读取）。 */
+  relicIds: string[];
+  /** 流派旗帜牌 / 遗物用：本玩家回合是否打出过攻击 / 技能（含 Power）。 */
+  playerPlayedAttackThisTurn: boolean;
+  playerPlayedSkillThisTurn: boolean;
+  /** 本回合是否将任意牌置入消耗堆（含过载批量消耗）。 */
+  playerExhaustedCardThisTurn: boolean;
+  /** 本玩家回合已打出的攻击牌次数（用于断裂之刃「第一次攻击」）。 */
+  playerAttacksPlayedThisTurn: number;
+  /** 上一完整玩家回合是否打出过攻击（流转）。在回合结束、进入敌方行动前写入。 */
+  prevTurnPlayerPlayedAttack: boolean;
+  /** 炽焰核心：本玩家回合内每消耗一张牌 +2，结算到本回合每一段攻击伤害上；玩家回合结束时清零。 */
+  blazeCoreAttackBonus: number;
+  /** 固守：本回合获得格挡后，在玩家回合结束时将半数剩余格挡转为伤害。 */
+  pendingFortifyConvert: boolean;
+  /** 双生核心：本回合第一次获得格挡后，下一次攻击伤害 +5。 */
+  twinCoreNextAttackBonus: number;
+  twinCoreFirstBlockUsed: boolean;
+  /** 双生核心：本回合第一次攻击后，下一张技能 / Power 的第一段格挡或伤害 +5。 */
+  twinCoreNextSkillBonus: number;
+  twinCoreFirstAttackUsed: boolean;
+  /** 调和徽记：本回合是否已触发过「攻+技」奖励。 */
+  harmonyEmblemTriggeredThisTurn: boolean;
+  /** 本回合是否获得过格挡（均衡刃）。 */
+  playerGainedBlockThisTurn: boolean;
   phase: BattlePhase;
   inputMode: InputMode;
   playerUnitId: string;

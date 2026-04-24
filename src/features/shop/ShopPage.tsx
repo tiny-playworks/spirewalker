@@ -7,6 +7,8 @@ import { useGameStore } from '@/game/store/gameStore';
 import { selectShopRunState } from '@/game/store/selectors/shopSelectors';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as subscreenStyles from '@/styles/subscreen.css';
+import { ArchetypeDot } from '../cards/ArchetypeDot';
+import { CardUpgradeList } from '../cards/CardUpgradeList';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
@@ -55,6 +57,7 @@ export function ShopPage() {
                 disabled={!canBuy}
                 onClick={() => dispatchCommand({ type: 'BUY_SHOP_CARD', definitionId: o.definitionId })}
               >
+                <ArchetypeDot cardId={o.definitionId} />
                 {def?.name ?? o.definitionId} — {o.price} 金
                 <span className={subscreenStyles.choiceDesc}>
                   {def ? `${def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · ${def.cost} 费` : ''}
@@ -80,6 +83,7 @@ export function ShopPage() {
                     disabled={!canBuy}
                     onClick={() => dispatchCommand({ type: 'BUY_SHOP_RELIC', relicId: o.relicId })}
                   >
+                    <ArchetypeDot relicId={o.relicId} />
                     {def?.name ?? o.relicId} — {o.price} 金
                     <span className={subscreenStyles.choiceDesc}>{def?.description ?? ''}</span>
                   </button>
@@ -116,6 +120,20 @@ export function ShopPage() {
           </ul>
         </>
       ) : null}
+      {typeof shop.upgradePrice === 'number' && shop.upgradePrice > 0 ? (
+        <>
+          <h3 className={subscreenStyles.sectionTitle}>升级卡（本店一次 · {shop.upgradePrice} 金）</h3>
+          <p className={subscreenStyles.tip}>
+            同一家商店只能升级 1 次；升级过的卡会在名字后追加 <strong>+</strong> 或 <strong>++</strong> 徽章。
+          </p>
+          <CardUpgradeList
+            masterDeck={masterDeck}
+            disabled={meta.gold < shop.upgradePrice}
+            onUpgrade={(index) => dispatchCommand({ type: 'BUY_SHOP_UPGRADE_CARD', masterDeckIndex: index })}
+            emptyText="没有卡可升级。"
+          />
+        </>
+      ) : null}
       <h3 className={subscreenStyles.sectionTitle}>删牌（每次 {shop.removeCardPrice} 金）</h3>
       <p className={subscreenStyles.removeHint}>
         删牌比旧版更贵，只保留给真想收紧构筑的时刻使用；牌组过短无法继续删除。
@@ -139,6 +157,7 @@ export function ShopPage() {
                   })
                 }
               >
+                <ArchetypeDot cardId={row.definitionId} />
                 移除 1 张 {def?.name ?? row.definitionId}（牌组中共 {row.count} 张）—{' '}
                 {shop.removeCardPrice} 金
               </button>

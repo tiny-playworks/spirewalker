@@ -64,12 +64,56 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
     name: '识隙刃',
     description: '主动消耗连势的伤害牌每消耗 1 层连势，额外造成 1 点伤害。',
   },
+  blaze_core: {
+    id: 'blaze_core',
+    name: '炽焰核心',
+    description: '每当你消耗一张牌，本回合你的攻击伤害 +2（可叠加）；玩家回合结束时清零。',
+  },
+  fractured_blade: {
+    id: 'fractured_blade',
+    name: '断裂之刃',
+    description:
+      '你每回合第一次打出的攻击牌会被消耗，且该牌每段攻击伤害翻倍。',
+  },
+  iron_heart: {
+    id: 'iron_heart',
+    name: '铁壁之心',
+    description: '每当你获得格挡时，额外再获得 2 点格挡。',
+  },
+  counter_sigil: {
+    id: 'counter_sigil',
+    name: '反击印记',
+    description:
+      '受到敌人攻击时，若你用格挡吸收了伤害，对攻击者造成等同于该次受击总量 30% 的伤害（格挡吸收 + 实际扣血之和）。',
+  },
+  twin_core: {
+    id: 'twin_core',
+    name: '双生核心',
+    description:
+      '每回合第一次获得格挡后，你的下一次攻击伤害 +5；每回合第一次打出攻击后，你的下一张技能或能力牌的第一段格挡或伤害 +5。',
+  },
+  harmony_emblem: {
+    id: 'harmony_emblem',
+    name: '调和徽记',
+    description: '若你在同一回合内打出过攻击牌以及技能/能力牌：抽 1 张牌并获得 1 点能量（每回合至多一次）。',
+  },
 };
 
 export const MOMENTUM_BURST_RELIC_IDS = ['burst_emblem', 'quick_fuse'] as const;
 export const MOMENTUM_FLOW_RELIC_IDS = ['guard_knot', 'still_core'] as const;
 export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'still_core'] as const;
-export const COMMON_RELIC_POOL = ['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse'] as const;
+export const COMMON_RELIC_POOL = [
+  'guard_knot',
+  'still_core',
+  'burst_emblem',
+  'quick_fuse',
+  'blaze_core',
+  'fractured_blade',
+  'iron_heart',
+  'counter_sigil',
+  'twin_core',
+  'harmony_emblem',
+] as const;
 
 /** Boss 战后随机其一（已拥有的不再出现） */
 const BOSS_RELIC_POOL = [...COMMON_RELIC_POOL] as const;

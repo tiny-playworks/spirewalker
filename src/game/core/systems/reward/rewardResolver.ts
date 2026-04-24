@@ -1,4 +1,5 @@
 import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { canUpgradeCardId, upgradeMasterDeckAt } from '../../definitions/cards/upgradeRules';
 import { MAX_POTIONS, POTION_DEFINITIONS } from '../../definitions/potions';
 import { applyRelicPickupEffect, RELIC_DEFINITIONS } from '../../definitions/relics';
 import type { GameEvent } from '../../events/types';
@@ -24,14 +25,26 @@ export function canResolveRewardGold(run: RunState, amount: number): boolean {
   return Boolean(choice && choice.type === 'card_choice');
 }
 
+export function canResolveRewardUpgrade(run: RunState, masterDeckIndex: number): boolean {
+  if (run.screen.type !== 'reward' || !run.reward || run.reward.claimed) return false;
+  if (masterDeckIndex < 0 || masterDeckIndex >= run.masterDeck.length) return false;
+  return canUpgradeCardId(run.masterDeck[masterDeckIndex]!);
+}
+
 export function resolveRewardPick(
   run: RunState,
   events: GameEvent[],
-  pick: { kind: 'card'; definitionId: string } | { kind: 'skip_card' },
+  pick:
+    | { kind: 'card'; definitionId: string }
+    | { kind: 'skip_card' }
+    | { kind: 'upgrade_card'; masterDeckIndex: number },
 ): void {
   if (run.screen.type !== 'reward' || !run.reward || run.reward.claimed) return;
   const tier = rewardEncounterTierFromRun(run);
   if (pick.kind === 'card') run.masterDeck.push(pick.definitionId);
+  if (pick.kind === 'upgrade_card') {
+    if (!upgradeMasterDeckAt(run, pick.masterDeckIndex)) return;
+  }
 
   let goldGain = pick.kind === 'skip_card' ? skipCardGoldAmount(tier) : 0;
   for (const it of run.reward.items) if (it.type === 'gold') goldGain += it.amount;

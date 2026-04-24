@@ -86,6 +86,8 @@ export interface CardDefinition {
   cost: number;
   target: CardTarget;
   effects: EffectDefinition[];
+  /** 出牌后进入消耗堆而非弃牌堆（对应反馈里「消耗牌」概念）。 */
+  exhaustOnPlay?: boolean;
 }
 
 export interface CardInstance {
