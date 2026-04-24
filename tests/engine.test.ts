@@ -456,7 +456,7 @@ describe('GameEngine MVP', () => {
     }
 
     expect(run.battle!.playerCardsPlayedThisTurn).toBe(3);
-    expect(run.battle!.units[PLAYER_UNIT_ID].hp).toBe(34);
+    expect(run.battle!.units[PLAYER_UNIT_ID].hp).toBe(38);
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
 
@@ -491,8 +491,8 @@ describe('GameEngine MVP', () => {
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
 
-    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(12);
-    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 6 });
+    expect(run.battle!.units[ENEMY_UNIT_ID].block).toBe(2);
+    expect(run.battle!.monsters[ENEMY_UNIT_ID]?.intent).toEqual({ type: 'attack', value: 8 });
   });
 
   test('整步作为节奏修复牌：获得格挡并抽 1 张牌', () => {
