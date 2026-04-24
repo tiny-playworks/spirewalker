@@ -110,4 +110,19 @@ describe('card archetypes', () => {
     expect(result.mixed).toBe(1);
     expect(result.neutral).toBe(4);
   });
+
+  test('流派旗帜牌与专属遗物映射（2026-04 设计稿）', () => {
+    expect(getCardArchetype('overload')).toBe('burst');
+    expect(getCardArchetype('blood_rush')).toBe('burst');
+    expect(getCardArchetype('fortify')).toBe('guard');
+    expect(getCardArchetype('patience_stance')).toBe('guard');
+    expect(getCardArchetype('flow_shift')).toBe('mixed');
+    expect(getCardArchetype('balance_edge')).toBe('mixed');
+    expect(getRelicArchetype('blaze_core')).toBe('burst');
+    expect(getRelicArchetype('fractured_blade')).toBe('burst');
+    expect(getRelicArchetype('iron_heart')).toBe('guard');
+    expect(getRelicArchetype('counter_sigil')).toBe('guard');
+    expect(getRelicArchetype('twin_core')).toBe('mixed');
+    expect(getRelicArchetype('harmony_emblem')).toBe('mixed');
+  });
 });

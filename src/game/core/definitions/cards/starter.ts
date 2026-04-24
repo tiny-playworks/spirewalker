@@ -3,6 +3,7 @@ import {
   STATUS_MOMENTUM,
   STATUS_PRIMED_BREAK,
   STATUS_STEADY_GUARD,
+  STATUS_PATIENCE,
   STATUS_STRENGTH,
   STATUS_VULNERABLE,
 } from '../statuses';
@@ -558,6 +559,83 @@ export const CLEAR_MIND: CardDefinition = {
   exhaustOnPlay: true,
 };
 
+/** Burst 旗帜：囤攻击牌后一波清空手牌资源换爆发。 */
+export const OVERLOAD: CardDefinition = {
+  id: 'overload',
+  name: '过载',
+  description: '消耗你手中所有攻击牌。每消耗一张，对一名随机敌人造成 8 点伤害。',
+  type: 'skill',
+  rarity: 'rare',
+  cost: 1,
+  target: 'none',
+  effects: [{ type: 'custom', scriptId: 'overload_exhaust_attacks' }],
+};
+
+/** Burst 旗帜：奖励本回合已进入「消耗」状态的爆发窗口。 */
+export const BLOOD_RUSH: CardDefinition = {
+  id: 'blood_rush',
+  name: '血怒',
+  description: '造成 6 点伤害。若你本回合已消耗过牌，改为造成 16 点伤害。',
+  type: 'attack',
+  rarity: 'rare',
+  cost: 0,
+  target: 'single_enemy',
+  effects: [{ type: 'custom', scriptId: 'blood_rush_strike' }],
+};
+
+/** Guard 旗帜：格挡转化为延迟输出。 */
+export const FORTIFY: CardDefinition = {
+  id: 'fortify',
+  name: '固守',
+  description: '获得 10 点格挡。回合结束时，将 50% 剩余格挡转化为伤害，随机攻击一名敌人。',
+  type: 'skill',
+  rarity: 'rare',
+  cost: 1,
+  target: 'none',
+  effects: [
+    { type: 'block', value: 10, target: 'self' },
+    { type: 'custom', scriptId: 'fortify_convert_flag' },
+  ],
+};
+
+/** Guard 旗帜：越拖越强，用「不打攻击」换永久力量。 */
+export const PATIENCE_STANCE: CardDefinition = {
+  id: 'patience_stance',
+  name: '耐心',
+  description:
+    '能力（Patience）：每回合结束时，若你本回合未打出攻击，获得 3 点力量（永久）。',
+  type: 'power',
+  rarity: 'rare',
+  cost: 1,
+  target: 'none',
+  effects: [{ type: 'apply_status', statusId: STATUS_PATIENCE, stacks: 1, target: 'self' }],
+};
+
+/** Mixed 旗帜：记忆上回合行为，切换攻防节奏。 */
+export const FLOW_SHIFT: CardDefinition = {
+  id: 'flow_shift',
+  name: '流转',
+  description:
+    '若你上回合打出过攻击：获得 12 点格挡。否则：对一名随机敌人造成 12 点伤害。',
+  type: 'skill',
+  rarity: 'rare',
+  cost: 1,
+  target: 'none',
+  effects: [{ type: 'custom', scriptId: 'flow_shift' }],
+};
+
+/** Mixed 旗帜：本回合先防后攻的复合奖励。 */
+export const BALANCE_EDGE: CardDefinition = {
+  id: 'balance_edge',
+  name: '均衡刃',
+  description: '造成 8 点伤害。若你本回合获得过格挡，额外造成 8 点伤害。',
+  type: 'attack',
+  rarity: 'rare',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [{ type: 'custom', scriptId: 'balance_edge' }],
+};
+
 export const JUNK_SLUDGE: CardDefinition = {
   id: 'junk_sludge',
   name: '淤泥',
@@ -698,6 +776,12 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [MEASURED_REST.id]: MEASURED_REST,
   [BURN_EDGE.id]: BURN_EDGE,
   [CLEAR_MIND.id]: CLEAR_MIND,
+  [OVERLOAD.id]: OVERLOAD,
+  [BLOOD_RUSH.id]: BLOOD_RUSH,
+  [FORTIFY.id]: FORTIFY,
+  [PATIENCE_STANCE.id]: PATIENCE_STANCE,
+  [FLOW_SHIFT.id]: FLOW_SHIFT,
+  [BALANCE_EDGE.id]: BALANCE_EDGE,
   [JUNK_SLUDGE.id]: JUNK_SLUDGE,
   [JUNK_BURN.id]: JUNK_BURN,
   [JUNK_STATIC.id]: JUNK_STATIC,

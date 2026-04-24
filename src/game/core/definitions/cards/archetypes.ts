@@ -62,6 +62,14 @@ const ARCHETYPE_BY_BASE_ID: Record<string, CardArchetype> = {
   prime_rhythm: 'mixed',
   cash_flow: 'mixed',
   release_flow: 'mixed',
+
+  // ————————— 流派旗帜牌（设计稿 2026-04） —————————
+  overload: 'burst',
+  blood_rush: 'burst',
+  fortify: 'guard',
+  patience_stance: 'guard',
+  flow_shift: 'mixed',
+  balance_edge: 'mixed',
 };
 
 export function getCardArchetype(cardId: string): CardArchetype {
@@ -116,6 +124,12 @@ const ARCHETYPE_BY_RELIC_ID: Record<string, CardArchetype> = {
   vajra: 'neutral',
   anchor: 'neutral',
   tactical_gloves: 'neutral',
+  blaze_core: 'burst',
+  fractured_blade: 'burst',
+  iron_heart: 'guard',
+  counter_sigil: 'guard',
+  twin_core: 'mixed',
+  harmony_emblem: 'mixed',
 };
 
 export function getRelicArchetype(relicId: string): CardArchetype {

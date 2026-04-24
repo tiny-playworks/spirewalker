@@ -10,6 +10,8 @@ export const STATUS_METALLICIZE = 'metallicize';
 export const STATUS_STEADY_GUARD = 'steady_guard';
 /** 破势预热：下一次主动消耗连势时额外强化收益。 */
 export const STATUS_PRIMED_BREAK = 'primed_break';
+/** 蓄势（耐心）：玩家回合结束时若本回合未打出攻击，按层数获得力量。 */
+export const STATUS_PATIENCE = 'patience_power';
 
 export interface StatusDefinitionMeta {
   id: string;
@@ -68,6 +70,13 @@ export const STATUS_DEFINITIONS: Record<string, StatusDefinitionMeta> = {
     shortLabel: '破',
     description: '本回合下次主动消耗连势时额外强化收益，随后移除。',
     battleHint: '偏向兑现路线；适合把下一张消耗连势的牌做成爆发回合。',
+  },
+  [STATUS_PATIENCE]: {
+    id: STATUS_PATIENCE,
+    name: '蓄势',
+    shortLabel: '蓄',
+    description: '回合结束时，若本回合未打出攻击，每层获得 3 点力量。',
+    battleHint: '防守转化：拖回合叠力，再择机爆发。',
   },
 };
 

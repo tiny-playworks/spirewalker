@@ -1,6 +1,7 @@
 import {
   STATUS_METALLICIZE,
   STATUS_MOMENTUM,
+  STATUS_PATIENCE,
   STATUS_PRIMED_BREAK,
   STATUS_STEADY_GUARD,
   STATUS_VULNERABLE,
@@ -8,6 +9,7 @@ import {
 } from '../../../definitions/statuses';
 import { metallicizeBehavior } from './metallicize';
 import { momentumBehavior } from './momentum';
+import { patienceBehavior } from './patience';
 import { primedBreakBehavior } from './primedBreak';
 import { steadyGuardBehavior } from './steadyGuard';
 import type { StatusBehavior } from './types';
@@ -21,4 +23,5 @@ export const STATUS_BEHAVIORS: Record<string, StatusBehavior> = {
   [STATUS_METALLICIZE]: metallicizeBehavior,
   [STATUS_STEADY_GUARD]: steadyGuardBehavior,
   [STATUS_PRIMED_BREAK]: primedBreakBehavior,
+  [STATUS_PATIENCE]: patienceBehavior,
 };

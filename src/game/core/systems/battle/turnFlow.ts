@@ -4,7 +4,7 @@ import type { RunState } from '../../model/run';
 import { runOnTurnEnd, runOnTurnStart } from '../status/statusHooks';
 import { refreshEnemyIntent } from '../enemy/enemyAi';
 import { executeMonsterIntent } from '../enemy/intentExecutor';
-import { applyStartOfPlayerTurnPressure, tickEnemyCountdown } from '../enemy/runtimeHooks';
+import { applyStartOfPlayerTurnPressure, dealDamageToUnit, tickEnemyCountdown } from '../enemy/runtimeHooks';
 import { syncRunPlayerFromBattle } from '../common/runGuards';
 import { mulberry32 } from '../../utils/rng';
 import { shuffleInPlace } from '../../utils/shuffle';
@@ -51,6 +51,29 @@ function discardHand(battle: BattleState): void {
   battle.player.lockedCardInstanceIds = [];
 }
 
+function pickRandomLivingEnemyId(battle: BattleState, random: () => number): string | undefined {
+  const living = battle.enemyUnitIds.filter((id) => battle.units[id]?.alive);
+  if (living.length === 0) return undefined;
+  return living[Math.floor(random() * living.length)]!;
+}
+
+/** 固守：玩家回合结束时将半数剩余格挡转为随机单体伤害。 */
+function resolveFortifyEndOfTurn(
+  battle: BattleState,
+  events: GameEvent[],
+  random: () => number,
+): void {
+  if (!battle.pendingFortifyConvert) return;
+  battle.pendingFortifyConvert = false;
+  const player = battle.units[battle.playerUnitId];
+  if (!player?.alive || player.block <= 0) return;
+  const conv = Math.floor(player.block * 0.5);
+  if (conv <= 0) return;
+  player.block -= conv;
+  const tid = pickRandomLivingEnemyId(battle, random);
+  if (tid) dealDamageToUnit(battle, battle.playerUnitId, tid, conv, events);
+}
+
 function applyEnemyIntent(
   relicIds: string[],
   battle: BattleState,
@@ -77,8 +100,16 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   }
 
   discardHand(battle);
+  const fortifyRng = mulberry32((run.seed ^ battle.turn * 0xf00d5a1) >>> 0);
+  resolveFortifyEndOfTurn(battle, events, () => fortifyRng());
+
   events.push({ type: 'TURN_ENDED', unitId: battle.playerUnitId });
   runOnTurnEnd(battle);
+
+  battle.prevTurnPlayerPlayedAttack = battle.playerPlayedAttackThisTurn;
+  battle.playerPlayedAttackThisTurn = false;
+  battle.playerPlayedSkillThisTurn = false;
+  battle.blazeCoreAttackBonus = 0;
 
   battle.phase = 'enemy_turn';
   const player = battle.units[battle.playerUnitId];
@@ -99,6 +130,14 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
 
   battle.playerCardsPlayedThisTurn = 0;
   battle.playerConsumedMomentumThisTurn = false;
+  battle.playerAttacksPlayedThisTurn = 0;
+  battle.playerExhaustedCardThisTurn = false;
+  battle.harmonyEmblemTriggeredThisTurn = false;
+  battle.twinCoreFirstBlockUsed = false;
+  battle.twinCoreFirstAttackUsed = false;
+  battle.twinCoreNextAttackBonus = 0;
+  battle.twinCoreNextSkillBonus = 0;
+  battle.playerGainedBlockThisTurn = false;
   battle.turn += 1;
   runOnTurnStart(battle);
   events.push({ type: 'TURN_STARTED', turn: battle.turn, unitId: battle.playerUnitId });
