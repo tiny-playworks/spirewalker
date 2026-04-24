@@ -31,8 +31,7 @@ export function createBattleGame(parent: HTMLElement): Game {
       roundPixels: true,
     },
     scale: {
-      // FIT 会保留纵横比，容器与画布比例不一致时易出现左右或上下大黑边。
-      // ENVELOP 铺满父节点（类似 CSS cover），无黑边，极端比例下可能裁切上下或左右少量边。
+      // FIT 保证完整战场可见；容器背景负责承接左右暗角边界，避免裁掉底部 UI。
       mode: Scale.FIT,
       autoCenter: Scale.CENTER_BOTH,
       autoRound: true,

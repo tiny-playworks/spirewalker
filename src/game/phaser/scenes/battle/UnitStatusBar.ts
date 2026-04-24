@@ -44,7 +44,7 @@ export class UnitStatusBar {
     this.scene = scene;
     this.textRes = textRes;
     this.container = scene.add.container(x, y);
-    this.container.setDepth(2);
+    this.container.setDepth(18);
   }
 
   setStatuses(statuses: StatusInstance[]): void {
