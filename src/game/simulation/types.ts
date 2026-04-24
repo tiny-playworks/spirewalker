@@ -47,6 +47,163 @@ export type Act2EntryPolicySummary = {
   act2EliteBranchSamples: number;
   act2EliteBranchSurviveRate: number;
   encounterBreakdown: Act2EntryEncounterMetric[];
+  /** 仅当 `includeAct1PreBossLossReport` 为 true 时填充：Boss 前 Act1 损耗分解（观测用） */
+  act1PreBossLossReport?: Act1PreBossLossPolicyReport;
+};
+
+/** Act1 地图层数分段（用于 Boss 前漏斗观测） */
+export type Act1FloorSegmentId = '1-7' | '8-13' | '14+';
+
+/** 单场 Act1 战斗结束（仅统计 act===1 的战斗，含胜/负结算前记录胜场；败场仅体现在 death） */
+export type Act1PreBossBattleEndRecord = {
+  actFloor: number;
+  floorSegment: Act1FloorSegmentId;
+  tier: 'normal' | 'elite' | 'boss';
+  encounterId: string;
+  pressureProfile: PressureProfile | 'unknown';
+  won: boolean;
+  hpLoss: number;
+  turns: number;
+};
+
+/** 终局 screen 粗分桶（观测用） */
+export type Act1TerminationScreenBucket =
+  | 'battle'
+  | 'map'
+  | 'reward'
+  | 'shop'
+  | 'rest'
+  | 'event'
+  | 'game_over'
+  | 'victory'
+  | 'other';
+
+/** 终局 floor 粗分桶：Act1 层段 + Boss 节点 + Act2+ */
+export type Act1TerminationFloorBucket = Act1FloorSegmentId | 'boss' | 'act2_plus';
+
+export type Act1SimAbortReason =
+  | 'battle_command_limit'
+  | 'battle_no_progress_state'
+  | 'battle_no_progress_combat'
+  | 'battle_no_progress_both'
+  | 'screen_limit'
+  | 'other';
+
+/** Act2 入口校验里 non_battle_end 的粗因（与 Act1 全量 trace 的 Act1NonBattleEndReason 区分） */
+export type Act1PreBossNonBattleEndReason =
+  | 'map_no_legal_next_nodes'
+  | 'game_over_non_act1_combat_death'
+  | 'other';
+
+/** 单次 sim_abort / non_battle_end 时的状态快照（观测用） */
+export type Act1TerminationSnapshot = {
+  screenBucket: Act1TerminationScreenBucket;
+  act: 1 | 2 | 3;
+  actFloor: number;
+  floorBucket: Act1TerminationFloorBucket;
+  nodeDepth: number | null;
+  recentNodeType: MapNodeType | 'none';
+  recentScreenTransitions: string[];
+  battleTurn: number | null;
+  aliveEnemyCount: number | null;
+  enemyTotalHp: number | null;
+  playerHp: number | null;
+  playerBlock: number | null;
+  encounterId: string | null;
+  mapNextNodesCount: number | null;
+  mapNoLegalNext: boolean | null;
+};
+
+export type Act1TerminationPolicyBreakdown = {
+  samples: number;
+  byScreenBucket: Partial<Record<Act1TerminationScreenBucket, number>>;
+  byFloorBucket: Partial<Record<Act1TerminationFloorBucket, number>>;
+  /** sim_abort: Act1SimAbortReason；non_battle_end: Act1PreBossNonBattleEndReason */
+  byReason: Record<string, number>;
+  byRecentNodeType: Partial<Record<MapNodeType | 'none', number>>;
+  /** recentScreenTransitions 整条链（用 \" > \" 拼接）出现次数，用于扫常见卡死路径 */
+  transitionTailHistogram: Record<string, number>;
+  battleSub: {
+    samples: number;
+    byAbortReason: Record<string, number>;
+    sumBattleTurn: number;
+    sumAliveEnemy: number;
+    sumEnemyHp: number;
+    sumPlayerHp: number;
+    sumPlayerBlock: number;
+  };
+  mapSub: {
+    samples: number;
+    zeroNextNodes: number;
+    sumNextNodesCount: number;
+  };
+};
+
+export type Act1PreBossDeathDetail =
+  | {
+    kind: 'act1_battle';
+    tier: 'normal' | 'elite' | 'boss';
+    actFloor: number;
+    floorSegment: Act1FloorSegmentId;
+    encounterId: string;
+    pressureProfile: PressureProfile | 'unknown';
+    /** 仅当死于 Boss 时有值：进入 Boss 战时的当前 hp / maxHp */
+    hpRatioAtBossEngage: number | null;
+  }
+  | { kind: 'sim_abort'; reason: Act1SimAbortReason; snapshot: Act1TerminationSnapshot }
+  | { kind: 'non_battle_end'; reason: Act1PreBossNonBattleEndReason; snapshot: Act1TerminationSnapshot };
+
+export type Act1PreBossLossPolicyReport = {
+  totalRuns: number;
+  /** 进入 Act2 的 run 数 */
+  enteredAct2Count: number;
+  /** 自然 game_over 于 Act1 战斗 */
+  act1CombatGameOverCount: number;
+  simAbortCount: number;
+  nonBattleEndCount: number;
+  /** 死于 normal / elite / boss（Act1 战斗 game_over） */
+  deathTierCounts: Record<'normal' | 'elite' | 'boss', number>;
+  /** 上述死亡按 floor 段 */
+  deathFloorSegmentCounts: Record<Act1FloorSegmentId, number>;
+  /** 仅 normal 死亡按 floor 段 */
+  deathNormalFloorSegmentCounts: Record<Act1FloorSegmentId, number>;
+  /** 死于 Boss 且进 Boss 时 hp 占比 < 40%（耗残） */
+  bossDeathWornDownCount: number;
+  /** 死于 Boss 且进 Boss 时 hp 占比 >= 40% */
+  bossDeathFreshCount: number;
+  /** Boss 前 normal：按 encounter 聚合（按 totalHpLoss 降序为主漏斗参考） */
+  normalEncounterAgg: Array<{
+    encounterId: string;
+    pressureProfile: PressureProfile | 'unknown';
+    attempts: number;
+    wins: number;
+    totalHpLoss: number;
+    totalTurns: number;
+    avgHpLoss: number;
+    avgTurns: number;
+    winRate: number;
+  }>;
+  /** Boss 前 normal：按 pressureProfile 聚合 */
+  normalProfileAgg: Record<string, {
+    attempts: number;
+    wins: number;
+    totalHpLoss: number;
+    totalTurns: number;
+  }>;
+  /** Boss 前 normal：按 floor 段聚合 */
+  normalFloorSegmentAgg: Record<Act1FloorSegmentId, {
+    battles: number;
+    wins: number;
+    totalHpLoss: number;
+    totalTurns: number;
+  }>;
+  /** 死于 Act1 战斗的 run：各 map 节点类型被选择次数之和（用于路线/资源倾向观测） */
+  nodeChoiceSumAtAct1CombatDeath: Partial<Record<MapNodeType, number>>;
+  nodeChoiceDeathSamples: number;
+  /** sim_abort 归因（未记为 Act1 战斗 game_over 的终局） */
+  simAbortBreakdown: Act1TerminationPolicyBreakdown;
+  /** non_battle_end 归因 */
+  nonBattleEndBreakdown: Act1TerminationPolicyBreakdown;
 };
 
 export type Act1StageMetric = {
