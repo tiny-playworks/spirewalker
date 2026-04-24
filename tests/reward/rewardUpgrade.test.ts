@@ -1,68 +1,62 @@
-import { describe, expect, test } from '@rstest/core';
-import { GameEngine } from '@/game/core/engine/GameEngine';
-import { createMapRun } from '@/game/core/engine/createMapRun';
-import { PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
-import type { MapNode } from '@/game/core/model/map';
-
-function findNodeId(run: ReturnType<typeof createMapRun>, pred: (n: MapNode) => boolean): string {
-  const n = Object.values(run.map.nodes).find(pred);
-  if (!n) throw new Error('map node not found');
-  return n.id;
-}
-
-function jumpToBeforeNode(run: ReturnType<typeof createMapRun>, targetId: string): void {
-  const target = run.map.nodes[targetId]!;
-  const prev = Object.values(run.map.nodes).find((n) => n.nextNodeIds.includes(target.id));
-  if (!prev) throw new Error('no predecessor');
-  run.map.currentNodeId = prev.id;
-  prev.visited = true;
-}
+import { describe, expect, test } from "@rstest/core";
+import { GameEngine } from "@/game/core/engine/GameEngine";
+import { createMapRun } from "@/game/core/engine/createMapRun";
+import { PLAYER_UNIT_ID } from "@/game/core/engine/createMvpRun";
 
 function firstBattleFromCamp(run: ReturnType<typeof createMapRun>): string {
-  const cur = run.map.currentNodeId!;
-  const b = run.map.nodes[cur]!.nextNodeIds.find((id) => run.map.nodes[id]!.type === 'battle');
-  if (!b) throw new Error('no battle from camp');
+  const b = run.map.nodes[run.map.currentNodeId!]!.nextNodeIds.find(
+    (id) => run.map.nodes[id]!.type === "battle",
+  );
+  if (!b) throw new Error("no battle from camp");
   return b;
 }
 
-describe('reward/upgrade', () => {
-  test('战后可以用 TAKE_REWARD_UPGRADE_CARD 升级 masterDeck 里的卡', () => {
+describe("reward/upgrade", () => {
+  test("战后可以用 TAKE_REWARD_UPGRADE_CARD 升级 masterDeck 里的卡", () => {
     const engine = new GameEngine();
     let run = createMapRun(55);
-    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: firstBattleFromCamp(run) }).nextRun;
-    run.battle!.units[PLAYER_UNIT_ID]!.hp = run.battle!.units[PLAYER_UNIT_ID]!.maxHp;
-    run.battle!.phase = 'victory';
-    run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
-    expect(run.screen.type).toBe('reward');
+    run = engine.dispatch(run, {
+      type: "CHOOSE_MAP_NODE",
+      nodeId: firstBattleFromCamp(run),
+    }).nextRun;
+    run.battle!.units[PLAYER_UNIT_ID]!.hp =
+      run.battle!.units[PLAYER_UNIT_ID]!.maxHp;
+    run.battle!.phase = "victory";
+    run = engine.dispatch(run, { type: "LEAVE_BATTLE_TO_REWARD" }).nextRun;
+    expect(run.screen.type).toBe("reward");
 
-    const strikeIdx = run.masterDeck.indexOf('strike');
+    const strikeIdx = run.masterDeck.indexOf("strike");
     expect(strikeIdx).toBeGreaterThanOrEqual(0);
 
     run = engine.dispatch(run, {
-      type: 'TAKE_REWARD_UPGRADE_CARD',
+      type: "TAKE_REWARD_UPGRADE_CARD",
       masterDeckIndex: strikeIdx,
     }).nextRun;
-    expect(run.masterDeck[strikeIdx]).toBe('strike+');
+    expect(run.masterDeck[strikeIdx]).toBe("strike+");
     expect(run.reward).toBeUndefined();
-    expect(run.screen.type).not.toBe('reward');
+    expect(run.screen.type).not.toBe("reward");
   });
 
-  test('不可升级的卡（junk_sludge）无法作为奖励升级目标', () => {
+  test("不可升级的卡（junk_sludge）无法作为奖励升级目标", () => {
     const engine = new GameEngine();
     let run = createMapRun(56);
-    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: firstBattleFromCamp(run) }).nextRun;
-    run.battle!.units[PLAYER_UNIT_ID]!.hp = run.battle!.units[PLAYER_UNIT_ID]!.maxHp;
-    run.battle!.phase = 'victory';
-    run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
+    run = engine.dispatch(run, {
+      type: "CHOOSE_MAP_NODE",
+      nodeId: firstBattleFromCamp(run),
+    }).nextRun;
+    run.battle!.units[PLAYER_UNIT_ID]!.hp =
+      run.battle!.units[PLAYER_UNIT_ID]!.maxHp;
+    run.battle!.phase = "victory";
+    run = engine.dispatch(run, { type: "LEAVE_BATTLE_TO_REWARD" }).nextRun;
 
-    run.masterDeck.push('junk_sludge');
+    run.masterDeck.push("junk_sludge");
     const junkIdx = run.masterDeck.length - 1;
     const deckBefore = [...run.masterDeck];
     run = engine.dispatch(run, {
-      type: 'TAKE_REWARD_UPGRADE_CARD',
+      type: "TAKE_REWARD_UPGRADE_CARD",
       masterDeckIndex: junkIdx,
     }).nextRun;
     expect(run.masterDeck).toEqual(deckBefore);
-    expect(run.screen.type).toBe('reward');
+    expect(run.screen.type).toBe("reward");
   });
 });

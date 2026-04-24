@@ -2,6 +2,7 @@ import type { GameObjects, Input } from 'phaser';
 import { Geom, Scene, Scenes } from 'phaser';
 import { buildCardKeywordHints, cardTargetLabel, cardTypeLabel, formatMonsterIntentText } from '@/game/core/battleUiText';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { getCardArchetype, ARCHETYPE_DISPLAY } from '@/game/core/definitions/cards/archetypes';
 import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import type { BattleState } from '@/game/core/model/battle';
 import type { CardTarget } from '@/game/core/model/card';
@@ -15,6 +16,8 @@ import {
   isFastModeEnabled,
 } from '../controllers/SceneBridge';
 import { BATTLE_RENDER_SCALE, getBattleCanvasTextResolution, LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../gameFactory';
+import { PileStack } from './battle/PileStack';
+import { UnitStatusBar } from './battle/UnitStatusBar';
 
 /** 手牌区与敌人 AABB 分离，避免第 4～5 张默认就压在敌人命中盒上导致误判 / 输入抢优先级。 */
 const HAND_START_X = 200;
@@ -47,6 +50,11 @@ export class BattleScene extends Scene {
   private hoveredEnemyId: string | null = null;
   private aoeHover = false;
   private textRes = 1;
+  private drawPile?: PileStack;
+  private discardPile?: PileStack;
+  private exhaustPile?: PileStack;
+  private playerStatusBar?: UnitStatusBar;
+  private enemyStatusBars = new Map<string, UnitStatusBar>();
 
   constructor() {
     super('BattleScene');
@@ -59,6 +67,17 @@ export class BattleScene extends Scene {
   private detachStore(): void {
     this.unsub?.();
     this.unsub = undefined;
+  }
+
+  private resetBattleUi(): void {
+    // Phaser 会在 scene shutdown 时把 game objects 销毁，但我们自己持有的 PileStack /
+    // UnitStatusBar / Map 引用仍会指向已销毁对象；在重入前清掉，避免下次 create 访问到脏数据。
+    this.drawPile = undefined;
+    this.discardPile = undefined;
+    this.exhaustPile = undefined;
+    this.playerStatusBar = undefined;
+    this.enemyStatusBars.clear();
+    this.lastSceneKey = '';
   }
 
   private txt(
@@ -82,10 +101,19 @@ export class BattleScene extends Scene {
       enemies: battle.enemyUnitIds,
       ph: pu?.hp,
       pb: pu?.block,
+      ps: pu?.statuses?.map((s) => [s.id, s.stacks]),
+      dp: battle.player.drawPile.length,
+      dc: battle.player.discardPile.length,
+      ex: battle.player.exhaustPile.length,
       eh: battle.enemyUnitIds.map((id) => {
         const u = battle.units[id];
         const m = battle.monsters[id];
-        return { hp: u?.hp, block: u?.block, intent: m?.intent };
+        return {
+          hp: u?.hp,
+          block: u?.block,
+          intent: m?.intent,
+          st: u?.statuses?.map((s) => [s.id, s.stacks]),
+        };
       }),
     });
   }
@@ -313,6 +341,11 @@ export class BattleScene extends Scene {
 
     this.aoePlayRect = new Geom.Rectangle(380, 72, 520, 320);
 
+    // 底部三堆可视化：抽牌堆/弃牌堆在左下，消耗堆在右下角避免与结束回合按钮冲突。
+    this.drawPile = new PileStack(this, 56, LOGICAL_HEIGHT - 72, 'draw', this.textRes);
+    this.discardPile = new PileStack(this, 116, LOGICAL_HEIGHT - 72, 'discard', this.textRes);
+    this.exhaustPile = new PileStack(this, LOGICAL_WIDTH - 56, LOGICAL_HEIGHT - 72, 'exhaust', this.textRes);
+
     this.unsub = useGameStore.subscribe((s) => {
       if (!this.canUseDisplay()) return;
       const battle = s.run?.battle;
@@ -323,6 +356,8 @@ export class BattleScene extends Scene {
       this.rebuildEnemyDisplay(battle ?? null);
       this.rebuildEnemyHitRects(battle ?? null);
       this.renderHand(battle ?? null);
+      this.refreshPiles(battle ?? null);
+      this.refreshStatusBars(battle ?? null);
     });
 
     const initial = useGameStore.getState().run?.battle ?? null;
@@ -331,8 +366,13 @@ export class BattleScene extends Scene {
     this.rebuildEnemyDisplay(initial);
     this.rebuildEnemyHitRects(initial);
     this.renderHand(initial);
+    this.refreshPiles(initial);
+    this.refreshStatusBars(initial);
 
-    const detach = () => this.detachStore();
+    const detach = () => {
+      this.detachStore();
+      this.resetBattleUi();
+    };
     this.events.once(Scenes.Events.SHUTDOWN, detach);
     this.events.once(Scenes.Events.DESTROY, detach);
   }
@@ -359,6 +399,8 @@ export class BattleScene extends Scene {
           e.value > 0 ? `+${e.value} 生命` : `${POTION_DEFINITIONS[e.potionId]?.name ?? e.potionId}`,
           '#7dffb3',
         );
+      } else if (e.type === 'DRAWPILE_RESHUFFLED') {
+        this.playReshuffleAnimation(e.fromDiscardCount);
       }
     }
     if (battle?.inputMode === 'animation_lock' && this.floatGroup.getLength() === 0) {
@@ -480,6 +522,111 @@ export class BattleScene extends Scene {
     });
   }
 
+  private refreshPiles(battle: BattleState | null): void {
+    if (!this.canUseDisplay()) return;
+    if (!this.drawPile || !this.discardPile || !this.exhaustPile) return;
+    const draw = battle?.player.drawPile.length ?? 0;
+    const discard = battle?.player.discardPile.length ?? 0;
+    const exhaust = battle?.player.exhaustPile.length ?? 0;
+    this.drawPile.setCount(draw);
+    this.discardPile.setCount(discard);
+    this.exhaustPile.setCount(exhaust);
+    const visible = Boolean(battle);
+    this.drawPile.container.setVisible(visible);
+    this.discardPile.container.setVisible(visible);
+    this.exhaustPile.container.setVisible(visible);
+  }
+
+  private refreshStatusBars(battle: BattleState | null): void {
+    if (!this.canUseDisplay()) return;
+
+    // 玩家状态条：粘在玩家面板下方，HP 条再往下一点，避免盖住格挡文字。
+    if (!battle) {
+      this.playerStatusBar?.destroy();
+      this.playerStatusBar = undefined;
+    } else {
+      const player = battle.units[battle.playerUnitId];
+      if (player) {
+        if (!this.playerStatusBar) {
+          this.playerStatusBar = new UnitStatusBar(this, 110, 340, this.textRes);
+        }
+        this.playerStatusBar.setStatuses(player.statuses ?? []);
+      } else if (this.playerStatusBar) {
+        this.playerStatusBar.destroy();
+        this.playerStatusBar = undefined;
+      }
+    }
+
+    // 敌人状态条：按槽位对齐 ENEMY_SLOT_X0 - i * ENEMY_SLOT_DX，y 放在意图行下方。
+    const existingIds = new Set(this.enemyStatusBars.keys());
+    if (battle) {
+      battle.enemyUnitIds.forEach((eid, i) => {
+        const unit = battle.units[eid];
+        if (!unit) return;
+        const cx = ENEMY_SLOT_X0 - i * ENEMY_SLOT_DX;
+        let bar = this.enemyStatusBars.get(eid);
+        if (!bar) {
+          bar = new UnitStatusBar(this, cx, 340, this.textRes);
+          this.enemyStatusBars.set(eid, bar);
+        } else {
+          bar.container.setPosition(cx, 340);
+        }
+        bar.setStatuses(unit.statuses ?? []);
+        existingIds.delete(eid);
+      });
+    }
+    for (const staleId of existingIds) {
+      const bar = this.enemyStatusBars.get(staleId);
+      bar?.destroy();
+      this.enemyStatusBars.delete(staleId);
+    }
+  }
+
+  private playReshuffleAnimation(fromDiscardCount: number): void {
+    if (!this.canUseDisplay()) return;
+    if (!this.drawPile || !this.discardPile) return;
+    const fast = isFastModeEnabled();
+    const duration = fast ? 140 : 480;
+    const flyCount = Math.min(5, Math.max(1, Math.ceil(fromDiscardCount / 3)));
+    const startX = this.discardPile.getWorldPosition().x;
+    const startY = this.discardPile.getWorldPosition().y;
+    const endX = this.drawPile.getWorldPosition().x;
+    const endY = this.drawPile.getWorldPosition().y;
+    for (let i = 0; i < flyCount; i++) {
+      const g = this.add.graphics();
+      g.setDepth(37);
+      g.fillStyle(0x3a2e28, 1);
+      g.lineStyle(1.5, 0xa07858, 1);
+      g.fillRoundedRect(-18, -24, 36, 48, 5);
+      g.strokeRoundedRect(-18, -24, 36, 48, 5);
+      g.setPosition(startX, startY);
+      g.setAlpha(0.95);
+      this.tweens.add({
+        targets: g,
+        x: endX,
+        y: endY,
+        delay: i * (fast ? 20 : 60),
+        duration,
+        ease: 'Quad.easeInOut',
+        onComplete: () => g.destroy(),
+      });
+    }
+    const label = this.txt(
+      (startX + endX) / 2,
+      startY - 40,
+      '弃牌堆回洗',
+      { fontSize: '12px', color: '#e8c4b8', fontStyle: 'bold' },
+    ).setOrigin(0.5, 0.5).setDepth(38);
+    this.tweens.add({
+      targets: label,
+      alpha: 0,
+      y: label.y - 20,
+      duration: duration + 200,
+      ease: 'Cubic.easeOut',
+      onComplete: () => label.destroy(),
+    });
+  }
+
   private spawnFloater(x: number, y: number, text: string, color: string): void {
     if (!this.canUseDisplay()) return;
     const fast = isFastModeEnabled();
@@ -567,6 +714,23 @@ export class BattleScene extends Scene {
       costBadge.strokeCircle(-36, -56, 15);
 
       container.add([bg, costBadge, cost, label]);
+
+      // 流派标识：只对 guard / burst / mixed 在牌面右下画一个小圆点，neutral 不画以免视觉噪音。
+      const archetype = getCardArchetype(inst.definitionId);
+      if (archetype !== 'neutral') {
+        const meta = ARCHETYPE_DISPLAY[archetype];
+        const dot = this.add.graphics();
+        dot.fillStyle(meta.hexColor, 1);
+        dot.lineStyle(1, 0x1a1814, 0.8);
+        dot.fillCircle(36, 46, 8);
+        dot.strokeCircle(36, 46, 8);
+        const dotLabel = this.txt(36, 46, meta.shortLabel, {
+          fontSize: '10px',
+          color: '#1a1814',
+          fontStyle: 'bold',
+        }).setOrigin(0.5, 0.5);
+        container.add([dot, dotLabel]);
+      }
       container.setSize(96, 128);
       container.setInteractive({ draggable: true });
       this.input.setDraggable(container);

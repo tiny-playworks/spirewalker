@@ -7,6 +7,7 @@ import { useGameStore } from '@/game/store/gameStore';
 import { selectShopRunState } from '@/game/store/selectors/shopSelectors';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as subscreenStyles from '@/styles/subscreen.css';
+import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { CardUpgradeList } from '../cards/CardUpgradeList';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
@@ -56,6 +57,7 @@ export function ShopPage() {
                 disabled={!canBuy}
                 onClick={() => dispatchCommand({ type: 'BUY_SHOP_CARD', definitionId: o.definitionId })}
               >
+                <ArchetypeDot cardId={o.definitionId} />
                 {def?.name ?? o.definitionId} — {o.price} 金
                 <span className={subscreenStyles.choiceDesc}>
                   {def ? `${def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · ${def.cost} 费` : ''}
@@ -154,6 +156,7 @@ export function ShopPage() {
                   })
                 }
               >
+                <ArchetypeDot cardId={row.definitionId} />
                 移除 1 张 {def?.name ?? row.definitionId}（牌组中共 {row.count} 张）—{' '}
                 {shop.removeCardPrice} 金
               </button>

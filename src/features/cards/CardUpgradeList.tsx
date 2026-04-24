@@ -9,6 +9,7 @@ import {
   nextUpgradedId,
   parseCardId,
 } from '@/game/core/definitions/cards/upgradeRules';
+import { ArchetypeDot } from '@/features/cards/ArchetypeDot';
 import * as subscreenStyles from '@/styles/subscreen.css';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
@@ -54,6 +55,7 @@ export function CardUpgradeList({ masterDeck, onUpgrade, disabled, title, emptyT
                   onClick={() => onUpgrade(index)}
                 >
                   <strong>
+                    <ArchetypeDot cardId={id} />
                     {currentDef.name} → {nextDef.name}
                     <span className={subscreenStyles.choiceDesc}> 升级徽章：{badge}</span>
                   </strong>

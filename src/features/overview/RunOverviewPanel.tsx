@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
 import '@/game/core/definitions/cards/upgradeRules';
+import { ARCHETYPE_DISPLAY, summarizeDeckArchetypes } from '@/game/core/definitions/cards/archetypes';
+import { ArchetypeDot } from '@/features/cards/ArchetypeDot';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
@@ -158,6 +160,22 @@ export function RunOverviewPanel({
           <p className={styles.empty} style={{ opacity: 0.85 }}>
             当前已构筑进度 · 核心卡 / 核心遗物命中越多，流派识别度越强。
           </p>
+          <div className={styles.stats} style={{ marginBottom: 8 }}>
+            {(['guard', 'burst', 'mixed', 'neutral'] as const).map((a) => {
+              const meta = ARCHETYPE_DISPLAY[a];
+              const count = summarizeDeckArchetypes(run.masterDeck)[a];
+              return (
+                <span
+                  key={a}
+                  className={styles.statChip}
+                  style={{ borderColor: meta.color, color: meta.color }}
+                  title={`${meta.name}流派：牌组里 ${count} 张`}
+                >
+                  {meta.name} · {count}
+                </span>
+              );
+            })}
+          </div>
           <ul className={styles.list}>
             {character.buildBranches.map((branch) => {
               const cardHits = branch.coreCardIds.filter(
@@ -274,6 +292,7 @@ export function RunOverviewPanel({
                   return (
                     <li key={row.definitionId}>
                       <strong className={styles.deckStrong}>
+                        <ArchetypeDot cardId={row.definitionId} />
                         {def?.name ?? row.definitionId} ×{row.count}
                       </strong>
                       <span className={styles.listMeta}>{def?.description ?? '暂无说明'}</span>

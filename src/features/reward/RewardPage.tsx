@@ -9,6 +9,7 @@ import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
 import { useGameStore } from '@/game/store/gameStore';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as subscreenStyles from '@/styles/subscreen.css';
+import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { CardUpgradeList } from '../cards/CardUpgradeList';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
@@ -121,7 +122,10 @@ export function RewardPage() {
                 title={buildCardTooltipText(def)}
                 onClick={() => dispatchCommand({ type: 'SELECT_REWARD_CARD', definitionId: defId })}
               >
-                <strong>{def.name}</strong>
+                <strong>
+                  <ArchetypeDot cardId={defId} />
+                  {def.name}
+                </strong>
                 <span className={subscreenStyles.choiceDesc}>
                   {def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · {def.cost} 费
                 </span>

@@ -9,6 +9,7 @@ export type GameEvent =
   | { type: 'UNIT_DIED'; unitId: string }
   | { type: 'TURN_ENDED'; unitId: string }
   | { type: 'CARD_EXHAUSTED'; unitId: string; cardInstanceId: string }
+  | { type: 'DRAWPILE_RESHUFFLED'; unitId: string; fromDiscardCount: number }
   | { type: 'BATTLE_WON' }
   | { type: 'BATTLE_LOST' }
   | { type: 'ENTERED_BATTLE_FROM_MAP'; nodeId: string }

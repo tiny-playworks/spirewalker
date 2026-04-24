@@ -26,9 +26,15 @@ function drawAdditionalCards(
   for (let i = 0; i < n; i++) {
     if (battle.player.drawPile.length === 0) {
       if (battle.player.discardPile.length === 0) break;
+      const fromDiscardCount = battle.player.discardPile.length;
       battle.player.drawPile = [...battle.player.discardPile];
       battle.player.discardPile = [];
       shuffleInPlace(battle.player.drawPile, random);
+      events.push({
+        type: 'DRAWPILE_RESHUFFLED',
+        unitId: battle.playerUnitId,
+        fromDiscardCount,
+      });
     }
     const id = battle.player.drawPile.shift();
     if (!id) break;
