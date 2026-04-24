@@ -1396,6 +1396,33 @@ describe('GameEngine 地图', () => {
     expect(run.screen.type).toBe('map');
   });
 
+  test('Act1 Boss 战后进入奖励界面前将玩家血量回满', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(777);
+    const bossId = findNodeId(run, (n) => n.type === 'boss' && n.floor === 1);
+    jumpToBeforeNode(run, bossId);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: bossId }).nextRun;
+    const maxHp = run.player.maxHp;
+    run.battle!.units[PLAYER_UNIT_ID]!.hp = 12;
+    run.player.currentHp = 12;
+    run.battle!.phase = 'victory';
+    run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
+    expect(run.screen.type).toBe('reward');
+    expect(run.player.currentHp).toBe(maxHp);
+    expect(run.player.maxHp).toBe(maxHp);
+  });
+
+  test('Act1 普通战胜利离开战斗不会触发 Boss 满血', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(778);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: firstBattleFromCamp(run) }).nextRun;
+    run.battle!.units[PLAYER_UNIT_ID]!.hp = 15;
+    run.player.currentHp = 15;
+    run.battle!.phase = 'victory';
+    run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
+    expect(run.player.currentHp).toBe(15);
+  });
+
   test('Act2 验证段进入 elite 分支会被记录，最后一战奖励后标记验证完成', () => {
     const engine = new GameEngine();
     let run = createMapRun(313);

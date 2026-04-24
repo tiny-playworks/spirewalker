@@ -161,14 +161,17 @@ describe('monster/enemyAi', () => {
   test('Act1 Boss 定义符合新的双核压力校准', () => {
     const hivePhases = MONSTER_DEFINITIONS.slime_boss.ai.phases;
     const gatePhases = MONSTER_DEFINITIONS.act1_boss_gate.ai.phases;
-    expect(hivePhases?.[1]?.threshold).toBe(0.65);
+    expect(hivePhases?.[1]?.threshold).toBe(0.4);
     expect(hivePhases?.[0]?.rotation[2]).toEqual({
       type: 'buff',
       statusId: STATUS_STRENGTH,
       value: 1,
     });
-    expect(gatePhases?.[0]?.rotation[4]).toEqual({ type: 'counter', threshold: 2, damage: 8 });
-    expect(gatePhases?.[1]?.rotation[2]).toEqual({ type: 'thorns', damage: 4 });
+    expect(gatePhases?.[0]?.rotation[4]).toEqual({ type: 'counter', threshold: 2, damage: 5 });
+    expect(gatePhases?.[0]?.rotation[1]).toEqual({ type: 'block', value: 4 });
+    expect(gatePhases?.[1]?.rotation[0]).toEqual({ type: 'phase_shift', label: '碾压', phase: 2 });
+    expect(gatePhases?.[1]?.rotation[1]).toEqual({ type: 'heavy_charge', value: 12, charge: 1 });
+    expect(gatePhases?.[1]?.rotation[2]).toEqual({ type: 'thorns', damage: 2 });
   });
 
   test('Act1 首精英 rotation 符合新的构筑检定设计', () => {
@@ -187,7 +190,7 @@ describe('monster/enemyAi', () => {
       { type: 'punish_multi_play', threshold: 5, block: 12 },
     ]);
     expect(debtMonk).toEqual([
-      { type: 'lock_hand', count: 2 },
+      { type: 'lock_hand', count: 1 },
       { type: 'heavy_charge', value: 22, charge: 1 },
       { type: 'draw_pressure', value: 2 },
     ]);

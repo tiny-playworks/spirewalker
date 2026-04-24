@@ -5,7 +5,7 @@ import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchin
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { isLegalMapStep } from '@/game/core/model/mapGraph';
-import type { MapNodeType } from '@/game/core/model/map';
+import type { MapNodeType, MapRouteBias } from '@/game/core/model/map';
 import type { RunState } from '@/game/core/model/run';
 import type { GameCommand } from '@/game/core/commands/types';
 import { getEncounterById } from '@/game/core/definitions/encounters';
@@ -17,6 +17,8 @@ import type {
   Act1PreBossBattleEndRecord,
   Act1PreBossDeathDetail,
   Act1PreBossLossPolicyReport,
+  Act1RouteShapeByBiasMetric,
+  Act1RouteShapeMetric,
   Act1SimAbortReason,
   Act1TerminationFloorBucket,
   Act1TerminationPolicyBreakdown,
@@ -39,6 +41,7 @@ const MAX_SCREENS_PER_RUN = 800;
 const NO_PROGRESS_STATE_REPEAT_LIMIT = 12;
 const NO_PROGRESS_COMBAT_REPEAT_LIMIT = 60;
 const ACT1_FLOOR_SEGMENTS: Act1FloorSegmentId[] = ['1-5', '6-9', '10+'];
+const ROUTE_SHAPE_KEYS = ['risk', 'balance', 'safe', 'mixed'] as const;
 
 function actFloorSegment(actFloor: number): Act1FloorSegmentId {
   if (actFloor <= 5) return '1-5';
@@ -251,6 +254,7 @@ type SingleRunResult = {
   hpAtBossEngage: number | null;
   maxHpAtBossEngage: number | null;
   mapNormalFightShape: Act1MapNormalFightShapeMetric;
+  routeShapeByBias: Act1RouteShapeByBiasMetric;
   firstElite: {
     monsterId: string | null;
     won: boolean;
@@ -313,6 +317,196 @@ function summarizeMapNormalFightShape(run: RunState): Act1MapNormalFightShapeMet
     minNormalFights: Number.isFinite(minNormalFights) ? minNormalFights : 0,
     maxNormalFights,
   };
+}
+
+type RouteShapeSample = {
+  bias: MapRouteBias | 'mixed';
+  eliteFights: number;
+  normalFights: number;
+  bufferNodes: number;
+  maxBattleStreak: number;
+};
+
+function emptyRouteShapeMetric(): Act1RouteShapeMetric {
+  return {
+    samples: 0,
+    avgEliteFights: 0,
+    minEliteFights: 0,
+    maxEliteFights: 0,
+    avgNormalFights: 0,
+    minNormalFights: 0,
+    maxNormalFights: 0,
+    avgBufferNodes: 0,
+    minBufferNodes: 0,
+    maxBufferNodes: 0,
+    maxBattleStreak: 0,
+    zeroEliteRoutes: 0,
+    oneEliteRoutes: 0,
+    twoPlusEliteRoutes: 0,
+  };
+}
+
+function emptyRouteShapeByBias(): Act1RouteShapeByBiasMetric {
+  return {
+    risk: emptyRouteShapeMetric(),
+    balance: emptyRouteShapeMetric(),
+    safe: emptyRouteShapeMetric(),
+    mixed: emptyRouteShapeMetric(),
+  };
+}
+
+function isRouteBufferType(type: MapNodeType): boolean {
+  return type === 'event' || type === 'shop' || type === 'rest' || type === 'treasure';
+}
+
+function classifyRouteBias(counts: Record<MapRouteBias, number>): MapRouteBias | 'mixed' {
+  const ordered = (['risk', 'balance', 'safe'] as const)
+    .map((bias) => ({ bias, count: counts[bias] }))
+    .sort((left, right) => right.count - left.count);
+  const top = ordered[0]!;
+  const second = ordered[1]!;
+  return top.count > second.count ? top.bias : 'mixed';
+}
+
+function metricFromRouteSamples(samples: RouteShapeSample[]): Act1RouteShapeMetric {
+  if (samples.length === 0) return emptyRouteShapeMetric();
+  const sumElite = samples.reduce((sum, item) => sum + item.eliteFights, 0);
+  const sumNormal = samples.reduce((sum, item) => sum + item.normalFights, 0);
+  const sumBuffer = samples.reduce((sum, item) => sum + item.bufferNodes, 0);
+  return {
+    samples: samples.length,
+    avgEliteFights: sumElite / samples.length,
+    minEliteFights: Math.min(...samples.map((item) => item.eliteFights)),
+    maxEliteFights: Math.max(...samples.map((item) => item.eliteFights)),
+    avgNormalFights: sumNormal / samples.length,
+    minNormalFights: Math.min(...samples.map((item) => item.normalFights)),
+    maxNormalFights: Math.max(...samples.map((item) => item.normalFights)),
+    avgBufferNodes: sumBuffer / samples.length,
+    minBufferNodes: Math.min(...samples.map((item) => item.bufferNodes)),
+    maxBufferNodes: Math.max(...samples.map((item) => item.bufferNodes)),
+    maxBattleStreak: Math.max(...samples.map((item) => item.maxBattleStreak)),
+    zeroEliteRoutes: samples.filter((item) => item.eliteFights === 0).length,
+    oneEliteRoutes: samples.filter((item) => item.eliteFights === 1).length,
+    twoPlusEliteRoutes: samples.filter((item) => item.eliteFights >= 2).length,
+  };
+}
+
+function summarizeAct1RouteShape(run: RunState): Act1RouteShapeByBiasMetric {
+  const start = Object.values(run.map.nodes).find((node) => node.depth === 1);
+  if (!start) return emptyRouteShapeByBias();
+
+  const samplesByBias: Record<MapRouteBias | 'mixed', RouteShapeSample[]> = {
+    risk: [],
+    balance: [],
+    safe: [],
+    mixed: [],
+  };
+  const stack: Array<{
+    nodeId: string;
+    eliteFights: number;
+    normalFights: number;
+    bufferNodes: number;
+    battleStreak: number;
+    maxBattleStreak: number;
+    biasCounts: Record<MapRouteBias, number>;
+  }> = [{
+    nodeId: start.id,
+    eliteFights: 0,
+    normalFights: 0,
+    bufferNodes: 0,
+    battleStreak: 0,
+    maxBattleStreak: 0,
+    biasCounts: { risk: 0, balance: 0, safe: 0 },
+  }];
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    const node = run.map.nodes[current.nodeId];
+    if (!node) continue;
+
+    const shouldCount = node.depth > 1 && node.type !== 'boss';
+    const bias = node.routeBias ?? 'balance';
+    const biasCounts = { ...current.biasCounts };
+    if (shouldCount) biasCounts[bias] += 1;
+    const normalFights = current.normalFights + (shouldCount && node.type === 'battle' ? 1 : 0);
+    const eliteFights = current.eliteFights + (shouldCount && node.type === 'elite' ? 1 : 0);
+    const bufferNodes = current.bufferNodes + (shouldCount && isRouteBufferType(node.type) ? 1 : 0);
+    const battleStreak = shouldCount && node.type === 'battle' ? current.battleStreak + 1 : 0;
+    const maxBattleStreak = Math.max(current.maxBattleStreak, battleStreak);
+
+    if (node.type === 'boss') {
+      const routeBias = classifyRouteBias(biasCounts);
+      samplesByBias[routeBias].push({
+        bias: routeBias,
+        eliteFights,
+        normalFights,
+        bufferNodes,
+        maxBattleStreak,
+      });
+      continue;
+    }
+
+    for (const nextNodeId of node.nextNodeIds) {
+      stack.push({
+        nodeId: nextNodeId,
+        eliteFights,
+        normalFights,
+        bufferNodes,
+        battleStreak,
+        maxBattleStreak,
+        biasCounts,
+      });
+    }
+  }
+
+  return {
+    risk: metricFromRouteSamples(samplesByBias.risk),
+    balance: metricFromRouteSamples(samplesByBias.balance),
+    safe: metricFromRouteSamples(samplesByBias.safe),
+    mixed: metricFromRouteSamples(samplesByBias.mixed),
+  };
+}
+
+function mergeRouteShapeMetrics(
+  reports: Act1RouteShapeByBiasMetric[],
+): Act1RouteShapeByBiasMetric {
+  const merged = emptyRouteShapeByBias();
+  for (const key of ROUTE_SHAPE_KEYS) {
+    let samples = 0;
+    let eliteSum = 0;
+    let normalSum = 0;
+    let bufferSum = 0;
+    let minElite = Number.POSITIVE_INFINITY;
+    let minNormal = Number.POSITIVE_INFINITY;
+    let minBuffer = Number.POSITIVE_INFINITY;
+    for (const report of reports) {
+      const row = report[key];
+      samples += row.samples;
+      eliteSum += row.avgEliteFights * row.samples;
+      normalSum += row.avgNormalFights * row.samples;
+      bufferSum += row.avgBufferNodes * row.samples;
+      if (row.samples > 0) {
+        minElite = Math.min(minElite, row.minEliteFights);
+        minNormal = Math.min(minNormal, row.minNormalFights);
+        minBuffer = Math.min(minBuffer, row.minBufferNodes);
+      }
+      merged[key].maxEliteFights = Math.max(merged[key].maxEliteFights, row.maxEliteFights);
+      merged[key].maxNormalFights = Math.max(merged[key].maxNormalFights, row.maxNormalFights);
+      merged[key].maxBufferNodes = Math.max(merged[key].maxBufferNodes, row.maxBufferNodes);
+      merged[key].maxBattleStreak = Math.max(merged[key].maxBattleStreak, row.maxBattleStreak);
+      merged[key].zeroEliteRoutes += row.zeroEliteRoutes;
+      merged[key].oneEliteRoutes += row.oneEliteRoutes;
+      merged[key].twoPlusEliteRoutes += row.twoPlusEliteRoutes;
+    }
+    merged[key].samples = samples;
+    merged[key].avgEliteFights = samples > 0 ? eliteSum / samples : 0;
+    merged[key].avgNormalFights = samples > 0 ? normalSum / samples : 0;
+    merged[key].avgBufferNodes = samples > 0 ? bufferSum / samples : 0;
+    merged[key].minEliteFights = Number.isFinite(minElite) ? minElite : 0;
+    merged[key].minNormalFights = Number.isFinite(minNormal) ? minNormal : 0;
+    merged[key].minBufferNodes = Number.isFinite(minBuffer) ? minBuffer : 0;
+  }
+  return merged;
 }
 
 function emptyFirstEliteRegression(): Act1FirstEliteRegressionMetric {
@@ -565,6 +759,7 @@ function simulateSingleRun(
     throw new Error(`unsupported character: ${run.meta.characterId}`);
   }
   const mapNormalFightShape = summarizeMapNormalFightShape(run);
+  const routeShapeByBias = summarizeAct1RouteShape(run);
 
   let screenTransitions = 0;
   let activeBattleId: string | null = null;
@@ -614,6 +809,7 @@ function simulateSingleRun(
     hpAtBossEngage,
     maxHpAtBossEngage,
     mapNormalFightShape,
+    routeShapeByBias,
     firstElite: {
       monsterId: firstEliteMonsterId,
       won: firstEliteWon,
@@ -938,6 +1134,7 @@ function simulateSingleRun(
           hpAtBossEngage,
           maxHpAtBossEngage,
           mapNormalFightShape,
+          routeShapeByBias,
           firstElite: {
             monsterId: firstEliteMonsterId,
             won: firstEliteWon,
@@ -1137,6 +1334,7 @@ function buildAct1PreBossLossReport(details: SingleRunResult[]): Act1PreBossLoss
       minNormalFights: Number.isFinite(mapShapeMinNormalFights) ? mapShapeMinNormalFights : 0,
       maxNormalFights: mapShapeMaxNormalFights,
     },
+    routeShapeByBias: mergeRouteShapeMetrics(details.map((detail) => detail.routeShapeByBias)),
     avgObservedAct1NormalAttempts: details.length > 0 ? observedNormalAttempts / details.length : 0,
     firstEliteRegression,
     act1CombatGameOverCount,
@@ -1167,6 +1365,7 @@ export function mergeAct1PreBossLossReports(
     totalRuns: reports.reduce((sum, item) => sum + item.totalRuns, 0),
     enteredAct2Count: reports.reduce((sum, item) => sum + item.enteredAct2Count, 0),
     mapNormalFightShape: { samples: 0, avgNormalFights: 0, minNormalFights: 0, maxNormalFights: 0 },
+    routeShapeByBias: emptyRouteShapeByBias(),
     avgObservedAct1NormalAttempts: 0,
     firstEliteRegression: emptyFirstEliteRegression(),
     act1CombatGameOverCount: reports.reduce((sum, item) => sum + item.act1CombatGameOverCount, 0),
@@ -1196,7 +1395,9 @@ export function mergeAct1PreBossLossReports(
   let firstEliteDeckSizeTotal = 0;
   let firstEliteNormalFightsTotal = 0;
   const firstEliteByMonster = new Map<string, { attempts: number; wins: number }>();
+  const routeShapeReports: Act1RouteShapeByBiasMetric[] = [];
   for (const item of reports) {
+    routeShapeReports.push(item.routeShapeByBias);
     merged.mapNormalFightShape.samples += item.mapNormalFightShape.samples;
     mapShapeWeightedNormalFights += item.mapNormalFightShape.avgNormalFights * item.mapNormalFightShape.samples;
     if (item.mapNormalFightShape.samples > 0) {
@@ -1253,6 +1454,7 @@ export function mergeAct1PreBossLossReports(
     ? mapShapeMinNormalFights
     : 0;
   merged.mapNormalFightShape.maxNormalFights = mapShapeMaxNormalFights;
+  merged.routeShapeByBias = mergeRouteShapeMetrics(routeShapeReports);
   merged.avgObservedAct1NormalAttempts = merged.totalRuns > 0
     ? observedNormalAttemptsTotal / merged.totalRuns
     : 0;

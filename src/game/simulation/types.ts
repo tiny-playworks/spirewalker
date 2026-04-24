@@ -2,7 +2,7 @@ import type { RewardEncounterTier } from '@/game/core/engine/generateRewardChoic
 import type { GameCommand } from '@/game/core/commands/types';
 import type { PressureProfile } from '@/game/core/definitions/encounters';
 import type { BattleState, MonsterIntent } from '@/game/core/model/battle';
-import type { MapNode, MapNodeType } from '@/game/core/model/map';
+import type { MapNode, MapNodeType, MapRouteBias } from '@/game/core/model/map';
 import type { RewardState } from '@/game/core/model/reward';
 import type { RunState } from '@/game/core/model/run';
 import type { ShopState } from '@/game/core/model/shop';
@@ -60,6 +60,25 @@ export type Act1MapNormalFightShapeMetric = {
   minNormalFights: number;
   maxNormalFights: number;
 };
+
+export type Act1RouteShapeMetric = {
+  samples: number;
+  avgEliteFights: number;
+  minEliteFights: number;
+  maxEliteFights: number;
+  avgNormalFights: number;
+  minNormalFights: number;
+  maxNormalFights: number;
+  avgBufferNodes: number;
+  minBufferNodes: number;
+  maxBufferNodes: number;
+  maxBattleStreak: number;
+  zeroEliteRoutes: number;
+  oneEliteRoutes: number;
+  twoPlusEliteRoutes: number;
+};
+
+export type Act1RouteShapeByBiasMetric = Record<MapRouteBias | 'mixed', Act1RouteShapeMetric>;
 
 export type Act1FirstEliteRegressionMetric = {
   attempts: number;
@@ -179,6 +198,8 @@ export type Act1PreBossLossPolicyReport = {
   enteredAct2Count: number;
   /** 地图形态：完整路线可见普通战数量 */
   mapNormalFightShape: Act1MapNormalFightShapeMetric;
+  /** 地图形态：按路线语义观察精英、普通战、缓冲和连续 battle */
+  routeShapeByBias: Act1RouteShapeByBiasMetric;
   /** 实际 run 中 Act1 normal attempts 均值，含死于 normal 的末战 */
   avgObservedAct1NormalAttempts: number;
   /** 首精英环境回归指标 */

@@ -45,6 +45,10 @@ const EVENT_POOLS: Record<MapAct, string[]> = {
 
 type Phase = 'early' | 'mid' | 'late';
 type WeightedNodeType = Exclude<MapNodeType, 'boss' | 'treasure'>;
+type GeneratedPath = {
+  bias: MapRouteBias;
+  rows: number[];
+};
 
 const PHASE_WEIGHTS: Record<Phase, Record<WeightedNodeType, number>> = {
   early: {
@@ -423,6 +427,79 @@ function assignEventScripts(act: MapAct, nodes: MapNode[]): void {
   });
 }
 
+function nodesForGeneratedPath(
+  act: MapAct,
+  path: GeneratedPath,
+  nodes: Record<string, MapNode>,
+): MapNode[] {
+  return path.rows
+    .map((row, index) => nodes[nodeId(act, index + 2, row)])
+    .filter((node): node is MapNode => Boolean(node));
+}
+
+function applyRoutePattern(nodes: MapNode[], pattern: Partial<Record<number, MapNodeType>>): void {
+  for (const node of nodes) {
+    const nextType = pattern[node.depth];
+    if (!nextType) continue;
+    node.type = nextType;
+  }
+}
+
+function applyAct1RouteGuarantees(
+  act: MapAct,
+  pathRows: GeneratedPath[],
+  nodes: Record<string, MapNode>,
+): void {
+  if (act !== 1) return;
+
+  const riskPath = pathRows.find((path) => path.bias === 'risk');
+  const balancePaths = pathRows.filter((path) => path.bias === 'balance');
+  const balancePath = balancePaths[0];
+  const pressurePath = balancePaths[1] ?? riskPath;
+  const safePath = [...pathRows].reverse().find((path) => path.bias === 'safe');
+  if (!riskPath || !balancePath || !pressurePath || !safePath) return;
+
+  for (const node of Object.values(nodes)) {
+    if (node.depth === 12 && node.type === 'elite') node.type = 'event';
+  }
+
+  applyRoutePattern(nodesForGeneratedPath(act, riskPath, nodes), {
+    6: 'elite',
+    9: 'elite',
+  });
+
+  applyRoutePattern(nodesForGeneratedPath(act, pressurePath, nodes), {
+    5: 'elite',
+    8: 'elite',
+    10: 'shop',
+  });
+
+  applyRoutePattern(nodesForGeneratedPath(act, balancePath, nodes), {
+    5: 'battle',
+    6: 'event',
+    7: 'battle',
+    8: 'elite',
+    9: 'battle',
+    10: 'shop',
+    11: 'rest',
+    12: 'event',
+  });
+
+  applyRoutePattern(nodesForGeneratedPath(act, safePath, nodes), {
+    2: 'battle',
+    3: 'event',
+    4: 'battle',
+    5: 'shop',
+    6: 'battle',
+    7: 'rest',
+    8: 'battle',
+    9: 'battle',
+    10: 'event',
+    11: 'shop',
+    12: 'event',
+  });
+}
+
 function finalizeEncounterMeta(act: MapAct, nodes: Record<string, MapNode>): void {
   for (const node of Object.values(nodes)) {
     Object.assign(node, encounterMetaForType(node.type, act));
@@ -552,6 +629,7 @@ export function generateActMap(act: MapAct, seed: number): Record<string, MapNod
   breakEventChains(mutableNodes, totalDepth);
   ensureLateRiskPeak(mutableNodes, totalDepth);
   ensureEventFallback(mutableNodes);
+  applyAct1RouteGuarantees(act, pathRows, nodes);
 
   assignEventScripts(act, Object.values(nodes));
   camp.eventScriptId = EVENT_POOLS[act][0]!;

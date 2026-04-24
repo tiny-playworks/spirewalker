@@ -34,6 +34,8 @@ describe('simulation/act2EntryValidation', () => {
       }
       expect(summary.act1PreBossLossReport).toBeDefined();
       expect(Number.isFinite(summary.act1PreBossLossReport!.mapNormalFightShape.avgNormalFights)).toBe(true);
+      expect(Number.isFinite(summary.act1PreBossLossReport!.routeShapeByBias.safe.avgNormalFights)).toBe(true);
+      expect(Number.isFinite(summary.act1PreBossLossReport!.routeShapeByBias.risk.avgEliteFights)).toBe(true);
       expect(Number.isFinite(summary.act1PreBossLossReport!.avgObservedAct1NormalAttempts)).toBe(true);
       expect(Number.isFinite(summary.act1PreBossLossReport!.firstEliteRegression.winRate)).toBe(true);
       expect(Number.isFinite(summary.act1PreBossLossReport!.firstEliteRegression.avgDeckSizeAtFirstElite)).toBe(true);

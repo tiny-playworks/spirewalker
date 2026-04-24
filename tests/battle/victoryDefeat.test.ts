@@ -3,7 +3,7 @@ import { GameEngine } from '@/game/core/engine/GameEngine';
 import { createMvpRun, PLAYER_UNIT_ID } from '@/game/core/engine/createMvpRun';
 
 describe('battle/victoryDefeat', () => {
-  test('强制 defeat 后进入 game_over', () => {
+  test('强制 defeat 后进入 game_over（不会触发 Act1 Boss 满血）', () => {
     const engine = new GameEngine();
     let run = createMvpRun(103);
     run = engine.dispatch(run, { type: 'DEBUG_FORCE_BATTLE_OUTCOME', outcome: 'defeat' }).nextRun;

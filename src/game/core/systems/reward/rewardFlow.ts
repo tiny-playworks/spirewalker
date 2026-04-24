@@ -6,11 +6,13 @@ import { generateBattleRewards } from './rewardGenerator';
 import { canResolveRewardCard, canResolveRewardGold, resolveRewardPick } from './rewardResolver';
 import { skipCardGoldAmount } from '../../engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '../../engine/rewardEncounter';
-import { hashMapNodeId } from '../common/runGuards';
+import { applyAct1BossPostVictoryFullHealIfEligible, hashMapNodeId } from '../common/runGuards';
 
 export function leaveBattleToRewardFlow(run: RunState, events: GameEvent[]): void {
   const battle = run.battle;
   if (!battle || battle.phase !== 'victory') return;
+  /** Act1 Boss 仅在此处满血，早于奖励 UI 与 `run.battle` 清空，失败路径不会进入本函数 */
+  applyAct1BossPostVictoryFullHealIfEligible(run);
   const curId = run.map.currentNodeId;
   const tier = rewardEncounterTierFromRun(run);
   const salt = (run.seed ^ run.meta.gold ^ 0xdec0de ^ hashMapNodeId(curId ?? '')) >>> 0;

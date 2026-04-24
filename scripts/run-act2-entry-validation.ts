@@ -99,6 +99,10 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function formatRange(min: number, max: number): string {
+  return `${min.toFixed(0)}-${max.toFixed(0)}`;
+}
+
 function personaName(policyId: string): string {
   return PERSONA_CN[policyId] ?? policyId;
 }
@@ -382,6 +386,14 @@ function printAct1PreBossLossBlock(title: string, report: Act1PreBossLossPolicyR
   console.log(
     `- Act1 地图普通战路径形态: pathSamples=${report.mapNormalFightShape.samples}, avgNormalFights=${report.mapNormalFightShape.avgNormalFights.toFixed(2)}, range=${report.mapNormalFightShape.minNormalFights}-${report.mapNormalFightShape.maxNormalFights}`,
   );
+  console.log('- Act1 safe/balance/risk 路线结构:');
+  for (const key of ['safe', 'balance', 'risk', 'mixed'] as const) {
+    const row = report.routeShapeByBias[key];
+    if (row.samples === 0) continue;
+    console.log(
+      `  - ${key}: routes=${row.samples}, eliteAvg=${row.avgEliteFights.toFixed(2)} (${formatRange(row.minEliteFights, row.maxEliteFights)}), normalAvg=${row.avgNormalFights.toFixed(2)} (${formatRange(row.minNormalFights, row.maxNormalFights)}), bufferAvg=${row.avgBufferNodes.toFixed(2)} (${formatRange(row.minBufferNodes, row.maxBufferNodes)}), maxBattleStreak=${row.maxBattleStreak}, 0/1/2+elite=${row.zeroEliteRoutes}/${row.oneEliteRoutes}/${row.twoPlusEliteRoutes}`,
+    );
+  }
   console.log(`- Act1 实际 normal attempts/run: avg=${report.avgObservedAct1NormalAttempts.toFixed(2)}`);
   console.log(
     `- 首精英回归: firstEliteAttempts=${report.firstEliteRegression.attempts}, firstEliteWin=${formatPercent(report.firstEliteRegression.winRate)} (${report.firstEliteRegression.wins}/${report.firstEliteRegression.attempts}), avgDeckSize=${report.firstEliteRegression.avgDeckSizeAtFirstElite.toFixed(2)}, avgNormalBefore=${report.firstEliteRegression.avgNormalFightsBeforeFirstElite.toFixed(2)}`,
@@ -561,6 +573,16 @@ function printSummary(): void {
       for (const { policyId, merged } of byAct2Entry) {
         const rate = merged.totalRuns > 0 ? merged.enteredAct2Count / merged.totalRuns : 0;
         console.log(`- ${personaName(policyId)} (${policyId}): act2EntryRate=${formatPercent(rate)} (${merged.enteredAct2Count}/${merged.totalRuns})`);
+      }
+      console.log('');
+      console.log('=== debt_monk 首精英按 persona 拆分 ===');
+      for (const { policyId, merged } of personaRows) {
+        const row = merged.firstEliteRegression.byMonsterId.act1_debt_monk;
+        if (!row) {
+          console.log(`- ${personaName(policyId)} (${policyId}): attempts=0`);
+          continue;
+        }
+        console.log(`- ${personaName(policyId)} (${policyId}): attempts=${row.attempts}, wins=${row.wins}, winRate=${formatPercent(row.winRate)}`);
       }
       console.log('');
     }

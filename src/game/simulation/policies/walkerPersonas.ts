@@ -384,6 +384,32 @@ function chooseNodeByPriority(ctx: SimulationMapContext, priority: Record<string
     })[0]!.id;
 }
 
+function chooseNodeByRouteSafety(
+  ctx: SimulationMapContext,
+  persona: PersonaStyle,
+): string {
+  const typeScoreByPersona: Record<PersonaStyle, Partial<Record<string, number>>> = {
+    guard: { boss: -100, rest: 0, shop: 1, battle: 2, event: 3, treasure: 4, elite: 9 },
+    burst: { boss: -100, battle: 1, shop: 2, event: 3, elite: 4, treasure: 5, rest: 6 },
+    mixed: { boss: -100, rest: 0, battle: 1, shop: 2, event: 3, treasure: 4, elite: 8 },
+  };
+  const biasScoreByPersona = {
+    guard: { safe: -5, balance: 0, risk: 6 },
+    burst: { safe: -1, balance: -3, risk: 2 },
+    mixed: { safe: -4, balance: 0, risk: 5 },
+  } satisfies Record<PersonaStyle, Record<'safe' | 'balance' | 'risk', number>>;
+  const typeScore = typeScoreByPersona[persona];
+  const biasScore = biasScoreByPersona[persona];
+
+  return [...ctx.nextNodes]
+    .sort((a, b) => {
+      const scoreA = (typeScore[a.type] ?? 9) + biasScore[a.routeBias ?? 'balance'];
+      const scoreB = (typeScore[b.type] ?? 9) + biasScore[b.routeBias ?? 'balance'];
+      if (scoreA !== scoreB) return scoreA - scoreB;
+      return a.y - b.y;
+    })[0]!.id;
+}
+
 function chooseRouteReward(
   ctx: SimulationRewardContext,
   favoredCards: Set<string>,
@@ -603,6 +629,7 @@ function createWalkerPersonaPolicy(id: PersonaId, mode: PersonaMode = 'default')
       id: policyId,
       chooseBattleCommand: chooseGuardBattleCommand,
       chooseMapNode(ctx) {
+        if (!preferElite) return chooseNodeByRouteSafety(ctx, 'guard');
         return chooseNodeByPriority(ctx, {
           boss: 0,
           ...(preferElite
@@ -640,6 +667,7 @@ function createWalkerPersonaPolicy(id: PersonaId, mode: PersonaMode = 'default')
       id: policyId,
       chooseBattleCommand: chooseBurstBattleCommand,
       chooseMapNode(ctx) {
+        if (!preferElite) return chooseNodeByRouteSafety(ctx, 'burst');
         return chooseNodeByPriority(ctx, {
           boss: 0,
           elite: 1,
@@ -677,6 +705,7 @@ function createWalkerPersonaPolicy(id: PersonaId, mode: PersonaMode = 'default')
     id: policyId,
     chooseBattleCommand: chooseMixedBattleCommand,
     chooseMapNode(ctx) {
+      if (!preferElite) return chooseNodeByRouteSafety(ctx, 'mixed');
       return chooseNodeByPriority(ctx, {
         boss: 0,
         ...(preferElite
