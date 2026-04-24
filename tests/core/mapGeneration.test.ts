@@ -17,6 +17,16 @@ function maxGapBetweenDepths(depths: number[], endDepth: number): number {
 }
 
 describe('core/mapGeneration', () => {
+  test('Act1 缩短为 14 层，Boss 前固定休息点在 13 层', () => {
+    expect(actFloorCount(1)).toBe(14);
+    const nodes = Object.values(buildActNodes(1, 19));
+
+    expect(nodes.filter((node) => node.depth === 13)).toHaveLength(1);
+    expect(nodes.filter((node) => node.depth === 13).every((node) => node.type === 'rest')).toBe(true);
+    expect(nodes.filter((node) => node.depth === 14)).toHaveLength(1);
+    expect(nodes.filter((node) => node.depth === 14).every((node) => node.type === 'boss')).toBe(true);
+  });
+
   test('首步至少分出三路，且非营地节点的出边不超过三条', () => {
     for (const act of ACTS) {
       for (const seed of SAMPLE_SEEDS) {
@@ -51,7 +61,7 @@ describe('core/mapGeneration', () => {
         const shopDepths = nodes.filter((node) => node.type === 'shop').map((node) => node.depth).sort((a, b) => a - b);
         const restDepths = nodes.filter((node) => node.type === 'rest').map((node) => node.depth).sort((a, b) => a - b);
 
-        expect(shopDepths.length).toBeGreaterThanOrEqual(2);
+        expect(shopDepths.length).toBeGreaterThanOrEqual(act === 1 ? 1 : 2);
         expect(restDepths.length).toBeGreaterThanOrEqual(2);
         expect(maxGapBetweenDepths(shopDepths, actFloorCount(act) - 1)).toBeLessThanOrEqual(8);
         expect(maxGapBetweenDepths(restDepths, actFloorCount(act) - 1)).toBeLessThanOrEqual(8);
@@ -133,6 +143,18 @@ describe('core/mapGeneration', () => {
         );
         expect(lateNodes.some((node) => node.type === 'elite')).toBe(true);
       }
+    }
+  });
+
+  test('短 Act1 仍保留补给、事件与风险路线', () => {
+    for (const seed of SAMPLE_SEEDS) {
+      const nodes = Object.values(buildActNodes(1, seed));
+      const mutableNodes = nodes.filter((node) => node.depth > 1 && node.depth < actFloorCount(1));
+
+      expect(mutableNodes.some((node) => node.type === 'shop')).toBe(true);
+      expect(mutableNodes.some((node) => node.type === 'rest')).toBe(true);
+      expect(mutableNodes.some((node) => node.type === 'event')).toBe(true);
+      expect(mutableNodes.some((node) => node.routeBias === 'risk' && node.type === 'elite')).toBe(true);
     }
   });
 

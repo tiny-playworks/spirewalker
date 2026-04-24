@@ -42,10 +42,10 @@ describe('monster/enemyAi', () => {
     expect(computeIntentForMonster('slime_guard', 1).intent).toEqual({
       type: 'counter',
       threshold: 2,
-      damage: 5,
+      damage: 3,
     });
     expect(computeIntentForMonster('slime_shell', 0).intent).toEqual({ type: 'attack', value: 6 });
-    expect(computeIntentForMonster('slime_shell', 1).intent).toEqual({ type: 'block', value: 12 });
+    expect(computeIntentForMonster('slime_shell', 1).intent).toEqual({ type: 'block', value: 2 });
   });
 
   test('computeIntentForMonster 对未知 id 抛错', () => {
@@ -123,7 +123,7 @@ describe('monster/enemyAi', () => {
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     const m1 = run.battle!.monsters[ENEMY_UNIT_ID]!;
-    expect(m1.intent).toEqual({ type: 'counter', threshold: 2, damage: 5 });
+    expect(m1.intent).toEqual({ type: 'counter', threshold: 2, damage: 3 });
     expect(m1.aiTrace).toContain('counter');
   });
 
@@ -154,8 +154,8 @@ describe('monster/enemyAi', () => {
 
     run = engine.dispatch(run, { type: 'END_TURN' }).nextRun;
     const m1 = run.battle!.monsters[ENEMY_UNIT_ID]!;
-    expect(m1.intent).toEqual({ type: 'block', value: 12 });
-    expect(m1.aiTrace).toContain('block=12');
+    expect(m1.intent).toEqual({ type: 'block', value: 2 });
+    expect(m1.aiTrace).toContain('block=2');
   });
 
   test('Act1 Boss 定义符合新的双核压力校准', () => {

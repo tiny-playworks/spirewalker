@@ -233,7 +233,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
     role: "carry",
     hpRange: [26, 32],
     archetype: "multi_hit",
-    rotation: [multi(3, 3), atk(9)],
+    rotation: [multi(2, 3), atk(9)],
     tags: ["multi_hit", "frontload"],
   },
   {
@@ -255,7 +255,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
     role: "disruptor",
     hpRange: [34, 38],
     archetype: "disruptor",
-    rotation: [atk(6), counter(2, 5)],
+    rotation: [atk(6), counter(2, 3)],
     tags: ["resource_tax", "counter"],
   },
   {
@@ -266,7 +266,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
     role: "tank",
     hpRange: [38, 42],
     archetype: "defender",
-    rotation: [atk(6), block(12)],
+    rotation: [atk(6), block(2), atk(8), atk(8)],
     tags: ["armor", "reactive"],
   },
   {
@@ -288,7 +288,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
     role: "backliner",
     hpRange: [30, 34],
     archetype: "debuffer",
-    rotation: [debuff(STATUS_WEAK, 2), atk(8), debuff(STATUS_VULNERABLE, 2)],
+    rotation: [debuff(STATUS_WEAK, 2), atk(7), debuff(STATUS_VULNERABLE, 2)],
     tags: ["debuff", "attrition"],
   },
   {
@@ -299,7 +299,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
     role: "backliner",
     hpRange: [24, 30],
     archetype: "reactive",
-    rotation: [reactive(4), multi(4, 2), atk(8)],
+    rotation: [reactive(3), multi(4, 2), atk(8)],
     tags: ["evasive", "reactive"],
   },
   {

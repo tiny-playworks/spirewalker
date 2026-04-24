@@ -12,6 +12,8 @@ import { getEncounterById } from '@/game/core/definitions/encounters';
 import type { PressureProfile } from '@/game/core/definitions/encounters';
 import type {
   Act1FloorSegmentId,
+  Act1FirstEliteRegressionMetric,
+  Act1MapNormalFightShapeMetric,
   Act1PreBossBattleEndRecord,
   Act1PreBossDeathDetail,
   Act1PreBossLossPolicyReport,
@@ -36,11 +38,12 @@ const MAX_COMMANDS_PER_BATTLE = 1000;
 const MAX_SCREENS_PER_RUN = 800;
 const NO_PROGRESS_STATE_REPEAT_LIMIT = 12;
 const NO_PROGRESS_COMBAT_REPEAT_LIMIT = 60;
+const ACT1_FLOOR_SEGMENTS: Act1FloorSegmentId[] = ['1-5', '6-9', '10+'];
 
 function actFloorSegment(actFloor: number): Act1FloorSegmentId {
-  if (actFloor <= 7) return '1-7';
-  if (actFloor <= 13) return '8-13';
-  return '14+';
+  if (actFloor <= 5) return '1-5';
+  if (actFloor <= 9) return '6-9';
+  return '10+';
 }
 
 function pushTerminationTransition(buffer: string[], entry: string): void {
@@ -247,6 +250,13 @@ type SingleRunResult = {
   act1Death: Act1PreBossDeathDetail | null;
   hpAtBossEngage: number | null;
   maxHpAtBossEngage: number | null;
+  mapNormalFightShape: Act1MapNormalFightShapeMetric;
+  firstElite: {
+    monsterId: string | null;
+    won: boolean;
+    deckSize: number | null;
+    normalFightsBefore: number | null;
+  };
 };
 
 type ValidationInput = {
@@ -267,6 +277,59 @@ type ValidationInput = {
     totalRuns: number;
   }) => void;
 };
+
+function summarizeMapNormalFightShape(run: RunState): Act1MapNormalFightShapeMetric {
+  const start = Object.values(run.map.nodes).find((node) => node.depth === 1);
+  if (!start) {
+    return { samples: 0, avgNormalFights: 0, minNormalFights: 0, maxNormalFights: 0 };
+  }
+
+  let pathCount = 0;
+  let totalNormalFights = 0;
+  let minNormalFights = Number.POSITIVE_INFINITY;
+  let maxNormalFights = 0;
+  const stack: Array<{ nodeId: string; normalFights: number }> = [{ nodeId: start.id, normalFights: 0 }];
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    const node = run.map.nodes[current.nodeId];
+    if (!node) continue;
+    const normalFights = current.normalFights + (node.depth > 1 && node.type === 'battle' ? 1 : 0);
+    if (node.type === 'boss') {
+      pathCount += 1;
+      totalNormalFights += normalFights;
+      minNormalFights = Math.min(minNormalFights, normalFights);
+      maxNormalFights = Math.max(maxNormalFights, normalFights);
+      continue;
+    }
+    for (const nextNodeId of node.nextNodeIds) {
+      stack.push({ nodeId: nextNodeId, normalFights });
+    }
+  }
+
+  return {
+    samples: pathCount,
+    avgNormalFights: pathCount > 0 ? totalNormalFights / pathCount : 0,
+    minNormalFights: Number.isFinite(minNormalFights) ? minNormalFights : 0,
+    maxNormalFights,
+  };
+}
+
+function emptyFirstEliteRegression(): Act1FirstEliteRegressionMetric {
+  return {
+    attempts: 0,
+    wins: 0,
+    winRate: 0,
+    avgDeckSizeAtFirstElite: 0,
+    avgNormalFightsBeforeFirstElite: 0,
+    byMonsterId: {},
+  };
+}
+
+function monsterIdForEncounter(encounterId: string): string {
+  const encounter = getEncounterById(encounterId);
+  return encounter?.lineup[0]?.enemyId ?? encounterId;
+}
 
 function asPlayCardCommand(
   battle: NonNullable<RunState['battle']>,
@@ -501,6 +564,7 @@ function simulateSingleRun(
   if (run.meta.characterId !== characterId) {
     throw new Error(`unsupported character: ${run.meta.characterId}`);
   }
+  const mapNormalFightShape = summarizeMapNormalFightShape(run);
 
   let screenTransitions = 0;
   let activeBattleId: string | null = null;
@@ -512,6 +576,10 @@ function simulateSingleRun(
   let enteredAct2 = false;
   let enteredEliteBranch = false;
   let firstEliteResolved = false;
+  let firstEliteMonsterId: string | null = null;
+  let firstEliteWon = false;
+  let firstEliteDeckSize: number | null = null;
+  let firstEliteNormalFightsBefore: number | null = null;
   const act2Battles: Act2BattleRecord[] = [];
   const nodeChoices: MapNodeType[] = [];
   const act1BattleEnds: Act1PreBossBattleEndRecord[] = [];
@@ -545,6 +613,13 @@ function simulateSingleRun(
     act1Death,
     hpAtBossEngage,
     maxHpAtBossEngage,
+    mapNormalFightShape,
+    firstElite: {
+      monsterId: firstEliteMonsterId,
+      won: firstEliteWon,
+      deckSize: firstEliteDeckSize,
+      normalFightsBefore: firstEliteNormalFightsBefore,
+    },
   });
 
   while (screenTransitions < MAX_SCREENS_PER_RUN) {
@@ -595,6 +670,11 @@ function simulateSingleRun(
             act1BossReached = true;
             hpAtBossEngage = run.player.currentHp;
             maxHpAtBossEngage = run.player.maxHp;
+          }
+          if (run.meta.act === 1 && battle.encounter.tier === 'elite' && firstEliteMonsterId === null) {
+            firstEliteMonsterId = monsterIdForEncounter(battle.encounter.id);
+            firstEliteDeckSize = run.masterDeck.length;
+            firstEliteNormalFightsBefore = act1BattleEnds.filter((record) => record.tier === 'normal').length;
           }
           pushTerminationTransition(
             terminationTransitions,
@@ -684,6 +764,9 @@ function simulateSingleRun(
           }
           if (run.meta.act === 1 && battle.encounter.tier === 'elite') {
             firstEliteResolved = true;
+            if (monsterIdForEncounter(battle.encounter.id) === firstEliteMonsterId) {
+              firstEliteWon = true;
+            }
           }
           if (run.meta.validationSegment === 'act2_entry') {
             act2Battles.push({
@@ -854,6 +937,13 @@ function simulateSingleRun(
           act1Death: null,
           hpAtBossEngage,
           maxHpAtBossEngage,
+          mapNormalFightShape,
+          firstElite: {
+            monsterId: firstEliteMonsterId,
+            won: firstEliteWon,
+            deckSize: firstEliteDeckSize,
+            normalFightsBefore: firstEliteNormalFightsBefore,
+          },
         };
       default:
         throw new Error(`unsupported screen: ${run.screen.type}`);
@@ -868,8 +958,8 @@ function simulateSingleRun(
 }
 
 function buildAct1PreBossLossReport(details: SingleRunResult[]): Act1PreBossLossPolicyReport {
-  const deathFloorSegmentCounts: Record<Act1FloorSegmentId, number> = { '1-7': 0, '8-13': 0, '14+': 0 };
-  const deathNormalFloorSegmentCounts: Record<Act1FloorSegmentId, number> = { '1-7': 0, '8-13': 0, '14+': 0 };
+  const deathFloorSegmentCounts: Record<Act1FloorSegmentId, number> = { '1-5': 0, '6-9': 0, '10+': 0 };
+  const deathNormalFloorSegmentCounts: Record<Act1FloorSegmentId, number> = { '1-5': 0, '6-9': 0, '10+': 0 };
   const deathTierCounts: Record<'normal' | 'elite' | 'boss', number> = { normal: 0, elite: 0, boss: 0 };
   const nodeChoiceSumAtAct1CombatDeath: Partial<Record<MapNodeType, number>> = {};
   let enteredAct2Count = 0;
@@ -879,6 +969,14 @@ function buildAct1PreBossLossReport(details: SingleRunResult[]): Act1PreBossLoss
   let bossDeathWornDownCount = 0;
   let bossDeathFreshCount = 0;
   let nodeChoiceDeathSamples = 0;
+  let observedNormalAttempts = 0;
+  let mapShapeSamples = 0;
+  let mapShapeWeightedNormalFights = 0;
+  let mapShapeMinNormalFights = Number.POSITIVE_INFINITY;
+  let mapShapeMaxNormalFights = 0;
+  let firstEliteDeckSizeTotal = 0;
+  let firstEliteNormalFightsTotal = 0;
+  const firstEliteByMonster = new Map<string, { attempts: number; wins: number }>();
   const simAbortBreakdown = emptyTerminationBreakdown();
   const nonBattleEndBreakdown = emptyTerminationBreakdown();
 
@@ -903,12 +1001,30 @@ function buildAct1PreBossLossReport(details: SingleRunResult[]): Act1PreBossLoss
     totalHpLoss: number;
     totalTurns: number;
   }> = {
-    '1-7': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
-    '8-13': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
-    '14+': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
+    '1-5': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
+    '6-9': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
+    '10+': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
   };
 
   for (const detail of details) {
+    observedNormalAttempts += detail.act1BattleEnds.filter((record) => record.tier === 'normal').length;
+    if (detail.act1Death?.kind === 'act1_battle' && detail.act1Death.tier === 'normal') {
+      observedNormalAttempts += 1;
+    }
+    if (detail.mapNormalFightShape.samples > 0) {
+      mapShapeSamples += detail.mapNormalFightShape.samples;
+      mapShapeWeightedNormalFights += detail.mapNormalFightShape.avgNormalFights * detail.mapNormalFightShape.samples;
+      mapShapeMinNormalFights = Math.min(mapShapeMinNormalFights, detail.mapNormalFightShape.minNormalFights);
+      mapShapeMaxNormalFights = Math.max(mapShapeMaxNormalFights, detail.mapNormalFightShape.maxNormalFights);
+    }
+    if (detail.firstElite.monsterId) {
+      const row = firstEliteByMonster.get(detail.firstElite.monsterId) ?? { attempts: 0, wins: 0 };
+      row.attempts += 1;
+      if (detail.firstElite.won) row.wins += 1;
+      firstEliteByMonster.set(detail.firstElite.monsterId, row);
+      firstEliteDeckSizeTotal += detail.firstElite.deckSize ?? 0;
+      firstEliteNormalFightsTotal += detail.firstElite.normalFightsBefore ?? 0;
+    }
     if (detail.enteredAct2) {
       enteredAct2Count += 1;
       continue;
@@ -995,10 +1111,34 @@ function buildAct1PreBossLossReport(details: SingleRunResult[]): Act1PreBossLoss
       winRate: row.attempts > 0 ? row.wins / row.attempts : 0,
     }))
     .sort((left, right) => right.totalHpLoss - left.totalHpLoss || right.attempts - left.attempts);
+  const firstEliteAttempts = [...firstEliteByMonster.values()].reduce((sum, row) => sum + row.attempts, 0);
+  const firstEliteWins = [...firstEliteByMonster.values()].reduce((sum, row) => sum + row.wins, 0);
+  const firstEliteRegression: Act1FirstEliteRegressionMetric = {
+    attempts: firstEliteAttempts,
+    wins: firstEliteWins,
+    winRate: firstEliteAttempts > 0 ? firstEliteWins / firstEliteAttempts : 0,
+    avgDeckSizeAtFirstElite: firstEliteAttempts > 0 ? firstEliteDeckSizeTotal / firstEliteAttempts : 0,
+    avgNormalFightsBeforeFirstElite: firstEliteAttempts > 0 ? firstEliteNormalFightsTotal / firstEliteAttempts : 0,
+    byMonsterId: Object.fromEntries([...firstEliteByMonster.entries()]
+      .sort((left, right) => left[0].localeCompare(right[0]))
+      .map(([monsterId, row]) => [monsterId, {
+        attempts: row.attempts,
+        wins: row.wins,
+        winRate: row.attempts > 0 ? row.wins / row.attempts : 0,
+      }])),
+  };
 
   return {
     totalRuns: details.length,
     enteredAct2Count,
+    mapNormalFightShape: {
+      samples: mapShapeSamples,
+      avgNormalFights: mapShapeSamples > 0 ? mapShapeWeightedNormalFights / mapShapeSamples : 0,
+      minNormalFights: Number.isFinite(mapShapeMinNormalFights) ? mapShapeMinNormalFights : 0,
+      maxNormalFights: mapShapeMaxNormalFights,
+    },
+    avgObservedAct1NormalAttempts: details.length > 0 ? observedNormalAttempts / details.length : 0,
+    firstEliteRegression,
     act1CombatGameOverCount,
     simAbortCount,
     nonBattleEndCount,
@@ -1026,31 +1166,56 @@ export function mergeAct1PreBossLossReports(
   const merged: Act1PreBossLossPolicyReport = {
     totalRuns: reports.reduce((sum, item) => sum + item.totalRuns, 0),
     enteredAct2Count: reports.reduce((sum, item) => sum + item.enteredAct2Count, 0),
+    mapNormalFightShape: { samples: 0, avgNormalFights: 0, minNormalFights: 0, maxNormalFights: 0 },
+    avgObservedAct1NormalAttempts: 0,
+    firstEliteRegression: emptyFirstEliteRegression(),
     act1CombatGameOverCount: reports.reduce((sum, item) => sum + item.act1CombatGameOverCount, 0),
     simAbortCount: reports.reduce((sum, item) => sum + item.simAbortCount, 0),
     nonBattleEndCount: reports.reduce((sum, item) => sum + item.nonBattleEndCount, 0),
     deathTierCounts: { normal: 0, elite: 0, boss: 0 },
-    deathFloorSegmentCounts: { '1-7': 0, '8-13': 0, '14+': 0 },
-    deathNormalFloorSegmentCounts: { '1-7': 0, '8-13': 0, '14+': 0 },
+    deathFloorSegmentCounts: { '1-5': 0, '6-9': 0, '10+': 0 },
+    deathNormalFloorSegmentCounts: { '1-5': 0, '6-9': 0, '10+': 0 },
     bossDeathWornDownCount: reports.reduce((sum, item) => sum + item.bossDeathWornDownCount, 0),
     bossDeathFreshCount: reports.reduce((sum, item) => sum + item.bossDeathFreshCount, 0),
     normalEncounterAgg: [],
     normalProfileAgg: {},
     normalFloorSegmentAgg: {
-      '1-7': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
-      '8-13': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
-      '14+': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
+      '1-5': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
+      '6-9': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
+      '10+': { battles: 0, wins: 0, totalHpLoss: 0, totalTurns: 0 },
     },
     nodeChoiceSumAtAct1CombatDeath: {},
     nodeChoiceDeathSamples: reports.reduce((sum, item) => sum + item.nodeChoiceDeathSamples, 0),
     simAbortBreakdown: emptyTerminationBreakdown(),
     nonBattleEndBreakdown: emptyTerminationBreakdown(),
   };
+  let mapShapeWeightedNormalFights = 0;
+  let mapShapeMinNormalFights = Number.POSITIVE_INFINITY;
+  let mapShapeMaxNormalFights = 0;
+  let observedNormalAttemptsTotal = 0;
+  let firstEliteDeckSizeTotal = 0;
+  let firstEliteNormalFightsTotal = 0;
+  const firstEliteByMonster = new Map<string, { attempts: number; wins: number }>();
   for (const item of reports) {
+    merged.mapNormalFightShape.samples += item.mapNormalFightShape.samples;
+    mapShapeWeightedNormalFights += item.mapNormalFightShape.avgNormalFights * item.mapNormalFightShape.samples;
+    if (item.mapNormalFightShape.samples > 0) {
+      mapShapeMinNormalFights = Math.min(mapShapeMinNormalFights, item.mapNormalFightShape.minNormalFights);
+      mapShapeMaxNormalFights = Math.max(mapShapeMaxNormalFights, item.mapNormalFightShape.maxNormalFights);
+    }
+    observedNormalAttemptsTotal += item.avgObservedAct1NormalAttempts * item.totalRuns;
+    firstEliteDeckSizeTotal += item.firstEliteRegression.avgDeckSizeAtFirstElite * item.firstEliteRegression.attempts;
+    firstEliteNormalFightsTotal += item.firstEliteRegression.avgNormalFightsBeforeFirstElite * item.firstEliteRegression.attempts;
+    for (const [monsterId, row] of Object.entries(item.firstEliteRegression.byMonsterId)) {
+      const current = firstEliteByMonster.get(monsterId) ?? { attempts: 0, wins: 0 };
+      current.attempts += row.attempts;
+      current.wins += row.wins;
+      firstEliteByMonster.set(monsterId, current);
+    }
     for (const tier of ['normal', 'elite', 'boss'] as const) {
       merged.deathTierCounts[tier] += item.deathTierCounts[tier];
     }
-    for (const seg of ['1-7', '8-13', '14+'] as const) {
+    for (const seg of ACT1_FLOOR_SEGMENTS) {
       merged.deathFloorSegmentCounts[seg] += item.deathFloorSegmentCounts[seg];
       merged.deathNormalFloorSegmentCounts[seg] += item.deathNormalFloorSegmentCounts[seg];
       merged.normalFloorSegmentAgg[seg].battles += item.normalFloorSegmentAgg[seg].battles;
@@ -1081,6 +1246,32 @@ export function mergeAct1PreBossLossReports(
       item.nonBattleEndBreakdown,
     );
   }
+  merged.mapNormalFightShape.avgNormalFights = merged.mapNormalFightShape.samples > 0
+    ? mapShapeWeightedNormalFights / merged.mapNormalFightShape.samples
+    : 0;
+  merged.mapNormalFightShape.minNormalFights = Number.isFinite(mapShapeMinNormalFights)
+    ? mapShapeMinNormalFights
+    : 0;
+  merged.mapNormalFightShape.maxNormalFights = mapShapeMaxNormalFights;
+  merged.avgObservedAct1NormalAttempts = merged.totalRuns > 0
+    ? observedNormalAttemptsTotal / merged.totalRuns
+    : 0;
+  const firstEliteAttempts = [...firstEliteByMonster.values()].reduce((sum, row) => sum + row.attempts, 0);
+  const firstEliteWins = [...firstEliteByMonster.values()].reduce((sum, row) => sum + row.wins, 0);
+  merged.firstEliteRegression = {
+    attempts: firstEliteAttempts,
+    wins: firstEliteWins,
+    winRate: firstEliteAttempts > 0 ? firstEliteWins / firstEliteAttempts : 0,
+    avgDeckSizeAtFirstElite: firstEliteAttempts > 0 ? firstEliteDeckSizeTotal / firstEliteAttempts : 0,
+    avgNormalFightsBeforeFirstElite: firstEliteAttempts > 0 ? firstEliteNormalFightsTotal / firstEliteAttempts : 0,
+    byMonsterId: Object.fromEntries([...firstEliteByMonster.entries()]
+      .sort((left, right) => left[0].localeCompare(right[0]))
+      .map(([monsterId, row]) => [monsterId, {
+        attempts: row.attempts,
+        wins: row.wins,
+        winRate: row.attempts > 0 ? row.wins / row.attempts : 0,
+      }])),
+  };
 
   const encMap = new Map<string, {
     pressureProfile: PressureProfile | 'unknown';

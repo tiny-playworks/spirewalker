@@ -52,7 +52,27 @@ export type Act2EntryPolicySummary = {
 };
 
 /** Act1 地图层数分段（用于 Boss 前漏斗观测） */
-export type Act1FloorSegmentId = '1-7' | '8-13' | '14+';
+export type Act1FloorSegmentId = '1-5' | '6-9' | '10+';
+
+export type Act1MapNormalFightShapeMetric = {
+  samples: number;
+  avgNormalFights: number;
+  minNormalFights: number;
+  maxNormalFights: number;
+};
+
+export type Act1FirstEliteRegressionMetric = {
+  attempts: number;
+  wins: number;
+  winRate: number;
+  avgDeckSizeAtFirstElite: number;
+  avgNormalFightsBeforeFirstElite: number;
+  byMonsterId: Record<string, {
+    attempts: number;
+    wins: number;
+    winRate: number;
+  }>;
+};
 
 /** 单场 Act1 战斗结束（仅统计 act===1 的战斗，含胜/负结算前记录胜场；败场仅体现在 death） */
 export type Act1PreBossBattleEndRecord = {
@@ -157,6 +177,12 @@ export type Act1PreBossLossPolicyReport = {
   totalRuns: number;
   /** 进入 Act2 的 run 数 */
   enteredAct2Count: number;
+  /** 地图形态：完整路线可见普通战数量 */
+  mapNormalFightShape: Act1MapNormalFightShapeMetric;
+  /** 实际 run 中 Act1 normal attempts 均值，含死于 normal 的末战 */
+  avgObservedAct1NormalAttempts: number;
+  /** 首精英环境回归指标 */
+  firstEliteRegression: Act1FirstEliteRegressionMetric;
   /** 自然 game_over 于 Act1 战斗 */
   act1CombatGameOverCount: number;
   simAbortCount: number;

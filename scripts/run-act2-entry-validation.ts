@@ -2,7 +2,7 @@ import {
   mergeAct1PreBossLossReports,
   runAct2EntryValidation,
 } from '../src/game/simulation/act2EntryValidation';
-import type { Act1PreBossLossPolicyReport, Act1TerminationPolicyBreakdown } from '../src/game/simulation/types';
+import type { Act1FloorSegmentId, Act1PreBossLossPolicyReport, Act1TerminationPolicyBreakdown } from '../src/game/simulation/types';
 import { walkerBasePolicies } from '../src/game/simulation/policies/walkerPersonas';
 
 type CliOptions = {
@@ -260,16 +260,18 @@ function printPolicySummary(summary: AggregatedPolicySummary, printEncounterBrea
   console.log('');
 }
 
-const FLOOR_SEG_LABEL: Record<'1-7' | '8-13' | '14+', string> = {
-  '1-7': '1-7',
-  '8-13': '8-13',
-  '14+': '14-Boss 前',
+const FLOOR_SEGMENTS: Act1FloorSegmentId[] = ['1-5', '6-9', '10+'];
+
+const FLOOR_SEG_LABEL: Record<Act1FloorSegmentId, string> = {
+  '1-5': '1-5',
+  '6-9': '6-9',
+  '10+': '10-Boss 前',
 };
 
 const TERM_FLOOR_LABEL: Record<string, string> = {
-  '1-7': '1-7',
-  '8-13': '8-13',
-  '14+': '14-Boss 前',
+  '1-5': '1-5',
+  '6-9': '6-9',
+  '10+': '10-Boss 前',
   boss: 'Boss',
   act2_plus: 'Act2+',
 };
@@ -374,9 +376,23 @@ function printAct1EndgameDiagnosticsConclusion(report: Act1PreBossLossPolicyRepo
 }
 
 function printAct1PreBossLossBlock(title: string, report: Act1PreBossLossPolicyReport): void {
-  const segs: Array<keyof Act1PreBossLossPolicyReport['deathFloorSegmentCounts']> = ['1-7', '8-13', '14+'];
+  const segs = FLOOR_SEGMENTS;
   console.log(title);
   console.log(`- totalRuns=${report.totalRuns}, enteredAct2=${report.enteredAct2Count}, act1CombatGameOver=${report.act1CombatGameOverCount}, simAbort=${report.simAbortCount}, nonBattleEnd=${report.nonBattleEndCount}`);
+  console.log(
+    `- Act1 地图普通战路径形态: pathSamples=${report.mapNormalFightShape.samples}, avgNormalFights=${report.mapNormalFightShape.avgNormalFights.toFixed(2)}, range=${report.mapNormalFightShape.minNormalFights}-${report.mapNormalFightShape.maxNormalFights}`,
+  );
+  console.log(`- Act1 实际 normal attempts/run: avg=${report.avgObservedAct1NormalAttempts.toFixed(2)}`);
+  console.log(
+    `- 首精英回归: firstEliteAttempts=${report.firstEliteRegression.attempts}, firstEliteWin=${formatPercent(report.firstEliteRegression.winRate)} (${report.firstEliteRegression.wins}/${report.firstEliteRegression.attempts}), avgDeckSize=${report.firstEliteRegression.avgDeckSizeAtFirstElite.toFixed(2)}, avgNormalBefore=${report.firstEliteRegression.avgNormalFightsBeforeFirstElite.toFixed(2)}`,
+  );
+  const firstEliteMonsterRows = Object.entries(report.firstEliteRegression.byMonsterId);
+  if (firstEliteMonsterRows.length > 0) {
+    console.log('- 首精英按 monsterId 拆分:');
+    for (const [monsterId, row] of firstEliteMonsterRows) {
+      console.log(`  - ${monsterId}: attempts=${row.attempts}, wins=${row.wins}, winRate=${formatPercent(row.winRate)}`);
+    }
+  }
   console.log(`- death tier (act1 combat): normal=${report.deathTierCounts.normal}, elite=${report.deathTierCounts.elite}, boss=${report.deathTierCounts.boss}`);
   const combatDeaths = report.deathTierCounts.normal + report.deathTierCounts.elite + report.deathTierCounts.boss;
   const directNormalElite = report.deathTierCounts.normal + report.deathTierCounts.elite;
@@ -424,7 +440,7 @@ function printAct1PreBossLossBlock(title: string, report: Act1PreBossLossPolicyR
     console.log('- Act1 战斗致死 run 的 map 节点选择累计: 无样本');
   }
 
-  const combatDeathTotal = report.deathFloorSegmentCounts['1-7'] + report.deathFloorSegmentCounts['8-13'] + report.deathFloorSegmentCounts['14+'];
+  const combatDeathTotal = segs.reduce((sum, seg) => sum + report.deathFloorSegmentCounts[seg], 0);
   const topSeg = [...segs].sort((a, b) => report.deathFloorSegmentCounts[b] - report.deathFloorSegmentCounts[a])[0]!;
   const topSegCount = report.deathFloorSegmentCounts[topSeg];
   const topEncounter = report.normalEncounterAgg[0];

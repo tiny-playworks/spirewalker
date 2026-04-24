@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createMapRun } from '@/game/core/engine/createMapRun';
+import { actFloorCount, createMapRun } from '@/game/core/engine/createMapRun';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
@@ -60,6 +60,7 @@ export function MapPage() {
   const curId = map.currentNodeId;
   const locationName = cur && curId ? nodeTitle(cur) : '—';
   const character = getCharacterDefinition(meta.characterId);
+  const isBossRestNode = cur?.type === 'rest' && meta.actFloor === actFloorCount(meta.act) - 1;
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
@@ -139,7 +140,7 @@ export function MapPage() {
               <span className={styles.hudCurrentKey}>当前位置</span>
               <span className={styles.hudCurrentValue}>{locationName}</span>
               <span className={styles.hudCurrentSub}>
-                {meta.actFloor === 19 || meta.actFloor === 23 || meta.actFloor === 25
+                {isBossRestNode
                   ? '下一层就是 Boss，先决定要不要在这里修整。'
                   : '发光营地就是你所在的位置。'}
               </span>
@@ -207,7 +208,7 @@ export function MapPage() {
               <span className={styles.objectiveKey}>当前位置</span>
               <strong className={styles.objectiveValue}>{locationName}</strong>
               <span className={styles.objectiveText}>
-                {meta.actFloor === 19 || meta.actFloor === 23 || meta.actFloor === 25
+                {isBossRestNode
                   ? '下一层就是 Boss，先决定要不要在这里修整。'
                   : '发光营地就是你所在的位置。'}
               </span>

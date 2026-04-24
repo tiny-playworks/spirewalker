@@ -7,7 +7,7 @@ export const BURST_ALTAR_EVENT_ID = 'burst_altar';
 export const PURGING_POOL_EVENT_ID = 'purging_pool';
 
 export const ACT_FLOOR_COUNTS: Record<MapAct, number> = {
-  1: 20,
+  1: 14,
   2: 24,
   3: 26,
 };
@@ -366,9 +366,13 @@ function ensureLateRiskPeak(nodes: MapNode[], totalDepth: number): void {
   const startDepth = lateRiskStartDepth(totalDepth);
   const endDepth = totalDepth - 2;
   const lateNodes = nodes.filter((node) => node.depth >= startDepth && node.depth <= endDepth);
-  if (lateNodes.some((node) => node.type === 'elite')) return;
+  const existingElite = lateNodes.find((node) => node.type === 'elite');
+  if (existingElite) {
+    existingElite.routeBias = 'risk';
+    return;
+  }
   const targetDepth = Math.max(startDepth, totalDepth - 4);
-  const candidate = [...lateNodes]
+  const candidate = ([...lateNodes]
     .filter((node) => node.type !== 'rest' && node.type !== 'shop' && node.type !== 'treasure')
     .sort((a, b) => {
       const biasScore =
@@ -376,9 +380,22 @@ function ensureLateRiskPeak(nodes: MapNode[], totalDepth: number): void {
         ['risk', 'balance', 'safe'].indexOf(b.routeBias ?? 'balance');
       if (biasScore !== 0) return biasScore;
       return Math.abs(a.depth - targetDepth) - Math.abs(b.depth - targetDepth);
-    })[0];
+    })[0])
+    ?? [...lateNodes]
+      .filter((node) => node.type !== 'rest')
+      .sort((a, b) => {
+        const biasScore =
+          ['risk', 'balance', 'safe'].indexOf(a.routeBias ?? 'balance') -
+          ['risk', 'balance', 'safe'].indexOf(b.routeBias ?? 'balance');
+        if (biasScore !== 0) return biasScore;
+        return Math.abs(a.depth - targetDepth) - Math.abs(b.depth - targetDepth);
+      })[0]
+    ?? [...lateNodes].sort((a, b) =>
+      Math.abs(a.depth - targetDepth) - Math.abs(b.depth - targetDepth),
+    )[0];
   if (!candidate) return;
   candidate.type = 'elite';
+  candidate.routeBias = 'risk';
 }
 
 function assignTreasureNode(allNodes: MapNode[], totalDepth: number): void {
