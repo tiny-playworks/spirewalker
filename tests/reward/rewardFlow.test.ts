@@ -24,10 +24,25 @@ describe('reward/rewardFlow', () => {
     expect(run.screen.type).toBe('map');
   });
 
-  test('v0.5 两条构筑都满足 2 张核心牌 + 1 个核心遗物', () => {
+  test('三条流派构筑都满足 2 张核心牌 + 1 个核心遗物', () => {
     const walker = getCharacterDefinition('walker');
-    expect(walker.buildBranches).toHaveLength(2);
-    expect(walker.rewardRelicPool).toEqual(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']);
+    expect(walker.buildBranches.map((branch) => branch.id)).toEqual([
+      'guard_line',
+      'burst_line',
+      'mixed_line',
+    ]);
+    expect(walker.rewardRelicPool).toEqual([
+      'guard_knot',
+      'still_core',
+      'burst_emblem',
+      'quick_fuse',
+      'blaze_core',
+      'fractured_blade',
+      'iron_heart',
+      'counter_sigil',
+      'twin_core',
+      'harmony_emblem',
+    ]);
     for (const branch of walker.buildBranches) {
       expect(branch.coreCardIds).toHaveLength(2);
       expect(walker.rewardCardPool).toContain(branch.coreCardIds[0]);

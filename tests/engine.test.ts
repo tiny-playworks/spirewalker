@@ -29,7 +29,7 @@ import {
   SURVEY_FIELD,
   TEMPO_GUARD,
 } from '@/game/core/definitions/cards/starter';
-import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
+import { COMMON_RELIC_POOL, RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { resolveEncounterTemplate } from '@/game/core/definitions/encounters';
 import {
   STATUS_MOMENTUM,
@@ -1379,7 +1379,7 @@ describe('GameEngine 地图', () => {
     expect(run.meta.gold).toBe(56);
     expect(run.meta.potions.length).toBe(bossPotionsBefore + 1);
     expect(run.meta.relics).toContain(relicId);
-    expect(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']).toContain(relicId);
+    expect(COMMON_RELIC_POOL as readonly string[]).toContain(relicId);
     expect(run.player.maxHp).toBe(50);
     expect(run.player.currentHp).toBe(27);
     expect(run.masterDeck.length).toBe(deckSizeBefore + 1);
@@ -1592,7 +1592,7 @@ describe('GameEngine 地图', () => {
     expect(run.masterDeck.filter((id) => id === 'defend').length).toBe(defendBefore - 1);
   });
 
-  test('商店购买遗物会加入持有列表，并落在双核遗物池内', () => {
+  test('商店购买遗物会加入持有列表，并落在正式遗物池内', () => {
     const engine = new GameEngine();
     let run = createMapRun(31);
     const shopId = findNodeId(run, (n) => n.type === 'shop' && n.floor === 1);
@@ -1602,7 +1602,7 @@ describe('GameEngine 地图', () => {
     const offer = run.shop!.relics[0]!;
     run = engine.dispatch(run, { type: 'BUY_SHOP_RELIC', relicId: offer.relicId }).nextRun;
     expect(run.meta.relics).toContain(offer.relicId);
-    expect(['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse']).toContain(offer.relicId);
+    expect(COMMON_RELIC_POOL as readonly string[]).toContain(offer.relicId);
   });
 
   test('商店删牌扣费且遵守牌组下限', () => {

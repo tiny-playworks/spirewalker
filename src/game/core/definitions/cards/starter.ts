@@ -677,6 +677,10 @@ export const MOMENTUM_SETUP_CARD_IDS = [
   SOFT_STEP.id,
   HELD_BREATH.id,
   BREAK_OPENING.id,
+  FORTIFY.id,
+  PATIENCE_STANCE.id,
+  FLOW_SHIFT.id,
+  OVERLOAD.id,
 ] as const;
 
 export const MOMENTUM_PAYOFF_CARD_IDS = [
@@ -688,6 +692,8 @@ export const MOMENTUM_PAYOFF_CARD_IDS = [
   QUICK_RELEASE.id,
   FOLLOW_THROUGH.id,
   FULL_RELEASE.id,
+  BLOOD_RUSH.id,
+  BALANCE_EDGE.id,
 ] as const;
 
 export const TEMPO_RECOVERY_CARD_IDS = [
@@ -700,6 +706,7 @@ export const TEMPO_RECOVERY_CARD_IDS = [
   ANCHOR_SLASH.id,
   STABLE_MIND.id,
   GUARD_STRIKE.id,
+  FLOW_SHIFT.id,
 ] as const;
 
 export const DEFENSE_LINE_CARD_IDS = [

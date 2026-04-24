@@ -102,7 +102,18 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
 export const MOMENTUM_BURST_RELIC_IDS = ['burst_emblem', 'quick_fuse'] as const;
 export const MOMENTUM_FLOW_RELIC_IDS = ['guard_knot', 'still_core'] as const;
 export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'still_core'] as const;
-export const COMMON_RELIC_POOL = ['guard_knot', 'still_core', 'burst_emblem', 'quick_fuse'] as const;
+export const COMMON_RELIC_POOL = [
+  'guard_knot',
+  'still_core',
+  'burst_emblem',
+  'quick_fuse',
+  'blaze_core',
+  'fractured_blade',
+  'iron_heart',
+  'counter_sigil',
+  'twin_core',
+  'harmony_emblem',
+] as const;
 
 /** Boss 战后随机其一（已拥有的不再出现） */
 const BOSS_RELIC_POOL = [...COMMON_RELIC_POOL] as const;

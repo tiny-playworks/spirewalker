@@ -16,6 +16,12 @@ const SHOP_RELIC_POOL = [
   'still_core',
   'burst_emblem',
   'quick_fuse',
+  'blaze_core',
+  'fractured_blade',
+  'iron_heart',
+  'counter_sigil',
+  'twin_core',
+  'harmony_emblem',
 ] as const;
 
 const SHOP_POTION_POOL = ['stillwater_tonic', 'flash_powder'] as const;

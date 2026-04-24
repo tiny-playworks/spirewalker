@@ -12,10 +12,39 @@ export type RewardEncounterTier = 'normal' | 'elite' | 'boss' | 'treasure';
 const ANCHOR_SLASH_ID = 'anchor_slash';
 
 const ACT_CARD_POOLS = {
-  early: ['prime_rhythm', 'brace_rhythm', 'soft_step', 'held_breath', 'survey_field', 'measured_rest'],
-  core: ['momentum', 'tempo_guard', 'anchored_breath', 'patient_cut', 'guard_strike', 'anchor_slash', 'stable_mind', 'break_opening', 'quick_release'],
-  amplifier: ['burst_strike', 'snap_strike', 'follow_through', 'cash_flow', 'release_flow'],
-  finisher: ['patient_cut', 'burst_strike', 'follow_through', 'full_release', 'cash_flow'],
+  early: [
+    'prime_rhythm',
+    'brace_rhythm',
+    'soft_step',
+    'held_breath',
+    'survey_field',
+    'measured_rest',
+    'fortify',
+    'overload',
+    'flow_shift',
+  ],
+  core: [
+    'momentum',
+    'tempo_guard',
+    'anchored_breath',
+    'patient_cut',
+    'guard_strike',
+    'anchor_slash',
+    'stable_mind',
+    'break_opening',
+    'quick_release',
+    'patience_stance',
+    'balance_edge',
+  ],
+  amplifier: [
+    'burst_strike',
+    'snap_strike',
+    'follow_through',
+    'cash_flow',
+    'release_flow',
+    'blood_rush',
+  ],
+  finisher: ['patient_cut', 'burst_strike', 'follow_through', 'full_release', 'cash_flow', 'blood_rush'],
 } as const;
 
 function pickOne<T>(pool: readonly T[], random: () => number): T {
