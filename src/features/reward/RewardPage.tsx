@@ -64,7 +64,10 @@ export function RewardPage() {
             return (
               <p key={r.relicId} className={subscreenStyles.bannerLine}>
                 <span className={cx(subscreenStyles.bannerTag, subscreenStyles.bannerTagTone.reward)}>遗物</span>
-                <strong>{def.name}</strong> — {def.description}
+                <strong>
+                  <ArchetypeDot relicId={r.relicId} />
+                  {def.name}
+                </strong> — {def.description}
               </p>
             );
           })}

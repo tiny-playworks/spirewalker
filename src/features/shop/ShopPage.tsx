@@ -83,6 +83,7 @@ export function ShopPage() {
                     disabled={!canBuy}
                     onClick={() => dispatchCommand({ type: 'BUY_SHOP_RELIC', relicId: o.relicId })}
                   >
+                    <ArchetypeDot relicId={o.relicId} />
                     {def?.name ?? o.relicId} — {o.price} 金
                     <span className={subscreenStyles.choiceDesc}>{def?.description ?? ''}</span>
                   </button>

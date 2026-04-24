@@ -2,6 +2,8 @@ import { describe, expect, test } from '@rstest/core';
 import '@/game/core/definitions/cards/upgradeRules';
 import {
   getCardArchetype,
+  getDominantArchetype,
+  getRelicArchetype,
   summarizeDeckArchetypes,
 } from '@/game/core/definitions/cards/archetypes';
 
@@ -54,6 +56,41 @@ describe('card archetypes', () => {
     expect(getCardArchetype('burn_edge')).toBe('neutral');
     expect(getCardArchetype('clear_mind')).toBe('neutral');
     expect(getCardArchetype('junk_sludge')).toBe('neutral');
+  });
+
+  test('遗物流派映射覆盖所有已登记遗物', () => {
+    expect(getRelicArchetype('burst_emblem')).toBe('burst');
+    expect(getRelicArchetype('insight_lens')).toBe('burst');
+    expect(getRelicArchetype('quick_fuse')).toBe('burst');
+    expect(getRelicArchetype('sighted_edge')).toBe('burst');
+    expect(getRelicArchetype('guard_knot')).toBe('guard');
+    expect(getRelicArchetype('still_core')).toBe('guard');
+    expect(getRelicArchetype('soft_guard')).toBe('guard');
+    expect(getRelicArchetype('wind_chime')).toBe('mixed');
+    expect(getRelicArchetype('vajra')).toBe('neutral');
+    expect(getRelicArchetype('unknown_relic')).toBe('neutral');
+  });
+
+  test('getDominantArchetype：守势牌 >= 4 张且领先 2 倍以上才算形成主导', () => {
+    expect(getDominantArchetype([])).toBeNull();
+    expect(getDominantArchetype(['held_breath', 'held_breath', 'held_breath'])).toBeNull();
+    expect(
+      getDominantArchetype([
+        'held_breath', 'held_breath', 'held_breath', 'held_breath',
+      ]),
+    ).toBe('guard');
+    // 守势 4 / 爆发 3：比例不到 2 倍，不算主导
+    expect(
+      getDominantArchetype([
+        'held_breath', 'held_breath', 'held_breath', 'held_breath',
+        'burst_strike', 'burst_strike', 'burst_strike',
+      ]),
+    ).toBeNull();
+    expect(
+      getDominantArchetype([
+        'burst_strike', 'burst_strike', 'burst_strike', 'burst_strike',
+      ]),
+    ).toBe('burst');
   });
 
   test('summarizeDeckArchetypes 能正确统计牌组分布', () => {

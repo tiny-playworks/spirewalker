@@ -6,6 +6,7 @@ import { getStatusMeta } from '@/game/core/definitions/statuses';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectBattle, selectCurrentEnemyIntents, selectPlayerBattleStats } from '@/game/store/selectors/battleSelectors';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
+import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { PotionBar } from './PotionBar';
 import * as styles from './battleHud.css';
 
@@ -202,6 +203,7 @@ export function BattleHUD() {
                         className={styles.metaPill}
                         title={buildRelicTooltip(relicId)}
                       >
+                        <ArchetypeDot relicId={relicId} />
                         {def?.name ?? relicId}
                       </span>
                     );

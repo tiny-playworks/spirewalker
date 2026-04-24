@@ -39,8 +39,9 @@
 | #4 B   | `PileStack` 组件在战场底角画抽 / 弃 / 消三堆卡背 + 计数（数量为 0 时半透明）。引擎层新增 `DRAWPILE_RESHUFFLED` 事件，scene 捕获后播放弃 → 抽的飞行动画。 | `src/game/phaser/scenes/battle/PileStack.ts`、`BattleScene.ts`、`events/types.ts`、`playCard.ts`、`turnFlow.ts` |
 | #6 B   | 单位状态条 / 三堆可视化都迁到 Phaser（见上），React `BattleHUD` 保留为聚合数字视图；未来若要再把手牌搬到 Phaser，骨架已铺好。                                 | 同上                                                                                                |
 | #8 B   | 每张基础卡（含升级版）自动打 `guard / burst / mixed / neutral` 流派标签；Phaser 手牌右下画彩色圆点；React 商店 / 奖励 / 总览 / 升级对照面板统一复用 `ArchetypeDot`；总览面板新增「牌组流派分布」chip 组。 | `archetypes.ts`、`ArchetypeDot.tsx`、`BattleScene.ts`、`RunOverviewPanel.tsx`、`ShopPage.tsx`、`RewardPage.tsx`、`CardUpgradeList.tsx`、`tests/cards/archetypes.test.ts` |
+| #8 C   | 遗物同步打流派标签；商店遗物行 / 奖励遗物条 / 战斗 HUD 遗物 pill / 总览「核心遗物」与「已持有遗物」都挂 `ArchetypeDot`；奖励三选一在牌组已明显偏向一派时做权重倾斜（同派/混合 ×2、对立派 ×0.5），用 `getDominantArchetype`（守/爆 >=4 且领先 2×）作为触发门槛。覆盖 100 个 seed 的分布测试保证倾斜可复现。 | `archetypes.ts`、`generateRewardChoices.ts`、`BattleHUD.tsx`、`ShopPage.tsx`、`RewardPage.tsx`、`RunOverviewPanel.tsx`、`tests/cards/archetypes.test.ts`、`tests/reward/rewardArchetypeTilt.test.ts` |
 
-> 测试总览：本轮 rstest → 184 passed / 2 pre-existing failed（`engine.test.ts` 两条 AI 行为旧红线，和本轮无关）。
+> 测试总览：本轮 rstest → 190 passed / 0 failed（此前 `engine.test.ts` 两条 AI 红线本次同样复跑通过，可能是上轮模块加载顺序引起的偶发，需要继续观察；若后续再红再定位）。
 
 ---
 
@@ -102,9 +103,9 @@
 
 **下一轮要补的**（需要内容 / 平衡改动）：
 
-1. 给遗物也打 `archetype` 标签，商店 / 总览的遗物条同样挂上颜色标识。本轮暂未做，主要因为遗物流派归属比卡牌更模糊，需要先和策划对齐归类。
-2. 每个流派补 1~2 件"流派专属遗物"与 2 张"流派旗帜牌"（命名 / 描述明显带风格），让新玩家第一眼就能通过卡牌区分方向。
-3. `rewardResolver` 在「奖励三选一」返回前，给本局已选择流派的牌做 +10% 出现概率加权（参数可配置）。
+1. 每个流派补 1~2 件"流派专属遗物"与 2 张"流派旗帜牌"（命名 / 描述明显带风格），让新玩家第一眼就能通过卡牌区分方向。
+2. 奖励权重倾斜目前硬编码为同派 / 混合 ×2、对立派 ×0.5；等玩家数据积累后再在 `REWARD_ARCHETYPE_TILT` 这个开关上加配置面板 / 角色差异。
+3. 遗物流派归类本轮按保守口径（攻伤/消耗相关=burst，格挡/稳势相关=guard，两派都补续航=mixed）；需要和策划最终对一遍，可能有微调。
 
 ---
 
@@ -113,12 +114,12 @@
 | 任务                         | 估时         | 备注                                                 |
 | ---------------------------- | ------------ | ---------------------------------------------------- |
 | 3.1 / 3.2 已完成（#2 / #4）  | —            | 本轮已落地，见 2.2。                                  |
-| 3.4 数据层 + UI 标记         | —            | 本轮已落地，见 2.2 #8 B。                             |
+| 3.4 卡面 + 总览流派标记      | —            | 本轮已落地，见 2.2 #8 B。                             |
+| 3.4 遗物流派标签 + 权重倾斜  | —            | 本轮已落地，见 2.2 #8 C；测试覆盖分布可复现。          |
 | 3.2 手牌 → Phaser（#6 C）   | 2            | 现阶段 React 已够用，等手牌要加粒子时再切。           |
-| 3.4 遗物流派标签 + 权重倾斜  | 1            | 数据层改动小，主要是归类需和策划对齐。               |
 | 3.4 流派专属内容             | 1~2          | 需要策划定内容（遗物名/数值/剧情旗帜）。           |
 
-剩余预估：一个人日口径下 **3~4 天**能把剩余创始人反馈（#6 C / #8 遗物 + 专属内容）收完，不含美术交付。
+剩余预估：一个人日口径下 **2~3 天**能把最后一项创始人反馈（#8 流派专属内容）+ #6 C 收完，不含美术交付。
 
 ---
 

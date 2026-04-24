@@ -82,3 +82,46 @@ export function summarizeDeckArchetypes(cardIds: readonly string[]): Record<Card
   for (const id of cardIds) counts[getCardArchetype(id)] += 1;
   return counts;
 }
+
+/**
+ * 判断牌组是否已经明显倾向某一派：需要主打派 >= 4 张，且至少是另一派的 2 倍。
+ * mixed / neutral 不参与主导判定，返回 null 时上层不做任何权重倾斜。
+ */
+export function getDominantArchetype(cardIds: readonly string[]): 'guard' | 'burst' | null {
+  const counts = summarizeDeckArchetypes(cardIds);
+  const { guard, burst } = counts;
+  if (guard >= 4 && guard >= burst * 2) return 'guard';
+  if (burst >= 4 && burst >= guard * 2) return 'burst';
+  return null;
+}
+
+// —————————————————— 遗物流派映射 ——————————————————
+
+/**
+ * 按遗物 id 标记流派。归类口径：
+ * - `guard`：偏防守/稳势/格挡/回血稳定线；
+ * - `burst`：直接强化主动消耗连势的伤害 / 过牌 / 能量；
+ * - `mixed`：给两派都补续航（如开场 +2 连势）；
+ * - `neutral`：纯属性补强 / 通用数值。
+ */
+const ARCHETYPE_BY_RELIC_ID: Record<string, CardArchetype> = {
+  burst_emblem: 'burst',
+  insight_lens: 'burst',
+  quick_fuse: 'burst',
+  sighted_edge: 'burst',
+  guard_knot: 'guard',
+  still_core: 'guard',
+  soft_guard: 'guard',
+  wind_chime: 'mixed',
+  vajra: 'neutral',
+  anchor: 'neutral',
+  tactical_gloves: 'neutral',
+};
+
+export function getRelicArchetype(relicId: string): CardArchetype {
+  return ARCHETYPE_BY_RELIC_ID[relicId] ?? 'neutral';
+}
+
+export function getRelicArchetypeDisplay(relicId: string): ArchetypeDisplayMeta {
+  return ARCHETYPE_DISPLAY[getRelicArchetype(relicId)];
+}

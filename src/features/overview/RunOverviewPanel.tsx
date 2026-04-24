@@ -197,6 +197,7 @@ export function RunOverviewPanel({
                       })
                       .join(' / ')}
                     ；核心遗物：
+                    <ArchetypeDot relicId={branch.coreRelicId} />
                     {RELIC_DEFINITIONS[branch.coreRelicId]?.name ?? branch.coreRelicId}
                     {relicHit ? '（已持有）' : ''}
                   </span>
@@ -251,7 +252,10 @@ export function RunOverviewPanel({
                 const def = RELIC_DEFINITIONS[relicId];
                 return (
                   <li key={relicId}>
-                    <strong>{def?.name ?? relicId}</strong>
+                    <strong>
+                      <ArchetypeDot relicId={relicId} />
+                      {def?.name ?? relicId}
+                    </strong>
                     <span className={styles.listMeta}>{def?.description ?? '暂无说明'}</span>
                   </li>
                 );
