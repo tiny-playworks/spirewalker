@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import '@/game/core/definitions/cards/upgradeRules';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { getStatusMeta } from '@/game/core/definitions/statuses';
+import type { CardDefinition, CardType } from '@/game/core/model/card';
 import type { RunState } from '@/game/core/model/run';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as styles from './runOverview.css';
@@ -12,12 +14,39 @@ function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
 }
 
-function deckRows(deck: string[]) {
+interface DeckRow { definitionId: string; count: number }
+interface DeckGroup { key: string; label: string; rows: DeckRow[]; total: number }
+
+function deckRows(deck: string[]): DeckRow[] {
   const counts = new Map<string, number>();
   for (const definitionId of deck) counts.set(definitionId, (counts.get(definitionId) ?? 0) + 1);
   return [...counts.entries()]
     .map(([definitionId, count]) => ({ definitionId, count }))
     .sort((a, b) => a.definitionId.localeCompare(b.definitionId));
+}
+
+function classifyCard(def: CardDefinition | undefined): { groupKey: string; groupLabel: string } {
+  if (!def) return { groupKey: 'other', groupLabel: '其他' };
+  if (def.exhaustOnPlay) return { groupKey: 'exhaust', groupLabel: '消耗牌' };
+  if (def.id.startsWith('junk_')) return { groupKey: 'junk', groupLabel: '污染牌' };
+  const typeLabel: Record<CardType, string> = { attack: '攻击', skill: '技能', power: '能力' };
+  return { groupKey: `type_${def.type}`, groupLabel: typeLabel[def.type] };
+}
+
+function groupDeckRows(rows: DeckRow[]): DeckGroup[] {
+  const groups = new Map<string, DeckGroup>();
+  for (const row of rows) {
+    const def = CARD_DEFINITIONS[row.definitionId];
+    const { groupKey, groupLabel } = classifyCard(def);
+    const g = groups.get(groupKey) ?? { key: groupKey, label: groupLabel, rows: [], total: 0 };
+    g.rows.push(row);
+    g.total += row.count;
+    groups.set(groupKey, g);
+  }
+  const order = ['type_attack', 'type_skill', 'type_power', 'exhaust', 'junk', 'other'];
+  return [...groups.values()].sort(
+    (a, b) => (order.indexOf(a.key) + 100) - (order.indexOf(b.key) + 100),
+  );
 }
 
 function currentHp(run: RunState): number {
@@ -125,6 +154,41 @@ export function RunOverviewPanel({
         </section>
 
         <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>流派身份</h3>
+          <p className={styles.empty} style={{ opacity: 0.85 }}>
+            当前已构筑进度 · 核心卡 / 核心遗物命中越多，流派识别度越强。
+          </p>
+          <ul className={styles.list}>
+            {character.buildBranches.map((branch) => {
+              const cardHits = branch.coreCardIds.filter(
+                (id) => run.masterDeck.some((x) => x === id || x === id + '+' || x === id + '++'),
+              );
+              const relicHit = run.meta.relics.includes(branch.coreRelicId);
+              const score = cardHits.length + (relicHit ? 1 : 0);
+              return (
+                <li key={branch.id}>
+                  <strong>
+                    {branch.name} · {score}/3 命中
+                  </strong>
+                  <span className={styles.listMeta}>
+                    核心卡：{branch.coreCardIds
+                      .map((id) => {
+                        const def = CARD_DEFINITIONS[id];
+                        const has = cardHits.includes(id);
+                        return `${def?.name ?? id}${has ? '（已入组）' : ''}`;
+                      })
+                      .join(' / ')}
+                    ；核心遗物：
+                    {RELIC_DEFINITIONS[branch.coreRelicId]?.name ?? branch.coreRelicId}
+                    {relicHit ? '（已持有）' : ''}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        <section className={styles.section}>
           <h3 className={styles.sectionTitle}>当前状态</h3>
           <div className={styles.stats}>
             <span className={styles.statChip}>Act {run.meta.act}</span>
@@ -198,20 +262,27 @@ export function RunOverviewPanel({
         </section>
 
         <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>牌组</h3>
-          <ul className={styles.list}>
-            {deck.map((row) => {
-              const def = CARD_DEFINITIONS[row.definitionId];
-              return (
-                <li key={row.definitionId}>
-                  <strong className={styles.deckStrong}>
-                    {def?.name ?? row.definitionId} ×{row.count}
-                  </strong>
-                  <span className={styles.listMeta}>{def?.description ?? '暂无说明'}</span>
-                </li>
-              );
-            })}
-          </ul>
+          <h3 className={styles.sectionTitle}>牌组（共 {run.masterDeck.length} 张）</h3>
+          {groupDeckRows(deck).map((group) => (
+            <div key={group.key} style={{ marginBottom: 12 }}>
+              <p className={styles.empty} style={{ opacity: 0.85 }}>
+                {group.label} · {group.total} 张
+              </p>
+              <ul className={styles.list}>
+                {group.rows.map((row) => {
+                  const def = CARD_DEFINITIONS[row.definitionId];
+                  return (
+                    <li key={row.definitionId}>
+                      <strong className={styles.deckStrong}>
+                        {def?.name ?? row.definitionId} ×{row.count}
+                      </strong>
+                      <span className={styles.listMeta}>{def?.description ?? '暂无说明'}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </section>
       </aside>
     </>

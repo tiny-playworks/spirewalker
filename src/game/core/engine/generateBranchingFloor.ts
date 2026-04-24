@@ -6,8 +6,14 @@ export const STILLNESS_SHRINE_EVENT_ID = 'stillness_shrine';
 export const BURST_ALTAR_EVENT_ID = 'burst_altar';
 export const PURGING_POOL_EVENT_ID = 'purging_pool';
 
+/**
+ * 每章总深度（含 Boss 层与倒数第 2 层固定休息）。
+ *
+ * - Act1 已按创始人测试反馈缩短：14 -> 12（约 -14%），节奏与旧版「缩到 14」再压一档。
+ * - Act2 / Act3 暂不动，保持多 seed 长跑数据可比。
+ */
 export const ACT_FLOOR_COUNTS: Record<MapAct, number> = {
-  1: 14,
+  1: 12,
   2: 24,
   3: 26,
 };
@@ -117,6 +123,9 @@ function biasForAverageScore(score: number): MapRouteBias {
 }
 
 function phaseForDepth(depth: number, totalDepth: number): Phase {
+  // Act1 被缩短到 12 层后，纯比例判定会让 depth=4 掉到 mid，从而在前 4 层出现 shop/rest。
+  // 明确保证前 4 层始终按 early 相权处理，避免早期补给/精英穿插破坏节奏目标。
+  if (depth <= EARLY_ELITE_PROTECTION_DEPTH) return 'early';
   const ratio = depth / Math.max(1, totalDepth);
   if (ratio <= 0.3) return 'early';
   if (ratio <= 0.7) return 'mid';
@@ -149,7 +158,9 @@ function generatePathRows(
     if (depth > 2) {
       current = clampRow(current + Math.floor(rnd() * 3) - 1);
       current = clampRow(nudgeToward(current, idealRowFor(depth, totalDepth, bias), 0.45, rnd));
-      if (depth >= totalDepth - 5) {
+      if (depth >= totalDepth - 2) {
+        // 只在最后一个内容层（depth = totalDepth - 2）再强制向中心合拢，
+        // 确保前中段不同路线保持自己的行，避免 safe 路被迫共享 risk 路上的精英节点。
         current = clampRow(nudgeToward(current, MAP_CENTER_ROW, 0.75, rnd));
       }
     }
@@ -481,8 +492,6 @@ function applyAct1RouteGuarantees(
     8: 'elite',
     9: 'battle',
     10: 'shop',
-    11: 'rest',
-    12: 'event',
   });
 
   applyRoutePattern(nodesForGeneratedPath(act, safePath, nodes), {
@@ -495,9 +504,115 @@ function applyAct1RouteGuarantees(
     8: 'battle',
     9: 'battle',
     10: 'event',
-    11: 'shop',
-    12: 'event',
   });
+
+  // 最后兜底：先让 risk / balance 达到目标精英数，再在最后一步统一把 safe 路上的
+  // 任何 elite 清理为 battle（safe 在所有兜底里的优先级最高，保证「0 精英安全路」总是存在）。
+  const riskNodes = nodesForGeneratedPath(act, riskPath, nodes);
+  const riskEliteCount = riskNodes.filter((n) => n.type === 'elite').length;
+  if (riskEliteCount < 2) {
+    const candidates = riskNodes.filter(
+      (n) =>
+        n.depth > EARLY_ELITE_PROTECTION_DEPTH
+        && n.depth < bossDepthFor(act) - 2
+        && n.type !== 'elite'
+        && n.type !== 'rest'
+        && n.type !== 'shop'
+        && n.type !== 'treasure',
+    );
+    for (let i = 0; i < 2 - riskEliteCount && i < candidates.length; i++) {
+      candidates[candidates.length - 1 - i]!.type = 'elite';
+    }
+  }
+
+  // 确保存在 1 精英均衡路：balancePath 上恰好一个 elite；pressurePath 不强制清理（它的 5/8 双 elite 更贴近 2+ 精英风险路补位）。
+  const balanceNodes = nodesForGeneratedPath(act, balancePath, nodes);
+  const balanceElites = balanceNodes.filter((n) => n.type === 'elite');
+  if (balanceElites.length === 0) {
+    const candidate = balanceNodes
+      .filter(
+        (n) =>
+          n.depth > EARLY_ELITE_PROTECTION_DEPTH
+          && n.depth < bossDepthFor(act) - 2
+          && n.type !== 'rest'
+          && n.type !== 'shop'
+          && n.type !== 'treasure',
+      )
+      .find((n) => n.depth === 8)
+      ?? balanceNodes.find(
+        (n) => n.depth > EARLY_ELITE_PROTECTION_DEPTH && n.depth < bossDepthFor(act) - 2,
+      );
+    if (candidate) candidate.type = 'elite';
+  } else if (balanceElites.length > 1) {
+    // 过多精英会让“1 精英均衡路”退化成“2+ 精英路”，只保留 d8（或最接近 d8 的那一个）。
+    const keep = balanceElites.sort((a, b) => Math.abs(a.depth - 8) - Math.abs(b.depth - 8))[0];
+    for (const e of balanceElites) {
+      if (e !== keep) e.type = 'battle';
+    }
+  }
+
+  // 最后再次兜底：无论前面的补救怎么安排，safe 路上的任何节点都不能是精英。
+  // （即使该节点被 riskPath 的兜底补成了 elite，此处一律改回 battle。）
+  const safeNodes = nodesForGeneratedPath(act, safePath, nodes);
+  for (const node of safeNodes) {
+    if (node.type === 'elite') node.type = 'battle';
+  }
+}
+
+function bossDepthFor(act: MapAct): number {
+  return ACT_FLOOR_COUNTS[act];
+}
+
+type RouteElite = { elites: number; eliteNodeIds: string[] };
+
+function enumerateRouteEliteCounts(nodes: Record<string, MapNode>): RouteElite[] {
+  const start = Object.values(nodes).find((node) => node.depth === 1);
+  if (!start) return [];
+  const routes: RouteElite[] = [];
+  const stack: Array<{ nodeId: string; elites: number; eliteNodeIds: string[] }> = [
+    { nodeId: start.id, elites: 0, eliteNodeIds: [] },
+  ];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    const node = nodes[current.nodeId];
+    if (!node) continue;
+    const isElite = node.depth > 1 && node.type === 'elite';
+    const elites = current.elites + (isElite ? 1 : 0);
+    const eliteNodeIds = isElite ? [...current.eliteNodeIds, node.id] : current.eliteNodeIds;
+    if (node.type === 'boss') {
+      routes.push({ elites, eliteNodeIds });
+      continue;
+    }
+    for (const nextId of node.nextNodeIds) {
+      stack.push({ nodeId: nextId, elites, eliteNodeIds });
+    }
+  }
+  return routes;
+}
+
+// Act1 的图被缩短后，pressurePath 的连续 elite 容易让 1-elite 均衡路消失；
+// 本函数在最终阶段做一轮路径级核对：如果没有恰好 1 精英的路线，就把一个
+// 在「多精英路线」上但「非 1-elite 路线必经」的精英回退成 battle，恢复 1-elite 存在性。
+function ensureAct1RouteShapes(nodes: Record<string, MapNode>, totalDepth: number): void {
+  for (let iter = 0; iter < 4; iter++) {
+    const routes = enumerateRouteEliteCounts(nodes);
+    if (routes.some((r) => r.elites === 1)) return;
+    // 找所有 elites === 2 的最短路径，统计其中每个 elite 节点出现频率。
+    const twoEliteRoutes = routes.filter((r) => r.elites === 2);
+    if (twoEliteRoutes.length === 0) return;
+    const freq = new Map<string, number>();
+    for (const r of twoEliteRoutes) {
+      for (const id of r.eliteNodeIds) freq.set(id, (freq.get(id) ?? 0) + 1);
+    }
+    // 选择一个精英节点：在 2-elite 路线上出现频率最高、且不在 boss-2 之前必经的位置。
+    // 简化策略：挑 depth 最小的精英节点（一般是早期被 pressurePath 补出的那个）改成 battle。
+    const candidate = [...freq.keys()]
+      .map((id) => nodes[id]!)
+      .filter((n) => n && n.depth > 4 && n.depth < totalDepth - 2)
+      .sort((a, b) => a.depth - b.depth)[0];
+    if (!candidate) return;
+    candidate.type = 'battle';
+  }
 }
 
 function finalizeEncounterMeta(act: MapAct, nodes: Record<string, MapNode>): void {
@@ -622,7 +737,6 @@ export function generateActMap(act: MapAct, seed: number): Record<string, MapNod
     previousType = chosen;
   }
 
-  assignTreasureNode(mutableNodes, totalDepth);
   enforceSupplySpacing(mutableNodes);
   repairSoftSupplies(mutableNodes, totalDepth);
   enforceSupplySpacing(mutableNodes);
@@ -630,6 +744,9 @@ export function generateActMap(act: MapAct, seed: number): Record<string, MapNod
   ensureLateRiskPeak(mutableNodes, totalDepth);
   ensureEventFallback(mutableNodes);
   applyAct1RouteGuarantees(act, pathRows, nodes);
+  if (act === 1) ensureAct1RouteShapes(nodes, totalDepth);
+  // 宝箱放到路线 pattern 之后，否则 applyAct1RouteGuarantees 会把 treasure 覆盖成 battle/event/shop/rest。
+  assignTreasureNode(mutableNodes, totalDepth);
 
   assignEventScripts(act, Object.values(nodes));
   camp.eventScriptId = EVENT_POOLS[act][0]!;

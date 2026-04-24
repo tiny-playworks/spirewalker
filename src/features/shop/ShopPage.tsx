@@ -7,6 +7,7 @@ import { useGameStore } from '@/game/store/gameStore';
 import { selectShopRunState } from '@/game/store/selectors/shopSelectors';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as subscreenStyles from '@/styles/subscreen.css';
+import { CardUpgradeList } from '../cards/CardUpgradeList';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
@@ -114,6 +115,20 @@ export function ShopPage() {
               );
             })}
           </ul>
+        </>
+      ) : null}
+      {typeof shop.upgradePrice === 'number' && shop.upgradePrice > 0 ? (
+        <>
+          <h3 className={subscreenStyles.sectionTitle}>升级卡（本店一次 · {shop.upgradePrice} 金）</h3>
+          <p className={subscreenStyles.tip}>
+            同一家商店只能升级 1 次；升级过的卡会在名字后追加 <strong>+</strong> 或 <strong>++</strong> 徽章。
+          </p>
+          <CardUpgradeList
+            masterDeck={masterDeck}
+            disabled={meta.gold < shop.upgradePrice}
+            onUpgrade={(index) => dispatchCommand({ type: 'BUY_SHOP_UPGRADE_CARD', masterDeckIndex: index })}
+            emptyText="没有卡可升级。"
+          />
         </>
       ) : null}
       <h3 className={subscreenStyles.sectionTitle}>删牌（每次 {shop.removeCardPrice} 金）</h3>

@@ -79,14 +79,14 @@ function enumerateRouteShapes(act: MapAct, seed: number): RouteShape[] {
 }
 
 describe('core/mapGeneration', () => {
-  test('Act1 缩短为 14 层，Boss 前固定休息点在 13 层', () => {
-    expect(actFloorCount(1)).toBe(14);
+  test('Act1 缩短为 12 层，Boss 前固定休息点在 11 层', () => {
+    expect(actFloorCount(1)).toBe(12);
     const nodes = Object.values(buildActNodes(1, 19));
 
-    expect(nodes.filter((node) => node.depth === 13)).toHaveLength(1);
-    expect(nodes.filter((node) => node.depth === 13).every((node) => node.type === 'rest')).toBe(true);
-    expect(nodes.filter((node) => node.depth === 14)).toHaveLength(1);
-    expect(nodes.filter((node) => node.depth === 14).every((node) => node.type === 'boss')).toBe(true);
+    expect(nodes.filter((node) => node.depth === 11)).toHaveLength(1);
+    expect(nodes.filter((node) => node.depth === 11).every((node) => node.type === 'rest')).toBe(true);
+    expect(nodes.filter((node) => node.depth === 12)).toHaveLength(1);
+    expect(nodes.filter((node) => node.depth === 12).every((node) => node.type === 'boss')).toBe(true);
   });
 
   test('首步至少分出三路，且非营地节点的出边不超过三条', () => {

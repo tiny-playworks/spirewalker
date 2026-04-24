@@ -57,5 +57,6 @@ export function generateShop(
     relics,
     potions: [{ potionId: pickOne(SHOP_POTION_POOL, random), price: 60 + f * 5 + jitter }],
     removeCardPrice: 96 + f * 9,
+    upgradePrice: 75 + f * 6,
   };
 }

@@ -1,5 +1,7 @@
 import { addStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
+// Side-effect: 注册 strike+ / strike++ 等升级版 CardDefinition 到 CARD_DEFINITIONS
+import '../definitions/cards/upgradeRules';
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
 import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STEADY_GUARD, STATUS_STRENGTH } from '../definitions/statuses';
 import type { BattleEncounterMeta, BattleState } from '../model/battle';

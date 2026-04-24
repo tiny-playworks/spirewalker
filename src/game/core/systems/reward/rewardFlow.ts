@@ -3,7 +3,12 @@ import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
 import type { GameEvent } from '../../events/types';
 import type { RunState } from '../../model/run';
 import { generateBattleRewards } from './rewardGenerator';
-import { canResolveRewardCard, canResolveRewardGold, resolveRewardPick } from './rewardResolver';
+import {
+  canResolveRewardCard,
+  canResolveRewardGold,
+  canResolveRewardUpgrade,
+  resolveRewardPick,
+} from './rewardResolver';
 import { skipCardGoldAmount } from '../../engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '../../engine/rewardEncounter';
 import { applyAct1BossPostVictoryFullHealIfEligible, hashMapNodeId } from '../common/runGuards';
@@ -53,4 +58,17 @@ export function takeRewardGoldFlow(
   if (command.amount !== skipCardGoldAmount(tier)) return;
   if (!canResolveRewardGold(run, command.amount)) return;
   resolveRewardPick(run, events, { kind: 'skip_card' });
+}
+
+/**
+ * 放弃战后三选一，转而升级 masterDeck 里某张可升级的卡。
+ * 不发金币，不加牌；仍会走正常的战后 -> 地图 / 章节过渡。
+ */
+export function takeRewardUpgradeCardFlow(
+  run: RunState,
+  command: Extract<GameCommand, { type: 'TAKE_REWARD_UPGRADE_CARD' }>,
+  events: GameEvent[],
+): void {
+  if (!canResolveRewardUpgrade(run, command.masterDeckIndex)) return;
+  resolveRewardPick(run, events, { kind: 'upgrade_card', masterDeckIndex: command.masterDeckIndex });
 }

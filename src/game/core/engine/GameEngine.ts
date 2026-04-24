@@ -10,7 +10,12 @@ import {
 } from '../systems/debug/debugFlow';
 import { resolveEventOptionFlow } from '../systems/event/eventFlow';
 import { chooseMapNodeFlow } from '../systems/map/mapFlow';
-import { leaveBattleToRewardFlow, selectRewardCardFlow, takeRewardGoldFlow } from '../systems/reward/rewardFlow';
+import {
+  leaveBattleToRewardFlow,
+  selectRewardCardFlow,
+  takeRewardGoldFlow,
+  takeRewardUpgradeCardFlow,
+} from '../systems/reward/rewardFlow';
 import { usePotionFlow } from '../systems/potion/potionFlow';
 import { leaveRestToMapFlow } from '../systems/rest/restFlow';
 import {
@@ -18,6 +23,7 @@ import {
   buyShopPotionFlow,
   buyShopRelicFlow,
   buyShopRemoveCardFlow,
+  buyShopUpgradeCardFlow,
   leaveShopToMapFlow,
 } from '../systems/shop/shopFlow';
 import { applyGameOverIfDefeat, syncRunPlayerFromBattle } from '../systems/common/runGuards';
@@ -66,6 +72,9 @@ export class GameEngine {
       case 'TAKE_REWARD_GOLD':
         takeRewardGoldFlow(nextRun, command, events);
         break;
+      case 'TAKE_REWARD_UPGRADE_CARD':
+        takeRewardUpgradeCardFlow(nextRun, command, events);
+        break;
       case 'BUY_SHOP_CARD':
         buyShopCardFlow(nextRun, command, events);
         break;
@@ -89,6 +98,9 @@ export class GameEngine {
         break;
       case 'BUY_SHOP_POTION':
         buyShopPotionFlow(nextRun, command, events);
+        break;
+      case 'BUY_SHOP_UPGRADE_CARD':
+        buyShopUpgradeCardFlow(nextRun, command, events);
         break;
       case 'DEBUG_SET_PLAYER_HP':
         debugSetPlayerHp(nextRun, command.hp);

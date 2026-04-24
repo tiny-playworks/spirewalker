@@ -22,6 +22,10 @@ export type GameCommand =
   /** 支付删牌价，从 masterDeck 移除一张指定 definitionId（至少保留 SHOP_MIN_MASTER_DECK_SIZE 张） */
   | { type: 'BUY_SHOP_REMOVE_CARD'; definitionId: string }
   | { type: 'BUY_SHOP_POTION'; potionId: string }
+  /** 商店升级一张 masterDeck 里的卡（按 masterDeck 下标），支付 shop.upgradePrice */
+  | { type: 'BUY_SHOP_UPGRADE_CARD'; masterDeckIndex: number }
+  /** 战后奖励可放弃卡牌三选一，改为升级 masterDeck 里指定下标的卡 */
+  | { type: 'TAKE_REWARD_UPGRADE_CARD'; masterDeckIndex: number }
   /** 战斗内使用背包中药水（按栏位下标） */
   | { type: 'USE_POTION'; slotIndex: number }
   /** 进入手牌拖拽态（仅输入状态，不做业务结算） */

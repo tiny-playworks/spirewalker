@@ -529,6 +529,35 @@ export const MEASURED_REST: CardDefinition = {
   ],
 };
 
+/** 消耗牌样板：高伤一次性攻击，打完进消耗堆。 */
+export const BURN_EDGE: CardDefinition = {
+  id: 'burn_edge',
+  name: '燃锋',
+  description: '造成 14 点伤害。消耗。',
+  type: 'attack',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [{ type: 'damage', value: 14, target: 'selected' }],
+  exhaustOnPlay: true,
+};
+
+/** 消耗牌样板：一次性过牌 + 恢复能量；打完进消耗堆。 */
+export const CLEAR_MIND: CardDefinition = {
+  id: 'clear_mind',
+  name: '清念',
+  description: '抽 2 张牌，获得 2 点能量。消耗。',
+  type: 'skill',
+  rarity: 'uncommon',
+  cost: 0,
+  target: 'none',
+  effects: [
+    { type: 'draw', value: 2 },
+    { type: 'gain_energy', value: 2 },
+  ],
+  exhaustOnPlay: true,
+};
+
 export const JUNK_SLUDGE: CardDefinition = {
   id: 'junk_sludge',
   name: '淤泥',
@@ -667,6 +696,8 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [FULL_RELEASE.id]: FULL_RELEASE,
   [SURVEY_FIELD.id]: SURVEY_FIELD,
   [MEASURED_REST.id]: MEASURED_REST,
+  [BURN_EDGE.id]: BURN_EDGE,
+  [CLEAR_MIND.id]: CLEAR_MIND,
   [JUNK_SLUDGE.id]: JUNK_SLUDGE,
   [JUNK_BURN.id]: JUNK_BURN,
   [JUNK_STATIC.id]: JUNK_STATIC,

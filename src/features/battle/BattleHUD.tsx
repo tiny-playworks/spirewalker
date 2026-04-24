@@ -77,6 +77,9 @@ export function BattleHUD() {
   const player = battle.units[battle.playerUnitId];
   const canAct = battle.phase === 'player_action';
   const handCount = battle.player.hand.length;
+  const drawCount = battle.player.drawPile.length;
+  const discardCount = battle.player.discardPile.length;
+  const exhaustCount = battle.player.exhaustPile.length;
   const outOfEnergy = canAct && battle.player.energy === 0 && handCount > 0;
   const selectingTarget = battle.inputMode === 'selecting_target' && battle.pendingAction?.type === 'play_card';
   const pendingCardInstanceId = selectingTarget ? battle.pendingAction?.cardInstanceId ?? null : null;
@@ -134,6 +137,13 @@ export function BattleHUD() {
             {outOfEnergy ? (
               <span className={styles.energyHint}>（已用尽，请结束回合）</span>
             ) : null}
+          </span>
+          <span
+            className={cx(styles.chip, styles.chipTone.default)}
+            title="抽牌堆 / 手牌 / 弃牌堆 / 消耗堆（空抽牌堆时会把弃牌堆洗回去再抽）"
+          >
+            牌堆 抽 <strong>{drawCount}</strong> · 手 <strong>{handCount}</strong> · 弃{' '}
+            <strong>{discardCount}</strong> · 消 <strong>{exhaustCount}</strong>
           </span>
           {player ? (
             <span className={cx(styles.chip, styles.chipTone.default)}>

@@ -8,6 +8,7 @@ export type GameEvent =
   | { type: 'STATUS_APPLIED'; unitId: string; statusId: string; value: number }
   | { type: 'UNIT_DIED'; unitId: string }
   | { type: 'TURN_ENDED'; unitId: string }
+  | { type: 'CARD_EXHAUSTED'; unitId: string; cardInstanceId: string }
   | { type: 'BATTLE_WON' }
   | { type: 'BATTLE_LOST' }
   | { type: 'ENTERED_BATTLE_FROM_MAP'; nodeId: string }

@@ -345,7 +345,12 @@ export function playCardFlow(
   battle.player.energy -= card.costForTurn;
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
   battle.player.hand = battle.player.hand.filter((id) => id !== cardInstanceId);
-  battle.player.discardPile.push(cardInstanceId);
+  if (def.exhaustOnPlay) {
+    battle.player.exhaustPile.push(cardInstanceId);
+    events.push({ type: 'CARD_EXHAUSTED', unitId: sourceUnitId, cardInstanceId });
+  } else {
+    battle.player.discardPile.push(cardInstanceId);
+  }
   battle.playerCardsPlayedThisTurn += 1;
   events.push({ type: 'CARD_PLAYED', unitId: sourceUnitId, cardInstanceId, targetUnitId });
   const effectRng = mulberry32((run.seed ^ battle.turn * 0xc001d ^ cardInstanceId.length * 0x9e37) >>> 0);
