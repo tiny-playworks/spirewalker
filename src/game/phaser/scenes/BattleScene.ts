@@ -23,19 +23,29 @@ import { UnitStatusBar } from './battle/UnitStatusBar';
 /** 手牌区与敌人 AABB 分离，避免第 4～5 张默认就压在敌人命中盒上导致误判 / 输入抢优先级。 */
 const HAND_START_X = 184;
 const HAND_GAP_X = 106;
-/** 手牌略高于底部牌堆，保证普通浏览器比例下所有文字完整可见。 */
-const HAND_Y = 386;
+const CARD_W = 112;
+const CARD_H = 144;
+const CARD_R = 11;
+
+/** 单位上移 + 逻辑画布加高后，手牌中心下移，单位区与手牌区之间留出大块空白。 */
+const UNIT_Y = 172;
+const UNIT_STATUS_Y = 252;
+/** 手牌中心纵坐标（随 LOGICAL_HEIGHT 提高而下调，避免贴单位脚下）。 */
+const HAND_Y = 458;
+/** 手牌区顶缘（牌面中心在 HAND_Y），用于舞台背景分层线。 */
+const HAND_ZONE_TOP = HAND_Y - CARD_H / 2;
 /** 高于敌人装饰（1），避免右侧牌叠在敌人矩形下抢不到拖拽。 */
 const HAND_DEPTH_BASE = 40;
 
 const ENEMY_SLOT_X0 = 764;
 const ENEMY_SLOT_DX = 176;
 const PLAYER_X = 150;
-const UNIT_Y = 206;
-const UNIT_STATUS_Y = 318;
-const CARD_W = 112;
-const CARD_H = 144;
-const CARD_R = 11;
+
+const PLAYER_NAME_DY = -88;
+const BLOCK_DY = 40;
+const HP_DY = 54;
+const ENEMY_INTENT_DY = -104;
+const ENEMY_NAME_DY = -84;
 
 export class BattleScene extends Scene {
   /** 全体攻击牌松手判定区（与敌人区重叠也算命中） */
@@ -131,21 +141,24 @@ export class BattleScene extends Scene {
     g.fillGradientStyle(0x15120f, 0x0a0908, 0x15120f, 0x0a0908, 0.12, 0.78, 0.12, 0.78);
     g.fillRect(LOGICAL_WIDTH - 92, 0, 92, LOGICAL_HEIGHT);
 
+    const arenaTop = 48;
+    const arenaPadBottom = 8;
+    const arenaH = Math.max(220, HAND_ZONE_TOP - arenaPadBottom - arenaTop);
     g.fillStyle(0x2a241a, 0.72);
-    g.fillRoundedRect(42, 48, LOGICAL_WIDTH - 84, 274, 20);
+    g.fillRoundedRect(42, arenaTop, LOGICAL_WIDTH - 84, arenaH, 20);
     g.lineStyle(2, 0x6f5a3f, 0.36);
-    g.strokeRoundedRect(42, 48, LOGICAL_WIDTH - 84, 274, 20);
+    g.strokeRoundedRect(42, arenaTop, LOGICAL_WIDTH - 84, arenaH, 20);
 
     g.fillGradientStyle(0x17130f, 0x17130f, 0x2e271c, 0x2b241a, 0.4, 0.4, 0.82, 0.82);
-    g.fillRect(0, 314, LOGICAL_WIDTH, LOGICAL_HEIGHT - 314);
+    g.fillRect(0, HAND_ZONE_TOP, LOGICAL_WIDTH, LOGICAL_HEIGHT - HAND_ZONE_TOP);
     g.lineStyle(2, 0xb4895e, 0.28);
-    g.lineBetween(54, 314, LOGICAL_WIDTH - 54, 314);
+    g.lineBetween(54, HAND_ZONE_TOP, LOGICAL_WIDTH - 54, HAND_ZONE_TOP);
     g.lineStyle(1, 0x463a2a, 0.35);
-    for (let y = 350; y < LOGICAL_HEIGHT; y += 36) {
+    for (let y = HAND_ZONE_TOP + 22; y < LOGICAL_HEIGHT; y += 36) {
       g.lineBetween(36, y, LOGICAL_WIDTH - 36, y + 8);
     }
     for (let x = 104; x < LOGICAL_WIDTH; x += 108) {
-      g.lineBetween(x, 316, x - 58, LOGICAL_HEIGHT);
+      g.lineBetween(x, HAND_ZONE_TOP + 2, x - 58, LOGICAL_HEIGHT);
     }
 
     g.fillStyle(0x000000, 0.2);
@@ -268,31 +281,31 @@ export class BattleScene extends Scene {
     const dark = tone === 'player' ? 0x111926 : 0x21130f;
 
     g.fillStyle(0x000000, 0.34 * alpha);
-    g.fillEllipse(cx, cy + 76, 144, 28);
+    g.fillEllipse(cx, cy + 66, 126, 24);
     g.fillStyle(dark, 0.82 * alpha);
-    g.fillEllipse(cx, cy + 74, 110, 16);
+    g.fillEllipse(cx, cy + 64, 96, 14);
 
     g.fillStyle(fill, 0.96 * alpha);
     g.lineStyle(2, stroke, 0.9 * alpha);
     if (tone === 'player') {
-      g.fillRoundedRect(cx - 40, cy - 38, 80, 102, 22);
-      g.strokeRoundedRect(cx - 40, cy - 38, 80, 102, 22);
-      g.fillCircle(cx, cy - 68, 24);
-      g.strokeCircle(cx, cy - 68, 24);
+      g.fillRoundedRect(cx - 34, cy - 32, 68, 88, 18);
+      g.strokeRoundedRect(cx - 34, cy - 32, 68, 88, 18);
+      g.fillCircle(cx, cy - 58, 20);
+      g.strokeCircle(cx, cy - 58, 20);
       g.fillStyle(0x182235, 0.86 * alpha);
-      g.fillTriangle(cx - 58, cy + 2, cx - 28, cy + 70, cx - 10, cy + 40);
-      g.fillTriangle(cx + 58, cy + 2, cx + 28, cy + 70, cx + 10, cy + 40);
+      g.fillTriangle(cx - 50, cy + 2, cx - 24, cy + 58, cx - 8, cy + 34);
+      g.fillTriangle(cx + 50, cy + 2, cx + 24, cy + 58, cx + 8, cy + 34);
       g.lineStyle(2, 0xb8cceb, 0.52 * alpha);
-      g.lineBetween(cx - 22, cy - 10, cx + 22, cy - 10);
+      g.lineBetween(cx - 20, cy - 8, cx + 20, cy - 8);
     } else {
-      g.fillEllipse(cx, cy - 8, 92, 130);
-      g.strokeEllipse(cx, cy - 8, 92, 130);
-      g.fillCircle(cx, cy - 76, 27);
-      g.strokeCircle(cx, cy - 76, 27);
-      g.fillTriangle(cx - 24, cy - 82, cx - 56, cy - 102, cx - 40, cy - 64);
-      g.fillTriangle(cx + 24, cy - 82, cx + 56, cy - 102, cx + 40, cy - 64);
+      g.fillEllipse(cx, cy - 6, 80, 112);
+      g.strokeEllipse(cx, cy - 6, 80, 112);
+      g.fillCircle(cx, cy - 66, 22);
+      g.strokeCircle(cx, cy - 66, 22);
+      g.fillTriangle(cx - 22, cy - 72, cx - 50, cy - 90, cx - 36, cy - 56);
+      g.fillTriangle(cx + 22, cy - 72, cx + 50, cy - 90, cx + 36, cy - 56);
       g.lineStyle(2, 0xf0b08a, 0.48 * alpha);
-      g.lineBetween(cx - 24, cy - 32, cx + 24, cy - 32);
+      g.lineBetween(cx - 22, cy - 28, cx + 22, cy - 28);
     }
     return g;
   }
@@ -487,7 +500,7 @@ export class BattleScene extends Scene {
       padding: { x: 8, y: 4 },
     }).setOrigin(0.5, 0.5).setDepth(38).setVisible(false);
 
-    this.aoePlayRect = new Geom.Rectangle(330, 50, 560, 288);
+    this.aoePlayRect = new Geom.Rectangle(330, 50, 560, Math.max(240, HAND_ZONE_TOP - 58));
 
     // 底部三堆可视化：抽牌堆/弃牌堆在左下，消耗堆在右下角避免与结束回合按钮冲突。
     this.drawPile = new PileStack(this, 56, LOGICAL_HEIGHT - 90, 'draw', this.textRes);
@@ -573,10 +586,10 @@ export class BattleScene extends Scene {
     const cx = PLAYER_X;
     const cy = UNIT_Y;
     this.playerLayer.add([
-      ...this.unitNamePlate(cx, cy - 118, u.name, 'player'),
+      ...this.unitNamePlate(cx, cy + PLAYER_NAME_DY, u.name, 'player'),
       this.unitToken(cx, cy, 'player', u.alive),
-      ...this.blockBadge(cx, cy + 58, u.block, 'player'),
-      ...this.unitHpBar(cx, cy + 82, u.hp, u.maxHp, 0x6a9dd4, 0x101722, '#eef6ff'),
+      ...this.blockBadge(cx, cy + BLOCK_DY, u.block, 'player'),
+      ...this.unitHpBar(cx, cy + HP_DY, u.hp, u.maxHp, 0x6a9dd4, 0x101722, '#eef6ff'),
     ]);
   }
 
@@ -591,11 +604,11 @@ export class BattleScene extends Scene {
       const cy = UNIT_Y;
       const intentLine = formatMonsterIntentText(monster?.intent);
       this.enemyLayer.add([
-        this.enemyIntentPill(cx, cy - 132, intentLine, monster?.intent?.type),
-        ...this.unitNamePlate(cx, cy - 112, u?.name ?? eid, 'enemy'),
+        this.enemyIntentPill(cx, cy + ENEMY_INTENT_DY, intentLine, monster?.intent?.type),
+        ...this.unitNamePlate(cx, cy + ENEMY_NAME_DY, u?.name ?? eid, 'enemy'),
         this.unitToken(cx, cy, 'enemy', u?.alive ?? true),
-        ...(u ? this.blockBadge(cx, cy + 58, u.block, 'enemy') : []),
-        ...(u ? this.unitHpBar(cx, cy + 82, u.hp, u.maxHp, 0xd4846a, 0x281915, '#fff0e6') : []),
+        ...(u ? this.blockBadge(cx, cy + BLOCK_DY, u.block, 'enemy') : []),
+        ...(u ? this.unitHpBar(cx, cy + HP_DY, u.hp, u.maxHp, 0xd4846a, 0x281915, '#fff0e6') : []),
       ]);
     });
   }
@@ -609,7 +622,7 @@ export class BattleScene extends Scene {
     }
     this.enemyHitRects = battle.enemyUnitIds.map((unitId, i) => {
       const cx = ENEMY_SLOT_X0 - i * ENEMY_SLOT_DX;
-      const rect = new Geom.Rectangle(cx - 88, 54, 176, 278);
+      const rect = new Geom.Rectangle(cx - 82, 52, 164, Math.min(268, HAND_ZONE_TOP - 46));
       const zone = this.add.zone(rect.centerX, rect.centerY, rect.width, rect.height);
       zone.setDepth(33);
       zone.setInteractive({ useHandCursor: true });

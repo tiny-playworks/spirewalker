@@ -3,11 +3,12 @@ import { BattleScene } from "./scenes/BattleScene";
 
 /**
  * 固定设计分辨率（逻辑坐标系）。场景里敌人 x=760、手牌 y 等数字都按此尺寸排布。
- * 内部画布为逻辑尺寸的 2 倍（约 1840×1040），接近「2K 档」清晰度，兼顾锐度与 GPU/内存。
+ * 内部画布为逻辑尺寸的 2 倍（约 1840×1120），接近「2K 档」清晰度，兼顾锐度与 GPU/内存。
  * 场景里用摄像机 zoom = BATTLE_RENDER_SCALE，可见世界仍是 LOGICAL_WIDTH×LOGICAL_HEIGHT。
  */
 export const LOGICAL_WIDTH = 920;
-export const LOGICAL_HEIGHT = 520;
+/** 略高于旧版 520，给手牌与单位之间多一段纵向留白，避免战斗区「顶手牌」的挤压感。 */
+export const LOGICAL_HEIGHT = 560;
 export const BATTLE_RENDER_SCALE = 2;
 export const DESIGN_WIDTH = LOGICAL_WIDTH * BATTLE_RENDER_SCALE;
 export const DESIGN_HEIGHT = LOGICAL_HEIGHT * BATTLE_RENDER_SCALE;
