@@ -55,5 +55,7 @@ export interface RunState {
     validationSegment?: 'act2_entry';
     validationCompleted?: boolean;
     enteredAct2EliteBranch?: boolean;
+    /** 为 false 时本局奖励卡池不做流派权重倾斜（仍受 `rewardTuning.REWARD_ARCHETYPE_TILT_ENABLED` 总开关约束）。 */
+    rewardArchetypeTiltEnabled?: boolean;
   };
 }

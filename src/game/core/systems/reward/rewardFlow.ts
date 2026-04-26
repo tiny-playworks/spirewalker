@@ -31,6 +31,7 @@ export function leaveBattleToRewardFlow(run: RunState, events: GameEvent[]): voi
     ownedRelicIds: run.meta.relics,
     potionCount: run.meta.potions.length,
     characterId: run.meta.characterId,
+    meta: run.meta,
   });
   run.reward = { items, claimed: false };
   run.battle = undefined;

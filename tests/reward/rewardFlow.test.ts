@@ -36,6 +36,8 @@ describe('reward/rewardFlow', () => {
       'still_core',
       'burst_emblem',
       'quick_fuse',
+      'ward_banner',
+      'flare_banner',
       'blaze_core',
       'fractured_blade',
       'iron_heart',

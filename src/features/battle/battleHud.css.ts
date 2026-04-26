@@ -8,6 +8,7 @@ const tablet = '(max-width: 900px)';
 export const battleBarControlMinHeight = '1.875rem';
 
 export const root = style({
+  position: 'relative',
   flexShrink: 0,
   width: '100%',
   padding: '0 0 0.24rem',
@@ -133,6 +134,21 @@ export const blockText = style({
 export const intentText = style({
   marginLeft: '0.16rem',
   color: '#a79d8e',
+});
+
+/** 仅自动化：主按钮在 Phaser 画布内，DOM 保留可聚焦的等价入口供 Playwright 使用 */
+export const e2ePhaserBridge = style({
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+  opacity: 0,
+  pointerEvents: 'auto',
 });
 
 export const actions = style({

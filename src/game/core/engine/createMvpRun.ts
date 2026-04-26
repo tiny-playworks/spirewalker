@@ -172,7 +172,9 @@ export function buildInitialBattle(
   if (relicIds.includes('guard_knot')) {
     addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STEADY_GUARD, 1);
   }
-  if (relicIds.includes('soft_guard')) {
+  if (relicIds.includes('ward_banner')) {
+    units[PLAYER_UNIT_ID].block += 6;
+  } else if (relicIds.includes('soft_guard')) {
     units[PLAYER_UNIT_ID].block += 4;
   }
   if (character?.passive.type === 'battle_start_status') {

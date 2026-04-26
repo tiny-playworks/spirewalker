@@ -1,3 +1,4 @@
+import { isRewardArchetypeTiltEnabled } from '../../config/rewardTuning';
 import { rollBossRelicReward } from '../../definitions/relics';
 import type { RewardItem } from '../../model/reward';
 import type { RewardEncounterTier } from '../../engine/generateRewardChoices';
@@ -14,9 +15,19 @@ export function generateBattleRewards(input: {
   ownedRelicIds: string[];
   potionCount: number;
   characterId: string;
+  meta?: { rewardArchetypeTiltEnabled?: boolean };
 }): RewardItem[] {
-  const { seed, salt, tier, act, actFloor, ownedCardIds, ownedRelicIds, potionCount, characterId } = input;
-  const cards = generateCardRewardChoices(seed, salt, tier, characterId, act, actFloor, ownedCardIds);
+  const { seed, salt, tier, act, actFloor, ownedCardIds, ownedRelicIds, potionCount, characterId, meta } = input;
+  const cards = generateCardRewardChoices(
+    seed,
+    salt,
+    tier,
+    characterId,
+    act,
+    actFloor,
+    ownedCardIds,
+    isRewardArchetypeTiltEnabled(meta),
+  );
   const items: RewardItem[] = [{ type: 'card_choice', cards }];
   const rng = ((seed ^ salt ^ 0x4455aa) >>> 0) % 100;
   if (tier === 'normal') {

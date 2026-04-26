@@ -611,6 +611,36 @@ export const CARD_UPGRADE_RULES: Record<string, CardUpgradeRule> = {
       },
     },
   },
+  guard_vigil_banner: {
+    baseId: 'guard_vigil_banner',
+    levels: {
+      1: {
+        nameSuffix: '+',
+        descriptionPatch: '获得 10 点格挡。',
+        patches: [{ effectIndex: 0, kind: 'block', delta: 3 }],
+      },
+      2: {
+        nameSuffix: '++',
+        descriptionPatch: '获得 12 点格挡。',
+        patches: [{ effectIndex: 0, kind: 'block', delta: 5 }],
+      },
+    },
+  },
+  burst_signal_banner: {
+    baseId: 'burst_signal_banner',
+    levels: {
+      1: {
+        nameSuffix: '+',
+        descriptionPatch: '造成 10 点伤害。',
+        patches: [{ effectIndex: 0, kind: 'damage', delta: 3 }],
+      },
+      2: {
+        nameSuffix: '++',
+        descriptionPatch: '造成 12 点伤害。',
+        patches: [{ effectIndex: 0, kind: 'damage', delta: 5 }],
+      },
+    },
+  },
 };
 
 /** 从完整 id 里拆出 base id 与升级级别。`strike` / `strike+` / `strike++`。 */

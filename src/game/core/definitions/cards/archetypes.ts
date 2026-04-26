@@ -70,6 +70,9 @@ const ARCHETYPE_BY_BASE_ID: Record<string, CardArchetype> = {
   patience_stance: 'guard',
   flow_shift: 'mixed',
   balance_edge: 'mixed',
+
+  guard_vigil_banner: 'guard',
+  burst_signal_banner: 'burst',
 };
 
 export function getCardArchetype(cardId: string): CardArchetype {
@@ -130,6 +133,8 @@ const ARCHETYPE_BY_RELIC_ID: Record<string, CardArchetype> = {
   counter_sigil: 'guard',
   twin_core: 'mixed',
   harmony_emblem: 'mixed',
+  ward_banner: 'guard',
+  flare_banner: 'burst',
 };
 
 export function getRelicArchetype(relicId: string): CardArchetype {

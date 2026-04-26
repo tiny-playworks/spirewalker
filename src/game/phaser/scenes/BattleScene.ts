@@ -1,3 +1,4 @@
+import type { GameCommand } from '@/game/core/commands/types';
 import type { GameObjects, Input } from 'phaser';
 import { Geom, Scene, Scenes } from 'phaser';
 import { buildCardKeywordHints, cardTargetLabel, cardTypeLabel, formatMonsterIntentText } from '@/game/core/battleUiText';
@@ -17,23 +18,31 @@ import {
   isFastModeEnabled,
 } from '../controllers/SceneBridge';
 import { BATTLE_RENDER_SCALE, getBattleCanvasTextResolution, LOGICAL_HEIGHT, LOGICAL_WIDTH } from '../gameFactory';
+import {
+  BATTLE_CARD_H,
+  BATTLE_CARD_W,
+  BATTLE_HAND_Y,
+  BATTLE_UNIT_Y,
+  computeEnemyHitRect,
+  computeHandZoneTop,
+} from './battle/battleSceneLayout';
 import { PileStack } from './battle/PileStack';
 import { UnitStatusBar } from './battle/UnitStatusBar';
 
 /** 手牌区与敌人 AABB 分离，避免第 4～5 张默认就压在敌人命中盒上导致误判 / 输入抢优先级。 */
 const HAND_START_X = 184;
 const HAND_GAP_X = 106;
-const CARD_W = 112;
-const CARD_H = 144;
+const CARD_W = BATTLE_CARD_W;
+const CARD_H = BATTLE_CARD_H;
 const CARD_R = 11;
 
 /** 单位上移 + 逻辑画布加高后，手牌中心下移，单位区与手牌区之间留出大块空白。 */
-const UNIT_Y = 172;
+const UNIT_Y = BATTLE_UNIT_Y;
 const UNIT_STATUS_Y = 252;
 /** 手牌中心纵坐标（随 LOGICAL_HEIGHT 提高而下调，避免贴单位脚下）。 */
-const HAND_Y = 458;
+const HAND_Y = BATTLE_HAND_Y;
 /** 手牌区顶缘（牌面中心在 HAND_Y），用于舞台背景分层线。 */
-const HAND_ZONE_TOP = HAND_Y - CARD_H / 2;
+const HAND_ZONE_TOP = computeHandZoneTop(HAND_Y, CARD_H);
 /** 高于敌人装饰（1），避免右侧牌叠在敌人矩形下抢不到拖拽。 */
 const HAND_DEPTH_BASE = 40;
 
@@ -68,6 +77,7 @@ export class BattleScene extends Scene {
   private exhaustPile?: PileStack;
   private playerStatusBar?: UnitStatusBar;
   private enemyStatusBars = new Map<string, UnitStatusBar>();
+  private battleDock?: GameObjects.Container;
 
   constructor() {
     super('BattleScene');
@@ -90,6 +100,8 @@ export class BattleScene extends Scene {
     this.exhaustPile = undefined;
     this.playerStatusBar = undefined;
     this.enemyStatusBars.clear();
+    this.battleDock?.destroy(true);
+    this.battleDock = undefined;
     this.lastSceneKey = '';
   }
 
@@ -110,6 +122,9 @@ export class BattleScene extends Scene {
     if (!battle) return '';
     const pu = battle.units[battle.playerUnitId];
     return JSON.stringify({
+      phase: battle.phase,
+      inputMode: battle.inputMode,
+      pending: battle.pendingAction?.type ?? null,
       hand: battle.player.hand,
       enemies: battle.enemyUnitIds,
       ph: pu?.hp,
@@ -507,6 +522,8 @@ export class BattleScene extends Scene {
     this.discardPile = new PileStack(this, 116, LOGICAL_HEIGHT - 90, 'discard', this.textRes);
     this.exhaustPile = new PileStack(this, LOGICAL_WIDTH - 56, LOGICAL_HEIGHT - 90, 'exhaust', this.textRes);
 
+    this.battleDock = this.add.container(0, 0).setDepth(46);
+
     this.unsub = useGameStore.subscribe((s) => {
       if (!this.canUseDisplay()) return;
       const battle = s.run?.battle;
@@ -519,6 +536,7 @@ export class BattleScene extends Scene {
       this.renderHand(battle ?? null);
       this.refreshPiles(battle ?? null);
       this.refreshStatusBars(battle ?? null);
+      this.refreshBattleDock();
     });
 
     const initial = useGameStore.getState().run?.battle ?? null;
@@ -529,6 +547,7 @@ export class BattleScene extends Scene {
     this.renderHand(initial);
     this.refreshPiles(initial);
     this.refreshStatusBars(initial);
+    this.refreshBattleDock();
 
     const detach = () => {
       this.detachStore();
@@ -622,7 +641,8 @@ export class BattleScene extends Scene {
     }
     this.enemyHitRects = battle.enemyUnitIds.map((unitId, i) => {
       const cx = ENEMY_SLOT_X0 - i * ENEMY_SLOT_DX;
-      const rect = new Geom.Rectangle(cx - 82, 52, 164, Math.min(268, HAND_ZONE_TOP - 46));
+      const dims = computeEnemyHitRect(cx, HAND_ZONE_TOP);
+      const rect = new Geom.Rectangle(dims.x, dims.y, dims.width, dims.height);
       const zone = this.add.zone(rect.centerX, rect.centerY, rect.width, rect.height);
       zone.setDepth(33);
       zone.setInteractive({ useHandCursor: true });
@@ -714,6 +734,62 @@ export class BattleScene extends Scene {
       const bar = this.enemyStatusBars.get(staleId);
       bar?.destroy();
       this.enemyStatusBars.delete(staleId);
+    }
+  }
+
+  private refreshBattleDock(): void {
+    if (!this.canUseDisplay() || !this.battleDock) return;
+
+    this.battleDock.removeAll(true);
+
+    const run = useGameStore.getState().run;
+    if (!run || run.screen.type !== 'battle') return;
+
+    const battle = run.battle;
+    if (!battle) return;
+    const dockY = LOGICAL_HEIGHT - 46;
+
+    const addBtn = (label: string, x: number, cmd: GameCommand) => {
+      const w = 118;
+      const h = 34;
+      const bg = this.add.graphics();
+      bg.fillStyle(0x5a4338, 1);
+      bg.lineStyle(1.5, 0xb69878, 1);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 7);
+      bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 7);
+
+      const text = this.add.text(0, 0, label, {
+        fontFamily: 'Arial',
+        fontSize: '14px',
+        color: '#f2dfd0',
+      });
+      text.setOrigin(0.5);
+
+      const zone = this.add.rectangle(0, 0, w + 12, h + 12, 0x000000, 0);
+      zone.setInteractive({ useHandCursor: true });
+
+      const row = this.add.container(x, dockY, [zone, bg, text]);
+      zone.on('pointerup', () => {
+        dispatchGameCommand(cmd);
+      });
+      this.battleDock!.add(row);
+    };
+
+    if (battle.phase === 'victory') {
+      addBtn('领取奖励', LOGICAL_WIDTH / 2, { type: 'LEAVE_BATTLE_TO_REWARD' });
+      return;
+    }
+
+    const selectingTarget =
+      battle.inputMode === 'selecting_target' && battle.pendingAction?.type === 'play_card';
+
+    if (battle.phase === 'player_action') {
+      if (selectingTarget) {
+        addBtn('结束回合', LOGICAL_WIDTH / 2 - 72, { type: 'END_TURN' });
+        addBtn('取消选目标', LOGICAL_WIDTH / 2 + 72, { type: 'CANCEL_TARGET_SELECTION' });
+      } else {
+        addBtn('结束回合', LOGICAL_WIDTH / 2, { type: 'END_TURN' });
+      }
     }
   }
 

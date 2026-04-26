@@ -1,3 +1,4 @@
+import { REWARD_ARCHETYPE_TILT_ENABLED } from '../config/rewardTuning';
 import {
   getCardArchetype,
   getDominantArchetype,
@@ -21,6 +22,8 @@ const ACT_CARD_POOLS = {
     'measured_rest',
     'fortify',
     'overload',
+    'guard_vigil_banner',
+    'burst_signal_banner',
     'flow_shift',
   ],
   core: [
@@ -57,17 +60,15 @@ function pickOne<T>(pool: readonly T[], random: () => number): T {
  *   同派 / 混合派的卡在奖励池里加权 2，对立派降权到 0.5，中性派保持 1。
  * - 未形成主导流派时直接等权抽。
  *
- * 这个倾斜只改变奖励出现概率，不改变任何规则结算；`REWARD_ARCHETYPE_TILT` 可作为后续
- * 配置开关（目前恒为 true，未来可由角色数据或调参面板关闭）。
+ * 这个倾斜只改变奖励出现概率，不改变任何规则结算；开关见 `rewardTuning.ts`。
  */
-const REWARD_ARCHETYPE_TILT = true;
-
 function pickWeightedCardId(
   pool: readonly string[],
   random: () => number,
   dominant: 'guard' | 'burst' | null,
+  tiltEnabled: boolean,
 ): string {
-  if (!REWARD_ARCHETYPE_TILT || dominant === null || pool.length === 0) {
+  if (!tiltEnabled || dominant === null || pool.length === 0) {
     return pickOne(pool, random);
   }
   const opposite: 'guard' | 'burst' = dominant === 'guard' ? 'burst' : 'guard';
@@ -93,6 +94,7 @@ function uniquePush(
   fallbackPool: readonly string[],
   random: () => number,
   dominant: 'guard' | 'burst' | null,
+  tiltEnabled: boolean,
 ): void {
   if (!out.includes(picked)) {
     out.push(picked);
@@ -100,7 +102,7 @@ function uniquePush(
   }
   const remaining = fallbackPool.filter((cardId) => !out.includes(cardId));
   if (remaining.length > 0) {
-    out.push(pickWeightedCardId(remaining, random, dominant));
+    out.push(pickWeightedCardId(remaining, random, dominant, tiltEnabled));
     return;
   }
   out.push(picked);
@@ -130,6 +132,7 @@ export function generateCardRewardChoices(
   act: 1 | 2 | 3 = 1,
   _actFloor?: number,
   ownedCardIds: readonly string[] = [],
+  archetypeTiltEnabled: boolean = REWARD_ARCHETYPE_TILT_ENABLED,
 ): string[] {
   const rng = mulberry32((seed ^ salt ^ 0x51eed) >>> 0);
   const random = () => rng();
@@ -145,7 +148,14 @@ export function generateCardRewardChoices(
   for (const pool of pools) {
     const filtered = pool.filter((cardId) => characterPool.has(cardId));
     const source = filtered.length > 0 ? filtered : fallbackPool;
-    uniquePush(picks, pickWeightedCardId(source, random, dominant), fallbackPool, random, dominant);
+    uniquePush(
+      picks,
+      pickWeightedCardId(source, random, dominant, archetypeTiltEnabled),
+      fallbackPool,
+      random,
+      dominant,
+      archetypeTiltEnabled,
+    );
   }
   return picks;
 }

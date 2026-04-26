@@ -84,6 +84,7 @@ export function debugJumpScreen(
         ownedRelicIds: run.meta.relics,
         potionCount: run.meta.potions.length,
         characterId: run.meta.characterId,
+        meta: run.meta,
       }),
       claimed: false,
     };

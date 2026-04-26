@@ -168,7 +168,7 @@ function applyMomentumBurstDamage(
   if (consumedStacks > 0 && typeof params.gainEnergyIfConsumed === 'number') {
     grantEnergy(battle, params.gainEnergyIfConsumed, events);
   }
-  if (consumedStacks > 0 && relicIds.includes('quick_fuse') && firstConsumeThisTurn) {
+  if (consumedStacks > 0 && (relicIds.includes('quick_fuse') || relicIds.includes('flare_banner')) && firstConsumeThisTurn) {
     grantEnergy(battle, 1, events);
   }
 }
@@ -200,7 +200,7 @@ function applyMomentumBurstDraw(
   const drawCount = params.baseDraw + consumedStacks * params.drawPerStack + primedBonus + relicBonus;
   drawAdditionalCards(battle, drawCount, events, random);
 
-  if (consumedStacks > 0 && relicIds.includes('quick_fuse') && firstConsumeThisTurn) {
+  if (consumedStacks > 0 && (relicIds.includes('quick_fuse') || relicIds.includes('flare_banner')) && firstConsumeThisTurn) {
     grantEnergy(battle, 1, events);
   }
 }

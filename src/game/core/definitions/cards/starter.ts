@@ -611,6 +611,30 @@ export const PATIENCE_STANCE: CardDefinition = {
   effects: [{ type: 'apply_status', statusId: STATUS_PATIENCE, stacks: 1, target: 'self' }],
 };
 
+/** 构筑向：守势旗帜（高格挡，易辨认）。 */
+export const GUARD_VIGIL_BANNER: CardDefinition = {
+  id: 'guard_vigil_banner',
+  name: '守势旗帜',
+  description: '获得 7 点格挡。',
+  type: 'skill',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'none',
+  effects: [{ type: 'block', value: 7, target: 'self' }],
+};
+
+/** 构筑向：爆发旗帜（单体伤害）。 */
+export const BURST_SIGNAL_BANNER: CardDefinition = {
+  id: 'burst_signal_banner',
+  name: '爆发旗帜',
+  description: '造成 7 点伤害。',
+  type: 'attack',
+  rarity: 'uncommon',
+  cost: 1,
+  target: 'single_enemy',
+  effects: [{ type: 'damage', value: 7, target: 'selected' }],
+};
+
 /** Mixed 旗帜：记忆上回合行为，切换攻防节奏。 */
 export const FLOW_SHIFT: CardDefinition = {
   id: 'flow_shift',
@@ -789,6 +813,8 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [PATIENCE_STANCE.id]: PATIENCE_STANCE,
   [FLOW_SHIFT.id]: FLOW_SHIFT,
   [BALANCE_EDGE.id]: BALANCE_EDGE,
+  [GUARD_VIGIL_BANNER.id]: GUARD_VIGIL_BANNER,
+  [BURST_SIGNAL_BANNER.id]: BURST_SIGNAL_BANNER,
   [JUNK_SLUDGE.id]: JUNK_SLUDGE,
   [JUNK_BURN.id]: JUNK_BURN,
   [JUNK_STATIC.id]: JUNK_STATIC,

@@ -97,9 +97,19 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
     name: '调和徽记',
     description: '若你在同一回合内打出过攻击牌以及技能/能力牌：抽 1 张牌并获得 1 点能量（每回合至多一次）。',
   },
+  ward_banner: {
+    id: 'ward_banner',
+    name: '沉壁旌',
+    description: '每场战斗开始时额外获得 6 点格挡。',
+  },
+  flare_banner: {
+    id: 'flare_banner',
+    name: '烈势徽',
+    description: '每回合第一次主动消耗连势时，获得 1 点能量。',
+  },
 };
 
-export const MOMENTUM_BURST_RELIC_IDS = ['burst_emblem', 'quick_fuse'] as const;
+export const MOMENTUM_BURST_RELIC_IDS = ['burst_emblem', 'quick_fuse', 'flare_banner'] as const;
 export const MOMENTUM_FLOW_RELIC_IDS = ['guard_knot', 'still_core'] as const;
 export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'still_core'] as const;
 export const COMMON_RELIC_POOL = [
@@ -107,6 +117,8 @@ export const COMMON_RELIC_POOL = [
   'still_core',
   'burst_emblem',
   'quick_fuse',
+  'ward_banner',
+  'flare_banner',
   'blaze_core',
   'fractured_blade',
   'iron_heart',
