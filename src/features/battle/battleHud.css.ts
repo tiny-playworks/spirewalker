@@ -4,6 +4,9 @@ import { infoChip } from '@/styles/uiPrimitives.css';
 
 const tablet = '(max-width: 900px)';
 
+/** 战斗顶栏一行：状态芯片、主操作、药水、快捷按钮共用，便于垂直对齐 */
+export const battleBarControlMinHeight = '1.875rem';
+
 export const root = style({
   flexShrink: 0,
   width: '100%',
@@ -12,24 +15,19 @@ export const root = style({
 
 export const inner = style({
   display: 'block',
-  padding: '0.26rem 5.1rem 0.26rem 0.46rem',
+  padding: '0.32rem 0.52rem',
   borderRadius: '10px',
   background:
     'linear-gradient(180deg, rgba(31, 28, 23, 0.86) 0%, rgba(20, 18, 15, 0.8) 100%)',
   border: '1px solid rgba(82, 70, 52, 0.56)',
   boxShadow: '0 8px 18px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(244, 213, 141, 0.04)',
-  '@media': {
-    [tablet]: {
-      paddingRight: '0.55rem',
-    },
-  },
 });
 
 export const primaryRow = style({
   display: 'flex',
   alignItems: 'center',
   gap: '0.36rem',
-  minHeight: '1.7rem',
+  minHeight: battleBarControlMinHeight,
   overflowX: 'auto',
   overflowY: 'hidden',
   scrollbarWidth: 'none',
@@ -74,10 +72,21 @@ export const chip = infoChip;
 
 globalStyle(`${chip}`, {
   flexShrink: 0,
-  padding: '0.2rem 0.46rem',
+  boxSizing: 'border-box',
+  minHeight: battleBarControlMinHeight,
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '0 0.5rem',
   fontSize: '0.72rem',
+  lineHeight: 1,
   background: 'rgba(12, 11, 9, 0.32)',
   borderColor: 'rgba(82, 70, 52, 0.58)',
+});
+
+globalStyle(`${chip} strong`, {
+  fontSize: '0.74rem',
+  fontWeight: 700,
+  lineHeight: 1,
 });
 
 export const chipTone = styleVariants({
@@ -137,11 +146,17 @@ export const actions = style({
 });
 
 export const actionButton = style({
-  padding: '0.28rem 0.66rem',
-  fontSize: '0.74rem',
+  boxSizing: 'border-box',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: battleBarControlMinHeight,
+  padding: '0 0.72rem',
+  fontSize: '0.72rem',
+  lineHeight: 1,
   fontWeight: 600,
   cursor: 'pointer',
-  borderRadius: '7px',
+  borderRadius: '999px',
   border: '1px solid rgba(90, 60, 40, 0.45)',
   boxShadow: '0 2px 0 rgba(0, 0, 0, 0.18)',
   transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}, background ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
@@ -193,13 +208,19 @@ export const potionList = style({
 });
 
 export const potionButton = style({
-  padding: '0.32rem 0.58rem',
-  fontSize: '0.76rem',
+  boxSizing: 'border-box',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: battleBarControlMinHeight,
+  padding: '0 0.55rem',
+  fontSize: '0.72rem',
+  lineHeight: 1,
   cursor: 'pointer',
   color: '#d9e7f2',
   background: 'rgba(42, 53, 68, 0.82)',
   border: '1px solid rgba(95, 121, 150, 0.72)',
-  borderRadius: '8px',
+  borderRadius: '999px',
   transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
   selectors: {
     '&:hover': {

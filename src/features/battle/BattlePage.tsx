@@ -14,26 +14,30 @@ export function BattlePage() {
 
   return (
     <div className={styles.page}>
-      <BattleHUD />
-      <div className={styles.topBar}>
-        <FastModeToggle />
-        <PotionBar />
-        <button
-          className={styles.logToggle}
-          type="button"
-          onClick={() => setSidePanel((prev) => (prev === 'deck' ? null : 'deck'))}
-          aria-pressed={sidePanel === 'deck'}
-        >
-          牌组 {deckSize}
-        </button>
-        <button
-          className={styles.logToggle}
-          type="button"
-          onClick={() => setSidePanel((prev) => (prev === 'log' ? null : 'log'))}
-          aria-pressed={sidePanel === 'log'}
-        >
-          日志
-        </button>
+      <div className={styles.headerArea}>
+        <div className={styles.headerMain}>
+          <BattleHUD />
+        </div>
+        <div className={styles.topBar}>
+          <FastModeToggle />
+          <PotionBar />
+          <button
+            className={styles.logToggle}
+            type="button"
+            onClick={() => setSidePanel((prev) => (prev === 'deck' ? null : 'deck'))}
+            aria-pressed={sidePanel === 'deck'}
+          >
+            牌组 {deckSize}
+          </button>
+          <button
+            className={styles.logToggle}
+            type="button"
+            onClick={() => setSidePanel((prev) => (prev === 'log' ? null : 'log'))}
+            aria-pressed={sidePanel === 'log'}
+          >
+            日志
+          </button>
+        </div>
       </div>
       <div className={`${styles.main} ${!sidePanel ? styles.mainExpanded : ''}`}>
         <div className={styles.stageColumn}>

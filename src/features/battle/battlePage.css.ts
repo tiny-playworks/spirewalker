@@ -1,5 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
+import { battleBarControlMinHeight } from './battleHud.css';
 
 const tablet = '(max-width: 900px)';
 
@@ -32,6 +33,30 @@ globalStyle(`${page} > *`, {
   zIndex: 1,
 });
 
+/** 顶栏：HUD 与快捷条同一行 flex，避免绝对定位叠在 HUD 上 */
+export const headerArea = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: '0.45rem 0.65rem',
+  width: '100%',
+  flexShrink: 0,
+  paddingInlineEnd: 'max(0.35rem, env(safe-area-inset-right, 0px))',
+  boxSizing: 'border-box',
+});
+
+export const headerMain = style({
+  flex: '1 1 0',
+  minWidth: 0,
+  display: 'flex',
+  alignItems: 'center',
+  '@media': {
+    [tablet]: {
+      flex: '1 1 100%',
+    },
+  },
+});
+
 export const main = style({
   position: 'relative',
   flex: 1,
@@ -51,17 +76,15 @@ export const mainExpanded = style({
 });
 
 export const topBar = style({
-  position: 'absolute',
-  top: '0.52rem',
-  right: '5.7rem',
-  zIndex: 3,
+  flex: '0 1 auto',
   display: 'flex',
+  flexWrap: 'wrap',
   justifyContent: 'flex-end',
   alignItems: 'center',
   gap: '0.45rem',
-  marginBottom: 0,
-  paddingRight: 0,
-  opacity: 0.72,
+  maxWidth: '100%',
+  rowGap: '0.35rem',
+  opacity: 0.88,
   transition: 'opacity 120ms ease',
   selectors: {
     '&:hover': {
@@ -70,22 +93,26 @@ export const topBar = style({
   },
   '@media': {
     [tablet]: {
-      position: 'static',
       justifyContent: 'flex-start',
-      marginBottom: '0.22rem',
+      width: '100%',
       opacity: 1,
     },
   },
 });
 
 export const logToggle = style({
+  boxSizing: 'border-box',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: battleBarControlMinHeight,
+  padding: '0 0.62rem',
   border: '1px solid rgba(120, 105, 83, 0.72)',
   background: 'linear-gradient(180deg, rgba(42, 36, 30, 0.92), rgba(28, 24, 20, 0.88))',
   color: '#d9cbb4',
   borderRadius: '999px',
-  padding: '0.24rem 0.62rem',
   fontSize: '0.72rem',
-  lineHeight: 1.1,
+  lineHeight: 1,
   letterSpacing: '0.01em',
   cursor: 'pointer',
   transition: 'all 120ms ease',
@@ -298,10 +325,14 @@ export const footerHint = style({
 });
 
 export const fastModeToggle = style({
+  boxSizing: 'border-box',
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '0.35rem',
-  fontSize: '0.8rem',
+  gap: '0.32rem',
+  minHeight: battleBarControlMinHeight,
+  padding: '0 0.1rem',
+  fontSize: '0.72rem',
+  lineHeight: 1,
   color: '#9a9488',
   cursor: 'pointer',
   userSelect: 'none',
@@ -309,4 +340,7 @@ export const fastModeToggle = style({
 
 globalStyle(`${fastModeToggle} input`, {
   accentColor: sceneVars.color.accent,
+  width: '0.95rem',
+  height: '0.95rem',
+  flexShrink: 0,
 });

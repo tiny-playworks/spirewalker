@@ -128,9 +128,16 @@ export function RunOverviewPanel({
         type="button"
         className={cx(sceneThemeClass, styles.toggle)}
         aria-expanded={open}
+        aria-label={open ? '关闭冒险总览' : '打开冒险总览'}
+        title={open ? '关闭冒险总览' : '冒险总览（悬停或点击展开）'}
         onClick={onToggle}
       >
-        总览
+        <span className={styles.toggleDots} aria-hidden>
+          <span className={styles.toggleDot} />
+          <span className={styles.toggleDot} />
+          <span className={styles.toggleDot} />
+        </span>
+        <span className={styles.toggleLabel}>总览</span>
       </button>
       {open ? <button type="button" className={styles.backdrop} aria-label="关闭总览" onClick={onClose} /> : null}
       <aside className={cx(sceneThemeClass, styles.panel, open && styles.panelOpen)} aria-hidden={!open}>

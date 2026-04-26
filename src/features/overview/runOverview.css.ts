@@ -2,25 +2,82 @@ import { globalStyle, style } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 import { infoChip, panelSurface, sectionKicker } from '@/styles/uiPrimitives.css';
 
-export const toggle = style([
-  infoChip,
-  {
-    position: 'fixed',
-    top: '0.9rem',
-    right: '0.9rem',
-    zIndex: 70,
-    padding: '0.48rem 0.8rem',
-    color: '#f0ebe3',
-    background: 'rgba(20, 18, 16, 0.88)',
-    borderColor: 'rgba(95, 81, 62, 0.9)',
-    boxShadow: '0 10px 26px rgba(0, 0, 0, 0.28)',
-    cursor: 'pointer',
+/** 靠右纵向居中的「探出」悬浮入口，类似桌面侧栏工具（如 uTools）：默认只露一条，悬停/聚焦/展开时滑入 */
+export const toggle = style({
+  position: 'fixed',
+  top: '50%',
+  right: 'max(0px, env(safe-area-inset-right, 0px))',
+  zIndex: 70,
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: '0.42rem',
+  margin: 0,
+  padding: '0.52rem 0.72rem 0.52rem 0.62rem',
+  border: '1px solid rgba(95, 81, 62, 0.5)',
+  borderRight: 'none',
+  borderRadius: '14px 0 0 14px',
+  color: '#ebe4d6',
+  fontSize: '0.78rem',
+  fontWeight: 600,
+  letterSpacing: '0.04em',
+  cursor: 'pointer',
+  background: 'linear-gradient(90deg, rgba(26, 23, 19, 0.42) 0%, rgba(18, 16, 14, 0.72) 100%)',
+  backdropFilter: 'blur(12px)',
+  boxShadow: '-6px 0 22px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(244, 213, 141, 0.06)',
+  transform: 'translateY(-50%) translateX(calc(100% - 1.35rem))',
+  transition: `transform ${sceneVars.motion.normal} ease-out, opacity ${sceneVars.motion.normal} ease-out, box-shadow ${sceneVars.motion.normal} ease-out`,
+  opacity: 0.55,
+  selectors: {
+    '&:hover': {
+      transform: 'translateY(-50%) translateX(0)',
+      opacity: 1,
+      boxShadow: '-10px 0 28px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(244, 213, 141, 0.08)',
+    },
+    '&:focus-visible': {
+      transform: 'translateY(-50%) translateX(0)',
+      opacity: 1,
+      outline: '2px solid rgba(212, 160, 100, 0.65)',
+      outlineOffset: '2px',
+    },
+    '&[aria-expanded="true"]': {
+      transform: 'translateY(-50%) translateX(0)',
+      opacity: 1,
+      borderColor: 'rgba(185, 154, 110, 0.65)',
+      background: 'linear-gradient(90deg, rgba(34, 30, 25, 0.88) 0%, rgba(22, 19, 16, 0.94) 100%)',
+    },
   },
-]);
+  '@media': {
+    '(prefers-reduced-motion: reduce)': {
+      transition: 'none',
+      transform: 'translateY(-50%) translateX(0)',
+      opacity: 0.92,
+    },
+  },
+});
 
-globalStyle(`${toggle} strong`, {
-  fontSize: 'inherit',
-  color: 'inherit',
+export const toggleDots = style({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '0.2rem',
+  flexShrink: 0,
+  width: '0.55rem',
+  padding: '0.12rem 0',
+});
+
+export const toggleDot = style({
+  width: '4px',
+  height: '4px',
+  borderRadius: '50%',
+  background: 'currentColor',
+  opacity: 0.75,
+});
+
+export const toggleLabel = style({
+  whiteSpace: 'nowrap',
+  paddingRight: '0.08rem',
 });
 
 export const backdrop = style({
