@@ -4,6 +4,7 @@ import {
   getDominantArchetype,
 } from '../definitions/cards/archetypes';
 import { CARD_DEFINITIONS } from '../definitions/cards/starter';
+import { isRewardEligible } from '../definitions/cards/rewardPoolRules';
 import {
   DEFAULT_CHARACTER_ID,
   getCharacterDefinition,
@@ -28,7 +29,7 @@ function buildCardPools(): {
   const amplifier: string[] = [];
   const finisher: string[] = [];
   for (const [id, def] of Object.entries(CARD_DEFINITIONS)) {
-    if (def.type === 'curse' || def.type === 'status') continue;
+    if (!isRewardEligible(id, def)) continue;
     if (def.rarity === 'common') early.push(id);
     else if (def.rarity === 'uncommon') core.push(id);
     else if (def.rarity === 'rare') {

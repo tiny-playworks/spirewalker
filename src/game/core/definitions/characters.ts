@@ -13,11 +13,11 @@ import {
   MEASURED_REST,
   CARD_DEFINITIONS,
 } from './cards/starter';
+import { isRewardEligible } from './cards/rewardPoolRules';
 
 function buildRewardCardPool(): string[] {
-  const SKIP = new Set(['strike', 'defend']);
   return Object.entries(CARD_DEFINITIONS)
-    .filter(([id, def]) => !SKIP.has(id) && def.type !== 'curse' && def.type !== 'status')
+    .filter(([id, def]) => isRewardEligible(id, def))
     .map(([id]) => id);
 }
 
