@@ -8,6 +8,7 @@
 |------|------|------|----------|
 | Phase 1 | [mimo-prompt-phase1-generation.md](./mimo-prompt-phase1-generation.md) | **已完成**（557 卡 / 152 relic / 205 event 等已落盘） | 需要再批量加内容时参考 schema 与批次模板 |
 | Phase 2 | [mimo-prompt-phase2-wiring.md](./mimo-prompt-phase2-wiring.md) | **当前主任务** | Event 地图池、Relic hook、Encounter、Legendary、去重 |
+| Phase 2b | [mimo-prompt-chronicle.md](./mimo-prompt-chronicle.md) | **推荐并行** | 40 条结构化编年史，低风险、对齐现有 lore id |
 | 进度真相 | [../../TODO.md](../../TODO.md) §执行进度 | 持续更新 | 开工前必读，区分「已生成」vs「已接线」 |
 
 ## 工作约定
