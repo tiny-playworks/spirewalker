@@ -238,3 +238,134 @@ SpireWalker 是一个受《杀戮尖塔》启发的 Roguelike Deckbuilder 项目
 - 支撑 20~50 小时游玩内容
 - 为平衡与 UI 演出提供素材基础
 - 每阶段输出完整结构，直接进入内容生成，不要解释、不要总结
+
+---
+
+## 执行进度
+
+### 总览
+
+| 资产 | 目标 | 实际 | 状态 |
+|------|------|------|------|
+| Relic | 130 | 133 | ✅ |
+| Event | 200 | 200 | ✅ |
+| 卡牌 | 500 | 542 | ✅ |
+| 敌人 | 80 | 80 | ✅ |
+| 美术 prompt | 800 | 805 (+ 520 extra) | ✅ |
+| 世界观 | 10+20+12 | 10+20+14 | ✅ |
+| Upgrade 规则 | ~218 | 218 | ✅ |
+| Critique+Revise | 全量 | 通过 | ✅ |
+
+---
+
+### 1. 卡牌 (542 张)
+
+**新增 218 张**，原有 324 张。
+
+| 流派 | Common | Uncommon | Rare | 小计 | 文件 |
+|------|--------|----------|------|------|------|
+| guard | 35+15 | 22+7 | 15+8 | 72+30=102 | `guard/common.ts` + `generated_c.ts` |
+| burst | 27+15 | 18+5 | 15+15 | 60+35=95 | `burst/common.ts` + `generated_b.ts` |
+| mixed | 23+15 | 14+5 | 10+10 | 47+30=77 | `mixed/common.ts` + `generated_a.ts` |
+| neutral | 35+15 | 16+5 | 12+10 | 63+30=93 | `neutral/common.ts` + `generated_d.ts` |
+| curse | 20 | — | — | 20 | `curse/curse.ts` |
+| status | 15 | — | — | 15 | `status/status.ts` |
+| starter | 45 | — | — | 45 | `starter.ts` |
+
+- 所有新卡已分配 `chapter: 1|2|3`
+- 所有新卡已分配 `archetype` 字段
+- Upgrade 规则：218 条，全部有 level 1 (+) 和 level 2 (++)
+
+**接入方式：** 各 `index.ts` barrel 自动 merge，`ALL_CARD_DEFINITIONS` 包含全部 542 张。
+
+---
+
+### 2. 遗物 (133 个)
+
+**新增 115 个**，原有 18 个。
+
+| 批次 | 数量 | 文件 |
+|------|------|------|
+| batch1 | 50 | `generated_relics/batch1.ts` |
+| batch2 | 50 | `generated_relics/batch2.ts` |
+| batch3 | 33 | `generated_relics/batch3.ts` |
+
+主题分布：连势(20+) / 格挡(20+) / 爆发(20+) / 通用(15+) / 联动(15+) / Boss(4)
+
+**接入方式：** `generated_relics/index.ts` 导出 `GENERATED_RELICS`，需手动 merge 到 `relics.ts` 的 `RELIC_DEFINITIONS` 或运行时注册。
+
+---
+
+### 3. 事件 (200 个)
+
+**全部新增**，原有 0 个。
+
+| 批次 | 数量 | 文件 |
+|------|------|------|
+| batch1 | 70 | `events/batch1.ts` |
+| batch2 | 70 | `events/batch2.ts` |
+| batch3 | 60 | `events/batch3.ts` |
+
+类型分布：risk_reward(26) / curse_trade(27) / merchant(24) / memory(26) / corruption(25) / strange_machine(23) / ancient_shrine(25) / random_gamble(24)
+
+章节分布：Ch1(69) / Ch2(64) / Ch3(67)
+
+**接入方式：** `events/index.ts` 定义类型并导出 `EVENT_DEFINITIONS`，按章节/类型分组。
+
+---
+
+### 4. 敌人 (80 个)
+
+**新增 44 个**（原 36 个 → 80 个）。
+
+| 章节 | Normal | Elite | Boss | 小计 |
+|------|--------|-------|------|------|
+| Ch1 | 30 | 4 | 2 | 36 |
+| Ch2 | 20 | 4 | 2 | 26 |
+| Ch3 | 10 | 4 | 4 | 18 |
+
+Boss 全部使用 `phases` 阶段切换 AI，HP 阈值触发。
+
+**接入方式：** `monsters/generated/index.ts` 导出 `ALL_GENERATED_ENEMIES`，需 merge 到 `definitions.ts`。
+
+---
+
+### 5. 世界观 (44 条)
+
+| 类型 | 数量 | 文件 |
+|------|------|------|
+| 势力 | 10 | `lore/factions.ts` |
+| 地区 | 20 | `lore/regions.ts` |
+| Boss 背景 | 14 | `lore/boss_lore.ts` |
+
+势力：远古守卫 / 织影者 / 铁誓盟约 / 翠环教团 / 深渊行者 / 节奏行者 / 灰烬宫廷 / 潮唤者 / 余烬盟约 / 默声圣咏
+
+地区分布：Ch1(7) / Ch2(7) / Ch3(6)
+
+---
+
+### 6. 美术 Prompt (805 + 520)
+
+| 文件 | 数量 | 类别 |
+|------|------|------|
+| `art_prompts.ts` | 805 | card(100) / enemy(100) / relic(80) / map(60) / event(100) / ui(80) / world(100) / boss_splash(80) / character(50) / misc(55) |
+| `art_prompts_extra.ts` | 520 | map(60) / event(100) / ui(80) / world(100) / boss_splash(80) / character(50) / misc(50) |
+
+格式：`{ id, category, subcategory, prompt, style, aspect_ratio }`
+
+---
+
+### 7. Upgrade 规则 (218 条)
+
+**文件：** `cards/generated_upgrade_rules.ts`
+
+覆盖全部 218 张新卡，每张有 level 1 (+) 和 level 2 (++)。已 merge 到 `upgradeRules.ts` 的 `CARD_UPGRADE_RULES`。
+
+---
+
+## 验证结果
+
+- `npx tsc --noEmit` — **零错误**
+- `pnpm run build` — **构建成功** (2017 kB)
+- `pnpm run test` — **全部通过**
+- `rewardCardPool.length` — 383 张（测试已更新期望范围）

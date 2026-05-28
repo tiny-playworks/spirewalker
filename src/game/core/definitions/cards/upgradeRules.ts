@@ -11,6 +11,7 @@
 
 import { CARD_DEFINITIONS } from './starter';
 import type { CardDefinition, EffectDefinition } from '../../model/card';
+import { GENERATED_UPGRADE_RULES } from './generated_upgrade_rules';
 
 export type UpgradeLevel = 0 | 1 | 2;
 
@@ -734,6 +735,9 @@ export function registerUpgradedCardDefinitions(
     }
   }
 }
+
+// 合并生成的升级规则
+Object.assign(CARD_UPGRADE_RULES, GENERATED_UPGRADE_RULES);
 
 registerUpgradedCardDefinitions();
 

@@ -2,12 +2,14 @@ import type { CardDefinition } from '../../../model/card';
 import { MIXED_COMMON_CARDS } from './common';
 import { MIXED_UNCOMMON_CARDS } from './uncommon';
 import { MIXED_RARE_CARDS } from './rare';
+import { MIXED_GENERATED_A } from './generated_a';
 
 // 合并所有混合流派卡牌
 export const MIXED_CARDS: Record<string, CardDefinition> = {
   ...MIXED_COMMON_CARDS,
   ...MIXED_UNCOMMON_CARDS,
   ...MIXED_RARE_CARDS,
+  ...MIXED_GENERATED_A,
 };
 
 // 导出各稀有度卡牌

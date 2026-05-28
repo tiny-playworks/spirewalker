@@ -55,10 +55,10 @@ describe('reward/rewardPoolRules', () => {
     }
   });
 
-  test('角色池规模合理（~180–230，含 uncommon/rare）', () => {
+  test('角色池规模合理（~300–500，含 uncommon/rare）', () => {
     const pool = getCharacterDefinition('walker').rewardCardPool;
-    expect(pool.length).toBeGreaterThanOrEqual(180);
-    expect(pool.length).toBeLessThanOrEqual(230);
+    expect(pool.length).toBeGreaterThanOrEqual(300);
+    expect(pool.length).toBeLessThanOrEqual(500);
   });
 
   test('generateCardRewardChoices 返回 3 张不重复卡牌', () => {
