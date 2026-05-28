@@ -28,7 +28,7 @@ function classifyCard(def: CardDefinition | undefined): { key: string; label: st
   if (!def) return { key: 'other', label: '其他' };
   if (def.exhaustOnPlay) return { key: 'exhaust', label: '消耗牌' };
   if (def.id.startsWith('junk_')) return { key: 'junk', label: '污染牌' };
-  const labels: Record<CardType, string> = { attack: '攻击', skill: '技能', power: '能力' };
+  const labels: Record<CardType, string> = { attack: '攻击', skill: '技能', power: '能力', curse: '诅咒', status: '状态' };
   return { key: `type_${def.type}`, label: labels[def.type] };
 }
 

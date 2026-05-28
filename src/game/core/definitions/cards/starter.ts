@@ -819,3 +819,14 @@ export const CARD_DEFINITIONS: Record<string, CardDefinition> = {
   [JUNK_BURN.id]: JUNK_BURN,
   [JUNK_STATIC.id]: JUNK_STATIC,
 };
+
+// ==================== 新增卡牌 ====================
+import { GUARD_CARDS } from './guard';
+import { BURST_CARDS } from './burst';
+import { MIXED_CARDS } from './mixed';
+import { NEUTRAL_CARDS } from './neutral';
+import { CURSE_CARDS } from './curse';
+import { STATUS_CARDS } from './status';
+
+// 合并所有新卡牌到 CARD_DEFINITIONS
+Object.assign(CARD_DEFINITIONS, GUARD_CARDS, BURST_CARDS, MIXED_CARDS, NEUTRAL_CARDS, CURSE_CARDS, STATUS_CARDS);

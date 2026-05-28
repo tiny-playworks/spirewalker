@@ -31,7 +31,7 @@ function classifyCard(def: CardDefinition | undefined): { groupKey: string; grou
   if (!def) return { groupKey: 'other', groupLabel: '其他' };
   if (def.exhaustOnPlay) return { groupKey: 'exhaust', groupLabel: '消耗牌' };
   if (def.id.startsWith('junk_')) return { groupKey: 'junk', groupLabel: '污染牌' };
-  const typeLabel: Record<CardType, string> = { attack: '攻击', skill: '技能', power: '能力' };
+  const typeLabel: Record<CardType, string> = { attack: '攻击', skill: '技能', power: '能力', curse: '诅咒', status: '状态' };
   return { groupKey: `type_${def.type}`, groupLabel: typeLabel[def.type] };
 }
 

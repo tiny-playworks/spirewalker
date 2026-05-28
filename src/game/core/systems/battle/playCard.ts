@@ -428,6 +428,274 @@ function applyEffects(
             });
           }
         }
+      } else if (e.scriptId === 'conditional_damage') {
+        const params = e.params as { baseDamage: number; bonusDamage: number; condition: string } | undefined;
+        if (!params) continue;
+        if (!targetUnitId) continue;
+        let dmg = params.baseDamage;
+        const source = battle.units[sourceUnitId];
+        if (params.condition === 'has_block' && source && source.block > 0) {
+          dmg += params.bonusDamage;
+        } else if (params.condition === 'has_steady_guard' && source) {
+          const stacks = getStatusStacks(source, 'steady_guard');
+          if (stacks > 0) dmg += params.bonusDamage;
+        } else if (params.condition === 'has_primed_break' && source) {
+          const stacks = getStatusStacks(source, 'primed_break');
+          if (stacks > 0) dmg += params.bonusDamage;
+        } else if (params.condition === 'has_metallicize' && source) {
+          const stacks = getStatusStacks(source, 'metallicize');
+          if (stacks > 0) dmg += params.bonusDamage;
+        } else if (params.condition === 'has_momentum' && source) {
+          const stacks = getStatusStacks(source, 'momentum');
+          if (stacks > 0) dmg += params.bonusDamage;
+        }
+        if (effectCtx?.cardType === 'attack') {
+          dmg += battle.blazeCoreAttackBonus;
+          if (effectCtx.fractureDoubleAttack) dmg *= 2;
+          if (battle.twinCoreNextAttackBonus > 0) {
+            dmg += battle.twinCoreNextAttackBonus;
+            battle.twinCoreNextAttackBonus = 0;
+          }
+        }
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+      } else if (e.scriptId === 'momentum_to_energy') {
+        const params = e.params as { consumeValue: number; energyGain: number } | undefined;
+        if (!params) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        const currentStacks = getStatusStacks(source, 'momentum');
+        const consumedStacks = Math.min(currentStacks, params.consumeValue);
+        if (consumedStacks > 0) {
+          decayStatus(source, 'momentum', consumedStacks);
+          battle.playerConsumedMomentumThisTurn = true;
+        }
+        grantEnergy(battle, params.energyGain, events);
+      } else if (e.scriptId === 'block_to_damage') {
+        const params = e.params as { multiplier: number } | undefined;
+        if (!params) continue;
+        if (!targetUnitId) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        const dmg = Math.floor(source.block * params.multiplier);
+        if (dmg <= 0) continue;
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+      } else if (e.scriptId === 'momentum_burst_block') {
+        const params = e.params as { consumeValue: number; baseBlock: number } | undefined;
+        if (!params) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        const currentStacks = getStatusStacks(source, 'momentum');
+        const consumedStacks = Math.min(currentStacks, params.consumeValue);
+        if (consumedStacks > 0) {
+          decayStatus(source, 'momentum', consumedStacks);
+          battle.playerConsumedMomentumThisTurn = true;
+        }
+        let blockGain = params.baseBlock;
+        if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
+          blockGain += 2;
+        }
+        source.block += blockGain;
+        events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
+        if (sourceUnitId === battle.playerUnitId) {
+          battle.playerGainedBlockThisTurn = true;
+          if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+            battle.twinCoreFirstBlockUsed = true;
+            battle.twinCoreNextAttackBonus = 5;
+          }
+        }
+      } else if (e.scriptId === 'metallicize_to_block') {
+        const params = e.params as { baseDamage: number } | undefined;
+        if (!params) continue;
+        if (!targetUnitId) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        const metallicizeStacks = getStatusStacks(source, 'metallicize');
+        let dmg = params.baseDamage;
+        if (effectCtx?.cardType === 'attack') {
+          dmg += battle.blazeCoreAttackBonus;
+          if (effectCtx.fractureDoubleAttack) dmg *= 2;
+          if (battle.twinCoreNextAttackBonus > 0) {
+            dmg += battle.twinCoreNextAttackBonus;
+            battle.twinCoreNextAttackBonus = 0;
+          }
+        }
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        if (metallicizeStacks > 0) {
+          let blockGain = metallicizeStacks;
+          if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
+            blockGain += 2;
+          }
+          source.block += blockGain;
+          events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
+          if (sourceUnitId === battle.playerUnitId) {
+            battle.playerGainedBlockThisTurn = true;
+            if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+              battle.twinCoreFirstBlockUsed = true;
+              battle.twinCoreNextAttackBonus = 5;
+            }
+          }
+        }
+      } else if (e.scriptId === 'momentum_conditional_block') {
+        const params = e.params as { baseBlock: number; blockIfNoConsume: number } | undefined;
+        if (!params) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        let blockGain = params.baseBlock;
+        if (!battle.playerConsumedMomentumThisTurn) {
+          blockGain += params.blockIfNoConsume;
+        }
+        if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
+          blockGain += 2;
+        }
+        source.block += blockGain;
+        events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
+        if (sourceUnitId === battle.playerUnitId) {
+          battle.playerGainedBlockThisTurn = true;
+          if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+            battle.twinCoreFirstBlockUsed = true;
+            battle.twinCoreNextAttackBonus = 5;
+          }
+        }
+      } else if (e.scriptId === 'steady_guard_burst_damage') {
+        const params = e.params as { baseDamage: number; damagePerStack: number } | undefined;
+        if (!params) continue;
+        if (!targetUnitId) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        const stacks = getStatusStacks(source, 'steady_guard');
+        if (stacks > 0) {
+          decayStatus(source, 'steady_guard', stacks);
+        }
+        let dmg = params.baseDamage + stacks * params.damagePerStack;
+        if (effectCtx?.cardType === 'attack') {
+          dmg += battle.blazeCoreAttackBonus;
+          if (effectCtx.fractureDoubleAttack) dmg *= 2;
+          if (battle.twinCoreNextAttackBonus > 0) {
+            dmg += battle.twinCoreNextAttackBonus;
+            battle.twinCoreNextAttackBonus = 0;
+          }
+        }
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+      } else if (e.scriptId === 'primed_break_burst_damage') {
+        const params = e.params as { baseDamage: number; damagePerStack: number } | undefined;
+        if (!params) continue;
+        if (!targetUnitId) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        const stacks = getStatusStacks(source, 'primed_break');
+        if (stacks > 0) {
+          decayStatus(source, 'primed_break', stacks);
+        }
+        let dmg = params.baseDamage + stacks * params.damagePerStack;
+        if (effectCtx?.cardType === 'attack') {
+          dmg += battle.blazeCoreAttackBonus;
+          if (effectCtx.fractureDoubleAttack) dmg *= 2;
+          if (battle.twinCoreNextAttackBonus > 0) {
+            dmg += battle.twinCoreNextAttackBonus;
+            battle.twinCoreNextAttackBonus = 0;
+          }
+        }
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+      } else if (e.scriptId === 'multi_hit_with_block') {
+        const params = e.params as { hits: number; damagePerHit: number; blockPerHit: number } | undefined;
+        if (!params) continue;
+        for (let i = 0; i < params.hits; i++) {
+          const eid = pickRandomLivingEnemyId(battle, random);
+          if (eid) {
+            let dmg = params.damagePerHit;
+            if (effectCtx?.cardType === 'attack') {
+              dmg += battle.blazeCoreAttackBonus;
+              if (effectCtx.fractureDoubleAttack) dmg *= 2;
+              if (battle.twinCoreNextAttackBonus > 0) {
+                dmg += battle.twinCoreNextAttackBonus;
+                battle.twinCoreNextAttackBonus = 0;
+              }
+            }
+            dealDamageToUnit(battle, sourceUnitId, eid, dmg, events);
+          }
+          const source = battle.units[sourceUnitId];
+          if (source) {
+            let blockGain = params.blockPerHit;
+            if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
+              blockGain += 2;
+            }
+            source.block += blockGain;
+            events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
+            if (sourceUnitId === battle.playerUnitId) {
+              battle.playerGainedBlockThisTurn = true;
+              if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+                battle.twinCoreFirstBlockUsed = true;
+                battle.twinCoreNextAttackBonus = 5;
+              }
+            }
+          }
+        }
+      } else if (e.scriptId === 'energy_to_damage') {
+        const params = e.params as { damagePerEnergy: number } | undefined;
+        if (!params) continue;
+        if (!targetUnitId) continue;
+        const energySpent = battle.player.energy;
+        if (energySpent > 0) {
+          battle.player.energy = 0;
+          events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: 0 });
+        }
+        let dmg = energySpent * params.damagePerEnergy;
+        if (effectCtx?.cardType === 'attack') {
+          dmg += battle.blazeCoreAttackBonus;
+          if (effectCtx.fractureDoubleAttack) dmg *= 2;
+          if (battle.twinCoreNextAttackBonus > 0) {
+            dmg += battle.twinCoreNextAttackBonus;
+            battle.twinCoreNextAttackBonus = 0;
+          }
+        }
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+      } else if (e.scriptId === 'consume_block_for_damage') {
+        const params = e.params as { baseDamage: number; blockCost: number; bonusDamage: number } | undefined;
+        if (!params) continue;
+        if (!targetUnitId) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        let dmg = params.baseDamage;
+        if (source.block >= params.blockCost) {
+          source.block -= params.blockCost;
+          dmg += params.bonusDamage;
+        }
+        if (effectCtx?.cardType === 'attack') {
+          dmg += battle.blazeCoreAttackBonus;
+          if (effectCtx.fractureDoubleAttack) dmg *= 2;
+          if (battle.twinCoreNextAttackBonus > 0) {
+            dmg += battle.twinCoreNextAttackBonus;
+            battle.twinCoreNextAttackBonus = 0;
+          }
+        }
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+      } else if (e.scriptId === 'conditional_block') {
+        const params = e.params as { baseBlock: number; bonusBlock: number; condition: string } | undefined;
+        if (!params) continue;
+        const source = battle.units[sourceUnitId];
+        if (!source) continue;
+        let blockGain = params.baseBlock;
+        if (params.condition === 'has_metallicize') {
+          const stacks = getStatusStacks(source, 'metallicize');
+          if (stacks > 0) blockGain += params.bonusBlock;
+        } else if (params.condition === 'has_steady_guard') {
+          const stacks = getStatusStacks(source, 'steady_guard');
+          if (stacks > 0) blockGain += params.bonusBlock;
+        } else if (params.condition === 'has_block') {
+          if (source.block > 0) blockGain += params.bonusBlock;
+        }
+        if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
+          blockGain += 2;
+        }
+        source.block += blockGain;
+        events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
+        if (sourceUnitId === battle.playerUnitId) {
+          battle.playerGainedBlockThisTurn = true;
+          if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+            battle.twinCoreFirstBlockUsed = true;
+            battle.twinCoreNextAttackBonus = 5;
+          }
+        }
       }
     }
   }

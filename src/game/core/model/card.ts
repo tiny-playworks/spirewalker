@@ -1,5 +1,5 @@
-export type CardType = 'attack' | 'skill' | 'power';
-export type CardRarity = 'common' | 'uncommon' | 'rare';
+export type CardType = 'attack' | 'skill' | 'power' | 'curse' | 'status';
+export type CardRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 export type CardTarget = 'none' | 'self' | 'single_enemy' | 'all_enemies';
 
 export type MomentumConsumeMode = 'fixed' | 'all';
@@ -77,6 +77,8 @@ export interface CardModifier {
   meta?: Record<string, unknown>;
 }
 
+export type CardArchetype = 'guard' | 'burst' | 'mixed' | 'neutral';
+
 export interface CardDefinition {
   id: string;
   name: string;
@@ -88,6 +90,12 @@ export interface CardDefinition {
   effects: EffectDefinition[];
   /** 出牌后进入消耗堆而非弃牌堆（对应反馈里「消耗牌」概念）。 */
   exhaustOnPlay?: boolean;
+  /** 流派标签，用于 UI 展示和奖励权重 */
+  archetype?: CardArchetype;
+  /** 所属章节，控制出现时机 */
+  chapter?: 1 | 2 | 3;
+  /** 关键词标签，用于 Build 联动 */
+  tags?: string[];
 }
 
 export interface CardInstance {
