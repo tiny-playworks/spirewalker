@@ -733,6 +733,7 @@ export function playCardFlow(
   if (!card) return;
   const def = CARD_DEFINITIONS[card.definitionId];
   if (!def) return;
+  if (def.type === 'curse' || def.type === 'status') return;
   if (battle.player.energy < card.costForTurn) return;
   if (def.target === 'single_enemy') {
     if (!targetUnitId) {

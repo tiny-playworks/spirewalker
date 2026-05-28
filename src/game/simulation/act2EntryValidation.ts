@@ -538,7 +538,8 @@ function asPlayCardCommand(
     const card = cardInstance
       ? CARD_DEFINITIONS[cardInstance.definitionId]
       : null;
-    if (!card || battle.player.energy < cardInstance.costForTurn) continue;
+    if (!card || card.type === 'curse' || card.type === 'status') continue;
+    if (battle.player.energy < cardInstance.costForTurn) continue;
     if (battle.player.lockedCardInstanceIds.includes(cardInstanceId)) continue;
 
     if (card.target === 'single_enemy') {

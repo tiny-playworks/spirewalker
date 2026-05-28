@@ -1020,8 +1020,14 @@ export class BattleScene extends Scene {
 
       container.add(nodes);
       container.setSize(CARD_W, CARD_H);
-      container.setInteractive({ draggable: true });
-      this.input.setDraggable(container);
+
+      const isUnplayable = def.type === 'curse' || def.type === 'status';
+      if (isUnplayable) {
+        container.setAlpha(0.45);
+      } else {
+        container.setInteractive({ draggable: true });
+        this.input.setDraggable(container);
+      }
 
       container.on('pointerover', () => {
         container.setScale(1.06);
