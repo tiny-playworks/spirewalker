@@ -134,6 +134,12 @@ export const ENCOUNTERS: EncounterTemplate[] = [
   { id: 'act3_gen_entropy', chapter: 3, tier: 'normal', weight: 3, name: '熵变侵蚀', tags: ['void'], pressureProfile: 'disruption', lineup: lineup(['gen_en_entropy_weaver', 'gen_en_dimensional_shard']) },
   // Act3 elite ×1
   { id: 'act3_gen_elite_mind', chapter: 3, tier: 'elite', weight: 2, name: '心智收割者', tags: ['elite', 'disruption'], pressureProfile: 'disruption', lineup: lineup(['gen_en_mind_flayer']) },
+  // === Additional encounters (+5) ===
+  { id: 'act1_gen_hounds', chapter: 1, tier: 'normal', weight: 3, name: '狂猎追袭', tags: ['beast'], pressureProfile: 'frontload', lineup: lineup(['gen_en_feral_hound', 'gen_en_feral_hound']) },
+  { id: 'act1_gen_sentinels', chapter: 1, tier: 'normal', weight: 3, name: '铁盏哨戒', tags: ['construct'], pressureProfile: 'attrition', lineup: lineup(['gen_en_stone_watchman', 'gen_en_iron_goblet']) },
+  { id: 'act2_gen_flame_line', chapter: 2, tier: 'normal', weight: 3, name: '焰火阵线', tags: ['construct'], pressureProfile: 'frontload', lineup: lineup(['gen_en_flame_automaton', 'gen_en_chained_captive']) },
+  { id: 'act2_gen_elite_crucible', chapter: 2, tier: 'elite', weight: 2, name: '坩埚守御', tags: ['elite', 'defender'], pressureProfile: 'attrition', lineup: lineup(['gen_en_crucible_guardian']) },
+  { id: 'act2_gen_boss_bellows', chapter: 2, tier: 'boss', weight: 2, name: '风箱暴君', tags: ['boss', 'summoner'], pressureProfile: 'snowball', lineup: lineup(['gen_en_bellows_tyrant']) },
 ];
 
 const ENCOUNTER_BY_ID = Object.fromEntries(ENCOUNTERS.map((encounter) => [encounter.id, encounter])) as Record<string, EncounterTemplate>;

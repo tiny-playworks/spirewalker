@@ -7,6 +7,7 @@ const HOOKED_RELIC_IDS = [
   'bulwark_sigil', 'fortify_root', 'tide_walker', 'cycle_engine', 'alternating_crest',
   'chain_bolt', 'guard_momentum_link', 'sanctuary_bell', 'void_charm', 'echo_charm',
   'memory_shard', 'meditation_stone', 'flow_resonance', 'draw_power_sigil',
+  'resonance_plating',
 ];
 
 function sourceHasRelicId(id: string): boolean {

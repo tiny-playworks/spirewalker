@@ -21,10 +21,21 @@ function pickRandomLivingEnemyId(battle: BattleState, random: () => number): str
   return living[Math.floor(random() * living.length)]!;
 }
 
-function notifyCardExhausted(battle: BattleState, relicIds: string[]): void {
+function notifyCardExhausted(
+  battle: BattleState,
+  relicIds: string[],
+  events?: GameEvent[],
+): void {
   battle.playerExhaustedCardThisTurn = true;
   if (relicIds.includes('blaze_core')) {
     battle.blazeCoreAttackBonus += 2;
+  }
+  if (relicIds.includes('resonance_plating')) {
+    const player = battle.units[battle.playerUnitId];
+    if (player) {
+      player.block += 1;
+      events?.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: 1 });
+    }
   }
 }
 
@@ -459,7 +470,7 @@ function applyEffects(
           battle.player.hand = battle.player.hand.filter((id) => id !== cid);
           battle.player.exhaustPile.push(cid);
           events.push({ type: 'CARD_EXHAUSTED', unitId: sourceUnitId, cardInstanceId: cid });
-          notifyCardExhausted(battle, relicIds);
+          notifyCardExhausted(battle, relicIds, events);
           const eid = pickRandomLivingEnemyId(battle, random);
           if (eid) dealDamageToUnit(battle, sourceUnitId, eid, 8, events);
         }
@@ -859,7 +870,7 @@ export function playCardFlow(
   if (def.exhaustOnPlay || useFractureExhaust) {
     battle.player.exhaustPile.push(cardInstanceId);
     events.push({ type: 'CARD_EXHAUSTED', unitId: sourceUnitId, cardInstanceId });
-    notifyCardExhausted(battle, run.meta.relics);
+    notifyCardExhausted(battle, run.meta.relics, events);
   } else {
     battle.player.discardPile.push(cardInstanceId);
   }

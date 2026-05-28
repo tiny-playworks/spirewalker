@@ -1,4 +1,5 @@
 import type { CardDefinition } from '../../../model/card';
+import { STATUS_MOMENTUM, STATUS_STEADY_GUARD } from '../../statuses';
 
 /**
  * 中立流派 - 传说卡牌 (2张)
@@ -8,7 +9,7 @@ import type { CardDefinition } from '../../../model/card';
 export const NEUTRAL_LEGENDARY_1: CardDefinition = {
   id: 'neutral_legendary_1',
   name: '命运之轮',
-  description: '消耗所有手牌，抽等量的牌并获得等量的格挡。',
+  description: '消耗所有连势。每消耗 1 层，抽 1 张牌。消耗。',
   type: 'skill',
   rarity: 'legendary',
   cost: 2,
@@ -28,9 +29,9 @@ export const NEUTRAL_LEGENDARY_2: CardDefinition = {
   cost: 0,
   target: 'none',
   effects: [
-    { type: 'custom', scriptId: 'lose_hp', params: { value: 6 } },
-    { type: 'apply_status', statusId: 'momentum', stacks: 3, target: 'self' },
-    { type: 'apply_status', statusId: 'steady_guard', stacks: 3, target: 'self' },
+    { type: 'damage', value: 6, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 3, target: 'self' },
+    { type: 'apply_status', statusId: STATUS_STEADY_GUARD, stacks: 3, target: 'self' },
   ],
   archetype: 'neutral',
   tags: ['momentum', 'steady_guard', 'risk'],
