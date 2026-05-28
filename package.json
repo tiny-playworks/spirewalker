@@ -30,6 +30,8 @@
     "simulate:act1-boss": "tsx scripts/run-act1-boss-attribution.ts",
     "simulate:act1-boss:validate": "tsx scripts/validate-act1-boss-change.ts",
     "simulate:act2-entry": "tsx scripts/run-act2-entry-validation.ts",
+    "audit:cards": "tsx scripts/audit-cards.ts",
+    "audit:relics": "tsx scripts/audit-relics.ts",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
 import type { MapAct, MapNode, MapNodeType, MapRouteBias } from '../model/map';
+import { PILOT_EVENT_IDS } from '../systems/event/eventRuntime';
 import { mulberry32 } from '../utils/rng';
 
 export const WANDERING_MERCHANT_EVENT_ID = 'wandering_merchant';
@@ -44,7 +45,7 @@ const BIAS_ANCHOR_ROW: Record<MapRouteBias, number> = {
 };
 
 const EVENT_POOLS: Record<MapAct, string[]> = {
-  1: [WANDERING_MERCHANT_EVENT_ID, STILLNESS_SHRINE_EVENT_ID],
+  1: [WANDERING_MERCHANT_EVENT_ID, STILLNESS_SHRINE_EVENT_ID, ...PILOT_EVENT_IDS],
   2: [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, STILLNESS_SHRINE_EVENT_ID],
   3: [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, WANDERING_MERCHANT_EVENT_ID],
 };
