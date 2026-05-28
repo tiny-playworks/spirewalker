@@ -3,6 +3,7 @@ import {
   getCardArchetype,
   getDominantArchetype,
 } from '../definitions/cards/archetypes';
+import { CARD_DEFINITIONS } from '../definitions/cards/starter';
 import {
   DEFAULT_CHARACTER_ID,
   getCharacterDefinition,
@@ -12,43 +13,33 @@ import { mulberry32 } from '../utils/rng';
 export type RewardEncounterTier = 'normal' | 'elite' | 'boss' | 'treasure';
 const ANCHOR_SLASH_ID = 'anchor_slash';
 
-const ACT_CARD_POOLS = {
-  early: [
-    'prime_rhythm',
-    'brace_rhythm',
-    'soft_step',
-    'held_breath',
-    'survey_field',
-    'measured_rest',
-    'fortify',
-    'overload',
-    'guard_vigil_banner',
-    'burst_signal_banner',
-    'flow_shift',
-  ],
-  core: [
-    'momentum',
-    'tempo_guard',
-    'anchored_breath',
-    'patient_cut',
-    'guard_strike',
-    'anchor_slash',
-    'stable_mind',
-    'break_opening',
-    'quick_release',
-    'patience_stance',
-    'balance_edge',
-  ],
-  amplifier: [
-    'burst_strike',
-    'snap_strike',
-    'follow_through',
-    'cash_flow',
-    'release_flow',
-    'blood_rush',
-  ],
-  finisher: ['patient_cut', 'burst_strike', 'follow_through', 'full_release', 'cash_flow', 'blood_rush'],
-} as const;
+/**
+ * 动态构建奖励卡池：按 rarity 分层，排除 curse/status。
+ * common → early，uncommon → core，rare → amplifier / finisher。
+ */
+function buildCardPools(): {
+  early: string[];
+  core: string[];
+  amplifier: string[];
+  finisher: string[];
+} {
+  const early: string[] = [];
+  const core: string[] = [];
+  const amplifier: string[] = [];
+  const finisher: string[] = [];
+  for (const [id, def] of Object.entries(CARD_DEFINITIONS)) {
+    if (def.type === 'curse' || def.type === 'status') continue;
+    if (def.rarity === 'common') early.push(id);
+    else if (def.rarity === 'uncommon') core.push(id);
+    else if (def.rarity === 'rare') {
+      amplifier.push(id);
+      finisher.push(id);
+    }
+  }
+  return { early, core, amplifier, finisher };
+}
+
+const ACT_CARD_POOLS = buildCardPools();
 
 function pickOne<T>(pool: readonly T[], random: () => number): T {
   return pool[Math.floor(random() * pool.length)]!;

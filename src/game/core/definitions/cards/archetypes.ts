@@ -1,4 +1,5 @@
 import { parseCardId } from './upgradeRules';
+import { CARD_DEFINITIONS } from './starter';
 
 /**
  * 流派身份标签（对应创始人反馈 #8）：
@@ -77,6 +78,8 @@ const ARCHETYPE_BY_BASE_ID: Record<string, CardArchetype> = {
 
 export function getCardArchetype(cardId: string): CardArchetype {
   const { baseId } = parseCardId(cardId);
+  const def = CARD_DEFINITIONS[baseId];
+  if (def?.archetype) return def.archetype;
   return ARCHETYPE_BY_BASE_ID[baseId] ?? 'neutral';
 }
 

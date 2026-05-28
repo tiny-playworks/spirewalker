@@ -1029,31 +1029,33 @@ export class BattleScene extends Scene {
         this.input.setDraggable(container);
       }
 
-      container.on('pointerover', () => {
-        container.setScale(1.06);
-        this.showCardPreview(inst.definitionId);
-      });
-      container.on('pointerout', () => {
-        if (!container.getData('dragging')) {
-          container.setScale(1);
-        }
-        this.clearPreview();
-        this.setDragHint('');
-      });
-      container.on('pointerup', () => {
-        const battleSnapshot = getBattleSnapshot();
-        if (!battleSnapshot || container.getData('dragging')) return;
-        if (battleSnapshot.inputMode === 'animation_lock') return;
-        if (battleSnapshot.inputMode === 'selecting_target') {
-          const pending = battleSnapshot.pendingAction;
-          if (pending?.cardInstanceId === id) {
-            dispatchGameCommand({ type: 'CANCEL_TARGET_SELECTION' });
-            this.setDragHint('');
+      if (!isUnplayable) {
+        container.on('pointerover', () => {
+          container.setScale(1.06);
+          this.showCardPreview(inst.definitionId);
+        });
+        container.on('pointerout', () => {
+          if (!container.getData('dragging')) {
+            container.setScale(1);
           }
-          return;
-        }
-        dispatchGameCommand({ type: 'PLAY_CARD', cardInstanceId: id, sourceUnitId: PLAYER_UNIT_ID });
-      });
+          this.clearPreview();
+          this.setDragHint('');
+        });
+        container.on('pointerup', () => {
+          const battleSnapshot = getBattleSnapshot();
+          if (!battleSnapshot || container.getData('dragging')) return;
+          if (battleSnapshot.inputMode === 'animation_lock') return;
+          if (battleSnapshot.inputMode === 'selecting_target') {
+            const pending = battleSnapshot.pendingAction;
+            if (pending?.cardInstanceId === id) {
+              dispatchGameCommand({ type: 'CANCEL_TARGET_SELECTION' });
+              this.setDragHint('');
+            }
+            return;
+          }
+          dispatchGameCommand({ type: 'PLAY_CARD', cardInstanceId: id, sourceUnitId: PLAYER_UNIT_ID });
+        });
+      }
 
       let dragOriginX = x;
       let dragOriginY = y;
