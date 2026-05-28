@@ -1,5 +1,6 @@
 import type { MapAct, MapNode, MapNodeType, MapRouteBias } from '../model/map';
 import { PILOT_EVENT_IDS } from '../systems/event/eventRuntime';
+import { EVENTS_BY_CHAPTER } from '../definitions/events';
 import { mulberry32 } from '../utils/rng';
 
 export const WANDERING_MERCHANT_EVENT_ID = 'wandering_merchant';
@@ -44,10 +45,24 @@ const BIAS_ANCHOR_ROW: Record<MapRouteBias, number> = {
   safe: 5,
 };
 
-const EVENT_POOLS: Record<MapAct, string[]> = {
+function buildChapterPool(chapter: 1 | 2 | 3, count: number, legacy: string[]): string[] {
+  const events = EVENTS_BY_CHAPTER[chapter] ?? [];
+  const seen = new Set(legacy);
+  const picked: string[] = [];
+  for (const e of events) {
+    if (picked.length >= count) break;
+    if (!seen.has(e.id)) {
+      picked.push(e.id);
+      seen.add(e.id);
+    }
+  }
+  return [...picked, ...legacy];
+}
+
+export const EVENT_POOLS: Record<MapAct, string[]> = {
   1: [WANDERING_MERCHANT_EVENT_ID, STILLNESS_SHRINE_EVENT_ID, ...PILOT_EVENT_IDS],
-  2: [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, STILLNESS_SHRINE_EVENT_ID],
-  3: [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, WANDERING_MERCHANT_EVENT_ID],
+  2: buildChapterPool(2, 8, [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, STILLNESS_SHRINE_EVENT_ID]),
+  3: buildChapterPool(3, 8, [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, WANDERING_MERCHANT_EVENT_ID]),
 };
 
 type Phase = 'early' | 'mid' | 'late';

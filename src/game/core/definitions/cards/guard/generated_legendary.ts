@@ -78,10 +78,24 @@ export const GUARD_LEGENDARY_5: CardDefinition = {
   tags: ['damage', 'block', 'multi_hit'],
 };
 
+export const GUARD_LEGENDARY_6: CardDefinition = {
+  id: 'guard_legendary_6',
+  name: '永恒壁垒',
+  description: '获得 15 点格挡。若你拥有金属化，额外获得等同于金属化层数的格挡。',
+  type: 'skill',
+  rarity: 'legendary',
+  cost: 2,
+  target: 'none',
+  effects: [{ type: 'custom', scriptId: 'momentum_conditional_block', params: { baseBlock: 15, blockIfNoConsume: 0 } }],
+  archetype: 'guard',
+  tags: ['block', 'metallicize', 'scaling'],
+};
+
 export const GUARD_LEGENDARY_CARDS: Record<string, CardDefinition> = {
   [GUARD_LEGENDARY_1.id]: GUARD_LEGENDARY_1,
   [GUARD_LEGENDARY_2.id]: GUARD_LEGENDARY_2,
   [GUARD_LEGENDARY_3.id]: GUARD_LEGENDARY_3,
   [GUARD_LEGENDARY_4.id]: GUARD_LEGENDARY_4,
   [GUARD_LEGENDARY_5.id]: GUARD_LEGENDARY_5,
+  [GUARD_LEGENDARY_6.id]: GUARD_LEGENDARY_6,
 };

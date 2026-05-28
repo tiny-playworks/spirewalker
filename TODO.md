@@ -1,6 +1,6 @@
 # SpireWalker 内容资产工厂计划（48 小时冲刺版）
 
-来源：`SpireWalker_Claude_Task_Template.md`
+来源：[docs/content-factory/README.md](docs/content-factory/README.md)（mimo agent prompt 库）
 
 ## 项目背景
 
@@ -243,95 +243,122 @@ SpireWalker 是一个受《杀戮尖塔》启发的 Roguelike Deckbuilder 项目
 
 ## 执行进度
 
-### 总览
+> 最后更新：2026-05-28  
+> 说明：**已生成** = 文件落盘、结构合法；**已接线** = 运行时能 lookup / 奖励 / 战斗 / 地图可触达。两者分开统计。
 
-| 资产 | 目标 | 实际 | 状态 |
-|------|------|------|------|
-| Relic | 130 | 133 (19 原有 + 114 generated → 实际 133 generated) | ✅ 已生成 / ✅ 已接线 |
-| Event | 200 | 205 (batch1:70 + batch2:70 + batch3:65) | ✅ 已生成 / ✅ 已接线 |
-| 卡牌 | 500 | 557 (含 15 legendary) | ✅ 已生成 / ✅ 已接线 |
-| 敌人 | 80 | 80 | ✅ 已生成 / ✅ 已接线 |
-| 美术 prompt | 800 | 805 + 100 linked | ✅ 已生成 / ✅ 已接线 |
-| 世界观 | 10+20+12 | 10+20+14 | ✅ 已生成 / ✅ 已接线 |
-| Upgrade 规则 | ~218 | 218 | ✅ 已生成 / ✅ 已接线 |
-| Critique+Revise | 全量 | 通过 | ✅ |
+### 总览（相对 TODO 各阶段目标）
 
----
+| 阶段 | 目标 | 已生成 | 已接线（可玩/可用） | 阶段完成度 |
+|------|------|--------|---------------------|------------|
+| 1 卡牌 | 300~500 | **557** base；`CARD_DEFINITIONS` runtime **1091**（含 +/++） | ✅ 奖励/战斗/升级 | **~85%** |
+| 2 Relic | 150 | **152**（133 generated + 19 原有） | ⚠️ 可查描述；~19 个有 battle hook | **~35%** |
+| 3 敌人 | 132（100+20+12） | **134** total（80 generated） | ⚠️ merge + 8 个试点 encounter | **~45%** |
+| 4 事件 | 200 | **205** | ⚠️ resolver fallback；Act1 地图 12 个 event id | **~40%** |
+| 5 地图 | 路线/Modifier | 原有 map 系统 | 未新增 Modifier | **~25%** |
+| 6 世界观 | 10+20+12 | **10+20+14** | 纯文本 spec | **~60%** |
+| 7 美术 | 800+ | **805+520+94 linked** | 文件资产，未 import 进 bundle | **~90%** gen |
 
-### 1. 卡牌 (557 张)
-
-**新增 233 张**，原有 324 张。
-
-| 流派 | Common | Uncommon | Rare | 小计 | 文件 |
-|------|--------|----------|------|------|------|
-| guard | 35+15 | 22+7 | 15+8 | 72+30=102 | `guard/common.ts` + `generated_c.ts` |
-| burst | 27+15 | 18+5 | 15+15 | 60+35=95 | `burst/common.ts` + `generated_b.ts` |
-| mixed | 23+15 | 14+5 | 10+10 | 47+30=77 | `mixed/common.ts` + `generated_a.ts` |
-| neutral | 35+15 | 16+5 | 12+10 | 63+30=93 | `neutral/common.ts` + `generated_d.ts` |
-| curse | 20 | — | — | 20 | `curse/curse.ts` |
-| status | 15 | — | — | 15 | `status/status.ts` |
-| starter | 45 | — | — | 45 | `starter.ts` |
-
-- 所有新卡已分配 `chapter: 1|2|3`
-- 所有新卡已分配 `archetype` 字段
-- Legendary 卡牌：15 张（guard/generated_legendary + burst/generated_legendary + mixed/generated_legendary）
-- Upgrade 规则：218 条，全部有 level 1 (+) 和 level 2 (++)
-
-**接入方式：** 各 `index.ts` barrel 自动 merge，`ALL_CARD_DEFINITIONS` 包含全部 542 张。
+**整体内容工厂进度：约 55%**（数量已超多数下限，runtime 与玩法深度仍不足）
 
 ---
 
-### 2. 遗物 (133 个 generated + 19 原有 = 152 total)
+### 资产明细
 
-**新增 133 个**，原有 19 个。
+| 资产 | 数量 | 已生成 | 已接线 | 备注 |
+|------|------|--------|--------|------|
+| 卡牌 base | 557 | ✅ | ✅ | `starter` + 各流派 `index.ts` merge |
+| Legendary | 15 / 目标 20+ | ✅ | ✅ | guard/burst/mixed 各 5 |
+| Upgrade 规则 | 267 base 规则 | ✅ | ✅ | `generated_upgrade_rules.ts` → `upgradeRules.ts` |
+| 奖励池 | walker **337** eligible；early **27**；core **304** | — | ✅ | `rewardPoolRules.ts` Phase A+B |
+| Relic | 152 | ✅ | ⚠️ | `Object.assign` 进 `RELIC_DEFINITIONS`；133 仅 description |
+| Event | 205 | ✅ | ⚠️ | `eventRuntime.resolveGenericEvent`；Act1 含 10 个 pilot |
+| 敌人 | 134（80 gen） | ✅ | ⚠️ | merge 进 `MONSTER_DEFINITIONS`；8 个 gen encounter |
+| 世界观 | 44 条 | ✅ | — | `lore/factions|regions|boss_lore.ts` |
+| 美术 prompt | 1419 条 | ✅ | — | `art_prompts*.ts` + `art_prompts_linked.ts` |
 
-| 批次 | 数量 | 文件 |
+---
+
+### 1. 卡牌
+
+| 流派 | 文件 | 规模（约） |
+|------|------|------------|
+| guard | `common` + `uncommon` + `rare` + `generated_c` + `generated_legendary` | ~102 |
+| burst | 同上 + `generated_b` | ~95 |
+| mixed | 同上 + `generated_a` | ~77 |
+| neutral | `common` + `uncommon` + `rare` + `generated_d` | ~93 |
+| curse / status | `curse/curse.ts`, `status/status.ts` | 20 + 15 |
+| starter | `starter.ts` | 45 |
+
+**已完成**
+
+- 类型扩展：curse / status / legendary
+- Custom script 12+ 种已在 `playCard.ts` 实现
+- curse/status 不可打出（引擎 + BattleScene + 模拟）
+- `getCardArchetype()` 读 `CardDefinition.archetype`
+- 218 张 generated 卡 + 15 legendary 均有 `chapter` / `archetype` / upgrade
+
+**待办**
+
+- Legendary 补至 20+（缺 neutral legendary）
+- 流派覆盖仍偏 Momentum/Guard/Block；Burn/Poison/Bleed 少
+- 卡牌去重：`pnpm audit:cards` 报告型；`cardAudit.test.ts` 宽松阈值，非零重复
+
+---
+
+### 2. 遗物
+
+| 批次 | 文件 | 数量 |
 |------|------|------|
-| batch1 | 50 | `generated_relics/batch1.ts` |
-| batch2 | 50 | `generated_relics/batch2.ts` |
-| batch3 | 33 | `generated_relics/batch3.ts` |
+| 原有 wired | `relics.ts` | 19 |
+| generated | `generated_relics/batch1~3` | 133 |
 
-主题分布：连势(20+) / 格挡(20+) / 爆发(20+) / 通用(15+) / 联动(15+) / Boss(4)
+**已完成：** merge 进 `RELIC_DEFINITIONS`；`IMPLEMENTATION_NOTES.md` 记录 hook 建议
 
-**接入方式：** `generated_relics/index.ts` 导出 `GENERATED_RELICS`，需手动 merge 到 `relics.ts` 的 `RELIC_DEFINITIONS` 或运行时注册。
-
----
-
-### 3. 事件 (205 个)
-
-**全部新增**，原有 0 个。
-
-| 批次 | 数量 | 文件 |
-|------|------|------|
-| batch1 | 70 | `events/batch1.ts` |
-| batch2 | 70 | `events/batch2.ts` |
-| batch3 | 65 | `events/batch3.ts` |
-
-类型分布：risk_reward(26) / curse_trade(27) / merchant(24) / memory(26) / corruption(25) / strange_machine(23) / ancient_shrine(25) / random_gamble(24)
-
-章节分布：Ch1(69) / Ch2(64) / Ch3(67)
-
-**接入方式：** `events/index.ts` 定义类型并导出 `EVENT_DEFINITIONS`，按章节/类型分组。
+**待办：** 133 个 generated relic 需逐批接 battle/map hook；`gain_relic` event outcome 仍空实现
 
 ---
 
-### 4. 敌人 (80 个)
+### 3. 事件
 
-**新增 44 个**（原 36 个 → 80 个）。
+| 批次 | 数量 |
+|------|------|
+| batch1 / batch2 / batch3 | 70 + 70 + 65 = **205** |
 
-| 章节 | Normal | Elite | Boss | 小计 |
-|------|--------|-------|------|------|
-| Ch1 | 30 | 4 | 2 | 36 |
-| Ch2 | 20 | 4 | 2 | 26 |
-| Ch3 | 10 | 4 | 4 | 18 |
+**已完成**
 
-Boss 全部使用 `phases` 阶段切换 AI，HP 阈值触发。
+- `events/index.ts` 类型 + `EVENT_DEFINITIONS`
+- `eventResolver` → 未知 id 走 `resolveGenericEvent`
+- Act1 `EVENT_POOLS` 含 4 个 legacy + **10 个 `PILOT_EVENT_IDS`**
 
-**接入方式：** `monsters/generated/index.ts` 导出 `ALL_GENERATED_ENEMIES`，需 merge 到 `definitions.ts`。
+**待办**
+
+- Act2/3 地图池仍仅 **3** 个 legacy event（无 pilot）
+- 部分 `gain_card` outcome 缺 `cardId`（有 description 无具体卡）
+- 事件 UI / 展示层未批量接入 205 个
 
 ---
 
-### 5. 世界观 (44 条)
+### 4. 敌人
+
+| 来源 | 数量 |
+|------|------|
+| 原有 | ~54 |
+| generated | 80 |
+| **合计** | **134** |
+
+**已完成：** `Object.assign(MONSTER_DEFINITIONS, ALL_GENERATED_ENEMIES)`；`encounters.ts` 8 个 `gen_en_*` 试点（weight=2）
+
+**待办：** 距 TODO 目标 132 仍有 tier 分布缺口；多数 generated 敌人未进遭遇权重表
+
+---
+
+### 5. 地图与路线（阶段 5）
+
+**现状：** 沿用 `generateBranchingFloor.ts` 既有路线 bias / 节点权重；本次 sprint **未新增** Act Modifier 或特殊路线机制。
+
+---
+
+### 6. 世界观
 
 | 类型 | 数量 | 文件 |
 |------|------|------|
@@ -339,38 +366,42 @@ Boss 全部使用 `phases` 阶段切换 AI，HP 阈值触发。
 | 地区 | 20 | `lore/regions.ts` |
 | Boss 背景 | 14 | `lore/boss_lore.ts` |
 
-势力：远古守卫 / 织影者 / 铁誓盟约 / 翠环教团 / 深渊行者 / 节奏行者 / 灰烬宫廷 / 潮唤者 / 余烬盟约 / 默声圣咏
-
-地区分布：Ch1(7) / Ch2(7) / Ch3(6)
+**待办：** 卡牌关键词来源、地图区域描述、与 event/卡牌的 id 交叉引用
 
 ---
 
-### 6. 美术 Prompt (805 + 100 linked)
+### 7. 美术 Prompt
 
-| 文件 | 数量 | 类别 |
-|------|------|------|
-| `art_prompts.ts` | 805 | card(100) / enemy(100) / relic(80) / map(60) / event(100) / ui(80) / world(100) / boss_splash(80) / character(50) / misc(55) |
-| `art_prompts_linked.ts` | 100 | card(40) / relic(20) / enemy(20) / boss_splash(10) / map+ui+world(10) — subjectId 对齐真实 ID |
+| 文件 | 数量 |
+|------|------|
+| `assets/prompts/art_prompts.ts` | 805 |
+| `assets/prompts/art_prompts_extra.ts` | 520 |
+| `assets/prompts/art_prompts_linked.ts` | 94（对齐真实 content id） |
 
-格式：`{ id, category, subcategory, prompt, style, aspect_ratio }`
-
----
-
-### 7. Upgrade 规则 (218 条)
-
-**文件：** `cards/generated_upgrade_rules.ts`
-
-覆盖全部 218 张新卡，每张有 level 1 (+) 和 level 2 (++)。已 merge 到 `upgradeRules.ts` 的 `CARD_UPGRADE_RULES`。
+**待办：** 按需从 linked 扩展到全库；UI 层引用 prompt 生成资源路径
 
 ---
 
-## 验证结果
+### 工程验证（当前 main）
 
-- `npx tsc --noEmit` — **零错误**
-- `pnpm run build` — **构建成功** (2253 kB)
-- `pnpm run test` — **全部通过** (220 tests)
-- `rewardCardPool.length` — 383 张（测试已更新期望范围）
-- 卡牌去重审计 — 已修复 top 30 问题（同名 >2 重复已消除）
-- 遗物语义重叠检查 — 已修复 `enduring_wall` 与 `guard_knot` 重叠
-- 事件补充 — batch3 新增 5 个事件（chapter 3 偏多）
-- 美术 Prompt 对齐 — `art_prompts_linked.ts` 100 条使用真实 ID
+| 检查项 | 结果 |
+|--------|------|
+| `pnpm run build` | ✅ ~2259 kB |
+| `pnpm run test` | ✅ **225** tests |
+| `pnpm audit:cards` | 报告型脚本，手动跑 |
+| `pnpm audit:relics` | 报告型脚本，手动跑 |
+| `tests/content/wiring.test.ts` | relic / enemy / event 结构 |
+| `tests/curse/curseHooks.test.ts` | curse hook 覆盖 |
+| `tests/reward/rewardPoolRules.test.ts` | early ≤ 50，池 250~350 |
+
+---
+
+### 下一步优先级
+
+详见 **[docs/content-factory/mimo-prompt-phase2-wiring.md](docs/content-factory/mimo-prompt-phase2-wiring.md)**（可直接复制给 mimo）。
+
+1. **Event 地图池**：Act2/3 分批纳入 generated event（或按 chapter 动态抽池）
+2. **Relic runtime**：从 `IMPLEMENTATION_NOTES.md` 挑 20 个接 hook
+3. **Encounter 表**：提高 `gen_en_*` 权重，补 elite/boss 分布；修 phantom 敌人 id
+4. **Legendary +5**、neutral legendary 1 张
+5. **卡牌去重**：只修 generated 内部重复，勿手改全库（用 audit 报告驱动）

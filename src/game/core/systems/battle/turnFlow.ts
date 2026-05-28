@@ -103,6 +103,14 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   const fortifyRng = mulberry32((run.seed ^ battle.turn * 0xf00d5a1) >>> 0);
   resolveFortifyEndOfTurn(battle, events, () => fortifyRng());
 
+  // Relic: fortify_root — if block >= 5, retain half block (rounded down)
+  {
+    const p = battle.units[battle.playerUnitId];
+    if (p && run.meta.relics.includes('fortify_root') && p.block >= 5) {
+      p.block = Math.floor(p.block * 0.5);
+    }
+  }
+
   events.push({ type: 'TURN_ENDED', unitId: battle.playerUnitId });
   runOnTurnEnd(battle);
 
@@ -138,6 +146,10 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   battle.twinCoreNextAttackBonus = 0;
   battle.twinCoreNextSkillBonus = 0;
   battle.playerGainedBlockThisTurn = false;
+  battle.playerMomentumConsumedAmountThisTurn = 0;
+  battle.playerTurnBlockGained = 0;
+  battle.cycleEngineDrawsThisTurn = 0;
+  battle.chainBoltActive = false;
   battle.turn += 1;
   runOnTurnStart(battle);
   events.push({ type: 'TURN_STARTED', turn: battle.turn, unitId: battle.playerUnitId });

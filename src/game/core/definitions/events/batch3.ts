@@ -1,6 +1,63 @@
 import type { EventDefinition } from './index';
 
 export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
+  // ==================== Legacy map events (used by generateBranchingFloor) ====================
+  burst_altar: {
+    id: 'burst_altar',
+    name: '裂响祭坛',
+    description: '一座散发着炽热光芒的祭坛，火焰在顶端跳动。你可以感受到其中蕴含的强大能量。',
+    chapter: 2,
+    type: 'ancient_shrine',
+    choices: [
+      { id: 'burst_relic', text: '以生命换取力量', outcomes: [
+        { type: 'lose_hp', value: 6, description: '火焰灼伤了你' },
+        { type: 'gain_relic', relicId: 'burst_emblem', description: '你获得了爆裂纹章' },
+      ]},
+      { id: 'burst_card', text: '学习祭坛的技艺', outcomes: [
+        { type: 'gain_card', cardId: 'burst_strike', description: '你学会了裂响斩' },
+      ]},
+      { id: 'choice_3', text: '离开', outcomes: [
+        { type: 'nothing', description: '你绕过了祭坛' },
+      ]},
+    ],
+  },
+  purging_pool: {
+    id: 'purging_pool',
+    name: '净手池',
+    description: '一池碧绿的水面泛着微光，水中似乎蕴含着某种净化的力量。你可以感受到它能洗去你手中的负担。',
+    chapter: 2,
+    type: 'ancient_shrine',
+    choices: [
+      { id: 'remove_strike', text: '洗去基础斩击', outcomes: [
+        { type: 'gain_card', cardId: 'strike', description: '你将一张斩击投入池中净化' },
+      ]},
+      { id: 'remove_defend', text: '洗去基础防御', outcomes: [
+        { type: 'gain_card', cardId: 'defend', description: '你将一张防御投入池中净化' },
+      ]},
+      { id: 'choice_3', text: '离开', outcomes: [
+        { type: 'nothing', description: '你没有碰池水' },
+      ]},
+    ],
+  },
+  stillness_shrine: {
+    id: 'stillness_shrine',
+    name: '静谧神龛',
+    description: '一座隐藏在林间的古老神龛，周围的一切都异常安静。神龛上刻着一行字："静者得之。"',
+    chapter: 1,
+    type: 'ancient_shrine',
+    choices: [
+      { id: 'choice_1', text: '静坐冥想', outcomes: [
+        { type: 'gain_hp', value: 12, description: '宁静治愈了你' },
+      ]},
+      { id: 'choice_2', text: '献上金币', outcomes: [
+        { type: 'lose_gold', value: 25, description: '你献上了 25 金币' },
+        { type: 'gain_relic', relicId: 'wind_chime', description: '神龛赐予了你一件遗物' },
+      ]},
+      { id: 'choice_3', text: '离开', outcomes: [
+        { type: 'nothing', description: '你安静地离开了' },
+      ]},
+    ],
+  },
   // ==================== Chapter 1: risk_reward (4), curse_trade (3), merchant (3), memory (3), corruption (2), strange_machine (2), ancient_shrine (1), random_gamble (2) = 20 ====================
 
   abandoned_well: {
@@ -14,7 +71,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '将绳索系在腰间，缓缓下探',
         outcomes: [
-          { type: 'gain_relic', description: '在井底发现一枚古老的铜质护符' },
+          { type: 'gain_relic', relicId: 'twin_core', description: '在井底发现一枚古老的铜质护符' },
           { type: 'lose_hp', value: 8, description: '攀爬时不慎跌落，损失 8 点生命' },
         ],
       },
@@ -56,7 +113,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '直接去拿那个被布包裹的物品',
         outcomes: [
-          { type: 'gain_card', description: '发现一张被封印的符文卡片' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 3, description: '包裹中暗藏毒咒，最大生命值降低 3' },
         ],
       },
@@ -115,7 +172,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '冒险登上塔顶搜寻',
         outcomes: [
-          { type: 'gain_card', description: '在塔顶发现一张被遗忘的古老卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 10, description: '塔身摇晃导致你从楼梯摔落，损失 10 点生命' },
         ],
       },
@@ -258,7 +315,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '询问他是否有好货',
         outcomes: [
-          { type: 'gain_card', description: '商人展示了一张稀有的古老卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_gold', value: 25, description: '花费 25 金币购入' },
         ],
       },
@@ -292,7 +349,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '购买一张封印的卷轴',
         outcomes: [
-          { type: 'gain_card', description: '卷轴中封印着一张古老卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_gold', value: 20, description: '花费 20 金币' },
         ],
       },
@@ -317,7 +374,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '用金币购买他的遗物',
         outcomes: [
-          { type: 'gain_relic', description: '获得一件古老的遗物' },
+          { type: 'gain_relic', relicId: 'harmony_emblem', description: '获得一件古老的遗物' },
           { type: 'lose_gold', value: 30, description: '花费 30 金币' },
         ],
       },
@@ -333,7 +390,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '提议用你的知识交换他的物品',
         outcomes: [
-          { type: 'gain_card', description: '他被你的知识打动，给了你一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'nothing', description: '他仔细听完后不置可否' },
         ],
       },
@@ -352,7 +409,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         text: '仔细观察壁画的内容',
         outcomes: [
           { type: 'gain_momentum', value: 2, description: '壁画中蕴含的智慧令你获得 2 点势能' },
-          { type: 'gain_card', description: '在壁画的裂缝中发现一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -417,7 +474,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '仔细研究画像下方的文字',
         outcomes: [
-          { type: 'gain_card', description: '文字中隐藏的咒语化作一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'gain_momentum', value: 1, description: '获得 1 点势能' },
         ],
       },
@@ -457,7 +514,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '触碰发光的苔藓',
         outcomes: [
-          { type: 'gain_card', description: '苔藓中蕴含的力量化作一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 2, description: '苔藓的毒素侵入体内，最大生命值降低 2' },
         ],
       },
@@ -516,7 +573,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '尝试启动那台机械装置',
         outcomes: [
-          { type: 'gain_relic', description: '装置运转后吐出一件古代遗物' },
+          { type: 'gain_relic', relicId: 'ward_banner', description: '装置运转后吐出一件古代遗物' },
           { type: 'lose_hp', value: 10, description: '装置失控，齿轮碎片飞溅，损失 10 点生命' },
         ],
       },
@@ -548,7 +605,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '投入一枚金币',
         outcomes: [
-          { type: 'gain_card', description: '装置吐出一张卡牌，上面描绘着你的未来' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_gold', value: 5, description: '花费 5 金币' },
         ],
       },
@@ -631,7 +688,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '选择前方的路',
         outcomes: [
-          { type: 'gain_card', description: '在路尽头的石龛中发现一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 5, description: '被潜伏的怪物偷袭，损失 5 点生命' },
         ],
       },
@@ -665,7 +722,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '将硬币投入"反"的凹槽',
         outcomes: [
-          { type: 'gain_card', description: '石门后是一间藏书室，发现一张神秘卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'nothing', description: '石门纹丝不动，什么也没有发生' },
         ],
       },
@@ -693,7 +750,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '沿着裂隙边缘小心探索',
         outcomes: [
-          { type: 'gain_relic', description: '在裂隙边缘发现一件被封印的古代遗物' },
+          { type: 'gain_relic', relicId: 'flare_banner', description: '在裂隙边缘发现一件被封印的古代遗物' },
           { type: 'lose_hp', value: 12, description: '脚下的岩石碎裂，险些坠入深渊，损失 12 点生命' },
         ],
       },
@@ -709,7 +766,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '从裂隙中汲取黑暗之力',
         outcomes: [
-          { type: 'gain_card', description: '黑暗之力化作一张强大的诅咒卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 8, description: '黑暗侵蚀了你的身体，损失 8 点生命' },
           { type: 'lose_max_hp', value: 2, description: '最大生命值降低 2' },
         ],
@@ -737,7 +794,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '将黑色液体收集在容器中',
         outcomes: [
-          { type: 'gain_card', description: '液体中蕴含的黑暗力量化作一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 8, description: '收集过程中液体溅到身上，损失 8 点生命' },
         ],
       },
@@ -862,7 +919,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '穿上这件斗篷',
         outcomes: [
-          { type: 'gain_relic', description: '斗篷化作一件强大的灵魂遗物' },
+          { type: 'gain_relic', relicId: 'vajra', description: '斗篷化作一件强大的灵魂遗物' },
           { type: 'lose_max_hp', value: 8, description: '灵魂被斗篷吞噬了一部分，最大生命值降低 8' },
         ],
       },
@@ -937,7 +994,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '向她购买一瓶鉴定药水',
         outcomes: [
-          { type: 'gain_card', description: '药水让你看清了隐藏的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_gold', value: 18, description: '花费 18 金币' },
         ],
       },
@@ -945,7 +1002,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '请求她修复一件损坏的遗物',
         outcomes: [
-          { type: 'gain_relic', description: '她成功修复了你的遗物' },
+          { type: 'gain_relic', relicId: 'anchor', description: '她成功修复了你的遗物' },
           { type: 'lose_gold', value: 25, description: '花费 25 金币作为报酬' },
         ],
       },
@@ -971,7 +1028,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '研究壁画中的加冕仪式',
         outcomes: [
-          { type: 'gain_card', description: '壁画中蕴含的古老知识化作一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'gain_momentum', value: 2, description: '获得 2 点势能' },
         ],
       },
@@ -997,7 +1054,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '凝视湖面的倒影',
         outcomes: [
-          { type: 'gain_card', description: '从另一个世界获取了一张神秘的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 10, description: '精神受到冲击，损失 10 点生命' },
         ],
       },
@@ -1047,7 +1104,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '将石头从墙壁中取出',
         outcomes: [
-          { type: 'gain_relic', description: '石头化作一件记忆遗物' },
+          { type: 'gain_relic', relicId: 'wind_chime', description: '石头化作一件记忆遗物' },
           { type: 'lose_hp', value: 12, description: '取出石头时遭到记忆反噬，损失 12 点生命' },
         ],
       },
@@ -1055,7 +1112,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '只观察画面，不触碰石头',
         outcomes: [
-          { type: 'gain_card', description: '画面中的知识化作一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'gain_momentum', value: 1, description: '获得 1 点势能' },
         ],
       },
@@ -1073,7 +1130,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '将自己的血液滴入熔炉',
         outcomes: [
-          { type: 'gain_card', description: '血液与火焰融合，锻造出一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 4, description: '生命力被熔炉吞噬，最大生命值降低 4' },
         ],
       },
@@ -1122,7 +1179,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '试图将碎片重新拼合',
         outcomes: [
-          { type: 'gain_relic', description: '碎片拼合后化作一件时间遗物' },
+          { type: 'gain_relic', relicId: 'tactical_gloves', description: '碎片拼合后化作一件时间遗物' },
           { type: 'lose_max_hp', value: 4, description: '拼合过程消耗了你的生命力，最大生命值降低 4' },
         ],
       },
@@ -1130,7 +1187,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '在碎片间寻找有用的映像',
         outcomes: [
-          { type: 'gain_card', description: '从一个映像中获取了一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'gain_momentum', value: 2, description: '获得了 2 点势能' },
         ],
       },
@@ -1148,7 +1205,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '对装置发出声音',
         outcomes: [
-          { type: 'gain_card', description: '装置与你的声音共鸣，释放出一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 6, description: '共鸣的冲击波伤害了你的耳朵，损失 6 点生命' },
         ],
       },
@@ -1190,7 +1247,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '在传送门前献上供品',
         outcomes: [
-          { type: 'gain_relic', description: '传送门接受了供品，吐出一件古代遗物' },
+          { type: 'gain_relic', relicId: 'burst_emblem', description: '传送门接受了供品，吐出一件古代遗物' },
           { type: 'lose_gold', value: 15, description: '供品价值 15 金币' },
         ],
       },
@@ -1216,7 +1273,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '将你的血液洒在供坛上',
         outcomes: [
-          { type: 'gain_card', description: '灵魂们回应了你的祭品，赐予一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 12, description: '失血过多，损失 12 点生命' },
         ],
       },
@@ -1284,7 +1341,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '接受挑战，坐下对弈',
         outcomes: [
-          { type: 'gain_relic', description: '你赢了棋局，骨手留下一件遗物后消散' },
+          { type: 'gain_relic', relicId: 'insight_lens', description: '你赢了棋局，骨手留下一件遗物后消散' },
           { type: 'lose_hp', value: 15, description: '你输了，骨手夺走了一部分生命力，损失 15 点生命' },
         ],
       },
@@ -1300,7 +1357,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '仔细观察棋局的走势',
         outcomes: [
-          { type: 'gain_card', description: '从棋局中领悟到一种新的战术，获得一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'gain_momentum', value: 1, description: '获得 1 点势能' },
         ],
       },
@@ -1334,7 +1391,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '用工具在石柱上刻下自己的印记',
         outcomes: [
-          { type: 'gain_card', description: '石柱回应了你的行为，赐予一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 3, description: '石柱的反噬令你受伤，最大生命值降低 3' },
         ],
       },
@@ -1388,7 +1445,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '站在阵法中央激活古老的仪式',
         outcomes: [
-          { type: 'gain_card', description: '仪式赐予你一张传说级的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 20, description: '仪式的反噬力极大，损失 20 点生命' },
           { type: 'lose_max_hp', value: 5, description: '最大生命值降低 5' },
         ],
@@ -1431,7 +1488,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '选择蓝色水晶',
         outcomes: [
-          { type: 'gain_card', description: '水晶中封印着一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 5, description: '水晶的力量侵蚀了你的身体，最大生命值降低 5' },
         ],
       },
@@ -1548,7 +1605,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '用金币贿赂契约',
         outcomes: [
-          { type: 'gain_relic', description: '契约接受了金币，化作一件虚空遗物' },
+          { type: 'gain_relic', relicId: 'guard_knot', description: '契约接受了金币，化作一件虚空遗物' },
           { type: 'lose_gold', value: 30, description: '花费 30 金币' },
         ],
       },
@@ -1566,7 +1623,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '用你的记忆换取一件遗物',
         outcomes: [
-          { type: 'gain_relic', description: '获得一件来自死亡领域的强大遗物' },
+          { type: 'gain_relic', relicId: 'still_core', description: '获得一件来自死亡领域的强大遗物' },
           { type: 'lose_hp', value: 10, description: '失去记忆的痛苦令你损失 10 点生命' },
           { type: 'lose_max_hp', value: 5, description: '灵魂受损，最大生命值降低 5' },
         ],
@@ -1611,7 +1668,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '用你的血液购买一件遗物',
         outcomes: [
-          { type: 'gain_relic', description: '用血液换取了一件深渊遗物' },
+          { type: 'gain_relic', relicId: 'soft_guard', description: '用血液换取了一件深渊遗物' },
           { type: 'lose_max_hp', value: 7, description: '大量失血，最大生命值降低 7' },
         ],
       },
@@ -1637,7 +1694,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '一口气攀登到最高处',
         outcomes: [
-          { type: 'gain_relic', description: '在阶梯顶端发现一件时间遗物' },
+          { type: 'gain_relic', relicId: 'quick_fuse', description: '在阶梯顶端发现一件时间遗物' },
           { type: 'lose_hp', value: 20, description: '攀登过程极度消耗体力，损失 20 点生命' },
         ],
       },
@@ -1645,7 +1702,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '逐层研究墙壁上的壁画',
         outcomes: [
-          { type: 'gain_card', description: '壁画中隐藏的知识化作一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'gain_momentum', value: 4, description: '获得 4 点势能' },
           { type: 'lose_hp', value: 10, description: '时间错乱感令你头痛欲裂，损失 10 点生命' },
         ],
@@ -1672,7 +1729,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '读取书中关于力量的章节',
         outcomes: [
-          { type: 'gain_card', description: '力量的知识化作一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 12, description: '力量的代价令你损失 12 点生命' },
         ],
       },
@@ -1714,7 +1771,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '将手伸入球体表面的裂纹',
         outcomes: [
-          { type: 'gain_card', description: '虚空中的力量凝结成一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 8, description: '虚空之力侵蚀了你的本质，最大生命值降低 8' },
         ],
       },
@@ -1756,7 +1813,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '攀爬藤蔓进入地下',
         outcomes: [
-          { type: 'gain_relic', description: '在藤蔓的根部发现一件被保护的遗物' },
+          { type: 'gain_relic', relicId: 'sighted_edge', description: '在藤蔓的根部发现一件被保护的遗物' },
           { type: 'lose_max_hp', value: 5, description: '藤蔓的毒素侵入了你的身体，最大生命值降低 5' },
         ],
       },
@@ -1799,7 +1856,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '引导引擎的能量为自己所用',
         outcomes: [
-          { type: 'gain_card', description: '引擎能量凝结成一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 6, description: '能量的反噬伤害了身体，最大生命值降低 6' },
         ],
       },
@@ -1824,7 +1881,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '将你的武器投入熔炉',
         outcomes: [
-          { type: 'gain_card', description: '武器在熔炉中被重塑为一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_gold', value: 15, description: '武器的价值约 15 金币' },
         ],
       },
@@ -1866,7 +1923,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '在神像残骸中寻找遗物',
         outcomes: [
-          { type: 'gain_relic', description: '在神像内部发现一件被封印的神圣遗物' },
+          { type: 'gain_relic', relicId: 'blaze_core', description: '在神像内部发现一件被封印的神圣遗物' },
           { type: 'lose_hp', value: 15, description: '触碰圣物时遭到神罚，损失 15 点生命' },
         ],
       },
@@ -1916,7 +1973,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '尝试唤醒一座神像',
         outcomes: [
-          { type: 'gain_card', description: '神像苏醒后赐予你一张强大的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 25, description: '神像的愤怒令你损失 25 点生命' },
           { type: 'lose_max_hp', value: 5, description: '最大生命值降低 5' },
         ],
@@ -1943,7 +2000,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '将你的血液洒在神像脚下',
         outcomes: [
-          { type: 'gain_card', description: '神像赐予你一张来自其他维度的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 4, description: '血液的代价，最大生命值降低 4' },
         ],
       },
@@ -1951,7 +2008,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '用金币装饰神像',
         outcomes: [
-          { type: 'gain_relic', description: '神像接受了你的供品，赐予一件维度遗物' },
+          { type: 'gain_relic', relicId: 'fractured_blade', description: '神像接受了你的供品，赐予一件维度遗物' },
           { type: 'lose_gold', value: 25, description: '花费 25 金币' },
         ],
       },
@@ -1977,7 +2034,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '伸手触碰裂缝的边缘',
         outcomes: [
-          { type: 'gain_relic', description: '从另一个维度获取了一件强大的遗物' },
+          { type: 'gain_relic', relicId: 'iron_heart', description: '从另一个维度获取了一件强大的遗物' },
           { type: 'lose_max_hp', value: 6, description: '维度能量侵蚀了你的身体，最大生命值降低 6' },
         ],
       },
@@ -2028,7 +2085,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '以你的记忆为赌注',
         outcomes: [
-          { type: 'gain_relic', description: '你赢了！获得一件来自虚空的遗物' },
+          { type: 'gain_relic', relicId: 'counter_sigil', description: '你赢了！获得一件来自虚空的遗物' },
           { type: 'lose_max_hp', value: 5, description: '部分记忆永久丢失，最大生命值降低 5' },
         ],
       },
@@ -2061,7 +2118,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '轻轻拨动命运之轮',
         outcomes: [
-          { type: 'gain_card', description: '转盘停在卡牌符号上，获得一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_max_hp', value: 3, description: '转盘停在心脏符号上，最大生命值降低 3' },
         ],
       },
@@ -2095,7 +2152,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '攀爬深渊的边缘探索',
         outcomes: [
-          { type: 'gain_relic', description: '在深渊边缘发现一件被黑暗保护的遗物' },
+          { type: 'gain_relic', relicId: 'twin_core', description: '在深渊边缘发现一件被黑暗保护的遗物' },
           { type: 'lose_hp', value: 18, description: '攀爬时不慎滑落，险些坠入深渊，损失 18 点生命' },
         ],
       },
@@ -2131,7 +2188,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '尝试使用锻造炉打造武器',
         outcomes: [
-          { type: 'gain_card', description: '利用锻造炉的力量凝聚出一张强大的攻击卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 12, description: '锻造炉的火焰灼伤了你的双手，损失 12 点生命' },
         ],
       },
@@ -2165,7 +2222,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '寻找关于连势的典籍',
         outcomes: [
-          { type: 'gain_card', description: '找到了一本记载连势秘术的古籍，习得一张技能卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'nothing', description: '古籍中的文字太过晦涩，你未能理解其中奥义' },
         ],
       },
@@ -2201,7 +2258,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         requirements: 'hp >= 15',
         outcomes: [
           { type: 'lose_hp', value: 15, description: '献出 15 点生命作为竞拍代价' },
-          { type: 'gain_relic', description: '赢得了装满珍宝的神秘宝箱' },
+          { type: 'gain_relic', relicId: 'harmony_emblem', description: '赢得了装满珍宝的神秘宝箱' },
         ],
       },
       {
@@ -2210,7 +2267,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         requirements: 'gold >= 40',
         outcomes: [
           { type: 'lose_gold', value: 40, description: '支付 40 金币购买情报' },
-          { type: 'gain_card', description: '获得了关于古代力量的知识，习得一张能力卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -2271,7 +2328,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '与守卫战斗',
         outcomes: [
-          { type: 'gain_relic', description: '击败守卫后获得了它守护的古老遗物' },
+          { type: 'gain_relic', relicId: 'ward_banner', description: '击败守卫后获得了它守护的古老遗物' },
           { type: 'lose_hp', value: 20, description: '守卫的攻击极为凶猛，损失 20 点生命' },
         ],
       },
@@ -2281,7 +2338,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         requirements: 'gold >= 60',
         outcomes: [
           { type: 'lose_gold', value: 60, description: '支付 60 金币作为通行费' },
-          { type: 'gain_card', description: '守卫满意地让开道路，并赠予你一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {

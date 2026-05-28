@@ -1,4 +1,4 @@
-import { addStatusStacks } from '../combat/statusCombat';
+import { addStatusStacks, getStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
 // Side-effect: 注册 strike+ / strike++ 等升级版 CardDefinition 到 CARD_DEFINITIONS
 import '../definitions/cards/upgradeRules';
@@ -181,6 +181,14 @@ export function buildInitialBattle(
   if (character?.passive.type === 'battle_start_status') {
     addStatusStacks(units[PLAYER_UNIT_ID], character.passive.statusId, character.passive.stacks);
   }
+  // Relic: echo_plating — battle start gain 2 metallicize
+  if (relicIds.includes('echo_plating')) {
+    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_METALLICIZE, 2);
+  }
+  // Relic: flow_anchor — if momentum >= 3, gain 3 block
+  if (relicIds.includes('flow_anchor') && getStatusStacks(units[PLAYER_UNIT_ID], STATUS_MOMENTUM) >= 3) {
+    units[PLAYER_UNIT_ID].block += 3;
+  }
 
   const battle: BattleState = {
     id: battleKey,
@@ -202,6 +210,11 @@ export function buildInitialBattle(
     twinCoreFirstAttackUsed: false,
     harmonyEmblemTriggeredThisTurn: false,
     playerGainedBlockThisTurn: false,
+    playerMomentumConsumedAmountThisTurn: 0,
+    playerTurnBlockGained: 0,
+    cycleEngineDrawsThisTurn: 0,
+    chainBoltActive: false,
+    memoryShardActive: false,
     activeCurseIds: new Set(
       deckDefinitionIds.filter((id) => CARD_DEFINITIONS[id]?.type === 'curse'),
     ),

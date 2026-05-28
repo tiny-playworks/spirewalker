@@ -1,6 +1,7 @@
 import type { RunState } from '../../model/run';
 import type { GameEvent } from '../../events/types';
 import { EVENT_DEFINITIONS, type EventOutcome } from '../../definitions/events';
+import { applyRelicPickupEffect } from '../../definitions/relics';
 
 /**
  * 通用 EventOutcome → RunState 执行器。
@@ -31,7 +32,10 @@ function applyOutcome(run: RunState, outcome: EventOutcome): boolean {
       }
       return true;
     case 'gain_relic':
-      // gain_relic 由 reward flow 处理，此处仅标记
+      if (outcome.relicId && !run.meta.relics.includes(outcome.relicId)) {
+        run.meta.relics.push(outcome.relicId);
+        applyRelicPickupEffect(run, outcome.relicId);
+      }
       return true;
     case 'gain_momentum':
       // gain_momentum 由战斗状态处理，事件中暂不处理

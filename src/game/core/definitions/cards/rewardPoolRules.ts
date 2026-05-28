@@ -15,6 +15,7 @@ const NEUTRAL_WHITELIST = new Set<string>([
   ...TEMPO_RECOVERY_CARD_IDS,
   'burn_edge', 'clear_mind', 'recenter', 'patch_breath', 'second_wind',
   'steady_step', 'survey_field',
+  'neutral_legendary_1', 'neutral_legendary_2',
 ]);
 
 export function isRewardEligible(id: string, def: CardDefinition): boolean {
@@ -24,8 +25,8 @@ export function isRewardEligible(id: string, def: CardDefinition): boolean {
   if (id.startsWith('junk_')) return false;
   if (id.startsWith('neutral_common_')) return false;
 
-  // Phase B: common 卡在 chapter 2+ 不进池（legendary 除外）
-  if (def.rarity === 'common' && (def.chapter ?? 1) >= 2 && def.rarity !== 'legendary') return false;
+  // Phase B: common 卡在 chapter 2+ 不进池
+  if (def.rarity === 'common' && (def.chapter ?? 1) >= 2) return false;
 
   const archetype = def.archetype ?? 'neutral';
   if (archetype === 'neutral' && !NEUTRAL_WHITELIST.has(id)) return false;

@@ -1128,7 +1128,7 @@ describe('GameEngine 战斗修正', () => {
     expect(run.map.nodes[eliteId].encounterId).not.toBe('act1_elite_open');
     expect(run.battle?.enemyUnitIds.length).toBe(1);
     const encounterId = run.map.nodes[eliteId].encounterId;
-    expect(['act1_elite_heavy', 'act1_elite_double', 'act1_elite_control']).toContain(encounterId);
+    expect(['act1_elite_heavy', 'act1_elite_double', 'act1_elite_control', 'act1_gen_elite_moss', 'act1_gen_elite_knight']).toContain(encounterId);
   });
 
   test('商店金币不足无法购买', () => {
@@ -1524,12 +1524,22 @@ describe('GameEngine 地图', () => {
 
   test('第二章事件池可出现裂响祭坛并正常结算', () => {
     const engine = new GameEngine();
-    let run = createMapRun(305);
-    run.meta.act = 2;
-    run.meta.actFloor = 1;
-    run.meta.floor = globalFloorFor(2, 1);
-    run.map = { nodes: buildFloor2Nodes(305), currentNodeId: Object.values(buildFloor2Nodes(305)).find((n) => n.depth === 1)!.id };
-    const eventId = findNodeId(run, (n) => n.type === 'event' && n.depth > 1 && n.eventScriptId === BURST_ALTAR_EVENT_ID);
+    const findRunWithBurstAltar = (startSeed: number): [RunState, string] => {
+      for (let seed = startSeed; seed < startSeed + 80; seed++) {
+        const candidate = createMapRun(seed);
+        candidate.meta.act = 2;
+        candidate.meta.actFloor = 1;
+        candidate.meta.floor = globalFloorFor(2, 1);
+        candidate.map = { nodes: buildFloor2Nodes(seed), currentNodeId: Object.values(buildFloor2Nodes(seed)).find((n) => n.depth === 1)!.id };
+        const eventNode = Object.values(candidate.map.nodes).find(
+          (n) => n.type === 'event' && n.depth > 1 && n.eventScriptId === BURST_ALTAR_EVENT_ID,
+        );
+        if (eventNode) return [candidate, eventNode.id];
+      }
+      throw new Error('burst_altar not found in sampled seeds');
+    };
+
+    let [run, eventId] = findRunWithBurstAltar(305);
     jumpToBeforeNode(run, eventId);
     const hpBefore = run.player.currentHp;
 
@@ -1540,15 +1550,9 @@ describe('GameEngine 地图', () => {
     expect(run.meta.relics).toContain('burst_emblem');
     expect(run.player.currentHp).toBe(hpBefore - 6);
 
-    const nodes = buildFloor2Nodes(306);
-    run = createMapRun(306);
-    run.meta.act = 2;
-    run.meta.actFloor = 1;
-    run.meta.floor = globalFloorFor(2, 1);
-    run.map = { nodes, currentNodeId: Object.values(nodes).find((n) => n.depth === 1)!.id };
-    const cardEventId = findNodeId(run, (n) => n.type === 'event' && n.depth > 1 && n.eventScriptId === BURST_ALTAR_EVENT_ID);
-    jumpToBeforeNode(run, cardEventId);
-    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: cardEventId }).nextRun;
+    [run, eventId] = findRunWithBurstAltar(400);
+    jumpToBeforeNode(run, eventId);
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: eventId }).nextRun;
     run = engine.dispatch(run, { type: 'RESOLVE_EVENT_OPTION', optionId: 'burst_card' }).nextRun;
     expect(run.masterDeck).toContain(BURST_STRIKE.id);
     expect(run.screen.type).toBe('map');

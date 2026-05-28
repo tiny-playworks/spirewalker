@@ -142,6 +142,16 @@ export interface BattleState {
   harmonyEmblemTriggeredThisTurn: boolean;
   /** 本回合是否获得过格挡（均衡刃）。 */
   playerGainedBlockThisTurn: boolean;
+  /** 本回合累计消耗的动量层数（用于 momentum_siphon 等）。 */
+  playerMomentumConsumedAmountThisTurn: number;
+  /** 本回合累计获得的格挡值（用于 sanctuary_bell）。 */
+  playerTurnBlockGained: number;
+  /** 循环引擎：本回合已触发抽牌次数（max 2/turn）。 */
+  cycleEngineDrawsThisTurn: number;
+  /** 链锁之扣：3+ 攻击后下一次攻击 +8 已就绪。 */
+  chainBoltActive: boolean;
+  /** 记忆碎片：下一张牌费用 -1。 */
+  memoryShardActive: boolean;
   /** 当前卡组中激活的诅咒 id 集合（用于快速查找，避免每回合扫描全卡组）。 */
   activeCurseIds: Set<string>;
   /** 诅咒：傲慢 — 所有卡牌费用 +1。 */

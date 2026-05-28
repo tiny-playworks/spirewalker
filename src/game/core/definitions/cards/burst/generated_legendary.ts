@@ -84,10 +84,27 @@ export const BURST_LEGENDARY_5: CardDefinition = {
   tags: ['momentum', 'draw', 'energy'],
 };
 
+export const BURST_LEGENDARY_6: CardDefinition = {
+  id: 'burst_legendary_6',
+  name: '连锁爆破',
+  description: '消耗所有连势，每层造成 5 点伤害，消耗后抽 1 张牌。',
+  type: 'attack',
+  rarity: 'legendary',
+  cost: 3,
+  target: 'single_enemy',
+  effects: [
+    { type: 'custom', scriptId: 'momentum_burst_damage', params: { consumeMode: 'all', baseDamage: 0, damagePerStack: 5 } },
+    { type: 'custom', scriptId: 'momentum_burst_draw', params: { consumeMode: 'fixed', consumeValue: 0, baseDraw: 1, drawPerStack: 0 } },
+  ],
+  archetype: 'burst',
+  tags: ['momentum', 'damage', 'draw'],
+};
+
 export const BURST_LEGENDARY_CARDS: Record<string, CardDefinition> = {
   [BURST_LEGENDARY_1.id]: BURST_LEGENDARY_1,
   [BURST_LEGENDARY_2.id]: BURST_LEGENDARY_2,
   [BURST_LEGENDARY_3.id]: BURST_LEGENDARY_3,
   [BURST_LEGENDARY_4.id]: BURST_LEGENDARY_4,
   [BURST_LEGENDARY_5.id]: BURST_LEGENDARY_5,
+  [BURST_LEGENDARY_6.id]: BURST_LEGENDARY_6,
 };

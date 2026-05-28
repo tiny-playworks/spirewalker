@@ -48,7 +48,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '大胆饮用井水',
         outcomes: [
           { type: 'lose_hp', value: 8, description: '毒水侵蚀身体，受到 8 点伤害' },
-          { type: 'gain_relic', description: '水底似乎有什么东西在闪光' },
+          { type: 'gain_relic', relicId: 'flare_banner', description: '水底似乎有什么东西在闪光' },
         ],
       },
       {
@@ -79,7 +79,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '握住那把匕首',
         outcomes: [
-          { type: 'gain_relic', description: '匕首似乎与你产生了共鸣' },
+          { type: 'gain_relic', relicId: 'vajra', description: '匕首似乎与你产生了共鸣' },
           { type: 'lose_hp', value: 5, description: '刀刃割伤了手掌' },
         ],
       },
@@ -307,7 +307,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '触摸镜面',
         outcomes: [
-          { type: 'gain_relic', description: '影子递出了一件古老的遗物' },
+          { type: 'gain_relic', relicId: 'anchor', description: '影子递出了一件古老的遗物' },
           { type: 'lose_max_hp', value: 3, description: '你的双眼暂时失明了，最大生命永久下降' },
         ],
       },
@@ -406,7 +406,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '用金币偿还债务',
         outcomes: [
           { type: 'lose_gold', value: 60, description: '你支付了 60 金币' },
-          { type: 'gain_relic', description: '讨债人留下了一件古老的遗物作为凭证' },
+          { type: 'gain_relic', relicId: 'wind_chime', description: '讨债人留下了一件古老的遗物作为凭证' },
         ],
       },
       {
@@ -539,7 +539,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '购买一把附魔匕首',
         outcomes: [
           { type: 'lose_gold', value: 50, description: '支付了 50 金币' },
-          { type: 'gain_relic', description: '获得了一把附魔匕首' },
+          { type: 'gain_relic', relicId: 'tactical_gloves', description: '获得了一把附魔匕首' },
         ],
       },
       {
@@ -572,7 +572,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '购买一张古老的卡牌',
         outcomes: [
           { type: 'lose_gold', value: 60, description: '支付了 60 金币' },
-          { type: 'gain_card', description: '获得了一张稀有卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -621,7 +621,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '交易自己的血液换取物品',
         outcomes: [
           { type: 'lose_hp', value: 10, description: '炼金师抽走了一些血液' },
-          { type: 'gain_relic', description: '他给了你一件炼金制品' },
+          { type: 'gain_relic', relicId: 'burst_emblem', description: '他给了你一件炼金制品' },
         ],
       },
       {
@@ -646,7 +646,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '购买一枚骨制护符',
         outcomes: [
           { type: 'lose_gold', value: 45, description: '支付了 45 金币' },
-          { type: 'gain_relic', description: '获得了一枚骨制护符' },
+          { type: 'gain_relic', relicId: 'insight_lens', description: '获得了一枚骨制护符' },
         ],
       },
       {
@@ -662,7 +662,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '询问关于亡者的信息',
         outcomes: [
           { type: 'lose_gold', value: 25, description: '支付了 25 金币' },
-          { type: 'gain_card', description: '它给了你一张亡灵卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
     ],
@@ -681,7 +681,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         outcomes: [
           { type: 'lose_gold', value: 70, description: '支付了 70 金币' },
           { type: 'gain_hp', value: 10, description: '护甲增强了你的防御力' },
-          { type: 'gain_relic', description: '获得了一套精良护甲' },
+          { type: 'gain_relic', relicId: 'guard_knot', description: '获得了一套精良护甲' },
         ],
       },
       {
@@ -713,7 +713,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '帮他试药',
         outcomes: [
-          { type: 'gain_relic', description: '他兴奋地给了你一件炼金制品' },
+          { type: 'gain_relic', relicId: 'still_core', description: '他兴奋地给了你一件炼金制品' },
           { type: 'lose_hp', value: 12, description: '药剂让你感到不适' },
         ],
       },
@@ -722,7 +722,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '花钱买他已完成的作品',
         outcomes: [
           { type: 'lose_gold', value: 50, description: '支付了 50 金币' },
-          { type: 'gain_card', description: '获得了一张炼金卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -779,7 +779,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '仔细研读这本书',
         outcomes: [
-          { type: 'gain_card', description: '你学会了一种古老的技艺' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 5, description: '书中的文字灼伤了你的眼睛' },
         ],
       },
@@ -794,7 +794,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '把书带走以后再看',
         outcomes: [
-          { type: 'gain_card', description: '你获得了一本珍贵的书籍' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
     ],
@@ -884,7 +884,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '试图找到音乐的来源',
         outcomes: [
-          { type: 'gain_card', description: '你发现了一张以音乐为主题的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -915,7 +915,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '进入民居寻找有用的物品',
         outcomes: [
-          { type: 'gain_card', description: '你在一户人家中找到了一件珍品' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'gain_gold', value: 20, description: '抽屉里还有一些零散的金币' },
         ],
       },
@@ -988,7 +988,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '搜查桌子和周围',
         outcomes: [
           { type: 'gain_gold', value: 40, description: '你发现了前人藏匿的金币' },
-          { type: 'gain_card', description: '桌下有一张古老的卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -1019,7 +1019,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '将灯带走',
         outcomes: [
-          { type: 'gain_relic', description: '你获得了一盏永恒之灯' },
+          { type: 'gain_relic', relicId: 'soft_guard', description: '你获得了一盏永恒之灯' },
           { type: 'lose_hp', value: 8, description: '火焰灼伤了你的手' },
         ],
       },
@@ -1077,7 +1077,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '握住剑柄',
         outcomes: [
-          { type: 'gain_relic', description: '你获得了诅咒之刃' },
+          { type: 'gain_relic', relicId: 'quick_fuse', description: '你获得了诅咒之刃' },
           { type: 'lose_max_hp', value: 3, description: '剑的诅咒渗入了你的身体' },
         ],
       },
@@ -1249,7 +1249,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '将花移植到你的背包中',
         outcomes: [
-          { type: 'gain_relic', description: '你获得了一朵奇迹之花' },
+          { type: 'gain_relic', relicId: 'sighted_edge', description: '你获得了一朵奇迹之花' },
         ],
       },
       {
@@ -1306,7 +1306,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '潜入水中寻找发光的东西',
         outcomes: [
-          { type: 'gain_relic', description: '你从井底找到了一件古老遗物' },
+          { type: 'gain_relic', relicId: 'blaze_core', description: '你从井底找到了一件古老遗物' },
           { type: 'lose_max_hp', value: 3, description: '井水的腐化渗入了你' },
         ],
       },
@@ -1372,7 +1372,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '触摸水晶球体',
         outcomes: [
-          { type: 'gain_card', description: '球体传递了一种技艺给你' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 6, description: '球体释放了能量冲击' },
         ],
       },
@@ -1470,7 +1470,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '尝试取出核心',
         outcomes: [
-          { type: 'gain_relic', description: '你成功取出了能量核心' },
+          { type: 'gain_relic', relicId: 'fractured_blade', description: '你成功取出了能量核心' },
           { type: 'lose_hp', value: 15, description: '电弧在你取出核心时击中了你' },
         ],
       },
@@ -1510,7 +1510,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '播放所有记忆晶体',
         outcomes: [
-          { type: 'gain_card', description: '你在记忆中学会了一种古老的技艺' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 10, description: '大量的记忆冲击了你的精神' },
         ],
       },
@@ -1607,7 +1607,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '投入自己的武器进行锻造',
         outcomes: [
-          { type: 'gain_relic', description: '你的武器被强化了' },
+          { type: 'gain_relic', relicId: 'iron_heart', description: '你的武器被强化了' },
           { type: 'lose_gold', value: 30, description: '锻造消耗了一些金币' },
         ],
       },
@@ -1745,7 +1745,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '献上金币',
         outcomes: [
           { type: 'lose_gold', value: 50, description: '你献上了 50 金币' },
-          { type: 'gain_card', description: '祭坛给予了一张卡牌作为回报' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -1834,7 +1834,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '倾听回音',
         outcomes: [
-          { type: 'gain_card', description: '回音传递了一种古老的技艺' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
           { type: 'lose_hp', value: 5, description: '回音冲击了你的精神' },
         ],
       },
@@ -2097,7 +2097,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '参与戏法',
         outcomes: [
-          { type: 'gain_card', description: '你猜中了，魔术师给了你一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -2170,7 +2170,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '用彩票交换其他东西',
         outcomes: [
-          { type: 'gain_card', description: '你用彩票换了一张卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {
@@ -2227,7 +2227,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '用记忆交换一件宝物',
         outcomes: [
-          { type: 'gain_relic', description: '你获得了一件梦境宝物' },
+          { type: 'gain_relic', relicId: 'counter_sigil', description: '你获得了一件梦境宝物' },
           { type: 'lose_max_hp', value: 2, description: '你失去了一段珍贵的记忆' },
         ],
       },
@@ -2236,7 +2236,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
         text: '用金币交换',
         outcomes: [
           { type: 'lose_gold', value: 60, description: '你支付了 60 金币' },
-          { type: 'gain_card', description: '你获得了一张梦境卡牌' },
+          { type: 'gain_gold', value: 40, description: '获得了一些金币' },
         ],
       },
       {

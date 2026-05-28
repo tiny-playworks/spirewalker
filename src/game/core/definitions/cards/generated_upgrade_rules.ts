@@ -1697,4 +1697,39 @@ export const GENERATED_UPGRADE_RULES: Record<string, CardUpgradeRule> = {
       2: { nameSuffix: '++', descriptionPatch: '消耗所有连势，每层造成 6 点伤害。获得 4 层力量。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 2 }, { effectIndex: 1, kind: 'stacks', delta: 2 }] },
     },
   },
+  guard_legendary_6: {
+    baseId: 'guard_legendary_6',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '获得 18 点格挡。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'baseBlock', delta: 3 }] },
+      2: { nameSuffix: '++', descriptionPatch: '获得 22 点格挡。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'baseBlock', delta: 7 }] },
+    },
+  },
+  burst_legendary_6: {
+    baseId: 'burst_legendary_6',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '每层造成 6 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '每层造成 7 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 2 }] },
+    },
+  },
+  mixed_legendary_6: {
+    baseId: 'mixed_legendary_6',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '造成 10 点伤害并获得 10 点格挡。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerHit', delta: 2 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'blockPerHit', delta: 2 }] },
+      2: { nameSuffix: '++', descriptionPatch: '造成 12 点伤害并获得 12 点格挡。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerHit', delta: 4 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'blockPerHit', delta: 4 }] },
+    },
+  },
+  neutral_legendary_1: {
+    baseId: 'neutral_legendary_1',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '抽等量的牌并获得等量格挡。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'drawPerStack', delta: 0 }] },
+      2: { nameSuffix: '++', descriptionPatch: '抽等量的牌并获得等量格挡。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'drawPerStack', delta: 0 }] },
+    },
+  },
+  neutral_legendary_2: {
+    baseId: 'neutral_legendary_2',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '获得 4 层连势和 4 层稳势。', patches: [{ effectIndex: 1, kind: 'stacks', delta: 1 }, { effectIndex: 2, kind: 'stacks', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '获得 5 层连势和 5 层稳势。', patches: [{ effectIndex: 1, kind: 'stacks', delta: 2 }, { effectIndex: 2, kind: 'stacks', delta: 2 }] },
+    },
+  },
 };

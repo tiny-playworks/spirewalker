@@ -65,7 +65,7 @@ function encounterPoolIdFor(chapter: MapAct, tier: BattleEncounterTier): Encount
   return `act_${chapter}_${tier}`;
 }
 
-const ENCOUNTERS: EncounterTemplate[] = [
+export const ENCOUNTERS: EncounterTemplate[] = [
   { id: 'act1_normal_press', chapter: 1, tier: 'normal', weight: 7, name: '前压巡猎', tags: ['frontload'], pressureProfile: 'frontload', lineup: lineup(['slime']) },
   { id: 'act1_normal_split', chapter: 1, tier: 'normal', weight: 6, name: '分裂巢穴', tags: ['split', 'snowball'], pressureProfile: 'snowball', lineup: lineup(['slime_splitter', 'slime']) },
   { id: 'act1_normal_multi', chapter: 1, tier: 'normal', weight: 4, name: '鼠群突脸', tags: ['multi_hit'], pressureProfile: 'frontload', lineup: lineup(['fang_rat', 'fang_rat'], [28, 28]) },
@@ -115,11 +115,25 @@ const ENCOUNTERS: EncounterTemplate[] = [
   { id: 'act1_gen_skeletons', chapter: 1, tier: 'normal', weight: 2, name: '锈骨游荡', tags: ['undead'], pressureProfile: 'frontload', lineup: lineup(['gen_en_rusty_skeleton', 'gen_en_rusty_skeleton']) },
   { id: 'act1_gen_worms', chapter: 1, tier: 'normal', weight: 2, name: '掘地虫群', tags: ['beast'], pressureProfile: 'frontload', lineup: lineup(['gen_en_burrowing_worm', 'gen_en_plague_rat']) },
   { id: 'act1_gen_elite_knight', chapter: 1, tier: 'elite', weight: 2, name: '崩甲骑士', tags: ['elite', 'heavy'], pressureProfile: 'execution_check', lineup: lineup(['gen_en_crumbling_knight']) },
-  { id: 'act2_gen_assassins', chapter: 2, tier: 'normal', weight: 2, name: '暗影刺杀', tags: ['multi_hit'], pressureProfile: 'frontload', lineup: lineup(['gen_en_combo_assassin', 'gen_en_combo_assassin'], [36, 36]) },
-  { id: 'act2_gen_constructs', chapter: 2, tier: 'normal', weight: 2, name: '构造体巡逻', tags: ['construct'], pressureProfile: 'attrition', lineup: lineup(['gen_en_iron_golem', 'gen_en_support_drone']) },
-  { id: 'act2_gen_elite_golem', chapter: 2, tier: 'elite', weight: 2, name: '远古石像', tags: ['elite', 'defender'], pressureProfile: 'attrition', lineup: lineup(['gen_en_ancient_golem']) },
+  { id: 'act2_gen_assassins', chapter: 2, tier: 'normal', weight: 2, name: '暗影刺杀', tags: ['multi_hit'], pressureProfile: 'frontload', lineup: lineup(['gen_en_smoke_wraith', 'gen_en_smoke_wraith'], [36, 36]) },
+  { id: 'act2_gen_constructs', chapter: 2, tier: 'normal', weight: 2, name: '构造体巡逻', tags: ['construct'], pressureProfile: 'attrition', lineup: lineup(['gen_en_blast_golem', 'gen_en_spark_drone']) },
+  { id: 'act2_gen_elite_golem', chapter: 2, tier: 'elite', weight: 2, name: '远古石像', tags: ['elite', 'defender'], pressureProfile: 'attrition', lineup: lineup(['gen_en_steel_sentinel']) },
   { id: 'act3_gen_void', chapter: 3, tier: 'normal', weight: 2, name: '虚空侵蚀', tags: ['void'], pressureProfile: 'disruption', lineup: lineup(['gen_en_void_tendril', 'gen_en_void_tendril']) },
   { id: 'act3_gen_boss_nexus', chapter: 3, tier: 'boss', weight: 2, name: '核心枢纽', tags: ['boss', 'summoner'], pressureProfile: 'snowball', lineup: lineup(['gen_en_core_nexus']) },
+  // === New encounters (12) ===
+  // Act1 normal ×1
+  { id: 'act1_gen_spores', chapter: 1, tier: 'normal', weight: 3, name: '孢子飘散', tags: ['beast'], pressureProfile: 'attrition', lineup: lineup(['gen_en_spore_drifter', 'gen_en_spore_drifter', 'gen_en_blighted_sapling']) },
+  // Act1 elite ×1
+  { id: 'act1_gen_elite_moss', chapter: 1, tier: 'elite', weight: 2, name: '苔石巨人', tags: ['elite', 'heavy'], pressureProfile: 'attrition', lineup: lineup(['gen_en_moss_golem']) },
+  // Act2 normal ×2
+  { id: 'act2_gen_furnace', chapter: 2, tier: 'normal', weight: 3, name: '熔炉巡逻', tags: ['construct'], pressureProfile: 'frontload', lineup: lineup(['gen_en_furnace_elemental', 'gen_en_cinder_sprite']) },
+  { id: 'act2_gen_clockwork', chapter: 2, tier: 'normal', weight: 3, name: '发条蛛群', tags: ['construct'], pressureProfile: 'frontload', lineup: lineup(['gen_en_clockwork_spider', 'gen_en_clockwork_spider', 'gen_en_clockwork_spider']) },
+  // Act2 elite ×1
+  { id: 'act2_gen_elite_forge', chapter: 2, tier: 'elite', weight: 2, name: '锻造霸主', tags: ['elite', 'heavy'], pressureProfile: 'execution_check', lineup: lineup(['gen_en_forge_overlord']) },
+  // Act3 normal ×1
+  { id: 'act3_gen_entropy', chapter: 3, tier: 'normal', weight: 3, name: '熵变侵蚀', tags: ['void'], pressureProfile: 'disruption', lineup: lineup(['gen_en_entropy_weaver', 'gen_en_dimensional_shard']) },
+  // Act3 elite ×1
+  { id: 'act3_gen_elite_mind', chapter: 3, tier: 'elite', weight: 2, name: '心智收割者', tags: ['elite', 'disruption'], pressureProfile: 'disruption', lineup: lineup(['gen_en_mind_flayer']) },
 ];
 
 const ENCOUNTER_BY_ID = Object.fromEntries(ENCOUNTERS.map((encounter) => [encounter.id, encounter])) as Record<string, EncounterTemplate>;

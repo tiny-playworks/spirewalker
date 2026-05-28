@@ -3,6 +3,7 @@ import { NEUTRAL_COMMON_CARDS } from './common';
 import { NEUTRAL_UNCOMMON_CARDS } from './uncommon';
 import { NEUTRAL_RARE_CARDS } from './rare';
 import { NEUTRAL_GENERATED_D } from './generated_d';
+import { NEUTRAL_LEGENDARY_CARDS } from './generated_legendary';
 
 // 合并所有通用流派卡牌
 export const NEUTRAL_CARDS: Record<string, CardDefinition> = {
@@ -10,6 +11,7 @@ export const NEUTRAL_CARDS: Record<string, CardDefinition> = {
   ...NEUTRAL_UNCOMMON_CARDS,
   ...NEUTRAL_RARE_CARDS,
   ...NEUTRAL_GENERATED_D,
+  ...NEUTRAL_LEGENDARY_CARDS,
 };
 
 // 导出各稀有度卡牌

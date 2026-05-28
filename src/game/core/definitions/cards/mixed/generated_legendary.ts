@@ -81,10 +81,25 @@ export const MIXED_LEGENDARY_5: CardDefinition = {
   tags: ['momentum', 'damage', 'strength'],
 };
 
+export const MIXED_LEGENDARY_6: CardDefinition = {
+  id: 'mixed_legendary_6',
+  name: '双生风暴',
+  description: '造成 8 点伤害并获得 8 点格挡，重复 2 次。消耗。',
+  type: 'attack',
+  rarity: 'legendary',
+  cost: 3,
+  target: 'single_enemy',
+  effects: [{ type: 'custom', scriptId: 'multi_hit_with_block', params: { hits: 2, damagePerHit: 8, blockPerHit: 8 } }],
+  exhaustOnPlay: true,
+  archetype: 'mixed',
+  tags: ['damage', 'block', 'multi_hit', 'exhaust'],
+};
+
 export const MIXED_LEGENDARY_CARDS: Record<string, CardDefinition> = {
   [MIXED_LEGENDARY_1.id]: MIXED_LEGENDARY_1,
   [MIXED_LEGENDARY_2.id]: MIXED_LEGENDARY_2,
   [MIXED_LEGENDARY_3.id]: MIXED_LEGENDARY_3,
   [MIXED_LEGENDARY_4.id]: MIXED_LEGENDARY_4,
   [MIXED_LEGENDARY_5.id]: MIXED_LEGENDARY_5,
+  [MIXED_LEGENDARY_6.id]: MIXED_LEGENDARY_6,
 };
