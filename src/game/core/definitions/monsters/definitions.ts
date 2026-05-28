@@ -974,6 +974,10 @@ export const MONSTER_DEFINITIONS: Record<string, EnemyDefinition> =
     ENEMY_SEEDS.map((seed) => [seed.id, buildEnemyDefinition(seed)]),
   ) as Record<string, EnemyDefinition>;
 
+// ─── Generated enemies ─────────────────────────────────────────
+import { ALL_GENERATED_ENEMIES } from './generated';
+Object.assign(MONSTER_DEFINITIONS, ALL_GENERATED_ENEMIES);
+
 const RUNTIME_ONLY_MONSTER_DEFINITIONS: Record<string, EnemyDefinition> = {
   death_blight_spawn: buildEnemyDefinition({
     id: "death_blight_spawn",

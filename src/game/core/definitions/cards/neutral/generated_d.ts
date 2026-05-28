@@ -46,7 +46,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'block', value: 4, target: 'self' },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'block'],
   },
 
@@ -60,7 +60,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
     target: 'all_enemies',
     effects: [{ type: 'damage', value: 5, target: 'all_enemies' }],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'aoe'],
   },
 
@@ -74,7 +74,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
     target: 'single_enemy',
     effects: [{ type: 'repeat', times: 2, effects: [{ type: 'damage', value: 3, target: 'selected' }] }],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'multi_hit'],
   },
 
@@ -91,7 +91,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_VULNERABLE, stacks: 1, target: 'selected' },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'debuff'],
   },
 
@@ -108,7 +108,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_WEAK, stacks: 1, target: 'selected' },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'debuff'],
   },
 
@@ -122,7 +122,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
     target: 'single_enemy',
     effects: [{ type: 'damage', value: 12, target: 'selected' }],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage'],
   },
 
@@ -136,7 +136,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
     target: 'none',
     effects: [{ type: 'block', value: 6, target: 'self' }],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['block'],
   },
 
@@ -153,7 +153,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'custom', scriptId: 'momentum_burst_damage', params: { consumeMode: 'fixed', consumeValue: 0, baseDamage: 0, damagePerStack: 0 } },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'momentum'],
   },
 
@@ -170,7 +170,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'draw', value: 1 },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'draw'],
   },
 
@@ -187,7 +187,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_VULNERABLE, stacks: 1, target: 'selected' },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'debuff'],
   },
 
@@ -204,7 +204,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'heal', value: 3, target: 'self' },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'heal'],
   },
 
@@ -221,7 +221,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_STRENGTH, stacks: 1, target: 'self' },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['block', 'strength'],
   },
 
@@ -238,7 +238,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'block', value: 3, target: 'self' },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'block'],
   },
 
@@ -255,7 +255,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
       { type: 'custom', scriptId: 'momentum_burst_damage', params: { consumeMode: 'fixed', consumeValue: 1, baseDamage: 0, damagePerStack: 1 } },
     ],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'momentum', 'multi_hit'],
   },
 
@@ -265,7 +265,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
 
   nt_d_fortify: {
     id: 'nt_d_fortify',
-    name: '加固',
+    name: '坚实',
     description: '获得 5 点格挡。',
     type: 'skill',
     rarity: 'common',
@@ -273,13 +273,13 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
     target: 'none',
     effects: [{ type: 'block', value: 5, target: 'self' }],
     archetype: 'neutral',
-    chapter: 1,
+    chapter: 2,
     tags: ['block'],
   },
 
   nt_d_iron_wall: {
     id: 'nt_d_iron_wall',
-    name: '铁壁',
+    name: '坚壁',
     description: '获得 8 点格挡。',
     type: 'skill',
     rarity: 'common',
@@ -366,7 +366,7 @@ export const NEUTRAL_GENERATED_D: Record<string, CardDefinition> = {
 
   nt_d_defense_up: {
     id: 'nt_d_defense_up',
-    name: '防御强化',
+    name: '防御充能',
     description: '获得 4 点格挡，获得 1 层力量。',
     type: 'skill',
     rarity: 'common',

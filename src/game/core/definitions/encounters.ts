@@ -110,6 +110,16 @@ const ENCOUNTERS: EncounterTemplate[] = [
   { id: 'act3_elite_protocol', chapter: 3, tier: 'elite', weight: 6, name: '多协议 AI 怪', tags: ['elite', 'control'], pressureProfile: 'attrition', lineup: lineup(['protocol_ai']) },
   { id: 'act3_boss_gate', chapter: 3, tier: 'boss', weight: 8, name: '守门人', tags: ['boss', 'gate'], pressureProfile: 'execution_check', lineup: lineup(['act3_boss_crown']) },
   { id: 'act3_boss_echo', chapter: 3, tier: 'boss', weight: 8, name: '回声体', tags: ['boss', 'copy'], pressureProfile: 'disruption', lineup: lineup(['act3_echo_body']) },
+
+  // ─── Generated encounters (low weight, 不破坏现有平衡) ──────────
+  { id: 'act1_gen_skeletons', chapter: 1, tier: 'normal', weight: 2, name: '锈骨游荡', tags: ['undead'], pressureProfile: 'frontload', lineup: lineup(['gen_en_rusty_skeleton', 'gen_en_rusty_skeleton']) },
+  { id: 'act1_gen_worms', chapter: 1, tier: 'normal', weight: 2, name: '掘地虫群', tags: ['beast'], pressureProfile: 'frontload', lineup: lineup(['gen_en_burrowing_worm', 'gen_en_plague_rat']) },
+  { id: 'act1_gen_elite_knight', chapter: 1, tier: 'elite', weight: 2, name: '崩甲骑士', tags: ['elite', 'heavy'], pressureProfile: 'execution_check', lineup: lineup(['gen_en_crumbling_knight']) },
+  { id: 'act2_gen_assassins', chapter: 2, tier: 'normal', weight: 2, name: '暗影刺杀', tags: ['multi_hit'], pressureProfile: 'frontload', lineup: lineup(['gen_en_combo_assassin', 'gen_en_combo_assassin'], [36, 36]) },
+  { id: 'act2_gen_constructs', chapter: 2, tier: 'normal', weight: 2, name: '构造体巡逻', tags: ['construct'], pressureProfile: 'attrition', lineup: lineup(['gen_en_iron_golem', 'gen_en_support_drone']) },
+  { id: 'act2_gen_elite_golem', chapter: 2, tier: 'elite', weight: 2, name: '远古石像', tags: ['elite', 'defender'], pressureProfile: 'attrition', lineup: lineup(['gen_en_ancient_golem']) },
+  { id: 'act3_gen_void', chapter: 3, tier: 'normal', weight: 2, name: '虚空侵蚀', tags: ['void'], pressureProfile: 'disruption', lineup: lineup(['gen_en_void_tendril', 'gen_en_void_tendril']) },
+  { id: 'act3_gen_boss_nexus', chapter: 3, tier: 'boss', weight: 2, name: '核心枢纽', tags: ['boss', 'summoner'], pressureProfile: 'snowball', lineup: lineup(['gen_en_core_nexus']) },
 ];
 
 const ENCOUNTER_BY_ID = Object.fromEntries(ENCOUNTERS.map((encounter) => [encounter.id, encounter])) as Record<string, EncounterTemplate>;

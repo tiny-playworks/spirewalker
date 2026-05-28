@@ -1582,4 +1582,119 @@ export const GENERATED_UPGRADE_RULES: Record<string, CardUpgradeRule> = {
       2: { nameSuffix: '++', descriptionPatch: '获得 7 层力量，获得 3 层连势。消耗。', patches: [{ effectIndex: 0, kind: 'stacks', delta: 2 }, { effectIndex: 1, kind: 'stacks', delta: 1 }] },
     },
   },
+
+  // =========================================================================
+  //  LEGENDARY — 15 张
+  // =========================================================================
+
+  // --- 守势传说 (5) ---
+  guard_legendary_1: {
+    baseId: 'guard_legendary_1',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '获得 13 点格挡。若你本回合未消耗连势，额外获得 13 点格挡。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'baseBlock', delta: 3 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'blockIfNoConsume', delta: 3 }] },
+      2: { nameSuffix: '++', descriptionPatch: '获得 16 点格挡。若你本回合未消耗连势，额外获得 16 点格挡。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'baseBlock', delta: 6 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'blockIfNoConsume', delta: 6 }] },
+    },
+  },
+  guard_legendary_2: {
+    baseId: 'guard_legendary_2',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '获得 10 层金属化。', patches: [{ effectIndex: 0, kind: 'stacks', delta: 2 }] },
+      2: { nameSuffix: '++', descriptionPatch: '获得 12 层金属化。', patches: [{ effectIndex: 0, kind: 'stacks', delta: 4 }] },
+    },
+  },
+  guard_legendary_3: {
+    baseId: 'guard_legendary_3',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '消耗所有稳势，每层造成 7 点伤害。消耗所有连势，每层造成 5 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 1 }, { effectIndex: 1, kind: 'custom_param', paramKey: 'damagePerStack', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '消耗所有稳势，每层造成 8 点伤害。消耗所有连势，每层造成 6 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 2 }, { effectIndex: 1, kind: 'custom_param', paramKey: 'damagePerStack', delta: 2 }] },
+    },
+  },
+  guard_legendary_4: {
+    baseId: 'guard_legendary_4',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '造成等同于你格挡值 3 倍的伤害。消耗。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'multiplier', delta: 0.5 }] },
+      2: { nameSuffix: '++', descriptionPatch: '造成等同于你格挡值 3.5 倍的伤害。消耗。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'multiplier', delta: 1 }] },
+    },
+  },
+  guard_legendary_5: {
+    baseId: 'guard_legendary_5',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '造成 6 点伤害并获得 6 点格挡，重复 4 次。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerHit', delta: 1 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'blockPerHit', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '造成 7 点伤害并获得 7 点格挡，重复 4 次。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerHit', delta: 2 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'blockPerHit', delta: 2 }] },
+    },
+  },
+
+  // --- 爆发传说 (5) ---
+  burst_legendary_1: {
+    baseId: 'burst_legendary_1',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '消耗所有能量，每点造成 20 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerEnergy', delta: 2 }] },
+      2: { nameSuffix: '++', descriptionPatch: '消耗所有能量，每点造成 22 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerEnergy', delta: 4 }] },
+    },
+  },
+  burst_legendary_2: {
+    baseId: 'burst_legendary_2',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '消耗所有连势，每层造成 6 点伤害。消耗所有破势预热，每层造成 9 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 1 }, { effectIndex: 1, kind: 'custom_param', paramKey: 'damagePerStack', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '消耗所有连势，每层造成 7 点伤害。消耗所有破势预热，每层造成 10 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 2 }, { effectIndex: 1, kind: 'custom_param', paramKey: 'damagePerStack', delta: 2 }] },
+    },
+  },
+  burst_legendary_3: {
+    baseId: 'burst_legendary_3',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '消耗 5 点格挡，造成 40 点伤害。消耗。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'bonusDamage', delta: 5 }] },
+      2: { nameSuffix: '++', descriptionPatch: '消耗 5 点格挡，造成 45 点伤害。消耗。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'bonusDamage', delta: 10 }] },
+    },
+  },
+  burst_legendary_4: {
+    baseId: 'burst_legendary_4',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '消耗所有破势预热，每层造成 7 点伤害并抽 1 张牌。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '消耗所有破势预热，每层造成 8 点伤害并抽 2 张牌。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 2 }, { effectIndex: 1, kind: 'draw', delta: 1 }] },
+    },
+  },
+  burst_legendary_5: {
+    baseId: 'burst_legendary_5',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '消耗所有连势，每层造成 3 点伤害并抽 1 张牌。获得 3 点能量。', patches: [{ effectIndex: 1, kind: 'gain_energy', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '消耗所有连势，每层造成 4 点伤害并抽 1 张牌。获得 3 点能量。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 1 }, { effectIndex: 1, kind: 'gain_energy', delta: 1 }] },
+    },
+  },
+
+  // --- 混合传说 (5) ---
+  mixed_legendary_1: {
+    baseId: 'mixed_legendary_1',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '消耗 3 层连势，获得 4 点能量。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'energyGain', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '消耗 2 层连势，获得 4 点能量。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'consumeValue', delta: -1 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'energyGain', delta: 1 }] },
+    },
+  },
+  mixed_legendary_2: {
+    baseId: 'mixed_legendary_2',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '造成等同于你金属化层数 2 倍的伤害，然后获得等同于金属化层数的格挡。', patches: [] },
+      2: { nameSuffix: '++', descriptionPatch: '造成等同于你金属化层数 3 倍的伤害，然后获得等同于金属化层数的格挡。', patches: [] },
+    },
+  },
+  mixed_legendary_3: {
+    baseId: 'mixed_legendary_3',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '造成 10 点伤害。若你有格挡，额外造成 18 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'baseDamage', delta: 2 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'bonusDamage', delta: 3 }] },
+      2: { nameSuffix: '++', descriptionPatch: '造成 12 点伤害。若你有格挡，额外造成 21 点伤害。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'baseDamage', delta: 4 }, { effectIndex: 0, kind: 'custom_param', paramKey: 'bonusDamage', delta: 6 }] },
+    },
+  },
+  mixed_legendary_4: {
+    baseId: 'mixed_legendary_4',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '获得 4 层连势和 4 层金属化。', patches: [{ effectIndex: 0, kind: 'stacks', delta: 1 }, { effectIndex: 1, kind: 'stacks', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '获得 5 层连势和 5 层金属化。', patches: [{ effectIndex: 0, kind: 'stacks', delta: 2 }, { effectIndex: 1, kind: 'stacks', delta: 2 }] },
+    },
+  },
+  mixed_legendary_5: {
+    baseId: 'mixed_legendary_5',
+    levels: {
+      1: { nameSuffix: '+', descriptionPatch: '消耗所有连势，每层造成 5 点伤害。获得 3 层力量。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 1 }, { effectIndex: 1, kind: 'stacks', delta: 1 }] },
+      2: { nameSuffix: '++', descriptionPatch: '消耗所有连势，每层造成 6 点伤害。获得 4 层力量。', patches: [{ effectIndex: 0, kind: 'custom_param', paramKey: 'damagePerStack', delta: 2 }, { effectIndex: 1, kind: 'stacks', delta: 2 }] },
+    },
+  },
 };

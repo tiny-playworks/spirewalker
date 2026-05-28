@@ -18,6 +18,16 @@ export function leaveBattleToRewardFlow(run: RunState, events: GameEvent[]): voi
   if (!battle || battle.phase !== 'victory') return;
   /** Act1 Boss 仅在此处满血，早于奖励 UI 与 `run.battle` 清空，失败路径不会进入本函数 */
   applyAct1BossPostVictoryFullHealIfEligible(run);
+
+  // 诅咒：欲望 — 每场战斗结束时失去 3 点最大生命
+  if (run.masterDeck.some((id) => CARD_DEFINITIONS[id]?.id === 'curse_lust')) {
+    run.player.maxHp = Math.max(1, run.player.maxHp - 3);
+    run.player.currentHp = Math.min(run.player.currentHp, run.player.maxHp);
+  }
+  // 诅咒：暴食 — 每场战斗结束时失去 50% 金币
+  if (run.masterDeck.some((id) => CARD_DEFINITIONS[id]?.id === 'curse_gluttony')) {
+    run.meta.gold = Math.floor(run.meta.gold * 0.5);
+  }
   const curId = run.map.currentNodeId;
   const tier = rewardEncounterTierFromRun(run);
   const salt = (run.seed ^ run.meta.gold ^ 0xdec0de ^ hashMapNodeId(curId ?? '')) >>> 0;

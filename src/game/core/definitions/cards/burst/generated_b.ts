@@ -36,7 +36,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
 
   br_b_momentum_strike: {
     id: 'br_b_momentum_strike',
-    name: '连势打击',
+    name: '蓄势斩',
     description: '造成 5 点伤害。消耗 2 层连势，造成额外 5 点伤害。',
     type: 'attack',
     rarity: 'common',
@@ -50,7 +50,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'momentum'],
   },
 
@@ -70,7 +70,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'multi_hit'],
   },
 
@@ -84,7 +84,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
     target: 'single_enemy',
     effects: [{ type: 'damage', value: 10, target: 'selected' }],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage'],
   },
 
@@ -101,7 +101,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_VULNERABLE, stacks: 2, target: 'selected' },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'debuff'],
   },
 
@@ -121,7 +121,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'multi_hit'],
   },
 
@@ -324,7 +324,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 3, target: 'self' },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['momentum', 'setup'],
   },
 
@@ -345,13 +345,13 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       { type: 'gain_energy', value: 2 },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['energy', 'momentum'],
   },
 
   br_b_momentum_draw: {
     id: 'br_b_momentum_draw',
-    name: '连势过牌',
+    name: '势能抽取',
     description: '抽 2 张牌。消耗 2 层连势。',
     type: 'skill',
     rarity: 'common',
@@ -365,7 +365,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['draw', 'momentum'],
   },
 
@@ -526,7 +526,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'multi_hit', 'momentum'],
   },
 
@@ -546,7 +546,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
       },
     ],
     archetype: 'burst',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'momentum'],
   },
 
@@ -731,7 +731,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
 
   br_b_power_surge_u: {
     id: 'br_b_power_surge_u',
-    name: '力量强化',
+    name: '力量激发',
     description: '获得 2 层力量。',
     type: 'power',
     rarity: 'uncommon',
@@ -991,7 +991,7 @@ export const BURST_GENERATED_B: Record<string, CardDefinition> = {
 
   br_b_power_master: {
     id: 'br_b_power_master',
-    name: '力量精通',
+    name: '力量奥义',
     description: '获得 3 层力量。',
     type: 'power',
     rarity: 'rare',

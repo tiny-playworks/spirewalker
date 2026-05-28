@@ -161,7 +161,7 @@ export const GUARD_UNCOMMON_SKILL_3: CardDefinition = {
 
 export const GUARD_UNCOMMON_SKILL_4: CardDefinition = {
   id: 'guard_uncommon_skill_4',
-  name: '连势防御',
+  name: '势能壁垒',
   description: '获得 5 点格挡，获得 3 层连势。',
   type: 'skill',
   rarity: 'uncommon',
@@ -193,7 +193,7 @@ export const GUARD_UNCOMMON_SKILL_5: CardDefinition = {
 
 export const GUARD_UNCOMMON_SKILL_6: CardDefinition = {
   id: 'guard_uncommon_skill_6',
-  name: '防御强化',
+  name: '防御灌注',
   description: '获得 7 点格挡，获得 1 层力量。',
   type: 'skill',
   rarity: 'uncommon',
@@ -282,7 +282,7 @@ export const GUARD_UNCOMMON_POWER_3: CardDefinition = {
 
 export const GUARD_UNCOMMON_POWER_4: CardDefinition = {
   id: 'guard_uncommon_power_4',
-  name: '连势储备',
+  name: '连势积蓄',
   description: '获得 4 层连势。',
   type: 'power',
   rarity: 'uncommon',

@@ -157,7 +157,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         text: '询问那把刻有符文的匕首',
         outcomes: [
           { type: 'lose_gold', value: 20, description: '花费 20 金币购买匕首' },
-          { type: 'gain_card', description: '获得一张诅咒匕首卡牌' },
+          { type: 'gain_card', cardId: 'curse_decay', description: '获得一张诅咒匕首卡牌' },
         ],
       },
       {
@@ -182,7 +182,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '将耳朵贴近图腾聆听',
         outcomes: [
-          { type: 'gain_card', description: '低语中蕴含的古老知识化作一张卡牌' },
+          { type: 'gain_card', cardId: 'curse_blood_mark', description: '低语中蕴含的古老知识化作一张卡牌' },
           { type: 'lose_hp', value: 6, description: '低语声刺痛了你的神经，损失 6 点生命' },
         ],
       },
@@ -216,7 +216,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '用你的一部分听力换取力量',
         outcomes: [
-          { type: 'gain_card', description: '影子赐予你一张强大的暗影卡牌' },
+          { type: 'gain_card', cardId: 'curse_darkness', description: '影子赐予你一张强大的暗影卡牌' },
           { type: 'lose_max_hp', value: 3, description: '听觉变得模糊，最大生命值降低 3' },
         ],
       },
@@ -795,7 +795,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '翻开那本发出最强光芒的书',
         outcomes: [
-          { type: 'gain_card', description: '书中记载的古老咒语化作一张强大的卡牌' },
+          { type: 'gain_card', cardId: 'curse_blood_mark', description: '书中记载的古老咒语化作一张强大的卡牌' },
           { type: 'lose_hp', value: 10, description: '知识的诅咒侵袭你的意识，损失 10 点生命' },
         ],
       },
@@ -837,7 +837,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_2',
         text: '用你的血液交换他的知识',
         outcomes: [
-          { type: 'gain_card', description: '获得了失传的禁忌知识，化作一张卡牌' },
+          { type: 'gain_card', cardId: 'curse_blood_mark', description: '获得了失传的禁忌知识，化作一张卡牌' },
           { type: 'lose_max_hp', value: 6, description: '大量失血，最大生命值降低 6' },
         ],
       },
@@ -878,7 +878,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_3',
         text: '用其他物品替代灵魂支付',
         outcomes: [
-          { type: 'gain_card', description: '斗篷接受替代品，化作一张卡牌' },
+          { type: 'gain_card', cardId: 'curse_blood_mark', description: '斗篷接受替代品，化作一张卡牌' },
           { type: 'lose_gold', value: 15, description: '花费 15 金币作为替代品' },
         ],
       },
@@ -1352,7 +1352,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '长时间凝视画像',
         outcomes: [
-          { type: 'gain_card', description: '从画像中获取了一张强大的诅咒卡牌' },
+          { type: 'gain_card', cardId: 'curse_blood_mark', description: '从画像中获取了一张强大的诅咒卡牌' },
           { type: 'lose_max_hp', value: 4, description: '画像中的诅咒侵蚀了你的身体，最大生命值降低 4' },
         ],
       },
@@ -1532,7 +1532,7 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         id: 'choice_1',
         text: '签署契约，用你的感官换取力量',
         outcomes: [
-          { type: 'gain_card', description: '契约赋予你一张虚空卡牌' },
+          { type: 'gain_card', cardId: 'curse_forgetfulness', description: '契约赋予你一张虚空卡牌' },
           { type: 'lose_max_hp', value: 6, description: '感官的丧失令你的生命力减弱，最大生命值降低 6' },
         ],
       },
@@ -2113,6 +2113,183 @@ export const GENERATED_EVENTS_3: Record<string, EventDefinition> = {
         outcomes: [
           { type: 'gain_momentum', value: 5, description: '深渊的力量令你获得了深刻的领悟，获得 5 点势能' },
           { type: 'lose_max_hp', value: 3, description: '深渊的侵蚀伤害了你的灵魂，最大生命值降低 3' },
+        ],
+      },
+    ],
+  },
+
+  // ==================== 5 additional events (chapter 3 heavy) ====================
+
+  forgotten_forge: {
+    id: 'forgotten_forge',
+    name: '被遗忘的锻造炉',
+    description: '在废墟深处，你发现了一座仍在微弱燃烧的锻造炉。炉火呈现不自然的蓝白色，锻造台上的工具摆放整齐，仿佛工匠只是暂时离开。炉边的墙壁上刻着模糊的铭文，记录着某种古老的锻造技艺。',
+    chapter: 3,
+    type: 'strange_machine',
+    choices: [
+      {
+        id: 'choice_1',
+        text: '尝试使用锻造炉打造武器',
+        outcomes: [
+          { type: 'gain_card', description: '利用锻造炉的力量凝聚出一张强大的攻击卡牌' },
+          { type: 'lose_hp', value: 12, description: '锻造炉的火焰灼伤了你的双手，损失 12 点生命' },
+        ],
+      },
+      {
+        id: 'choice_2',
+        text: '研究墙上的铭文',
+        outcomes: [
+          { type: 'gain_momentum', value: 4, description: '铭文中蕴含的古老智慧令你获得 4 点势能' },
+          { type: 'nothing', description: '铭文太过模糊，你只解读出零星片段' },
+        ],
+      },
+      {
+        id: 'choice_3',
+        text: '取走锻造炉中的余烬',
+        outcomes: [
+          { type: 'gain_gold', value: 30, description: '余烬中蕴含着稀有金属，获得 30 金币' },
+          { type: 'lose_max_hp', value: 2, description: '余烬的余温灼伤了你的灵魂，最大生命值降低 2' },
+        ],
+      },
+    ],
+  },
+
+  ancient_library_b3: {
+    id: 'ancient_library_b3',
+    name: '远古图书馆',
+    description: '一座被藤蔓和苔藓覆盖的建筑矗立在你面前，推开沉重的石门，里面是一间巨大的图书馆。书架高耸入云，书卷散发着微弱的光芒。空气中弥漫着古老纸张和墨水的气息，偶尔有书页自行翻动。',
+    chapter: 3,
+    type: 'memory',
+    choices: [
+      {
+        id: 'choice_1',
+        text: '寻找关于连势的典籍',
+        outcomes: [
+          { type: 'gain_card', description: '找到了一本记载连势秘术的古籍，习得一张技能卡牌' },
+          { type: 'nothing', description: '古籍中的文字太过晦涩，你未能理解其中奥义' },
+        ],
+      },
+      {
+        id: 'choice_2',
+        text: '翻阅历史卷轴',
+        outcomes: [
+          { type: 'gain_momentum', value: 3, description: '历史的智慧令你获得 3 点势能' },
+          { type: 'gain_gold', value: 15, description: '在书架间发现散落的金币，获得 15 金币' },
+        ],
+      },
+      {
+        id: 'choice_3',
+        text: '触碰发光的书籍',
+        outcomes: [
+          { type: 'gain_hp', value: 15, description: '书籍中蕴含的治愈之力恢复了 15 点生命' },
+          { type: 'lose_hp', value: 10, description: '书籍中的诅咒反噬，损失 10 点生命' },
+        ],
+      },
+    ],
+  },
+
+  shadow_auction: {
+    id: 'shadow_auction',
+    name: '暗影拍卖会',
+    description: '你误入了一场隐秘的拍卖会。昏暗的灯光下，各种奇珍异宝被陈列在展示台上。拍卖师是一个戴着面具的身影，他的声音沙哑而诱惑："欢迎，新来的客人。这里的一切都可以用你最珍贵的东西来交换。"',
+    chapter: 3,
+    type: 'merchant',
+    choices: [
+      {
+        id: 'choice_1',
+        text: '用生命竞拍神秘宝箱',
+        requirements: 'hp >= 15',
+        outcomes: [
+          { type: 'lose_hp', value: 15, description: '献出 15 点生命作为竞拍代价' },
+          { type: 'gain_relic', description: '赢得了装满珍宝的神秘宝箱' },
+        ],
+      },
+      {
+        id: 'choice_2',
+        text: '用金币购买情报',
+        requirements: 'gold >= 40',
+        outcomes: [
+          { type: 'lose_gold', value: 40, description: '支付 40 金币购买情报' },
+          { type: 'gain_card', description: '获得了关于古代力量的知识，习得一张能力卡牌' },
+        ],
+      },
+      {
+        id: 'choice_3',
+        text: '只是参观，不参与竞拍',
+        outcomes: [
+          { type: 'gain_gold', value: 10, description: '在角落捡到一些被遗忘的金币，获得 10 金币' },
+          { type: 'nothing', description: '拍卖师对你失去了兴趣' },
+        ],
+      },
+    ],
+  },
+
+  cursed_merchant_b3: {
+    id: 'cursed_merchant_b3',
+    name: '被诅咒的商人',
+    description: '一个面容扭曲的商人坐在路旁，他的眼睛闪烁着不自然的光芒。"我有你需要的一切，"他低声说道，"但每件商品都有代价……你愿意付出什么？"',
+    chapter: 3,
+    type: 'curse_trade',
+    choices: [
+      {
+        id: 'choice_1',
+        text: '购买力量药剂',
+        requirements: 'gold >= 50',
+        outcomes: [
+          { type: 'lose_gold', value: 50, description: '支付 50 金币购买药剂' },
+          { type: 'gain_momentum', value: 6, description: '药剂令你获得了 6 点势能' },
+          { type: 'lose_max_hp', value: 4, description: '药剂的副作用侵蚀了你的生命力，最大生命值降低 4' },
+        ],
+      },
+      {
+        id: 'choice_2',
+        text: '购买治愈药水',
+        requirements: 'gold >= 35',
+        outcomes: [
+          { type: 'lose_gold', value: 35, description: '支付 35 金币购买药水' },
+          { type: 'gain_hp', value: 25, description: '药水恢复了 25 点生命' },
+        ],
+      },
+      {
+        id: 'choice_3',
+        text: '拒绝交易',
+        outcomes: [
+          { type: 'nothing', description: '商人发出不满的哼声，消失在阴影中' },
+        ],
+      },
+    ],
+  },
+
+  rift_guardian: {
+    id: 'rift_guardian',
+    name: '裂隙守卫',
+    description: '一道巨大的裂隙横亘在你面前，裂隙中散发着诡异的紫光。裂隙的边缘站着一个由岩石和能量构成的守卫，它的眼睛空洞地注视着你。守卫的声音如同雷鸣："此路不通，除非你能证明你的价值。"',
+    chapter: 3,
+    type: 'risk_reward',
+    choices: [
+      {
+        id: 'choice_1',
+        text: '与守卫战斗',
+        outcomes: [
+          { type: 'gain_relic', description: '击败守卫后获得了它守护的古老遗物' },
+          { type: 'lose_hp', value: 20, description: '守卫的攻击极为凶猛，损失 20 点生命' },
+        ],
+      },
+      {
+        id: 'choice_2',
+        text: '献上金币作为通行费',
+        requirements: 'gold >= 60',
+        outcomes: [
+          { type: 'lose_gold', value: 60, description: '支付 60 金币作为通行费' },
+          { type: 'gain_card', description: '守卫满意地让开道路，并赠予你一张卡牌' },
+        ],
+      },
+      {
+        id: 'choice_3',
+        text: '尝试绕过裂隙',
+        outcomes: [
+          { type: 'lose_hp', value: 10, description: '绕行时被裂隙的能量灼伤，损失 10 点生命' },
+          { type: 'gain_gold', value: 20, description: '在绕行途中发现了一些被遗弃的物资，获得 20 金币' },
         ],
       },
     ],

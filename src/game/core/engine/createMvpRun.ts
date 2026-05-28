@@ -11,6 +11,7 @@ import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
 import { buildInitialMonsterRuntime, getMonsterDefinition } from '../definitions/monsters';
 import { setInitialEnemyIntent } from '../systems/enemy/enemyAi';
+import { applyCurseBattleStart } from '../systems/status/statusHooks';
 import { createInstanceId, resetIdCounter } from '../utils/id';
 import { mulberry32 } from '../utils/rng';
 import { shuffleInPlace } from '../utils/shuffle';
@@ -201,6 +202,13 @@ export function buildInitialBattle(
     twinCoreFirstAttackUsed: false,
     harmonyEmblemTriggeredThisTurn: false,
     playerGainedBlockThisTurn: false,
+    activeCurseIds: new Set(
+      deckDefinitionIds.filter((id) => CARD_DEFINITIONS[id]?.type === 'curse'),
+    ),
+    cursePrideCostPressure: 0,
+    curseSlothDrawPressure: 0,
+    curseConfusionCostDelta: 0,
+    curseBurdenBlockDecay: 0,
     phase: 'player_action',
     inputMode: 'idle',
     playerUnitId: PLAYER_UNIT_ID,
@@ -228,6 +236,9 @@ export function buildInitialBattle(
   for (const enemyUnitId of enemyUnitIds) {
     setInitialEnemyIntent(battle, enemyUnitId);
   }
+
+  // 应用诅咒的战斗开始效果（恐惧、贪婪、愤怒等一次性效果）
+  applyCurseBattleStart(battle);
 
   return battle;
 }

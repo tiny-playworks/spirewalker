@@ -328,7 +328,7 @@ export function resetPlayerTurnControls(battle: BattleState): void {
 }
 
 export function applyStartOfPlayerTurnPressure(battle: BattleState): number {
-  const drawPenalty = Math.max(0, battle.player.drawPressure);
+  const drawPenalty = Math.max(0, battle.player.drawPressure + battle.curseSlothDrawPressure);
   battle.player.drawPressure = 0;
   return drawPenalty;
 }

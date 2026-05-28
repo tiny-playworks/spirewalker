@@ -142,6 +142,16 @@ export interface BattleState {
   harmonyEmblemTriggeredThisTurn: boolean;
   /** 本回合是否获得过格挡（均衡刃）。 */
   playerGainedBlockThisTurn: boolean;
+  /** 当前卡组中激活的诅咒 id 集合（用于快速查找，避免每回合扫描全卡组）。 */
+  activeCurseIds: Set<string>;
+  /** 诅咒：傲慢 — 所有卡牌费用 +1。 */
+  cursePrideCostPressure: number;
+  /** 诅咒：懒惰 — 额外抽牌压力（正值 = 少抽）。 */
+  curseSlothDrawPressure: number;
+  /** 诅咒：混乱 — 每张牌的额外随机费用（战斗开始时确定）。 */
+  curseConfusionCostDelta: number;
+  /** 诅咒：重担 — 格挡值衰减比例（0.25 = -25%）。 */
+  curseBurdenBlockDecay: number;
   phase: BattlePhase;
   inputMode: InputMode;
   playerUnitId: string;

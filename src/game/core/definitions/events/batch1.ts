@@ -216,7 +216,7 @@ export const GENERATED_EVENTS_1: Record<string, EventDefinition> = {
         id: 'sign_pact',
         text: '以血为墨，签署契约',
         outcomes: [
-          { type: 'gain_card', description: '获得一张强力卡牌' },
+          { type: 'gain_card', cardId: 'curse_wrath', description: '获得一张强力卡牌' },
           { type: 'lose_max_hp', value: 5, description: '你的血液被碑文吸取，失去 5 最大生命' },
         ],
       },
@@ -912,7 +912,7 @@ export const GENERATED_EVENTS_1: Record<string, EventDefinition> = {
         id: 'accept_power',
         text: '接受力量',
         outcomes: [
-          { type: 'gain_card', description: '获得一张强力诅咒卡牌' },
+          { type: 'gain_card', cardId: 'curse_dread', description: '获得一张强力诅咒卡牌' },
           { type: 'lose_max_hp', value: 6, description: '你的生命力被窃取，失去 6 最大生命' },
         ],
       },
@@ -947,7 +947,7 @@ export const GENERATED_EVENTS_1: Record<string, EventDefinition> = {
         requirements: 'gold >= 40',
         outcomes: [
           { type: 'lose_gold', value: 40, description: '花费 40 金币' },
-          { type: 'gain_card', description: '获得一张强力攻击卡牌' },
+          { type: 'gain_card', cardId: 'curse_wrath', description: '获得一张强力攻击卡牌' },
           { type: 'lose_max_hp', value: 3, description: '刀刃灼伤手掌，失去 3 最大生命' },
         ],
       },
@@ -957,7 +957,7 @@ export const GENERATED_EVENTS_1: Record<string, EventDefinition> = {
         requirements: 'gold >= 40',
         outcomes: [
           { type: 'lose_gold', value: 40, description: '花费 40 金币' },
-          { type: 'gain_card', description: '获得一张强力防御卡牌' },
+          { type: 'gain_card', cardId: 'curse_burden', description: '获得一张强力防御卡牌' },
           { type: 'lose_hp', value: 5, description: '盾牌上的诅咒灼伤了你，失去 5 生命' },
         ],
       },
@@ -1804,7 +1804,7 @@ export const GENERATED_EVENTS_1: Record<string, EventDefinition> = {
         id: 'wear_crown',
         text: '戴上王冠',
         outcomes: [
-          { type: 'gain_card', description: '获得一张王者之力的卡牌' },
+          { type: 'gain_card', cardId: 'curse_pride', description: '获得一张王者之力的卡牌' },
           { type: 'lose_max_hp', value: 8, description: '王冠的重量压碎了你的一部分，失去 8 最大生命' },
           { type: 'gain_momentum', value: 2, description: '获得 2 点动量' },
         ],

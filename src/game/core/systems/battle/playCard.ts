@@ -734,7 +734,8 @@ export function playCardFlow(
   const def = CARD_DEFINITIONS[card.definitionId];
   if (!def) return;
   if (def.type === 'curse' || def.type === 'status') return;
-  if (battle.player.energy < card.costForTurn) return;
+  const effectiveCost = card.costForTurn + battle.cursePrideCostPressure + battle.curseConfusionCostDelta;
+  if (battle.player.energy < Math.max(0, effectiveCost)) return;
   if (def.target === 'single_enemy') {
     if (!targetUnitId) {
       battle.pendingAction = { type: 'play_card', cardInstanceId, sourceUnitId };
@@ -757,7 +758,7 @@ export function playCardFlow(
   const useFractureExhaust =
     run.meta.relics.includes('fractured_blade') && isFirstAttackThisTurn;
 
-  battle.player.energy -= card.costForTurn;
+  battle.player.energy -= Math.max(0, effectiveCost);
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
   battle.player.hand = battle.player.hand.filter((id) => id !== cardInstanceId);
   if (def.exhaustOnPlay || useFractureExhaust) {

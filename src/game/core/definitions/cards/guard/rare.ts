@@ -128,7 +128,7 @@ export const GUARD_RARE_SKILL_3: CardDefinition = {
 
 export const GUARD_RARE_SKILL_4: CardDefinition = {
   id: 'guard_rare_skill_4',
-  name: '连势防御',
+  name: '势能壁垒',
   description: '获得 8 点格挡，获得 5 层连势。',
   type: 'skill',
   rarity: 'rare',

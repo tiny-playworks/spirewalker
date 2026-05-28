@@ -368,7 +368,7 @@ export const GUARD_POWER_4: CardDefinition = {
 
 export const GUARD_POWER_5: CardDefinition = {
   id: 'guard_power_5',
-  name: '连势储备',
+  name: '连势积蓄',
   description: '获得 3 层连势。',
   type: 'power',
   rarity: 'common',
@@ -438,7 +438,7 @@ export const GUARD_SKILL_11: CardDefinition = {
 
 export const GUARD_SKILL_12: CardDefinition = {
   id: 'guard_skill_12',
-  name: '防御强化',
+  name: '防御灌注',
   description: '获得 4 点格挡，获得 1 层金属化。',
   type: 'skill',
   rarity: 'common',
@@ -514,7 +514,7 @@ export const GUARD_SKILL_13: CardDefinition = {
 
 export const GUARD_SKILL_14: CardDefinition = {
   id: 'guard_skill_14',
-  name: '防御强化',
+  name: '防御充能',
   description: '获得 4 点格挡，获得 1 层金属化。',
   type: 'skill',
   rarity: 'common',

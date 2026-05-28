@@ -6,70 +6,125 @@ import type { BattleState } from '../../model/battle';
 import type { CombatUnit } from '../../model/unit';
 import type { AfterPlayCardPayload } from './statusRegistry';
 import { behaviorOf } from './statusRegistry';
-import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
 
 type BeforeDealDamageHook = (source: CombatUnit, amount: number) => number;
 type BeforeTakeDamageHook = (target: CombatUnit, amount: number) => number;
 type TurnStartHook = (battle: BattleState) => void;
 type TurnEndHook = (battle: BattleState) => void;
 
-/** 处理诅咒牌效果 */
-function applyCurseEffects(battle: BattleState): void {
+/**
+ * 战斗开始时一次性应用的诅咒效果。
+ * 调用时机：buildInitialBattle 之后、第一回合开始之前。
+ */
+export function applyCurseBattleStart(battle: BattleState): void {
   const player = battle.units[battle.playerUnitId];
   if (!player) return;
+  const curses = battle.activeCurseIds;
 
-  // 遍历玩家卡组中的诅咒牌
-  const allCards = [
-    ...battle.player.drawPile,
-    ...battle.player.hand,
-    ...battle.player.discardPile,
-  ];
+  if (curses.has('curse_dread')) {
+    // 恐惧：战斗开始时获得 2 层虚弱和 2 层易伤（仅一次）
+    addStatusStacks(player, 'weak', 2);
+    addStatusStacks(player, 'vulnerable', 2);
+  }
+  if (curses.has('curse_greed')) {
+    // 贪婪：战斗开始时失去 5 点生命
+    player.hp = Math.max(1, player.hp - 5);
+  }
+  if (curses.has('curse_wrath')) {
+    // 愤怒：获得 2 层力量（攻击 +50% 近似），同时获得 2 层易伤（受伤 +50% 近似）
+    addStatusStacks(player, 'strength', 2);
+    addStatusStacks(player, 'vulnerable', 2);
+  }
+  if (curses.has('curse_pride')) {
+    // 傲慢：所有卡牌费用 +1（记录到 battle 状态，由费用计算读取）
+    battle.cursePrideCostPressure = 1;
+  }
+  if (curses.has('curse_sloth')) {
+    // 懒惰：每回合少抽 1 张牌
+    battle.curseSlothDrawPressure = 1;
+  }
+  if (curses.has('curse_burden')) {
+    // 重担：格挡值 -25%
+    battle.curseBurdenBlockDecay = 0.25;
+  }
+  if (curses.has('curse_confusion')) {
+    // 混乱：所有卡牌费用随机增加 0-2（战斗开始时确定一个固定偏移）
+    battle.curseConfusionCostDelta = Math.floor(Math.random() * 3);
+  }
+}
 
-  for (const cardId of allCards) {
-    const card = battle.player.cards[cardId];
-    if (!card) continue;
-    const def = CARD_DEFINITIONS[card.definitionId];
-    if (!def || def.type !== 'curse') continue;
+/** 回合开始时触发的诅咒效果 */
+function applyCurseTurnStart(battle: BattleState): void {
+  const player = battle.units[battle.playerUnitId];
+  if (!player) return;
+  const curses = battle.activeCurseIds;
 
-    // 根据诅咒牌 ID 应用效果
-    switch (def.id) {
-      case 'curse_blood_mark':
-      case 'curse_darkness':
-      case 'curse_decay':
-      case 'curse_decay_2':
-        player.hp = Math.max(1, player.hp - 2);
-        break;
-      case 'curse_wrath':
-        // 愤怒：攻击伤害+50%，受到伤害+50%（已在战斗系统中处理）
-        break;
-      case 'curse_envy':
-        // 嫉妒：敌人每回合获得1层力量（在敌人回合处理）
-        break;
-      case 'curse_sloth':
-        // 懒惰：每回合少抽1张牌（在抽牌逻辑中处理）
-        break;
-      case 'curse_lust':
-        // 欲望：每场战斗结束时失去3点最大生命（在战斗结束时处理）
-        break;
-      case 'curse_gluttony':
-        // 暴食：每场战斗结束时失去50%金币（在战斗结束时处理）
-        break;
-      case 'curse_pride':
-        // 傲慢：卡牌费用+1（在费用计算中处理）
-        break;
-      case 'curse_silence':
-      case 'curse_forgetfulness':
-        // 沉默/遗忘：回合结束时消耗1张牌（在回合结束时处理）
-        break;
-      case 'curse_burden':
-        // 重担：格挡值-25%（在格挡计算中处理）
-        break;
-      case 'curse_dread':
-        // 恐惧：战斗开始时获得2层虚弱和2层易伤
-        addStatusStacks(player, 'weak', 2);
-        addStatusStacks(player, 'vulnerable', 2);
-        break;
+  // 血印 / 黑暗 / 腐朽：每回合失去 2 点生命
+  if (curses.has('curse_blood_mark') || curses.has('curse_darkness') || curses.has('curse_decay')) {
+    player.hp = Math.max(1, player.hp - 2);
+  }
+
+  // 虚弱诅咒：每回合获得 1 层虚弱
+  if (curses.has('curse_weakness')) {
+    addStatusStacks(player, 'weak', 1);
+  }
+
+  // 易伤诅咒：每回合获得 1 层易伤
+  if (curses.has('curse_vulnerability')) {
+    addStatusStacks(player, 'vulnerable', 1);
+  }
+
+  // 麻痹：每回合随机弃 1 张牌
+  if (curses.has('curse_paralysis') && battle.player.hand.length > 0) {
+    const index = Math.floor(Math.random() * battle.player.hand.length);
+    const discarded = battle.player.hand.splice(index, 1)[0];
+    if (discarded) battle.player.discardPile.push(discarded);
+  }
+
+  // 遗忘：每回合开始时消耗 1 张随机抽牌堆中的牌
+  if (curses.has('curse_forgetfulness') && battle.player.drawPile.length > 0) {
+    const index = Math.floor(Math.random() * battle.player.drawPile.length);
+    const exhausted = battle.player.drawPile.splice(index, 1)[0];
+    if (exhausted) battle.player.exhaustPile.push(exhausted);
+  }
+
+  // 嫉妒：敌人每回合获得 1 层力量
+  if (curses.has('curse_envy')) {
+    for (const enemyId of battle.enemyUnitIds) {
+      const enemy = battle.units[enemyId];
+      if (enemy?.alive) {
+        addStatusStacks(enemy, 'strength', 1);
+      }
     }
+  }
+
+  // 重担：回合开始时格挡值 -25%
+  if (curses.has('curse_burden') && player.block > 0) {
+    player.block = Math.floor(player.block * 0.75);
+  }
+}
+
+/** 回合结束时触发的诅咒效果 */
+function applyCurseTurnEnd(battle: BattleState): void {
+  const player = battle.units[battle.playerUnitId];
+  if (!player) return;
+  const curses = battle.activeCurseIds;
+
+  // 疑虑：每回合结束时获得 1 层易伤
+  if (curses.has('curse_doubt')) {
+    addStatusStacks(player, 'vulnerable', 1);
+  }
+
+  // 耻辱：每回合结束时获得 1 层虚弱
+  if (curses.has('curse_shame')) {
+    addStatusStacks(player, 'weak', 1);
+  }
+
+  // 沉默：回合结束时消耗 1 张随机手牌
+  if (curses.has('curse_silence') && battle.player.hand.length > 0) {
+    const index = Math.floor(Math.random() * battle.player.hand.length);
+    const exhausted = battle.player.hand.splice(index, 1)[0];
+    if (exhausted) battle.player.exhaustPile.push(exhausted);
   }
 }
 
@@ -83,16 +138,9 @@ function applyStatusCardEffects(battle: BattleState): void {
   for (const cardId of handCards) {
     const card = battle.player.cards[cardId];
     if (!card) continue;
-    const def = CARD_DEFINITIONS[card.definitionId];
-    if (!def || def.type !== 'status') continue;
 
     // 根据状态牌 ID 应用效果
-    switch (def.id) {
-      case 'status_wound':
-      case 'status_dazed':
-      case 'status_slimed':
-        // 这些状态牌在回合结束时消耗（已由战斗系统处理）
-        break;
+    switch (card.definitionId) {
       case 'status_burn':
         player.hp = Math.max(1, player.hp - 2);
         break;
@@ -110,11 +158,8 @@ function applyStatusCardEffects(battle: BattleState): void {
         player.block += 3;
         break;
       case 'status_poison':
-        // 中毒：失去等同于层数的生命
+        // 中毒：失去1点生命
         player.hp = Math.max(1, player.hp - 1);
-        break;
-      case 'status_bleed':
-        // 流血：每打出一张攻击牌失去2点生命（在出牌时处理）
         break;
       case 'status_curse':
         // 诅咒：获得1层易伤
@@ -153,8 +198,7 @@ function applyStatusCardEffects(battle: BattleState): void {
 
 const TURN_START_HOOKS: TurnStartHook[] = [
   (battle) => {
-    // 预留入口：后续接开局抽牌前、回合开始型状态效果。
-    applyCurseEffects(battle);
+    applyCurseTurnStart(battle);
     applyStatusCardEffects(battle);
   },
 ];
@@ -184,6 +228,7 @@ const BEFORE_TAKE_DAMAGE_HOOKS: BeforeTakeDamageHook[] = [
 
 const TURN_END_HOOKS: TurnEndHook[] = [
   (battle) => {
+    applyCurseTurnEnd(battle);
     const allUnitIds = [battle.playerUnitId, ...battle.enemyUnitIds];
     for (const uid of allUnitIds) {
       const unit = battle.units[uid];
@@ -212,12 +257,12 @@ export function runOnBeforeTakeDamage(target: CombatUnit, amount: number): numbe
   return next;
 }
 
-/** 玩家回合结束时状态衰减（虚弱/敌方易伤）。 */
+/** 玩家回合开始时触发。 */
 export function runOnTurnStart(battle: BattleState): void {
   for (const hook of TURN_START_HOOKS) hook(battle);
 }
 
-/** 玩家回合结束时状态衰减（虚弱/敌方易伤）。 */
+/** 玩家回合结束时触发。 */
 export function runOnTurnEnd(battle: BattleState): void {
   for (const hook of TURN_END_HOOKS) hook(battle);
 }

@@ -11,6 +11,7 @@ export type EventType =
 export interface EventOutcome {
   type: 'gain_gold' | 'lose_gold' | 'gain_hp' | 'lose_hp' | 'gain_card' | 'lose_max_hp' | 'gain_relic' | 'gain_momentum' | 'nothing';
   value?: number;
+  cardId?: string;
   description: string;
 }
 

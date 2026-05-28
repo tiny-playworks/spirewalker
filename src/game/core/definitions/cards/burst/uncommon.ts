@@ -172,7 +172,7 @@ export const BURST_UNCOMMON_SKILL_5: CardDefinition = {
 
 export const BURST_UNCOMMON_SKILL_6: CardDefinition = {
   id: 'burst_uncommon_skill_6',
-  name: '连势过牌',
+  name: '势能抽取',
   description: '抽 4 张牌。消耗 2 层连势。',
   type: 'skill',
   rarity: 'uncommon',
@@ -226,7 +226,7 @@ export const BURST_UNCOMMON_POWER_2: CardDefinition = {
 
 export const BURST_UNCOMMON_POWER_3: CardDefinition = {
   id: 'burst_uncommon_power_3',
-  name: '力量强化',
+  name: '力量激发',
   description: '获得 2 层力量。',
   type: 'power',
   rarity: 'uncommon',

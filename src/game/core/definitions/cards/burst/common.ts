@@ -215,7 +215,7 @@ export const BURST_COMMON_SKILL_5: CardDefinition = {
 
 export const BURST_COMMON_SKILL_6: CardDefinition = {
   id: 'burst_common_skill_6',
-  name: '连势过牌',
+  name: '势能抽取',
   description: '抽 3 张牌。消耗 1 层连势。',
   type: 'skill',
   rarity: 'common',
@@ -269,7 +269,7 @@ export const BURST_COMMON_POWER_1: CardDefinition = {
 
 export const BURST_COMMON_POWER_2: CardDefinition = {
   id: 'burst_common_power_2',
-  name: '连势储备',
+  name: '连势积蓄',
   description: '获得 2 层连势。',
   type: 'power',
   rarity: 'common',
@@ -282,7 +282,7 @@ export const BURST_COMMON_POWER_2: CardDefinition = {
 
 export const BURST_COMMON_POWER_3: CardDefinition = {
   id: 'burst_common_power_3',
-  name: '力量强化',
+  name: '力量激发',
   description: '获得 1 层力量。',
   type: 'power',
   rarity: 'common',
@@ -375,7 +375,7 @@ export const BURST_COMMON_POWER_4: CardDefinition = {
 
 export const BURST_COMMON_POWER_5: CardDefinition = {
   id: 'burst_common_power_5',
-  name: '连势储备',
+  name: '连势积蓄',
   description: '获得 2 层连势。',
   type: 'power',
   rarity: 'common',

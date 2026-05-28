@@ -103,7 +103,7 @@ export const MIXED_UNCOMMON_SKILL_1: CardDefinition = {
 
 export const MIXED_UNCOMMON_SKILL_2: CardDefinition = {
   id: 'mixed_uncommon_skill_2',
-  name: '连势防御',
+  name: '势能格挡',
   description: '获得 6 点格挡，获得 3 层连势。',
   type: 'skill',
   rarity: 'uncommon',
@@ -135,7 +135,7 @@ export const MIXED_UNCOMMON_SKILL_3: CardDefinition = {
 
 export const MIXED_UNCOMMON_SKILL_4: CardDefinition = {
   id: 'mixed_uncommon_skill_4',
-  name: '连势过牌',
+  name: '势能抽取',
   description: '抽 3 张牌。消耗 2 层连势。',
   type: 'skill',
   rarity: 'uncommon',
@@ -166,7 +166,7 @@ export const MIXED_UNCOMMON_SKILL_5: CardDefinition = {
 
 export const MIXED_UNCOMMON_POWER_1: CardDefinition = {
   id: 'mixed_uncommon_power_1',
-  name: '连势储备',
+  name: '连势积蓄',
   description: '获得 4 层连势。',
   type: 'power',
   rarity: 'uncommon',
@@ -192,7 +192,7 @@ export const MIXED_UNCOMMON_POWER_2: CardDefinition = {
 
 export const MIXED_UNCOMMON_POWER_3: CardDefinition = {
   id: 'mixed_uncommon_power_3',
-  name: '力量强化',
+  name: '力量充能',
   description: '获得 2 层力量。',
   type: 'power',
   rarity: 'uncommon',

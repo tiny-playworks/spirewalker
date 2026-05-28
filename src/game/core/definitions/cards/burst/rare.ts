@@ -174,7 +174,7 @@ export const BURST_RARE_POWER_2: CardDefinition = {
 
 export const BURST_RARE_POWER_3: CardDefinition = {
   id: 'burst_rare_power_3',
-  name: '力量精通',
+  name: '力量觉醒',
   description: '获得 3 层力量。',
   type: 'power',
   rarity: 'rare',

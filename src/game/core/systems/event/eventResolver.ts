@@ -6,6 +6,7 @@ import {
 } from '../../engine/generateBranchingFloor';
 import type { GameEvent } from '../../events/types';
 import type { RunState } from '../../model/run';
+import { resolveGenericEvent } from './eventRuntime';
 
 type EventOptionResolver = (run: RunState, optionId: string, events: GameEvent[]) => boolean;
 
@@ -74,6 +75,6 @@ export function resolveEventOption(
   events: GameEvent[],
 ): boolean {
   const resolver = EVENT_OPTION_RESOLVERS[eventId];
-  if (!resolver) return false;
-  return resolver(run, optionId, events);
+  if (resolver) return resolver(run, optionId, events);
+  return resolveGenericEvent(run, eventId, optionId, events);
 }

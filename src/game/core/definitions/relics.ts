@@ -154,3 +154,7 @@ export function applyRelicPickupEffect(run: RunState, relicId: string): void {
     run.player.currentHp += 5;
   }
 }
+
+// ─── Generated relics ──────────────────────────────────────────
+import { GENERATED_RELICS } from './generated_relics';
+Object.assign(RELIC_DEFINITIONS, GENERATED_RELICS);

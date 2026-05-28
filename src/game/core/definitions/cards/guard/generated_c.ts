@@ -20,7 +20,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
 
   gd_c_iron_wall: {
     id: 'gd_c_iron_wall',
-    name: '铁壁',
+    name: '钢壁',
     description: '获得 8 点格挡。',
     type: 'skill',
     rarity: 'common',
@@ -45,7 +45,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_METALLICIZE, stacks: 1, target: 'self' },
     ],
     archetype: 'guard',
-    chapter: 1,
+    chapter: 2,
     tags: ['block', 'metallicize'],
   },
 
@@ -62,7 +62,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_STEADY_GUARD, stacks: 1, target: 'self' },
     ],
     archetype: 'guard',
-    chapter: 1,
+    chapter: 2,
     tags: ['block', 'steady_guard'],
   },
 
@@ -79,7 +79,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 2, target: 'self' },
     ],
     archetype: 'guard',
-    chapter: 1,
+    chapter: 2,
     tags: ['block', 'momentum'],
   },
 
@@ -93,7 +93,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
     target: 'none',
     effects: [{ type: 'block', value: 11, target: 'self' }],
     archetype: 'guard',
-    chapter: 1,
+    chapter: 2,
     tags: ['block'],
   },
 
@@ -110,7 +110,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
       { type: 'draw', value: 1 },
     ],
     archetype: 'guard',
-    chapter: 1,
+    chapter: 2,
     tags: ['block', 'draw'],
   },
 
@@ -293,7 +293,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: STATUS_METALLICIZE, stacks: 2, target: 'self' },
     ],
     archetype: 'guard',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'metallicize'],
   },
 
@@ -310,7 +310,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
       { type: 'block', value: 4, target: 'self' },
     ],
     archetype: 'guard',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'block'],
   },
 
@@ -327,7 +327,7 @@ export const GUARD_GENERATED_C: Record<string, CardDefinition> = {
       { type: 'apply_status', statusId: 'vulnerable', stacks: 1, target: 'selected' },
     ],
     archetype: 'guard',
-    chapter: 1,
+    chapter: 2,
     tags: ['damage', 'debuff'],
   },
 

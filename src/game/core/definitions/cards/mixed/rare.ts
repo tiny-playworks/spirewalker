@@ -90,7 +90,7 @@ export const MIXED_RARE_SKILL_1: CardDefinition = {
 
 export const MIXED_RARE_SKILL_2: CardDefinition = {
   id: 'mixed_rare_skill_2',
-  name: '连势防御',
+  name: '势能壁垒',
   description: '获得 10 点格挡，获得 5 层连势。',
   type: 'skill',
   rarity: 'rare',
@@ -150,7 +150,7 @@ export const MIXED_RARE_POWER_2: CardDefinition = {
 
 export const MIXED_RARE_POWER_3: CardDefinition = {
   id: 'mixed_rare_power_3',
-  name: '力量精通',
+  name: '力量领悟',
   description: '获得 3 层力量。',
   type: 'power',
   rarity: 'rare',

@@ -12,11 +12,11 @@ function historyFromIds(ids: string[]) {
 }
 
 describe('enemy system content', () => {
-  test('敌人池满足 36 普通 / 12 精英 / 6 Boss', () => {
+  test('敌人池满足 ≥36 普通 / ≥12 精英 / ≥6 Boss', () => {
     const defs = listMonsterDefinitions();
-    expect(defs.filter((def) => def.tier === 'normal')).toHaveLength(36);
-    expect(defs.filter((def) => def.tier === 'elite')).toHaveLength(12);
-    expect(defs.filter((def) => def.tier === 'boss')).toHaveLength(6);
+    expect(defs.filter((def) => def.tier === 'normal').length).toBeGreaterThanOrEqual(36);
+    expect(defs.filter((def) => def.tier === 'elite').length).toBeGreaterThanOrEqual(12);
+    expect(defs.filter((def) => def.tier === 'boss').length).toBeGreaterThanOrEqual(6);
   });
 
   test('encounter 模板池至少 12 个，且普通/精英/Boss 池都存在', () => {

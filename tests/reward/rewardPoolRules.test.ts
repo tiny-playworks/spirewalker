@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@rstest/core';
-import { isRewardEligible } from '@/game/core/definitions/cards/rewardPoolRules';
+import { isRewardEligible, buildCardPools } from '@/game/core/definitions/cards/rewardPoolRules';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { generateCardRewardChoices } from '@/game/core/engine/generateRewardChoices';
@@ -55,10 +55,26 @@ describe('reward/rewardPoolRules', () => {
     }
   });
 
-  test('角色池规模合理（~300–500，含 uncommon/rare）', () => {
+  test('角色池规模合理（~250–350，Phase B 收紧后）', () => {
     const pool = getCharacterDefinition('walker').rewardCardPool;
-    expect(pool.length).toBeGreaterThanOrEqual(300);
-    expect(pool.length).toBeLessThanOrEqual(500);
+    expect(pool.length).toBeGreaterThanOrEqual(250);
+    expect(pool.length).toBeLessThanOrEqual(350);
+  });
+
+  test('early 池 ≤ 50', () => {
+    const pools = buildCardPools(CARD_DEFINITIONS);
+    expect(pools.early.length).toBeLessThanOrEqual(50);
+    expect(pools.early.length).toBeGreaterThan(0);
+  });
+
+  test('所有 legendary 卡全部 isRewardEligible === true', () => {
+    const legendaryIds = Object.entries(CARD_DEFINITIONS)
+      .filter(([id, def]) => def.rarity === 'legendary' && !id.includes('+'))
+      .map(([id]) => id);
+    expect(legendaryIds.length).toBeGreaterThanOrEqual(15);
+    for (const id of legendaryIds) {
+      expect(isRewardEligible(id, CARD_DEFINITIONS[id]!)).toBe(true);
+    }
   });
 
   test('generateCardRewardChoices 返回 3 张不重复卡牌', () => {

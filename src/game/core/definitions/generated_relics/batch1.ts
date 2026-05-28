@@ -94,7 +94,7 @@ export const GENERATED_RELICS_1: Record<string, RelicDefinition> = {
   enduring_wall: {
     id: 'enduring_wall',
     name: '不朽之墙',
-    description: '每场战斗开始时获得 1 层稳势。',
+    description: '每当你失去格挡时，若失去量不低于 5，获得 1 层稳势。',
   },
   barrier_echo: {
     id: 'barrier_echo',

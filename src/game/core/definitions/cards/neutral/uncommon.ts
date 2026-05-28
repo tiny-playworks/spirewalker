@@ -184,7 +184,7 @@ export const NEUTRAL_UNCOMMON_SKILL_6: CardDefinition = {
 
 export const NEUTRAL_UNCOMMON_SKILL_7: CardDefinition = {
   id: 'neutral_uncommon_skill_7',
-  name: '防御强化',
+  name: '防御灌注',
   description: '获得 8 点格挡，获得 2 层力量。',
   type: 'skill',
   rarity: 'uncommon',
@@ -202,7 +202,7 @@ export const NEUTRAL_UNCOMMON_SKILL_7: CardDefinition = {
 
 export const NEUTRAL_UNCOMMON_POWER_1: CardDefinition = {
   id: 'neutral_uncommon_power_1',
-  name: '力量强化',
+  name: '力量注入',
   description: '获得 2 层力量。',
   type: 'power',
   rarity: 'uncommon',

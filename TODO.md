@@ -247,20 +247,20 @@ SpireWalker 是一个受《杀戮尖塔》启发的 Roguelike Deckbuilder 项目
 
 | 资产 | 目标 | 实际 | 状态 |
 |------|------|------|------|
-| Relic | 130 | 133 | ✅ |
-| Event | 200 | 200 | ✅ |
-| 卡牌 | 500 | 542 | ✅ |
-| 敌人 | 80 | 80 | ✅ |
-| 美术 prompt | 800 | 805 (+ 520 extra) | ✅ |
-| 世界观 | 10+20+12 | 10+20+14 | ✅ |
-| Upgrade 规则 | ~218 | 218 | ✅ |
+| Relic | 130 | 133 (19 原有 + 114 generated → 实际 133 generated) | ✅ 已生成 / ✅ 已接线 |
+| Event | 200 | 205 (batch1:70 + batch2:70 + batch3:65) | ✅ 已生成 / ✅ 已接线 |
+| 卡牌 | 500 | 557 (含 15 legendary) | ✅ 已生成 / ✅ 已接线 |
+| 敌人 | 80 | 80 | ✅ 已生成 / ✅ 已接线 |
+| 美术 prompt | 800 | 805 + 100 linked | ✅ 已生成 / ✅ 已接线 |
+| 世界观 | 10+20+12 | 10+20+14 | ✅ 已生成 / ✅ 已接线 |
+| Upgrade 规则 | ~218 | 218 | ✅ 已生成 / ✅ 已接线 |
 | Critique+Revise | 全量 | 通过 | ✅ |
 
 ---
 
-### 1. 卡牌 (542 张)
+### 1. 卡牌 (557 张)
 
-**新增 218 张**，原有 324 张。
+**新增 233 张**，原有 324 张。
 
 | 流派 | Common | Uncommon | Rare | 小计 | 文件 |
 |------|--------|----------|------|------|------|
@@ -274,15 +274,16 @@ SpireWalker 是一个受《杀戮尖塔》启发的 Roguelike Deckbuilder 项目
 
 - 所有新卡已分配 `chapter: 1|2|3`
 - 所有新卡已分配 `archetype` 字段
+- Legendary 卡牌：15 张（guard/generated_legendary + burst/generated_legendary + mixed/generated_legendary）
 - Upgrade 规则：218 条，全部有 level 1 (+) 和 level 2 (++)
 
 **接入方式：** 各 `index.ts` barrel 自动 merge，`ALL_CARD_DEFINITIONS` 包含全部 542 张。
 
 ---
 
-### 2. 遗物 (133 个)
+### 2. 遗物 (133 个 generated + 19 原有 = 152 total)
 
-**新增 115 个**，原有 18 个。
+**新增 133 个**，原有 19 个。
 
 | 批次 | 数量 | 文件 |
 |------|------|------|
@@ -296,7 +297,7 @@ SpireWalker 是一个受《杀戮尖塔》启发的 Roguelike Deckbuilder 项目
 
 ---
 
-### 3. 事件 (200 个)
+### 3. 事件 (205 个)
 
 **全部新增**，原有 0 个。
 
@@ -304,7 +305,7 @@ SpireWalker 是一个受《杀戮尖塔》启发的 Roguelike Deckbuilder 项目
 |------|------|------|
 | batch1 | 70 | `events/batch1.ts` |
 | batch2 | 70 | `events/batch2.ts` |
-| batch3 | 60 | `events/batch3.ts` |
+| batch3 | 65 | `events/batch3.ts` |
 
 类型分布：risk_reward(26) / curse_trade(27) / merchant(24) / memory(26) / corruption(25) / strange_machine(23) / ancient_shrine(25) / random_gamble(24)
 
@@ -344,12 +345,12 @@ Boss 全部使用 `phases` 阶段切换 AI，HP 阈值触发。
 
 ---
 
-### 6. 美术 Prompt (805 + 520)
+### 6. 美术 Prompt (805 + 100 linked)
 
 | 文件 | 数量 | 类别 |
 |------|------|------|
 | `art_prompts.ts` | 805 | card(100) / enemy(100) / relic(80) / map(60) / event(100) / ui(80) / world(100) / boss_splash(80) / character(50) / misc(55) |
-| `art_prompts_extra.ts` | 520 | map(60) / event(100) / ui(80) / world(100) / boss_splash(80) / character(50) / misc(50) |
+| `art_prompts_linked.ts` | 100 | card(40) / relic(20) / enemy(20) / boss_splash(10) / map+ui+world(10) — subjectId 对齐真实 ID |
 
 格式：`{ id, category, subcategory, prompt, style, aspect_ratio }`
 
@@ -366,6 +367,10 @@ Boss 全部使用 `phases` 阶段切换 AI，HP 阈值触发。
 ## 验证结果
 
 - `npx tsc --noEmit` — **零错误**
-- `pnpm run build` — **构建成功** (2017 kB)
-- `pnpm run test` — **全部通过**
+- `pnpm run build` — **构建成功** (2253 kB)
+- `pnpm run test` — **全部通过** (220 tests)
 - `rewardCardPool.length` — 383 张（测试已更新期望范围）
+- 卡牌去重审计 — 已修复 top 30 问题（同名 >2 重复已消除）
+- 遗物语义重叠检查 — 已修复 `enduring_wall` 与 `guard_knot` 重叠
+- 事件补充 — batch3 新增 5 个事件（chapter 3 偏多）
+- 美术 Prompt 对齐 — `art_prompts_linked.ts` 100 条使用真实 ID

@@ -603,7 +603,7 @@ export const PATIENCE_STANCE: CardDefinition = {
   id: 'patience_stance',
   name: '耐心',
   description:
-    '能力（Patience）：每回合结束时，若你本回合未打出攻击，获得 3 点力量（永久）。',
+    '能力（Patience）：每回合结束时，若你本回合未打出攻击，获得 1 层力量。',
   type: 'power',
   rarity: 'rare',
   cost: 1,

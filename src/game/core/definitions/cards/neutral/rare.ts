@@ -138,7 +138,7 @@ export const NEUTRAL_RARE_SKILL_5: CardDefinition = {
 
 export const NEUTRAL_RARE_POWER_1: CardDefinition = {
   id: 'neutral_rare_power_1',
-  name: '力量精通',
+  name: '力量觉醒',
   description: '获得 4 层力量。',
   type: 'power',
   rarity: 'rare',

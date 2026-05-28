@@ -104,7 +104,7 @@ export const MIXED_COMMON_SKILL_1: CardDefinition = {
 
 export const MIXED_COMMON_SKILL_2: CardDefinition = {
   id: 'mixed_common_skill_2',
-  name: '连势防御',
+  name: '势能格挡',
   description: '获得 4 点格挡，获得 2 层连势。',
   type: 'skill',
   rarity: 'common',
@@ -136,7 +136,7 @@ export const MIXED_COMMON_SKILL_3: CardDefinition = {
 
 export const MIXED_COMMON_SKILL_4: CardDefinition = {
   id: 'mixed_common_skill_4',
-  name: '连势过牌',
+  name: '势流抽牌',
   description: '抽 2 张牌。消耗 1 层连势。',
   type: 'skill',
   rarity: 'common',
@@ -167,7 +167,7 @@ export const MIXED_COMMON_SKILL_5: CardDefinition = {
 
 export const MIXED_COMMON_POWER_1: CardDefinition = {
   id: 'mixed_common_power_1',
-  name: '连势储备',
+  name: '连势积蓄',
   description: '获得 2 层连势。',
   type: 'power',
   rarity: 'common',
@@ -193,7 +193,7 @@ export const MIXED_COMMON_POWER_2: CardDefinition = {
 
 export const MIXED_COMMON_POWER_3: CardDefinition = {
   id: 'mixed_common_power_3',
-  name: '力量强化',
+  name: '力量充能',
   description: '获得 1 层力量。',
   type: 'power',
   rarity: 'common',
@@ -253,7 +253,7 @@ export const MIXED_COMMON_SKILL_6: CardDefinition = {
 
 export const MIXED_COMMON_SKILL_7: CardDefinition = {
   id: 'mixed_common_skill_7',
-  name: '连势防御',
+  name: '势能格挡',
   description: '获得 4 点格挡，获得 2 层连势。',
   type: 'skill',
   rarity: 'common',
@@ -285,7 +285,7 @@ export const MIXED_COMMON_SKILL_8: CardDefinition = {
 
 export const MIXED_COMMON_SKILL_9: CardDefinition = {
   id: 'mixed_common_skill_9',
-  name: '连势过牌',
+  name: '势能抽取',
   description: '抽 2 张牌。消耗 1 层连势。',
   type: 'skill',
   rarity: 'common',
@@ -314,7 +314,7 @@ export const MIXED_COMMON_SKILL_10: CardDefinition = {
 
 export const MIXED_COMMON_POWER_4: CardDefinition = {
   id: 'mixed_common_power_4',
-  name: '连势储备',
+  name: '连势积蓄',
   description: '获得 2 层连势。',
   type: 'power',
   rarity: 'common',
@@ -340,7 +340,7 @@ export const MIXED_COMMON_POWER_5: CardDefinition = {
 
 export const MIXED_COMMON_POWER_6: CardDefinition = {
   id: 'mixed_common_power_6',
-  name: '力量强化',
+  name: '力量凝聚',
   description: '获得 1 层力量。',
   type: 'power',
   rarity: 'common',
