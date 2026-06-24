@@ -24,9 +24,9 @@ import * as styles from "./reactBattleStage.css";
 
 type DragPayload = { cardInstanceId: string };
 
-const BATTLE_BACKDROP_URL = "/assets/combat/gilded-ruins.png";
-const PLAYER_SPRITE_URL = "/assets/combat/player.png";
-const ENEMY_SPRITE_URL = "/assets/combat/enemy.png";
+const BATTLE_BACKDROP_URL = "/assets/combat/gilded-ruins.webp";
+const PLAYER_SPRITE_URL = "/assets/combat/player.webp";
+const ENEMY_SPRITE_URL = "/assets/combat/enemy.webp";
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(" ");
