@@ -10,10 +10,9 @@ export const page = style({
   flexDirection: 'column',
   alignItems: 'stretch',
   minHeight: 0,
-  overflow: 'auto',
-  padding: 'clamp(0.45rem, 1.4vw, 0.85rem)',
+  overflow: 'hidden',
   background:
-    'radial-gradient(ellipse 90% 55% at 50% 0%, rgba(139, 92, 246, 0.18) 0%, transparent 52%), radial-gradient(ellipse 60% 45% at 100% 60%, rgba(45, 212, 191, 0.1) 0%, transparent 42%), linear-gradient(175deg, #0a0a0b 0%, #131314 42%, #0e0e0f 100%)',
+    'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(139, 92, 246, 0.16) 0%, transparent 54%), radial-gradient(ellipse 55% 45% at 92% 82%, rgba(45, 212, 191, 0.09) 0%, transparent 46%), linear-gradient(175deg, #0a0a0b 0%, #131314 44%, #0d0d0e 100%)',
   selectors: {
     '&::after': {
       content: '""',
@@ -21,10 +20,10 @@ export const page = style({
       position: 'absolute',
       inset: 0,
       zIndex: 0,
-      opacity: 0.035,
+      opacity: 0.04,
       backgroundImage:
-        'linear-gradient(rgba(208, 188, 255, 0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(208, 188, 255, 0.55) 1px, transparent 1px)',
-      backgroundSize: '40px 40px',
+        'linear-gradient(rgba(208, 188, 255, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(208, 188, 255, 0.5) 1px, transparent 1px)',
+      backgroundSize: '46px 46px',
     },
   },
 });
@@ -34,655 +33,425 @@ globalStyle(`${page} > *`, {
   zIndex: 1,
 });
 
-export const hud = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.45rem',
-  width: '100%',
-  marginBottom: '0.45rem',
-  padding: '0.45rem 0.65rem 0.35rem',
-  borderRadius: sceneVars.radii.md,
-  background: 'linear-gradient(180deg, rgba(32, 31, 32, 0.78) 0%, rgba(14, 14, 15, 0.5) 100%)',
-  border: '1px solid rgba(208, 188, 255, 0.3)',
-  boxShadow: sceneVars.shadow.panel,
-  backdropFilter: 'blur(16px)',
-});
+/* —— 顶部品牌 / 资源条 —— */
 
-export const hudTop = style({
+export const topBar = style({
   display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  gap: '0.75rem 1rem',
-});
-
-export const hudAside = style({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'flex-end',
-  gap: '0.5rem',
-  marginLeft: 'auto',
-});
-
-export const hudChips = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.45rem',
   alignItems: 'center',
-  flex: 1,
+  justifyContent: 'space-between',
+  gap: '1rem',
+  padding: '0.7rem clamp(1rem, 3vw, 2rem)',
+  borderBottom: '1px solid rgba(208, 188, 255, 0.16)',
+  background: 'linear-gradient(180deg, rgba(14, 14, 15, 0.85) 0%, rgba(14, 14, 15, 0.2) 100%)',
+  backdropFilter: 'blur(10px)',
+});
+
+export const brand = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.85rem',
   minWidth: 0,
 });
 
-const chipBase = style({
-  display: 'inline-flex',
-  alignItems: 'baseline',
-  gap: '0.25rem',
-  padding: '0.28rem 0.55rem',
-  fontSize: '0.78rem',
-  color: sceneVars.color.textMuted,
-  background: 'rgba(10, 10, 11, 0.45)',
-  border: `1px solid ${sceneVars.color.borderSoft}`,
-  borderRadius: sceneVars.radii.pill,
+export const brandMark = style({
+  margin: 0,
+  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontSize: '1.18rem',
+  fontWeight: 700,
+  letterSpacing: '0.22em',
+  color: sceneVars.color.textStrong,
+  textTransform: 'uppercase',
+  whiteSpace: 'nowrap',
 });
 
-export const chip = chipBase;
+export const brandDivider = style({
+  width: '1px',
+  height: '1.4rem',
+  background: 'rgba(208, 188, 255, 0.3)',
+});
 
-export const chipFloor = style([
-  chipBase,
-  {
-    fontWeight: 700,
-    letterSpacing: '0.06em',
-    color: sceneVars.color.fortune,
-    borderColor: 'rgba(251, 191, 36, 0.45)',
-    background: 'rgba(251, 191, 36, 0.1)',
-  },
-]);
+export const actBlock = style({
+  display: 'flex',
+  alignItems: 'baseline',
+  gap: '0.6rem',
+  minWidth: 0,
+});
 
-globalStyle(`${chipBase} strong`, {
-  fontSize: '0.88rem',
+export const actName = style({
+  fontSize: '0.92rem',
   fontWeight: 700,
+  color: sceneVars.color.accentGlow,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+});
+
+export const floorLabel = style({
+  fontSize: '0.82rem',
+  color: sceneVars.color.textSubtle,
+  whiteSpace: 'nowrap',
+});
+
+export const topRight = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.55rem',
+});
+
+const statPillBase = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.4rem',
+  padding: '0.32rem 0.7rem',
+  fontSize: '0.86rem',
+  fontWeight: 700,
+  borderRadius: sceneVars.radii.pill,
+  border: '1px solid rgba(208, 188, 255, 0.2)',
+  background: 'rgba(10, 10, 11, 0.55)',
   color: sceneVars.color.textStrong,
 });
 
-export const hudCurrent = style({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-end',
-  gap: '0.15rem',
-  padding: '0.3rem 0.55rem',
-  borderRadius: '10px',
-  border: '1px solid rgba(251, 191, 36, 0.28)',
-  background: 'rgba(251, 191, 36, 0.06)',
-  minWidth: '8rem',
+export const statPillHp = style([
+  statPillBase,
+  {
+    borderColor: 'rgba(224, 86, 70, 0.4)',
+  },
+]);
+
+export const statPillGold = style([
+  statPillBase,
+  {
+    borderColor: 'rgba(244, 191, 96, 0.4)',
+  },
+]);
+
+export const statIconHp = style({
+  width: '0.95rem',
+  height: '0.95rem',
+  color: '#ff7a68',
 });
 
-export const systemToolbar = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'flex-end',
-  gap: '0.45rem',
-});
-
-export const hudCurrentKey = style({
-  fontSize: '0.68rem',
-  fontWeight: 600,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: sceneVars.color.textSubtle,
-});
-
-export const hudCurrentValue = style({
-  fontSize: '0.92rem',
-  fontWeight: 700,
+export const statIconGold = style({
+  width: '0.95rem',
+  height: '0.95rem',
   color: sceneVars.color.fortune,
-  textAlign: 'right',
-  lineHeight: 1.25,
-  maxWidth: '12rem',
 });
 
-export const hudCurrentSub = style({
-  fontSize: '0.72rem',
-  color: sceneVars.color.textSubtle,
-  textAlign: 'right',
-});
-
-export const hudRelics = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.35rem 0.5rem',
-  alignItems: 'baseline',
-  paddingTop: '0.3rem',
-  marginTop: '0.15rem',
-  borderTop: '1px solid rgba(208, 188, 255, 0.18)',
-  fontSize: '0.8rem',
-  lineHeight: 1.45,
+export const iconButton = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '2rem',
+  height: '2rem',
+  cursor: 'pointer',
   color: sceneVars.color.textMuted,
+  background: 'rgba(10, 10, 11, 0.55)',
+  border: '1px solid rgba(208, 188, 255, 0.2)',
+  borderRadius: sceneVars.radii.sm,
+  transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}, color ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
 });
 
-export const hudRelicsKey = style({
-  flexShrink: 0,
-  fontWeight: 700,
-  color: sceneVars.color.fortune,
+globalStyle(`${iconButton}:hover`, {
+  borderColor: sceneVars.color.accentGlow,
+  color: sceneVars.color.textStrong,
 });
+
+export const iconButtonGlyph = style({
+  width: '1.05rem',
+  height: '1.05rem',
+});
+
+/* —— 中部：左侧图例 + 中央滚动星图 —— */
 
 export const body = style({
+  position: 'relative',
   flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.25rem',
-  width: '100%',
   minHeight: 0,
+  display: 'flex',
 });
 
-export const board = style({
-  flex: 1,
-  display: 'grid',
-  gridTemplateColumns: '15rem minmax(0, 1fr)',
-  gap: '1rem',
-  alignItems: 'stretch',
-  minHeight: 'calc(100vh - 8.25rem)',
-  '@media': {
-    [tablet]: {
-      gridTemplateColumns: '1fr',
-      gap: '0.6rem',
-      minHeight: 'auto',
-    },
-  },
-});
-
-export const sidePanel = style({
+export const legend = style({
+  position: 'absolute',
+  top: '1rem',
+  left: 'clamp(0.75rem, 2vw, 1.5rem)',
+  zIndex: 4,
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.85rem',
-  alignSelf: 'start',
-  paddingTop: '0.3rem',
-  '@media': {
-    [tablet]: {
-      order: 2,
-    },
-  },
-});
-
-export const routeIntro = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.3rem',
-  padding: '0.8rem 0.9rem',
+  gap: '0.6rem',
+  width: '12.5rem',
+  padding: '0.85rem 0.95rem',
   borderRadius: sceneVars.radii.md,
-  background: 'linear-gradient(180deg, rgba(32, 31, 32, 0.58) 0%, rgba(10, 10, 11, 0.3) 100%)',
-  border: '1px solid rgba(208, 188, 255, 0.22)',
+  background: 'linear-gradient(180deg, rgba(20, 19, 22, 0.86) 0%, rgba(12, 12, 14, 0.7) 100%)',
+  border: '1px solid rgba(208, 188, 255, 0.2)',
+  boxShadow: sceneVars.shadow.panel,
+  backdropFilter: 'blur(14px)',
+  '@media': {
+    [tablet]: {
+      position: 'static',
+      width: 'auto',
+      margin: '0.75rem',
+    },
+  },
 });
 
-export const boardTitle = style({
+export const legendTitle = style({
   margin: 0,
-  fontSize: '0.76rem',
+  fontSize: '0.72rem',
   fontWeight: 700,
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: sceneVars.color.textSubtle,
 });
 
-export const boardSub = style({
-  margin: 0,
-  fontSize: '0.84rem',
-  lineHeight: 1.5,
-  color: sceneVars.color.textMuted,
-});
-
-export const boardRoute = style({
-  flex: 1,
-  minWidth: 0,
-  minHeight: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-export const stage = style({
-  position: 'relative',
-  minWidth: 0,
-  minHeight: 0,
-  display: 'flex',
-  alignItems: 'stretch',
-});
-
-export const stageRoute = style({
-  position: 'relative',
-  flex: 1,
-  minHeight: 'calc(100vh - 9.5rem)',
-  padding: '0.5rem 0.2rem 0.35rem',
-  borderRadius: '20px',
-  background:
-    'radial-gradient(circle at 50% 42%, rgba(139, 92, 246, 0.14), transparent 34%), radial-gradient(circle at 84% 48%, rgba(45, 212, 191, 0.08), transparent 24%)',
-  overflow: 'hidden',
-  '@media': {
-    [tablet]: {
-      minHeight: '32rem',
-    },
-  },
-});
-
-export const legend = style({
+export const legendList = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.5rem',
-  padding: '0.7rem 0.8rem',
-  borderRadius: sceneVars.radii.sm,
-  background: 'rgba(10, 10, 11, 0.36)',
-  border: '1px solid rgba(208, 188, 255, 0.2)',
-});
-
-export const legendRow = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'flex-start',
-  gap: '0.45rem 0.85rem',
-});
-
-globalStyle(`${legendRow} + ${legendRow}`, {
-  paddingTop: '0.45rem',
-  borderTop: '1px solid rgba(208, 188, 255, 0.18)',
-});
-
-export const legendTitle = style({
-  flexShrink: 0,
-  margin: 0,
-  fontSize: '0.72rem',
-  fontWeight: 600,
-  letterSpacing: '0.04em',
-  textTransform: 'uppercase',
-  color: sceneVars.color.textSubtle,
-});
-
-const legendListBase = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  gap: '0.35rem 0.75rem',
+  gap: '0.45rem',
   margin: 0,
   padding: 0,
   listStyle: 'none',
 });
 
-export const legendList = legendListBase;
-
-export const legendEdgeList = style([
-  legendListBase,
-  {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    gap: '0.35rem',
-    minWidth: 0,
-  },
-]);
-
-const legendItemBase = style({
-  display: 'inline-flex',
+export const legendItem = style({
+  display: 'flex',
   alignItems: 'center',
-  gap: '0.35rem',
+  gap: '0.55rem',
   fontSize: '0.78rem',
   color: sceneVars.color.textMuted,
 });
-
-export const legendItem = legendItemBase;
-
-export const legendEdgeItem = style([
-  legendItemBase,
-  {
-    alignItems: 'flex-start',
-    lineHeight: 1.35,
-  },
-]);
 
 export const legendGlyphBase = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '1.38rem',
-  height: '1.38rem',
+  flexShrink: 0,
+  width: '1.5rem',
+  height: '1.5rem',
   borderRadius: '50%',
-  fontSize: '0.72rem',
-  fontWeight: 700,
-  lineHeight: 1,
-  border: `2px solid ${sceneVars.color.border}`,
-  background: 'linear-gradient(165deg, rgba(53, 52, 54, 0.78) 0%, rgba(10, 10, 11, 0.74) 100%)',
-  color: sceneVars.color.textSubtle,
-  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+  border: '1.5px solid currentColor',
+  background: 'rgba(17, 17, 22, 0.85)',
 });
 
 export const legendGlyphTone = styleVariants({
-  battle: { color: sceneVars.color.hazard },
-  elite: { color: sceneVars.color.hazard },
-  boss: { color: sceneVars.color.hazard },
-  shop: { color: sceneVars.color.fortune },
-  treasure: { color: sceneVars.color.fortune },
-  event: { color: sceneVars.color.accentGlow },
-  rest: { color: sceneVars.color.relief },
-  camp: { color: sceneVars.color.fortune },
+  battle: { color: 'rgba(176, 168, 196, 0.85)' },
+  elite: { color: '#ff9a86' },
+  boss: { color: '#ff9a86' },
+  shop: { color: '#f4cf86' },
+  treasure: { color: '#f4cf86' },
+  event: { color: '#6fe0d2' },
+  rest: { color: '#6fe0d2' },
+  camp: { color: '#f4d58d' },
 });
 
 export const legendIcon = style({
-  width: '0.92rem',
-  height: '0.92rem',
+  width: '0.86rem',
+  height: '0.86rem',
 });
 
 export const legendLabel = style({
   color: sceneVars.color.textMuted,
 });
 
-export const objectiveCard = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.25rem',
-  padding: '0.8rem 0.9rem',
-  borderRadius: sceneVars.radii.md,
-  background: 'rgba(10, 10, 11, 0.42)',
-  border: '1px solid rgba(251, 191, 36, 0.26)',
-});
-
-export const objectiveKey = style({
+export const legendHint = style({
+  margin: 0,
+  paddingTop: '0.55rem',
+  borderTop: '1px solid rgba(208, 188, 255, 0.16)',
   fontSize: '0.72rem',
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: sceneVars.color.textSubtle,
-});
-
-export const objectiveValue = style({
-  fontSize: '1.02rem',
-  color: sceneVars.color.fortune,
-});
-
-export const objectiveText = style({
-  fontSize: '0.82rem',
   lineHeight: 1.45,
-  color: sceneVars.color.textMuted,
-});
-
-const edgeSwatchBase = style({
-  display: 'inline-block',
-  width: '2rem',
-  height: '3px',
-  marginTop: '0.38em',
-  borderRadius: '2px',
-  flexShrink: 0,
-});
-
-export const edgeSwatchBright = style([
-  edgeSwatchBase,
-  {
-    background: 'rgba(251, 191, 36, 0.85)',
-    opacity: 0.9,
-  },
-]);
-
-export const edgeSwatchDim = style([
-  edgeSwatchBase,
-  {
-    background: sceneVars.color.edgeDim,
-    opacity: 0.28,
-  },
-]);
-
-export const actionsPanel = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.85rem',
-  marginTop: 'auto',
-  paddingBottom: '0.25rem',
-});
-
-export const toolbar = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.5rem',
-});
-
-export const toolButtonBase = style({
-  padding: '0.42rem 0.72rem',
-  fontSize: '0.78rem',
-  fontWeight: 600,
-  cursor: 'pointer',
-  color: sceneVars.color.textMuted,
-  background: 'rgba(10, 10, 11, 0.55)',
-  border: `1px solid ${sceneVars.color.border}`,
-  borderRadius: sceneVars.radii.sm,
-  transition: [
-    `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
-    `background ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
-  ].join(', '),
-});
-
-export const toolButtonTone = styleVariants({
-  default: {},
-  danger: {},
-});
-
-globalStyle(`${toolButtonBase}:hover`, {
-  borderColor: 'rgba(251, 191, 36, 0.62)',
-  background: 'rgba(32, 31, 32, 0.9)',
-});
-
-globalStyle(`${toolButtonTone.danger}:hover`, {
-  borderColor: 'rgba(212, 132, 106, 0.72)',
-  color: '#ffb4ab',
-});
-
-export const done = style({
-  margin: 0,
-  padding: '0.65rem 0.85rem',
-  borderRadius: '10px',
-  border: '1px dashed rgba(251, 191, 36, 0.42)',
-  color: sceneVars.color.fortune,
-  fontSize: '0.95rem',
-  textAlign: 'center',
-  background: 'rgba(251, 191, 36, 0.06)',
-});
-
-export const selectionPrompt = style({
-  margin: 0,
-  padding: '0.85rem 1rem',
-  borderRadius: sceneVars.radii.md,
-  border: '1px dashed rgba(208, 188, 255, 0.36)',
-  background: 'rgba(10, 10, 11, 0.32)',
-  color: sceneVars.color.textMuted,
-  textAlign: 'center',
-});
-
-export const decisionPanel = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.95rem',
-  padding: '1rem 1.05rem 1.05rem',
-  borderRadius: sceneVars.radii.lg,
-  border: '1px solid rgba(208, 188, 255, 0.32)',
-  background: 'linear-gradient(180deg, rgba(32, 31, 32, 0.84) 0%, rgba(10, 10, 11, 0.82) 100%)',
-  boxShadow: sceneVars.shadow.panel,
-});
-
-export const decisionHead = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.75rem 1rem',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  '@media': {
-    [tablet]: {
-      flexDirection: 'column',
-    },
-  },
-});
-
-export const decisionCopy = style({
-  flex: 1,
-  minWidth: 'min(100%, 18rem)',
-});
-
-export const decisionKicker = style({
-  margin: '0 0 0.25rem',
-  fontSize: '0.72rem',
-  fontWeight: 700,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
   color: sceneVars.color.textSubtle,
 });
 
-export const decisionTitle = style({
+globalStyle(`${legendHint} strong`, {
+  color: sceneVars.color.accentGlow,
+});
+
+export const mapScroll = style({
+  flex: 1,
+  minWidth: 0,
+  minHeight: 0,
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  display: 'flex',
+  justifyContent: 'center',
+  padding: '1.5rem 1rem 2.5rem',
+  scrollbarWidth: 'thin',
+});
+
+/* —— 底部操作坞 —— */
+
+export const bottomBar = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '2.25rem',
+  padding: '0.6rem 1rem',
+  borderTop: '1px solid rgba(208, 188, 255, 0.16)',
+  background: 'linear-gradient(0deg, rgba(14, 14, 15, 0.9) 0%, rgba(14, 14, 15, 0.2) 100%)',
+  backdropFilter: 'blur(10px)',
+});
+
+export const dockButton = style({
+  display: 'inline-flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '0.2rem',
+  padding: '0.3rem 0.85rem',
+  cursor: 'pointer',
+  background: 'transparent',
+  border: 'none',
+  color: sceneVars.color.textSubtle,
+  fontSize: '0.66rem',
+  fontWeight: 700,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  borderRadius: sceneVars.radii.sm,
+  transition: `color ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
+});
+
+globalStyle(`${dockButton}:hover, ${dockButton}[aria-expanded='true']`, {
+  color: sceneVars.color.accentGlow,
+});
+
+export const dockIcon = style({
+  width: '1.2rem',
+  height: '1.2rem',
+});
+
+/* —— 弹层（遗物 / 牌组 / 菜单） —— */
+
+export const popoverBackdrop = style({
+  position: 'absolute',
+  inset: 0,
+  zIndex: 30,
+  border: 'none',
+  background: 'rgba(6, 6, 8, 0.45)',
+  backdropFilter: 'blur(2px)',
+  cursor: 'pointer',
+});
+
+export const popover = style({
+  position: 'absolute',
+  zIndex: 31,
+  bottom: '4.25rem',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  width: 'min(30rem, calc(100vw - 2rem))',
+  maxHeight: '60vh',
+  overflowY: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.6rem',
+  padding: '1rem 1.1rem',
+  borderRadius: sceneVars.radii.lg,
+  border: '1px solid rgba(208, 188, 255, 0.3)',
+  background: 'linear-gradient(180deg, rgba(24, 23, 27, 0.96) 0%, rgba(12, 12, 14, 0.94) 100%)',
+  boxShadow: sceneVars.shadow.panelHeavy,
+});
+
+export const popoverMenu = style([
+  popover,
+  {
+    bottom: 'auto',
+    top: '3.4rem',
+    left: 'auto',
+    right: 'clamp(0.75rem, 2vw, 2rem)',
+    transform: 'none',
+    width: 'min(14rem, calc(100vw - 2rem))',
+  },
+]);
+
+export const popoverTitle = style({
   margin: 0,
-  fontSize: '1.18rem',
+  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontSize: '1.1rem',
   color: sceneVars.color.textStrong,
 });
 
-export const decisionDesc = style({
-  margin: '0.4rem 0 0',
-  fontSize: '0.9rem',
-  lineHeight: 1.55,
+export const popoverEmpty = style({
+  margin: 0,
+  fontSize: '0.85rem',
+  color: sceneVars.color.textSubtle,
+});
+
+export const popoverList = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.5rem',
+  margin: 0,
+  padding: 0,
+  listStyle: 'none',
+});
+
+export const popoverItem = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.15rem',
+  padding: '0.5rem 0.65rem',
+  borderRadius: sceneVars.radii.sm,
+  background: 'rgba(10, 10, 11, 0.5)',
+  border: '1px solid rgba(208, 188, 255, 0.14)',
+});
+
+export const popoverItemHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.35rem',
+  fontSize: '0.88rem',
+  fontWeight: 700,
+  color: sceneVars.color.textStrong,
+});
+
+export const popoverItemDesc = style({
+  fontSize: '0.78rem',
+  lineHeight: 1.4,
   color: sceneVars.color.textMuted,
 });
 
-export const decisionBadges = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'flex-end',
+export const deckGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(8.5rem, 1fr))',
   gap: '0.4rem',
-  '@media': {
-    [tablet]: {
-      justifyContent: 'flex-start',
-    },
-  },
 });
 
-export const decisionBadgeBase = style({
-  display: 'inline-flex',
+export const deckChip = style({
+  display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
-  padding: '0.28rem 0.56rem',
-  borderRadius: sceneVars.radii.pill,
-  border: '1px solid rgba(95, 81, 62, 0.85)',
-  background: 'rgba(20, 18, 16, 0.45)',
-  fontSize: '0.76rem',
-  color: '#ddd5c8',
+  gap: '0.35rem',
+  padding: '0.36rem 0.5rem',
+  borderRadius: sceneVars.radii.sm,
+  background: 'rgba(10, 10, 11, 0.5)',
+  border: '1px solid rgba(208, 188, 255, 0.14)',
+  fontSize: '0.8rem',
+  color: sceneVars.color.text,
 });
 
-export const decisionBadgeTone = styleVariants({
-  battle: {
-    borderColor: 'rgba(186, 111, 72, 0.62)',
-    color: '#f0c3aa',
-  },
-  elite: {
-    borderColor: 'rgba(186, 111, 72, 0.62)',
-    color: '#f0c3aa',
-  },
-  boss: {
-    borderColor: 'rgba(186, 111, 72, 0.62)',
-    color: '#f0c3aa',
-  },
-  shop: {
-    borderColor: 'rgba(191, 152, 79, 0.62)',
-    color: '#f1d898',
-  },
-  treasure: {
-    borderColor: 'rgba(191, 152, 79, 0.62)',
-    color: '#f1d898',
-  },
-  event: {
-    borderColor: 'rgba(94, 123, 173, 0.62)',
-    color: '#c9daff',
-  },
-  rest: {
-    borderColor: 'rgba(96, 145, 118, 0.62)',
-    color: '#c9e4c3',
-  },
-  lane: {
-    color: '#cfc7ba',
-  },
-});
-
-export const decisionCtaBase = style({
-  position: 'relative',
-  width: '100%',
-  padding: '0.95rem 1.05rem',
-  borderRadius: sceneVars.radii.md,
-  border: '1px solid rgba(95, 81, 62, 0.85)',
-  font: 'inherit',
-  fontSize: '0.98rem',
+export const deckChipCount = style({
+  marginLeft: 'auto',
+  fontSize: '0.74rem',
   fontWeight: 700,
+  color: sceneVars.color.accentGlow,
+});
+
+export const menuButton = style({
+  display: 'block',
+  width: '100%',
+  padding: '0.6rem 0.7rem',
+  textAlign: 'left',
   cursor: 'pointer',
-  overflow: 'hidden',
-  color: '#1a1814',
-  background: 'linear-gradient(168deg, #ebc592 0%, #d69a62 38%, #925a36 100%)',
-  boxShadow: sceneVars.shadow.button,
-  transition: [
-    `transform ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
-    `box-shadow ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
-    `filter ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
-  ].join(', '),
-  selectors: {
-    '&::before, &::after': {
-      content: '""',
-      position: 'absolute',
-      inset: 0,
-      pointerEvents: 'none',
-    },
-    '&::before': {
-      background:
-        'radial-gradient(circle at 18% 50%, rgba(255, 239, 201, 0.24), transparent 34%), linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 42%)',
-      opacity: 0.7,
-    },
-    '&::after': {
-      inset: '-24% auto -24% -12%',
-      width: '36%',
-      transform: 'rotate(20deg) translate3d(-110%, 0, 0)',
-      background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0))',
-      opacity: 0,
-      transition: `transform ${sceneVars.motion.normal} ${sceneVars.motion.ease}, opacity ${sceneVars.motion.normal} ${sceneVars.motion.ease}`,
-    },
-  },
+  fontSize: '0.85rem',
+  fontWeight: 600,
+  color: sceneVars.color.text,
+  background: 'rgba(10, 10, 11, 0.5)',
+  border: '1px solid rgba(208, 188, 255, 0.18)',
+  borderRadius: sceneVars.radii.sm,
+  transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
 });
 
-globalStyle(`${decisionCtaBase}:hover`, {
-  transform: 'translateY(-2px) scale(1.01)',
-  filter: 'brightness(1.09) saturate(1.08)',
-  boxShadow:
-    '0 16px 34px rgba(0, 0, 0, 0.36), 0 0 34px rgba(244, 213, 141, 0.24), inset 0 0 30px rgba(255, 237, 199, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.22)',
+globalStyle(`${menuButton}:hover`, {
+  borderColor: sceneVars.color.accentGlow,
 });
 
-globalStyle(`${decisionCtaBase}:hover::after`, {
-  transform: 'rotate(20deg) translate3d(140%, 0, 0)',
-  opacity: 1,
-});
-
-globalStyle(`${decisionCtaBase}:active`, {
-  transform: 'translateY(2px) scale(0.98)',
-  filter: 'brightness(0.9) saturate(1.06)',
-  boxShadow:
-    '0 6px 14px rgba(0, 0, 0, 0.32), inset 0 0 34px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.16)',
-});
-
-export const decisionCtaTone = styleVariants({
-  battle: {},
-  event: {
-    color: '#eaf1ff',
-    background: 'linear-gradient(168deg, #45618c 0%, #2f4465 40%, #243247 100%)',
-  },
-  rest: {
-    color: '#eff7eb',
-    background: 'linear-gradient(168deg, #5d7e63 0%, #45614b 42%, #314538 100%)',
-  },
-  shop: {
-    color: '#231a0a',
-    background: 'linear-gradient(168deg, #e5c979 0%, #c89a45 40%, #886321 100%)',
-  },
-  treasure: {
-    color: '#231a0a',
-    background: 'linear-gradient(168deg, #e5c979 0%, #c89a45 40%, #886321 100%)',
-  },
-  elite: {
-    color: '#fff1eb',
-    background: 'linear-gradient(168deg, #9f5846 0%, #7e3f32 40%, #572820 100%)',
-  },
-  boss: {
-    color: '#fff1eb',
-    background: 'linear-gradient(168deg, #9f5846 0%, #7e3f32 40%, #572820 100%)',
-  },
+export const menuButtonDanger = style({
+  borderColor: 'rgba(224, 86, 70, 0.4)',
+  color: '#ffb4ab',
 });

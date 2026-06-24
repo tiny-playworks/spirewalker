@@ -13,3 +13,4 @@ coverage
 .env*
 !.env.example
 test-results
+stitch_spirewalker_cyber_gothic_combat_ui

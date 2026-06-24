@@ -1,31 +1,42 @@
-import { buildCardTooltipText } from '@/game/core/battleUiText';
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { useState } from 'react';
+import { Coins, FlaskConical, Gem } from 'lucide-react';
+import { buildCardTooltipText, cardTypeLabel } from '@/game/core/battleUiText';
+import { ALL_CARD_DEFINITIONS } from '@/game/core/definitions/cards';
+import { getCardArchetype } from '@/game/core/definitions/cards/archetypes';
 import '@/game/core/definitions/cards/upgradeRules';
 import { listUpgradableDeckIndices } from '@/game/core/definitions/cards/upgradeRules';
 import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
+import type { CardRarity, CardType } from '@/game/core/model/card';
 import { useGameStore } from '@/game/store/gameStore';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
-import * as subscreenStyles from '@/styles/subscreen.css';
+import { FallbackImg } from '@/features/cards/FallbackImg';
+import { getCardArtSources } from '@/features/battle/combatAssets';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { CardUpgradeList } from '../cards/CardUpgradeList';
+import * as styles from './rewardPage.css';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
 }
 
-function rewardTierLabel(t: ReturnType<typeof rewardEncounterTierFromRun>): string {
-  if (t === 'boss') return 'Boss';
-  if (t === 'elite') return '精英';
-  if (t === 'treasure') return '宝箱';
-  return '普通';
+type TypeKey = 'attack' | 'skill' | 'power';
+
+function typeKey(type: CardType): TypeKey {
+  return type === 'attack' ? 'attack' : type === 'power' ? 'power' : 'skill';
 }
+
+const RARITY_LABEL: Partial<Record<CardRarity, string>> = {
+  rare: '稀有',
+  legendary: '传说',
+};
 
 export function RewardPage() {
   const run = useGameStore((s) => s.run);
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   if (!run || run.screen.type !== 'reward' || !run.reward) return null;
 
@@ -40,138 +51,193 @@ export function RewardPage() {
   const skipGoldBase = skipCardGoldAmount(encounterTier);
   const totalGoldOnSkip = skipGoldBase + bonusGold;
 
-  const relicItems = run.reward.items.filter((i): i is { type: 'relic'; relicId: string } => {
-    return i.type === 'relic';
-  });
-  const potionItems = run.reward.items.filter((i): i is { type: 'potion'; potionId: string } => {
-    return i.type === 'potion';
-  });
+  const relicItems = run.reward.items.filter(
+    (i): i is { type: 'relic'; relicId: string } => i.type === 'relic',
+  );
+  const potionItems = run.reward.items.filter(
+    (i): i is { type: 'potion'; potionId: string } => i.type === 'potion',
+  );
+
+  const isTreasure = encounterTier === 'treasure';
+  const upgradable = listUpgradableDeckIndices(run.masterDeck);
 
   return (
-    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot)} data-testid="reward-page">
-      <h2 className={subscreenStyles.title}>
-        {encounterTier === 'treasure' ? '宝箱' : '战后奖励'}
-      </h2>
-      <p className={subscreenStyles.tip}>
-        Act <strong>{run.meta.act}</strong> · 本章第 <strong>{run.meta.actFloor}</strong> 层 · 全局第{' '}
-        <strong>{run.meta.floor}</strong> 层
-      </p>
-      {relicItems.length > 0 ? (
-        <div className={cx(subscreenStyles.banner, subscreenStyles.bannerTone.reward)}>
-          {relicItems.map((r) => {
-            const def = RELIC_DEFINITIONS[r.relicId];
-            if (!def) return null;
-            return (
-              <p key={r.relicId} className={subscreenStyles.bannerLine}>
-                <span className={cx(subscreenStyles.bannerTag, subscreenStyles.bannerTagTone.reward)}>遗物</span>
-                <strong>
-                  <ArchetypeDot relicId={r.relicId} />
-                  {def.name}
-                </strong> — {def.description}
-              </p>
-            );
-          })}
-        </div>
-      ) : null}
-      {potionItems.length > 0 ? (
-        <div className={cx(subscreenStyles.banner, subscreenStyles.bannerTone.potion)}>
-          {potionItems.map((p) => {
-            const def = POTION_DEFINITIONS[p.potionId];
-            if (!def) return null;
-            return (
-              <p key={p.potionId} className={subscreenStyles.bannerLine}>
-                <span className={cx(subscreenStyles.bannerTag, subscreenStyles.bannerTagTone.potion)}>药水</span>
-                <strong>{def.name}</strong> — {def.description}
-                <span className={subscreenStyles.bannerNote}>（选牌或换金币后一并入包）</span>
-              </p>
-            );
-          })}
-        </div>
-      ) : null}
-      <p className={subscreenStyles.tip}>
-        当前节点：
-        <strong>
-          {encounterTier === 'treasure'
-            ? '宝箱'
-            : `${rewardTierLabel(encounterTier)}战`}
-        </strong>
-        。选一张加入牌组，领取时金币 <strong>+{totalGoldOnPick}</strong>
-        {bonusGold > 0 ? (
-          <>
-            {' '}
-            （本次奖励额外 +{bonusGold}）
-          </>
-        ) : (
-          <>（这次没有额外金币条目）</>
-        )}
-        。
-        {potionItems.length > 0 ? (
-          <> 若有药水，会与卡牌奖励同时结算。</>
-        ) : encounterTier === 'normal' ? (
-          <> 普通战药水掉率已压低，本次未触发额外掉落。</>
-        ) : encounterTier === 'treasure' ? (
-          <> 宝箱仍有机会额外掉药，但不会像旧版那样过于稳定。</>
-        ) : null}
-      </p>
-      <ul className={subscreenStyles.choiceList}>
-        {cards.map((defId, index) => {
-          const def = CARD_DEFINITIONS[defId];
-          if (!def) return null;
-          return (
-            <li key={`${index}-${defId}`}>
-              <button
-                type="button"
-                className={subscreenStyles.choiceButton}
-                title={buildCardTooltipText(def)}
-                onClick={() => dispatchCommand({ type: 'SELECT_REWARD_CARD', definitionId: defId })}
-              >
-                <strong>
-                  <ArchetypeDot cardId={defId} />
-                  {def.name}
-                </strong>
-                <span className={subscreenStyles.choiceDesc}>
-                  {def.type === 'attack' ? '攻击' : def.type === 'skill' ? '技能' : '能力'} · {def.cost} 费
+    <div className={cx(sceneThemeClass, styles.page)} data-testid="reward-page">
+      <header className={styles.topBar}>
+        <p className={styles.brandMark}>Spirewalker</p>
+        <span className={styles.topMeta}>
+          第 {run.meta.act} 章 · 第 {run.meta.actFloor} 层 · 全局第 {run.meta.floor} 层
+        </span>
+        <span className={styles.topGold}>
+          <Coins className={styles.topGoldIcon} aria-hidden />
+          {run.meta.gold}
+        </span>
+      </header>
+
+      <div className={styles.header}>
+        <span className={styles.headerHalo} aria-hidden />
+        <h1 className={styles.title}>{isTreasure ? '宝藏' : '胜利'}</h1>
+        <p className={styles.subtitle}>
+          {isTreasure ? '开启宝藏' : `第 ${run.meta.actFloor} 层已清剿`} · 选择你的奖励
+        </p>
+      </div>
+
+      <div className={styles.main}>
+        <aside className={styles.logPanel}>
+          <h2 className={styles.logTitle}>战利清单</h2>
+          <div className={styles.logRow}>
+            <span className={styles.logKey}>节点</span>
+            <span className={cx(styles.logVal, styles.logValTone.plain)}>
+              {isTreasure ? '宝箱' : encounterTier === 'boss' ? 'Boss' : encounterTier === 'elite' ? '精英' : '普通'}
+            </span>
+          </div>
+          <div className={styles.logRow}>
+            <span className={styles.logKey}>选牌得金</span>
+            <span className={cx(styles.logVal, styles.logValTone.gold)}>+{totalGoldOnPick}</span>
+          </div>
+          <div className={styles.logRow}>
+            <span className={styles.logKey}>遗物</span>
+            <span className={cx(styles.logVal, styles.logValTone.purple)}>{relicItems.length}</span>
+          </div>
+          <div className={styles.logRow}>
+            <span className={styles.logKey}>药水</span>
+            <span className={cx(styles.logVal, styles.logValTone.teal)}>{potionItems.length}</span>
+          </div>
+          <div className={styles.logRow}>
+            <span className={styles.logKey}>牌组</span>
+            <span className={cx(styles.logVal, styles.logValTone.plain)}>{run.masterDeck.length}</span>
+          </div>
+        </aside>
+
+        <section className={styles.center}>
+          <div className={styles.cardRow}>
+            {cards.map((defId, index) => {
+              const def = ALL_CARD_DEFINITIONS[defId];
+              if (!def) return null;
+              const archetype = getCardArchetype(defId);
+              const tk = typeKey(def.type);
+              const rarityLabel = RARITY_LABEL[def.rarity];
+              const isLegendary = def.rarity === 'legendary';
+              return (
+                <button
+                  key={`${index}-${defId}`}
+                  type="button"
+                  className={cx(styles.card, styles.cardRarity[def.rarity])}
+                  style={{ animationDelay: `${index * 70}ms` }}
+                  title={buildCardTooltipText(def)}
+                  onClick={() =>
+                    dispatchCommand({ type: 'SELECT_REWARD_CARD', definitionId: defId })
+                  }
+                >
+                  <span className={styles.cardArt}>
+                    <FallbackImg
+                      className={styles.cardArtImg}
+                      alt=""
+                      sources={getCardArtSources(defId)}
+                      fallback={<span className={cx(styles.cardArtImg, styles.cardArtFallback[archetype])} />}
+                    />
+                    <span className={styles.cardArtFade} aria-hidden />
+                    {rarityLabel ? (
+                      <span className={cx(styles.rarityBadge, !isLegendary && styles.rarityBadgeRare)}>
+                        {rarityLabel}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className={styles.cardBody}>
+                    <span className={styles.cardName}>
+                      <ArchetypeDot cardId={defId} />
+                      {def.name}
+                    </span>
+                    <span className={cx(styles.cardMeta, styles.cardMetaTone[tk])}>
+                      {cardTypeLabel(def.type)} · {def.cost} 费
+                    </span>
+                    <span className={styles.cardDesc}>{def.description}</span>
+                    <span
+                      className={cx(
+                        styles.cardAccent,
+                        isLegendary ? styles.cardAccentTone.legendary : styles.cardAccentTone[tk],
+                      )}
+                    />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className={styles.pills}>
+            <span className={styles.pill}>
+              <Coins className={cx(styles.pillIcon)} style={{ color: '#ffc640' }} aria-hidden />
+              <span className={styles.pillGoldText}>+{totalGoldOnPick} 金</span>
+            </span>
+            {relicItems.map((r) => {
+              const def = RELIC_DEFINITIONS[r.relicId];
+              return (
+                <span key={r.relicId} className={styles.pill}>
+                  <span className={styles.pillDivider} aria-hidden />
+                  <Gem className={styles.pillIcon} style={{ color: '#d0bcff' }} aria-hidden />
+                  <span>
+                    <span className={styles.pillRelicKey}>获得遗物</span>
+                    <br />
+                    <span className={styles.pillRelicVal}>{def?.name ?? r.relicId}</span>
+                  </span>
                 </span>
-                <span className={subscreenStyles.choiceDesc}>{def.description}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      <div className={subscreenStyles.skipSection}>
-        <p className={subscreenStyles.skipLabel}>不加入牌组</p>
+              );
+            })}
+            {potionItems.map((p) => {
+              const def = POTION_DEFINITIONS[p.potionId];
+              return (
+                <span key={p.potionId} className={styles.pill}>
+                  <span className={styles.pillDivider} aria-hidden />
+                  <FlaskConical className={styles.pillIcon} style={{ color: '#3cddc7' }} aria-hidden />
+                  <span>
+                    <span className={styles.pillRelicKey}>获得药水</span>
+                    <br />
+                    <span className={styles.pillRelicVal} style={{ color: '#3cddc7' }}>
+                      {def?.name ?? p.potionId}
+                    </span>
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+        </section>
+
+        <div className={styles.logPanel} style={{ visibility: 'hidden' }} aria-hidden />
+      </div>
+
+      <footer className={styles.footer}>
         <button
           type="button"
-          className={subscreenStyles.skipButton}
-          onClick={() =>
-            dispatchCommand({ type: 'TAKE_REWARD_GOLD', amount: skipGoldBase })
-          }
+          className={styles.skipButton}
+          onClick={() => dispatchCommand({ type: 'TAKE_REWARD_GOLD', amount: skipGoldBase })}
         >
-          换成金币 <strong>+{totalGoldOnSkip}</strong>
-          {bonusGold > 0 ? (
-            <span className={subscreenStyles.choiceDesc}>
-              （放弃卡牌 {skipGoldBase}，另含节点额外 +{bonusGold}）
-            </span>
-          ) : (
-            <span className={subscreenStyles.choiceDesc}>（放弃卡牌，换取 {skipGoldBase} 金）</span>
-          )}
+          放弃卡牌 · 换 {totalGoldOnSkip} 金
         </button>
-      </div>
-      {listUpgradableDeckIndices(run.masterDeck).length > 0 ? (
-        <div className={subscreenStyles.skipSection}>
-          <p className={subscreenStyles.skipLabel}>不加入牌组 · 改为升级一张</p>
-          <p className={subscreenStyles.tip}>
-            放弃本次卡牌奖励与金币，改成给已有的一张卡升级（+ 或 ++）。
-          </p>
-          <CardUpgradeList
-            masterDeck={run.masterDeck}
-            onUpgrade={(index) =>
-              dispatchCommand({ type: 'TAKE_REWARD_UPGRADE_CARD', masterDeckIndex: index })
-            }
-            emptyText="当前牌组里没有可升级的卡。"
-          />
-        </div>
-      ) : null}
+        {upgradable.length > 0 ? (
+          <button
+            type="button"
+            className={styles.ghostButton}
+            aria-expanded={showUpgrade}
+            onClick={() => setShowUpgrade((v) => !v)}
+          >
+            {showUpgrade ? '收起升级选项' : '改为升级一张已有卡'}
+          </button>
+        ) : null}
+        {showUpgrade && upgradable.length > 0 ? (
+          <div className={styles.upgradePanel}>
+            <p className={styles.upgradeHint}>
+              放弃本次卡牌奖励与金币，改为给已有的一张卡升级（+ 或 ++）。
+            </p>
+            <CardUpgradeList
+              masterDeck={run.masterDeck}
+              onUpgrade={(index) =>
+                dispatchCommand({ type: 'TAKE_REWARD_UPGRADE_CARD', masterDeckIndex: index })
+              }
+              emptyText="当前牌组里没有可升级的卡。"
+            />
+          </div>
+        ) : null}
+      </footer>
     </div>
   );
 }

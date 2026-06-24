@@ -11,10 +11,10 @@
 | Stitch 页面 | 当前项目页面 | 状态 | 目标 |
 | --- | --- | --- | --- |
 | `Spirewalker 16:9 Strategic Redesign` | `BattlePage` / `ReactBattleStage` | 已开始 | 完整对齐战斗 HUD、单位区、手牌、能量、牌堆、意图、状态图标 |
-| `Spirewalker Strategic Void Map - Tactical Redesign` | `MapPage` | 未达标 | 改成星图投影、Void Veins 路径、节点层级和路线预判 |
-| `Spirewalker Void Shop - Atmospheric Redesign` | `ShopPage` | 未达标 | 改成商人/商品/钱包/价格的沉浸式商店 |
-| `Spirewalker Victory & Rewards Interface` | `RewardPage` | 未达标 | 改成胜利结算、奖励卡、金币、遗物的仪式化界面 |
-| `Spirewalker Event - The Forgotten Altar` | `EventPage` | 未达标 | 改成祭坛事件大图、选择代价、结果反馈 |
+| `Spirewalker Strategic Void Map - Tactical Redesign` | `MapPage` | 已完成 | 竖向星图、Void Veins 路径、节点符号系统、顶栏/图例/底部 dock |
+| `Spirewalker Void Shop - Atmospheric Redesign` | `ShopPage` | 已完成 | 左商人立绘 + 中央禁忌知识/造物/灵药/仪式 + 右侧财富/躯壳/遗物 |
+| `Spirewalker Victory & Rewards Interface` | `RewardPage` | 已完成 | 金色「胜利」标题、战利清单面板、三张 HoloCard、金币/遗物 pill、升级入口 |
+| `Spirewalker Event - The Forgotten Altar` | `EventPage` | 已完成 | 数据驱动：徽章+大标题+祭坛美术 + 故事面板 + 按代价/收益着色的选项 |
 | `Spirewalker New Run - The Fate Alignment` | `MainMenuPage` / 新局流程 | 缺失 | 新增三步开局：Soul Archetype、Starting Deck、Covenant Banner |
 | `Spirewalker Deck Viewer - Draw Pile` | `BattleDeckPanel` | 未达标 | 改成战斗内牌堆查看器，区分 draw/discard/exhaust |
 | `Spirewalker Collection - Void Hall Style` | `ArchivePage` | 初版 | 改成收藏大厅，卡牌/遗物/实体用博物馆式陈列 |
@@ -194,6 +194,25 @@
 5. Boss Summary。
 
 理由：战斗和地图决定第一体验；奖励、商店、事件决定一次 Run 的循环是否完整；Archive 和 New Run 是长期体验；Boss Summary 在 Boss 流程稳定后再做。
+
+## 进度记录
+
+### 2026-06-24
+
+- 设计依据：使用导出的 `stitch_spirewalker_cyber_gothic_combat_ui/`（每页 `screen.png` + `code.html` + `spirewalker/DESIGN.md` 设计令牌），不再依赖 MCP 取图。
+- Phase 2 主流程四页全部完成并通过 `lint` / `build` / 单测（241）：
+  - Map：`MapPage.tsx`、`MapRoute.tsx`、`mapNodeIcons.tsx`、`mapRouteLayout.ts`、`mapPage.css.ts`、`mapRoute.css.ts`。
+  - Reward：`RewardPage.tsx` + `rewardPage.css.ts`。
+  - Shop：`ShopPage.tsx` + `shopPage.css.ts`。
+  - Event：`EventPage.tsx` + `eventPage.css.ts`（四个事件统一为数据驱动配置）。
+  - 抽出共享 `src/features/cards/FallbackImg.tsx`（战斗页与奖励页共用卡图回退）。
+- 已逐页 16:9 截图与 Stitch 设计对照，视觉基本还原（卡图复用 `combatAssets` 图源，缺图走 CSS 回退）。
+
+### 待办 / 已知问题
+
+- e2e `battleRewardFlow.spec.ts` 失败为**既有问题**（与本次重构无关）：`leave-battle-to-reward` 这个 testid 在 `BattleHUD`(隐藏桥接) 与 `ReactBattleStage`(真实按钮) 上重复，触发 Playwright strict-mode。已在干净 HEAD 复现。修法：给桥接换 testid，或让测试只点可见按钮。
+- 剩余页面（按优先级）：Archive Suite（Collection / Relic / Codex / Achievements）、New Run「Fate Alignment」三步开局、Boss Defeated Summary、Deck Viewer。
+- 收口项：抽公共组件（`GameTopBar` / `VoidPanel` / `HoloButton` / `HoloCard` / `StatusGlyph`），目前各页顶栏/面板样式仍有重复，后续统一。
 
 ## 明确不做
 

@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 import type { MapState } from '@/game/core/model/map';
 import { getForwardReachableNodeIds } from '@/game/core/model/mapGraph';
-import { MAP_ROUTE_SVG, mapNodeCenter, mapRouteViewBox } from './mapRouteLayout';
+import {
+  MAP_ROUTE_SVG,
+  mapNodeCenter,
+  mapRouteViewBox,
+  mapRouteViewSize,
+} from './mapRouteLayout';
 import * as styles from './mapRoute.css';
 import { mapNodeToneForNode, mapNodeViewState } from './mapViewState';
 import { MapNodeIcon, nodeVisualKind } from './mapNodeIcons';
@@ -93,19 +98,22 @@ export function MapRoute({
     return list;
   }, [floorNodes, map.nodes, act]);
 
-  const vb = mapRouteViewBox(maxX, maxY);
+  const vb = mapRouteViewBox(maxY, maxX);
+  const { h: viewHeight } = mapRouteViewSize(maxY, maxX);
+
   return (
     <nav className={styles.route} aria-label="本层路线概览">
       <svg
         className={styles.routeSvg}
         viewBox={vb}
+        style={{ height: `${viewHeight}px` }}
         preserveAspectRatio="xMidYMid meet"
         role="img"
       >
         <title>本层岔路与连接</title>
         {edges.map(({ from, to }) => {
-          const a = mapNodeCenter(map.nodes[from]!);
-          const b = mapNodeCenter(map.nodes[to]!);
+          const a = mapNodeCenter(map.nodes[from]!, maxX);
+          const b = mapNodeCenter(map.nodes[to]!, maxX);
           const targetNode = map.nodes[to]!;
           const routePresentation = routePresentationForNodeType(targetNode.type);
           const emphasis =
@@ -135,7 +143,7 @@ export function MapRoute({
           );
         })}
         {floorNodes.map((node) => {
-          const { cx, cy } = mapNodeCenter(node);
+          const { cx, cy } = mapNodeCenter(node, maxX);
           const nodeRadius = nodeRadiusFor(node);
           const isCurrent = currentNodeId === node.id;
           const isVisited = node.visited;
@@ -144,6 +152,7 @@ export function MapRoute({
           const isSelected = selectedNodeId === node.id;
           const isHovered = hoveredNodeId === node.id;
           const isThreatNode = node.type === 'elite' || node.type === 'boss';
+          const isBoss = node.type === 'boss';
           const viewState = mapNodeViewState({ isCurrent, isVisited, canReach });
           const tone = mapNodeToneForNode(node);
 
@@ -168,9 +177,29 @@ export function MapRoute({
               onPointerLeave={isSelectable ? () => onHoverNode(null) : undefined}
             >
               {isSelectable ? (
-                <circle className={styles.nodeHit} r={nodeRadius + 10} cx={0} cy={0} />
+                <circle className={styles.nodeHit} r={nodeRadius + 12} cx={0} cy={0} />
               ) : null}
               <g className={styles.nodeCore}>
+                {isBoss ? (
+                  <>
+                    <rect
+                      className={styles.bossFrameOuter}
+                      x={-(nodeRadius + 13)}
+                      y={-(nodeRadius + 13)}
+                      width={(nodeRadius + 13) * 2}
+                      height={(nodeRadius + 13) * 2}
+                      transform="rotate(45)"
+                    />
+                    <rect
+                      className={styles.bossFrameInner}
+                      x={-(nodeRadius + 7)}
+                      y={-(nodeRadius + 7)}
+                      width={(nodeRadius + 7) * 2}
+                      height={(nodeRadius + 7) * 2}
+                      transform="rotate(45)"
+                    />
+                  </>
+                ) : null}
                 {isCurrent ? <circle className={styles.nodeAura} r={nodeRadius + 7} cx={0} cy={0} /> : null}
                 {isCurrent ? <circle className={styles.nodeHeart} r={nodeRadius - 8} cx={0} cy={0} /> : null}
                 {isSelected ? (
@@ -209,7 +238,7 @@ export function MapRoute({
                   className={cn(
                     styles.nodeCircleBase,
                     styles.nodeCircleState[viewState],
-                    viewState === 'available' ? styles.nodeCircleTone[tone] : null,
+                    viewState !== 'current' ? styles.nodeCircleTone[tone] : null,
                     isSelectable && styles.nodeCircleInteractive,
                     isSelected && styles.nodeCircleSelected,
                   )}
@@ -217,20 +246,34 @@ export function MapRoute({
                   cx={0}
                   cy={0}
                 />
-                {isCurrent ? <circle className={styles.nodePlayer} r={4} cx={0} cy={-nodeRadius - 8} /> : null}
                 <MapNodeIcon
                   kind={nodeVisualKind(node)}
-                  className={cn(styles.nodeIconBase, styles.nodeIconState[viewState])}
-                  x={-9}
-                  y={-9}
-                  width={18}
-                  height={18}
+                  className={cn(
+                    styles.nodeIconBase,
+                    viewState === 'available'
+                      ? styles.nodeIconTone[tone]
+                      : styles.nodeIconState[viewState],
+                  )}
+                  x={-10}
+                  y={-10}
+                  width={20}
+                  height={20}
                   aria-hidden="true"
                 />
                 {isCurrent ? (
-                  <text className={styles.nodeTag} x={0} y={-nodeRadius - 16} textAnchor="middle">
-                    你在这里
-                  </text>
+                  <g className={styles.youAreHere} transform={`translate(0,${nodeRadius + 20})`}>
+                    <rect
+                      className={styles.youAreHereBox}
+                      x={-46}
+                      y={-11}
+                      width={92}
+                      height={22}
+                      rx={11}
+                    />
+                    <text className={styles.youAreHereText} x={0} y={4} textAnchor="middle">
+                      你在这里
+                    </text>
+                  </g>
                 ) : null}
               </g>
             </g>

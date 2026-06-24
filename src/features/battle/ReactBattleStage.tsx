@@ -1,4 +1,5 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { FallbackImg } from "@/features/cards/FallbackImg";
 import {
   buildCardKeywordHints,
   cardTargetLabel,
@@ -30,31 +31,6 @@ const ENEMY_SPRITE_URL = "/assets/combat/enemy.webp";
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(" ");
-}
-
-/** 依次尝试多个图片源，全部加载失败时回退到 fallback 节点（文字/CSS 占位）。 */
-function FallbackImg({
-  sources,
-  alt,
-  className,
-  fallback = null,
-}: {
-  sources: string[];
-  alt: string;
-  className?: string;
-  fallback?: ReactNode;
-}) {
-  const [index, setIndex] = useState(0);
-  if (index >= sources.length) return <>{fallback}</>;
-  return (
-    <img
-      className={className}
-      alt={alt}
-      src={sources[index]}
-      draggable={false}
-      onError={() => setIndex((i) => i + 1)}
-    />
-  );
 }
 
 const INTENT_CATEGORY_TONE: Record<IntentCategory, keyof typeof styles.intentTone> = {

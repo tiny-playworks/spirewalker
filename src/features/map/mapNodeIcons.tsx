@@ -1,11 +1,11 @@
 import type { SVGProps } from 'react';
 import {
-  Archive,
-  Bed,
-  Bug,
+  Eye,
+  Flame,
+  Gem,
+  HelpCircle,
   ShoppingBag,
   Skull,
-  Sparkles,
   Swords,
   Tent,
 } from 'lucide-react';
@@ -43,16 +43,16 @@ function iconComponent(kind: MapNodeVisualKind) {
     case 'battle':
       return Swords;
     case 'elite':
-      return Bug;
-    case 'boss':
       return Skull;
+    case 'boss':
+      return Eye;
     case 'shop':
       return ShoppingBag;
     case 'rest':
-      return Bed;
+      return Flame;
     case 'event':
-      return Sparkles;
+      return HelpCircle;
     case 'treasure':
-      return Archive;
+      return Gem;
   }
 }
