@@ -15,459 +15,459 @@ dark fantasy game card illustration, ruined ancient temple and void spire settin
 
 ## 尺寸与格式规格
 
-| 资产                  | 出图尺寸                           | 比例 | 格式 | 背景             | 备注                                |
-| --------------------- | ---------------------------------- | ---- | ---- | ---------------- | ----------------------------------- |
-| 核心卡插画 / 兜底插画 | 1024×1024                          | 1:1  | PNG  | 深色或不透明均可 | 进 public 前建议压到 ~512 或转 webp |
-| 状态图标              | 1024×1024 出，downscale 到 256×256 | 1:1  | PNG  | 必须透明         | 显示约 64px，需 alpha 通道          |
-| 意图图标              | 1024×1024 出，downscale 到 256×256 | 1:1  | PNG  | 必须透明         | 显示约 32px，需 alpha 通道          |
+| 资产 | 出图尺寸 | 比例 | 格式 | 背景 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+| 核心卡插画 / 兜底插画 | 1024×1024 | 1:1 | webp（优先）或 png | 深色或不透明均可 | 进 public 前可压到 ~512 |
+| 状态图标 | **256×256** | 1:1 | webp（优先）或 png | 必须透明 | UI 显示约 64px，无需 1024 |
+| 意图图标 | **256×256** | 1:1 | webp（优先）或 png | 必须透明 | UI 显示约 32px，无需 1024 |
 
 - 插画区在 UI 里用 `object-fit: cover` 裁切，统一 1:1 不会变形。
 - 图标叠在深色 chip/画框上，背景务必透明；GPT 偶尔不给 alpha，拿到后确认。
 - 164 张卡插画全 1024 会让仓库变重，建议批量压缩后再放入 public。
 
-## A. 状态图标（8 个） → public/assets/combat/statuses/<id>.png
+## A. 状态图标（8 个） → public/assets/combat/statuses/<id>.webp
 
-风格：1:1，透明底，发光符文宝石小图标，可在 64px 下清晰辨认，统一描边。
+风格：1:1 **256×256**，透明底，发光符文宝石小图标，可在 64px 下清晰辨认。
 
-- `strength.png`（力量）
-
-```
-a glowing crimson fist rune emblem, empowering aura, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
-```
-
-- `weak.png`（虚弱）
+- `strength.webp`（力量）
 
 ```
-a cracked grey downward-arrow rune draining energy, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+a glowing crimson fist rune emblem, empowering aura, status icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `vulnerable.png`（易伤）
+- `weak.webp`（虚弱）
 
 ```
-a shattered shield rune with red fracture glow, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+a cracked grey downward-arrow rune draining energy, status icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `momentum.png`（连势）
+- `vulnerable.webp`（易伤）
 
 ```
-a spiraling cyan momentum vortex rune, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+a shattered shield rune with red fracture glow, status icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `metallicize.png`（金属化）
+- `momentum.webp`（连势）
 
 ```
-a dark metallic hexagon plate rune with steel sheen, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+a spiraling cyan momentum vortex rune, status icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `steady_guard.png`（稳势）
+- `metallicize.webp`（金属化）
 
 ```
-a layered teal ward sigil, calm steady glow, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+a dark metallic hexagon plate rune with steel sheen, status icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `primed_break.png`（破势预热）
+- `steady_guard.webp`（稳势）
 
 ```
-a charged amber burst rune about to detonate, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+a layered teal ward sigil, calm steady glow, status icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `patience_power.png`（蓄势）
+- `primed_break.webp`（破势预热）
 
 ```
-a meditative gathering-energy rune, slow building violet glow, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+a charged amber burst rune about to detonate, status icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-## B. 意图图标（5 个） → public/assets/combat/intents/<id>.png
-
-- `attack.png`（攻击）
+- `patience_power.webp`（蓄势）
 
 ```
-crossed blades / weapon strike icon, aggressive red glow, enemy intent icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+a meditative gathering-energy rune, slow building violet glow, status icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `defend.png`（防御）
+## B. 意图图标（5 个） → public/assets/combat/intents/<id>.webp
+
+- `attack.webp`（攻击）
 
 ```
-raised shield icon, steel-blue protective glow, enemy intent icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+crossed blades / weapon strike icon, aggressive red glow, enemy intent icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `buff.png`（增益）
+- `defend.webp`（防御）
 
 ```
-upward spiral aura icon, golden empowering glow, enemy intent icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+raised shield icon, steel-blue protective glow, enemy intent icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `debuff.png`（减益）
+- `buff.webp`（增益）
 
 ```
-downward draining hex icon, sickly purple glow, enemy intent icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+upward spiral aura icon, golden empowering glow, enemy intent icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-- `unknown.png`（未知）
+- `debuff.webp`（减益）
 
 ```
-a glowing question sigil shrouded in mist, neutral grey, enemy intent icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG
+downward draining hex icon, sickly purple glow, enemy intent icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
 ```
 
-## C. 兜底插画（12 张） → public/assets/cards/art*shared/<archetype>*<type>.jpeg
+- `unknown.webp`（未知）
+
+```
+a glowing question sigil shrouded in mist, neutral grey, enemy intent icon, glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256
+```
+
+## C. 兜底插画（12 张） → public/assets/cards/art_shared/<archetype>_<type>.webp
 
 长尾卡未单独出图时使用，按流派×类型各一张。
 
-- `guard_attack.jpeg`
+- `guard_attack.webp`
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, cool cyan and steel-blue protective energy accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_skill.jpeg`
+- `guard_skill.webp`
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, cool cyan and steel-blue protective energy accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_power.jpeg`
+- `guard_power.webp`
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, cool cyan and steel-blue protective energy accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_attack.jpeg`
+- `burst_attack.webp`
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, fiery crimson and molten-orange embers accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_skill.jpeg`
+- `burst_skill.webp`
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, fiery crimson and molten-orange embers accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_power.jpeg`
+- `burst_power.webp`
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, fiery crimson and molten-orange embers accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_attack.jpeg`
+- `mixed_attack.webp`
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, violet and magenta void energy accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_skill.jpeg`
+- `mixed_skill.webp`
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, violet and magenta void energy accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_power.jpeg`
+- `mixed_power.webp`
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, violet and magenta void energy accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_attack.jpeg`
+- `neutral_attack.webp`
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, muted grey-gold ethereal light accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_skill.jpeg`
+- `neutral_skill.webp`
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, muted grey-gold ethereal light accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_power.jpeg`
+- `neutral_power.webp`
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, muted grey-gold ethereal light accents, generic emblematic composition, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-## D. 核心卡插画（164 张） → public/assets/cards/art/<cardId>.png
+## D. 核心卡插画（164 张） → public/assets/cards/art/<cardId>.webp
 
 文件名用卡的基础 id（升级版 +/++ 复用同一张图）。
 
 ### guard（47）
 
-- `guard_legendary_1.png` — 不动明王（legendary/skill）：获得 10 点格挡。若你本回合未消耗连势，额外获得 10 点格挡。
+- `guard_legendary_1.webp` — 不动明王（legendary/skill）：获得 10 点格挡。若你本回合未消耗连势，额外获得 10 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_legendary_2.png` — 铁壁圣殿（legendary/power）：获得 8 层金属化。
+- `guard_legendary_2.webp` — 铁壁圣殿（legendary/power）：获得 8 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, skin hardening into dark metallic plating, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_legendary_3.png` — 定海神针（legendary/attack）：消耗所有稳势，每层造成 6 点伤害。消耗所有连势，每层造成 4 点伤害。
+- `guard_legendary_3.webp` — 定海神针（legendary/attack）：消耗所有稳势，每层造成 6 点伤害。消耗所有连势，每层造成 4 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_legendary_4.png` — 钢铁洪流（legendary/attack）：造成等同于你格挡值 2.5 倍的伤害。消耗。
+- `guard_legendary_4.webp` — 钢铁洪流（legendary/attack）：造成等同于你格挡值 2.5 倍的伤害。消耗。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_legendary_5.png` — 圣盾连击（legendary/attack）：造成 5 点伤害并获得 5 点格挡，重复 4 次。
+- `guard_legendary_5.webp` — 圣盾连击（legendary/attack）：造成 5 点伤害并获得 5 点格挡，重复 4 次。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_legendary_6.png` — 永恒壁垒（legendary/skill）：获得 15 点格挡。若你本回合未消耗连势，额外获得 5 点格挡。
+- `guard_legendary_6.webp` — 永恒壁垒（legendary/skill）：获得 15 点格挡。若你本回合未消耗连势，额外获得 5 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `fortify.png` — 固守（rare/skill）：获得 10 点格挡。回合结束时，将 50% 剩余格挡转化为伤害，随机攻击一名敌人。
+- `fortify.webp` — 固守（rare/skill）：获得 10 点格挡。回合结束时，将 50% 剩余格挡转化为伤害，随机攻击一名敌人。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_aegis_mastery.png` — 神盾精通（rare/power）：获得 6 层稳势和 4 层金属化。
+- `gd_c_aegis_mastery.webp` — 神盾精通（rare/power）：获得 6 层稳势和 4 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a steady braced stance ringed by layered translucent wards, skin hardening into dark metallic plating, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_breaking_guard.png` — 破势大师（rare/power）：获得 4 层破势预热，获得 3 层连势。
+- `gd_c_breaking_guard.webp` — 破势大师（rare/power）：获得 4 层破势预热，获得 3 层连势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a coiled charge of energy about to burst, swirling streams of momentum energy spiraling around the body, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_eternal_fortress.png` — 永恒堡垒（rare/skill）：获得 12 点格挡，获得 4 层金属化。
+- `gd_c_eternal_fortress.webp` — 永恒堡垒（rare/skill）：获得 12 点格挡，获得 4 层金属化。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, skin hardening into dark metallic plating, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_fortress_master.png` — 堡垒大师（rare/power）：获得 3 层力量和 5 层金属化。
+- `gd_c_fortress_master.webp` — 堡垒大师（rare/power）：获得 3 层力量和 5 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, blade and arms glowing with empowering crimson runes, skin hardening into dark metallic plating, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_guardian_devastation.png` — 守卫毁灭（rare/attack）：造成等同于你格挡值两倍的伤害。
+- `gd_c_guardian_devastation.webp` — 守卫毁灭（rare/attack）：造成等同于你格挡值两倍的伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_guardian_wrath.png` — 守卫之怒（rare/attack）：造成 15 点伤害四次。
+- `gd_c_guardian_wrath.webp` — 守卫之怒（rare/attack）：造成 15 点伤害四次。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a rapid multi-hit flurry of strikes, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_impenetrable_wall.png` — 不可逾越之墙（rare/skill）：获得 20 点格挡。
+- `gd_c_impenetrable_wall.webp` — 不可逾越之墙（rare/skill）：获得 20 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_last_wall.png` — 最后壁垒（rare/skill）：获得 25 点格挡。消耗。
+- `gd_c_last_wall.webp` — 最后壁垒（rare/skill）：获得 25 点格挡。消耗。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_metallic_mastery.png` — 金属化精通（rare/power）：获得 8 层金属化。
+- `gd_c_metallic_mastery.webp` — 金属化精通（rare/power）：获得 8 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, skin hardening into dark metallic plating, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_momentum_bastion.png` — 连势壁垒（rare/skill）：获得 8 点格挡，获得 6 层连势。
+- `gd_c_momentum_bastion.webp` — 连势壁垒（rare/skill）：获得 8 点格挡，获得 6 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, swirling streams of momentum energy spiraling around the body, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_momentum_lord.png` — 连势之王（rare/skill）：获得 8 层连势，抽 2 张牌。
+- `gd_c_momentum_lord.webp` — 连势之王（rare/skill）：获得 8 层连势，抽 2 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, swirling streams of momentum energy spiraling around the body, spectral cards and scrolls swirling toward the hand, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_steady_master.png` — 稳势大师（rare/power）：获得 5 层稳势。
+- `gd_c_steady_master.webp` — 稳势大师（rare/power）：获得 5 层稳势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a steady braced stance ringed by layered translucent wards, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_titan_slam.png` — 巨人碾压（rare/attack）：造成 20 点伤害。消耗所有稳势，每层造成额外 5 点伤害。
+- `gd_c_titan_slam.webp` — 巨人碾压（rare/attack）：造成 20 点伤害。消耗所有稳势，每层造成额外 5 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_ultimate_defense.png` — 终极防御（rare/skill）：获得 15 点格挡，获得 3 层金属化，抽 2 张牌。
+- `gd_c_ultimate_defense.webp` — 终极防御（rare/skill）：获得 15 点格挡，获得 3 层金属化，抽 2 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, skin hardening into dark metallic plating, spectral cards and scrolls swirling toward the hand, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `gd_c_unstoppable_bulwark.png` — 不可阻挡之壁（rare/skill）：获得 15 点格挡，获得 3 层力量。
+- `gd_c_unstoppable_bulwark.webp` — 不可阻挡之壁（rare/skill）：获得 15 点格挡，获得 3 层力量。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, blade and arms glowing with empowering crimson runes, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_atk_1.png` — 铁壁猛击（rare/attack）：造成等同于你格挡值两倍的伤害。
+- `guard_rare_atk_1.webp` — 铁壁猛击（rare/attack）：造成等同于你格挡值两倍的伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_atk_2.png` — 稳势爆发（rare/attack）：造成 20 点伤害。消耗所有稳势，每层造成额外 5 点伤害。
+- `guard_rare_atk_2.webp` — 稳势爆发（rare/attack）：造成 20 点伤害。消耗所有稳势，每层造成额外 5 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_atk_3.png` — 金属化打击（rare/attack）：造成 15 点伤害，获得等同于你金属化层数的格挡。
+- `guard_rare_atk_3.webp` — 金属化打击（rare/attack）：造成 15 点伤害，获得等同于你金属化层数的格挡。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_atk_4.png` — 守势连击（rare/attack）：造成 5 点伤害四次。
+- `guard_rare_atk_4.webp` — 守势连击（rare/attack）：造成 5 点伤害四次。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a rapid multi-hit flurry of strikes, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_atk_5.png` — 破势反击（rare/attack）：造成 25 点伤害。消耗所有破势预热，每层造成额外 8 点伤害。
+- `guard_rare_atk_5.webp` — 破势反击（rare/attack）：造成 25 点伤害。消耗所有破势预热，每层造成额外 8 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_power_1.png` — 金属化精通（rare/power）：获得 8 层金属化。
+- `guard_rare_power_1.webp` — 金属化精通（rare/power）：获得 8 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, skin hardening into dark metallic plating, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_power_2.png` — 稳势精通（rare/power）：获得 5 层稳势。
+- `guard_rare_power_2.webp` — 稳势精通（rare/power）：获得 5 层稳势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a steady braced stance ringed by layered translucent wards, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_power_3.png` — 守势大师（rare/power）：获得 3 层力量和 5 层金属化。
+- `guard_rare_power_3.webp` — 守势大师（rare/power）：获得 3 层力量和 5 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, blade and arms glowing with empowering crimson runes, skin hardening into dark metallic plating, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_power_4.png` — 连势大师（rare/power）：获得 6 层连势。
+- `guard_rare_power_4.webp` — 连势大师（rare/power）：获得 6 层连势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, swirling streams of momentum energy spiraling around the body, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_power_5.png` — 破势预热精通（rare/power）：获得 4 层破势预热。
+- `guard_rare_power_5.webp` — 破势预热精通（rare/power）：获得 4 层破势预热。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a coiled charge of energy about to burst, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_skill_1.png` — 铁壁防御（rare/skill）：获得 20 点格挡。
+- `guard_rare_skill_1.webp` — 铁壁防御（rare/skill）：获得 20 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_skill_2.png` — 稳势防御（rare/skill）：获得 12 点格挡，获得 3 层稳势。
+- `guard_rare_skill_2.webp` — 稳势防御（rare/skill）：获得 12 点格挡，获得 3 层稳势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, a steady braced stance ringed by layered translucent wards, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_skill_3.png` — 金属化防御（rare/skill）：获得 10 点格挡，获得 4 层金属化。
+- `guard_rare_skill_3.webp` — 金属化防御（rare/skill）：获得 10 点格挡，获得 4 层金属化。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, skin hardening into dark metallic plating, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_skill_4.png` — 势能壁垒（rare/skill）：获得 8 点格挡，获得 5 层连势。
+- `guard_rare_skill_4.webp` — 势能壁垒（rare/skill）：获得 8 点格挡，获得 5 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, swirling streams of momentum energy spiraling around the body, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_rare_skill_5.png` — 坚守阵地（rare/skill）：获得 15 点格挡，抽 2 张牌。
+- `guard_rare_skill_5.webp` — 坚守阵地（rare/skill）：获得 15 点格挡，抽 2 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, spectral cards and scrolls swirling toward the hand, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `patience_stance.png` — 耐心（rare/power）：能力（Patience）：每回合结束时，若你本回合未打出攻击，获得 1 层力量。
+- `patience_stance.webp` — 耐心（rare/power）：能力（Patience）：每回合结束时，若你本回合未打出攻击，获得 1 层力量。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a meditative charging pose slowly gathering inner power, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `anchor_slash.png` — 定锋（uncommon/attack）：造成 6 点伤害，获得 4 点格挡，并获得 1 层稳势。
+- `anchor_slash.webp` — 定锋（uncommon/attack）：造成 6 点伤害，获得 4 点格挡，并获得 1 层稳势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, raising a glowing protective ward or shield, a steady braced stance ringed by layered translucent wards, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `anchored_breath.png` — 定息（uncommon/skill）：获得 5 点格挡，并获得 1 层金属化与 1 层稳势。
+- `anchored_breath.webp` — 定息（uncommon/skill）：获得 5 点格挡，并获得 1 层金属化与 1 层稳势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, skin hardening into dark metallic plating, a steady braced stance ringed by layered translucent wards, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_vigil_banner.png` — 守势旗帜（uncommon/skill）：获得 7 点格挡。
+- `guard_vigil_banner.webp` — 守势旗帜（uncommon/skill）：获得 7 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `patient_cut.png` — 缓收（uncommon/attack）：造成 6 点伤害。获得等同当前连势层数的格挡，不消耗连势。
+- `patient_cut.webp` — 缓收（uncommon/attack）：造成 6 点伤害。获得等同当前连势层数的格挡，不消耗连势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, weaving momentum energy into a defensive barrier, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `stable_mind.png` — 定心（uncommon/skill）：获得 7 点格挡。若本回合未主动消耗连势，再抽 1 张牌并获得 1 层连势。
+- `stable_mind.webp` — 定心（uncommon/skill）：获得 7 点格挡。若本回合未主动消耗连势，再抽 1 张牌并获得 1 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `brace_rhythm.png` — 稳架（common/skill）：获得 5 点格挡，并获得 2 层连势。
+- `brace_rhythm.webp` — 稳架（common/skill）：获得 5 点格挡，并获得 2 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, swirling streams of momentum energy spiraling around the body, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `guard_strike.png` — 护锋（common/attack）：造成 6 点伤害，获得 4 点格挡。
+- `guard_strike.webp` — 护锋（common/attack）：造成 6 点伤害，获得 4 点格挡。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, raising a glowing protective ward or shield, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `held_breath.png` — 屏息（common/skill）：获得 6 点格挡。获得 1 层稳势。
+- `held_breath.webp` — 屏息（common/skill）：获得 6 点格挡。获得 1 层稳势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, a steady braced stance ringed by layered translucent wards, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `soft_step.png` — 垫步（common/skill）：获得 3 点格挡，并获得 1 层连势。
+- `soft_step.webp` — 垫步（common/skill）：获得 3 点格挡，并获得 1 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, swirling streams of momentum energy spiraling around the body, cool cyan and steel-blue protective energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
@@ -475,271 +475,271 @@ a hooded dark-armored void warrior performing a focused defensive or utility ges
 
 ### burst（45）
 
-- `burst_legendary_1.png` — 能量湮灭（legendary/attack）：消耗所有能量，每点造成 18 点伤害。
+- `burst_legendary_1.webp` — 能量湮灭（legendary/attack）：消耗所有能量，每点造成 18 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_legendary_2.png` — 连势风暴（legendary/attack）：消耗所有连势，每层造成 5 点伤害。消耗所有破势预热，每层造成 8 点伤害。
+- `burst_legendary_2.webp` — 连势风暴（legendary/attack）：消耗所有连势，每层造成 5 点伤害。消耗所有破势预热，每层造成 8 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_legendary_3.png` — 破甲重击（legendary/attack）：消耗 5 点格挡，造成 35 点伤害。消耗。
+- `burst_legendary_3.webp` — 破甲重击（legendary/attack）：消耗 5 点格挡，造成 35 点伤害。消耗。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_legendary_4.png` — 破势洪流（legendary/attack）：消耗所有破势预热，每层造成 6 点伤害并抽 1 张牌。
+- `burst_legendary_4.webp` — 破势洪流（legendary/attack）：消耗所有破势预热，每层造成 6 点伤害并抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, spectral cards and scrolls swirling toward the hand, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_legendary_5.png` — 连势狂潮（legendary/attack）：消耗所有连势，每层造成 3 点伤害并抽 1 张牌。获得 2 点能量。
+- `burst_legendary_5.webp` — 连势狂潮（legendary/attack）：消耗所有连势，每层造成 3 点伤害并抽 1 张牌。获得 2 点能量。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, converting swirling momentum into a fan of drawn cards, a surging radiant energy core flaring with power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_legendary_6.png` — 连锁爆破（legendary/attack）：消耗所有连势，每层造成 5 点伤害，消耗后抽 1 张牌。
+- `burst_legendary_6.webp` — 连锁爆破（legendary/attack）：消耗所有连势，每层造成 5 点伤害，消耗后抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, converting swirling momentum into a fan of drawn cards, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `blood_rush.png` — 血怒（rare/attack）：造成 6 点伤害。若你本回合已消耗过牌，改为造成 16 点伤害。
+- `blood_rush.webp` — 血怒（rare/attack）：造成 6 点伤害。若你本回合已消耗过牌，改为造成 16 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_burst_master.png` — 爆发大师（rare/power）：获得 4 层破势预热和 4 层连势。
+- `br_b_burst_master.webp` — 爆发大师（rare/power）：获得 4 层破势预热和 4 层连势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a coiled charge of energy about to burst, swirling streams of momentum energy spiraling around the body, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_energy_annihilation.png` — 能量湮灭（rare/attack）：造成 40 点伤害。消耗所有能量。
+- `br_b_energy_annihilation.webp` — 能量湮灭（rare/attack）：造成 40 点伤害。消耗所有能量。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_energy_master.png` — 能量大师（rare/skill）：获得 4 点能量。消耗 5 层连势。
+- `br_b_energy_master.webp` — 能量大师（rare/skill）：获得 4 点能量。消耗 5 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, a surging radiant energy core flaring with power, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_final_rupture.png` — 终结裂变（rare/attack）：造成 30 点伤害。消耗所有连势和破势预热，每层造成额外 5 点伤害。
+- `br_b_final_rupture.webp` — 终结裂变（rare/attack）：造成 30 点伤害。消耗所有连势和破势预热，每层造成额外 5 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_momentum_fortify_r.png` — 连势精通·极（rare/power）：获得 6 层连势。
+- `br_b_momentum_fortify_r.webp` — 连势精通·极（rare/power）：获得 6 层连势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, swirling streams of momentum energy spiraling around the body, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_momentum_master.png` — 连势大师（rare/skill）：获得 8 层连势。
+- `br_b_momentum_master.webp` — 连势大师（rare/skill）：获得 8 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, swirling streams of momentum energy spiraling around the body, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_momentum_master_p.png` — 连势大师·极（rare/power）：获得 5 层连势和 2 层力量。
+- `br_b_momentum_master_p.webp` — 连势大师·极（rare/power）：获得 5 层连势和 2 层力量。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, swirling streams of momentum energy spiraling around the body, blade and arms glowing with empowering crimson runes, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_momentum_slash_r.png` — 连势裂斩（rare/attack）：造成 14 点伤害两次。消耗 5 层连势。
+- `br_b_momentum_slash_r.webp` — 连势裂斩（rare/attack）：造成 14 点伤害两次。消耗 5 层连势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_momentum_storm.png` — 连势风暴（rare/attack）：造成 8 点伤害五次。消耗 5 层连势。
+- `br_b_momentum_storm.webp` — 连势风暴（rare/attack）：造成 8 点伤害五次。消耗 5 层连势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_power_master.png` — 力量奥义（rare/power）：获得 3 层力量。
+- `br_b_power_master.webp` — 力量奥义（rare/power）：获得 3 层力量。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, blade and arms glowing with empowering crimson runes, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_primed_devastate.png` — 预热毁灭（rare/attack）：造成 35 点伤害。消耗 8 层连势。
+- `br_b_primed_devastate.webp` — 预热毁灭（rare/attack）：造成 35 点伤害。消耗 8 层连势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_primed_draw_r.png` — 破势过牌·极（rare/skill）：抽 5 张牌。消耗 4 层连势。
+- `br_b_primed_draw_r.webp` — 破势过牌·极（rare/skill）：抽 5 张牌。消耗 4 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, converting swirling momentum into a fan of drawn cards, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_primed_fortify_r.png` — 破势精通·极（rare/power）：获得 6 层破势预热。
+- `br_b_primed_fortify_r.webp` — 破势精通·极（rare/power）：获得 6 层破势预热。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a coiled charge of energy about to burst, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_primed_master.png` — 破势大师（rare/skill）：获得 5 层破势预热。
+- `br_b_primed_master.webp` — 破势大师（rare/skill）：获得 5 层破势预热。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, a coiled charge of energy about to burst, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `br_b_triple_rupture.png` — 三重裂变（rare/attack）：造成 10 点伤害三次。消耗 6 层连势。
+- `br_b_triple_rupture.webp` — 三重裂变（rare/attack）：造成 10 点伤害三次。消耗 6 层连势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_atk_1.png` — 破势终结（rare/attack）：造成 30 点伤害。消耗所有连势和破势预热，每层造成额外 5 点伤害。
+- `burst_rare_atk_1.webp` — 破势终结（rare/attack）：造成 30 点伤害。消耗所有连势和破势预热，每层造成额外 5 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_atk_2.png` — 连势风暴（rare/attack）：造成 8 点伤害五次。消耗 5 层连势。
+- `burst_rare_atk_2.webp` — 连势风暴（rare/attack）：造成 8 点伤害五次。消耗 5 层连势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_atk_3.png` — 破势猛击（rare/attack）：造成 35 点伤害。消耗 8 层连势。
+- `burst_rare_atk_3.webp` — 破势猛击（rare/attack）：造成 35 点伤害。消耗 8 层连势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_atk_4.png` — 爆发终结（rare/attack）：造成 40 点伤害。消耗所有能量。
+- `burst_rare_atk_4.webp` — 爆发终结（rare/attack）：造成 40 点伤害。消耗所有能量。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_atk_5.png` — 破势连击（rare/attack）：造成 10 点伤害三次。消耗 6 层连势。
+- `burst_rare_atk_5.webp` — 破势连击（rare/attack）：造成 10 点伤害三次。消耗 6 层连势。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_power_1.png` — 破势精通（rare/power）：获得 6 层破势预热。
+- `burst_rare_power_1.webp` — 破势精通（rare/power）：获得 6 层破势预热。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a coiled charge of energy about to burst, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_power_2.png` — 连势精通（rare/power）：获得 6 层连势。
+- `burst_rare_power_2.webp` — 连势精通（rare/power）：获得 6 层连势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, swirling streams of momentum energy spiraling around the body, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_power_3.png` — 力量觉醒（rare/power）：获得 3 层力量。
+- `burst_rare_power_3.webp` — 力量觉醒（rare/power）：获得 3 层力量。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, blade and arms glowing with empowering crimson runes, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_power_4.png` — 爆发大师（rare/power）：获得 4 层破势预热和 4 层连势。
+- `burst_rare_power_4.webp` — 爆发大师（rare/power）：获得 4 层破势预热和 4 层连势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, a coiled charge of energy about to burst, swirling streams of momentum energy spiraling around the body, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_power_5.png` — 连势大师（rare/power）：获得 5 层连势和 2 层力量。
+- `burst_rare_power_5.webp` — 连势大师（rare/power）：获得 5 层连势和 2 层力量。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, swirling streams of momentum energy spiraling around the body, blade and arms glowing with empowering crimson runes, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_skill_1.png` — 破势大师（rare/skill）：获得 5 层破势预热。
+- `burst_rare_skill_1.webp` — 破势大师（rare/skill）：获得 5 层破势预热。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, a coiled charge of energy about to burst, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_skill_2.png` — 连势大师（rare/skill）：获得 8 层连势。
+- `burst_rare_skill_2.webp` — 连势大师（rare/skill）：获得 8 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, swirling streams of momentum energy spiraling around the body, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_skill_3.png` — 破势过牌（rare/skill）：抽 5 张牌。消耗 4 层连势。
+- `burst_rare_skill_3.webp` — 破势过牌（rare/skill）：抽 5 张牌。消耗 4 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, converting swirling momentum into a fan of drawn cards, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_skill_4.png` — 连势能量（rare/skill）：获得 4 点能量。消耗 5 层连势。
+- `burst_rare_skill_4.webp` — 连势能量（rare/skill）：获得 4 点能量。消耗 5 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, channeling void power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_rare_skill_5.png` — 破势防御（rare/skill）：获得 15 点格挡。消耗 3 层连势。
+- `burst_rare_skill_5.webp` — 破势防御（rare/skill）：获得 15 点格挡。消耗 3 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, channeling void power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `full_release.png` — 断流（rare/attack）：造成 6 点伤害，并消耗全部连势，每层额外造成 3 点伤害。抽 1 张牌。
+- `full_release.webp` — 断流（rare/attack）：造成 6 点伤害，并消耗全部连势，每层额外造成 3 点伤害。抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, spectral cards and scrolls swirling toward the hand, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `overload.png` — 过载（rare/skill）：消耗你手中所有攻击牌。每消耗一张，对一名随机敌人造成 8 点伤害。
+- `overload.webp` — 过载（rare/skill）：消耗你手中所有攻击牌。每消耗一张，对一名随机敌人造成 8 点伤害。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, channeling void power, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_signal_banner.png` — 爆发旗帜（uncommon/attack）：造成 7 点伤害。
+- `burst_signal_banner.webp` — 爆发旗帜（uncommon/attack）：造成 7 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burst_strike.png` — 破势击（uncommon/attack）：造成 4 点伤害，并消耗全部连势，每层额外造成 3 点伤害。
+- `burst_strike.webp` — 破势击（uncommon/attack）：造成 4 点伤害，并消耗全部连势，每层额外造成 3 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `follow_through.png` — 追击（uncommon/attack）：造成 4 点伤害，并消耗至多 2 层连势，每层额外造成 3 点伤害。若实际消耗了连势，获得 1 点能量。
+- `follow_through.webp` — 追击（uncommon/attack）：造成 4 点伤害，并消耗至多 2 层连势，每层额外造成 3 点伤害。若实际消耗了连势，获得 1 点能量。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `snap_strike.png` — 断势击（uncommon/attack）：造成 5 点伤害，并消耗至多 2 层连势，每层额外造成 4 点伤害。
+- `snap_strike.webp` — 断势击（uncommon/attack）：造成 5 点伤害，并消耗至多 2 层连势，每层额外造成 4 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `break_opening.png` — 压锋（common/skill）：获得 2 层连势。获得 1 层破势预热。
+- `break_opening.webp` — 压锋（common/skill）：获得 2 层连势。获得 1 层破势预热。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, swirling streams of momentum energy spiraling around the body, a coiled charge of energy about to burst, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `quick_release.png` — 疾放（common/attack）：造成 3 点伤害，并消耗至多 1 层连势，每层额外造成 5 点伤害。
+- `quick_release.webp` — 疾放（common/attack）：造成 3 点伤害，并消耗至多 1 层连势，每层额外造成 5 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, fiery crimson and molten-orange embers accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
@@ -747,199 +747,199 @@ a hooded dark-armored void warrior in a dynamic offensive action, unleashing sto
 
 ### mixed（33）
 
-- `mixed_legendary_1.png` — 连势转化（legendary/skill）：消耗 3 层连势，获得 3 点能量。
+- `mixed_legendary_1.webp` — 连势转化（legendary/skill）：消耗 3 层连势，获得 3 点能量。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, channeling void power, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_legendary_2.png` — 金属风暴（legendary/attack）：造成等同于你金属化层数 2 倍的伤害，然后获得等同于金属化层数的格挡。
+- `mixed_legendary_2.webp` — 金属风暴（legendary/attack）：造成等同于你金属化层数 2 倍的伤害，然后获得等同于金属化层数的格挡。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_legendary_3.png` — 攻守兼备（legendary/attack）：造成 8 点伤害。若你有格挡，额外造成 15 点伤害。
+- `mixed_legendary_3.webp` — 攻守兼备（legendary/attack）：造成 8 点伤害。若你有格挡，额外造成 15 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_legendary_4.png` — 双势合一（legendary/skill）：获得 3 层连势和 3 层金属化。
+- `mixed_legendary_4.webp` — 双势合一（legendary/skill）：获得 3 层连势和 3 层金属化。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, swirling streams of momentum energy spiraling around the body, skin hardening into dark metallic plating, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_legendary_5.png` — 势能爆发（legendary/attack）：消耗所有连势，每层造成 4 点伤害。获得 2 层力量。
+- `mixed_legendary_5.webp` — 势能爆发（legendary/attack）：消耗所有连势，每层造成 4 点伤害。获得 2 层力量。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, blade and arms glowing with empowering crimson runes, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_legendary_6.png` — 双生风暴（legendary/attack）：造成 8 点伤害并获得 8 点格挡，重复 2 次。消耗。
+- `mixed_legendary_6.webp` — 双生风暴（legendary/attack）：造成 8 点伤害并获得 8 点格挡，重复 2 次。消耗。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `balance_edge.png` — 均衡刃（rare/attack）：造成 8 点伤害。若你本回合获得过格挡，额外造成 8 点伤害。
+- `balance_edge.webp` — 均衡刃（rare/attack）：造成 8 点伤害。若你本回合获得过格挡，额外造成 8 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `flow_shift.png` — 流转（rare/skill）：若你上回合打出过攻击：获得 12 点格挡。否则：对一名随机敌人造成 12 点伤害。
+- `flow_shift.webp` — 流转（rare/skill）：若你上回合打出过攻击：获得 12 点格挡。否则：对一名随机敌人造成 12 点伤害。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, channeling void power, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_atk_1.png` — 攻防一体（rare/attack）：造成 15 点伤害，获得 10 点格挡。
+- `mixed_rare_atk_1.webp` — 攻防一体（rare/attack）：造成 15 点伤害，获得 10 点格挡。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, raising a glowing protective ward or shield, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_atk_2.png` — 条件爆发（rare/attack）：造成 10 点伤害。若你有格挡，造成额外 15 点伤害。
+- `mixed_rare_atk_2.webp` — 条件爆发（rare/attack）：造成 10 点伤害。若你有格挡，造成额外 15 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, channeling void power, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_atk_3.png` — 灵活连击（rare/attack）：造成 6 点伤害三次，获得 6 点格挡。
+- `mixed_rare_atk_3.webp` — 灵活连击（rare/attack）：造成 6 点伤害三次，获得 6 点格挡。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a rapid multi-hit flurry of strikes, raising a glowing protective ward or shield, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_atk_4.png` — 连势打击（rare/attack）：造成 8 点伤害。消耗 3 层连势，造成额外 12 点伤害。
+- `mixed_rare_atk_4.webp` — 连势打击（rare/attack）：造成 8 点伤害。消耗 3 层连势，造成额外 12 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_power_1.png` — 连势大师（rare/power）：获得 6 层连势。
+- `mixed_rare_power_1.webp` — 连势大师（rare/power）：获得 6 层连势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, swirling streams of momentum energy spiraling around the body, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_power_2.png` — 金属化精通（rare/power）：获得 6 层金属化。
+- `mixed_rare_power_2.webp` — 金属化精通（rare/power）：获得 6 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, skin hardening into dark metallic plating, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_power_3.png` — 力量领悟（rare/power）：获得 3 层力量。
+- `mixed_rare_power_3.webp` — 力量领悟（rare/power）：获得 3 层力量。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, blade and arms glowing with empowering crimson runes, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_skill_1.png` — 灵活防御（rare/skill）：获得 12 点格挡，造成 5 点伤害。
+- `mixed_rare_skill_1.webp` — 灵活防御（rare/skill）：获得 12 点格挡，造成 5 点伤害。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, a sweeping area strike crashing into several enemies at once, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_skill_2.png` — 势能壁垒（rare/skill）：获得 10 点格挡，获得 5 层连势。
+- `mixed_rare_skill_2.webp` — 势能壁垒（rare/skill）：获得 10 点格挡，获得 5 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, swirling streams of momentum energy spiraling around the body, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mixed_rare_skill_3.png` — 灵活过牌（rare/skill）：抽 4 张牌，获得 6 点格挡。
+- `mixed_rare_skill_3.webp` — 灵活过牌（rare/skill）：抽 4 张牌，获得 6 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, spectral cards and scrolls swirling toward the hand, raising a glowing protective ward or shield, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_absolute_break.png` — 绝对破击（rare/attack）：造成 15 点伤害，施加 2 层易伤，获得 6 点格挡。
+- `mx_a_absolute_break.webp` — 绝对破击（rare/attack）：造成 15 点伤害，施加 2 层易伤，获得 6 点格挡。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, target armor cracking apart with glowing red fissures, raising a glowing protective ward or shield, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_adaptive_mastery.png` — 适应精通（rare/skill）：获得 3 层力量，获得 3 层金属化。
+- `mx_a_adaptive_mastery.webp` — 适应精通（rare/skill）：获得 3 层力量，获得 3 层金属化。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, blade and arms glowing with empowering crimson runes, skin hardening into dark metallic plating, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_balanced_harmony.png` — 均衡和谐（rare/power）：获得 3 层力量，获得 3 层金属化。
+- `mx_a_balanced_harmony.webp` — 均衡和谐（rare/power）：获得 3 层力量，获得 3 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, blade and arms glowing with empowering crimson runes, skin hardening into dark metallic plating, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_fortified_momentum.png` — 固守连势（rare/skill）：获得 10 点格挡，获得 4 层连势。
+- `mx_a_fortified_momentum.webp` — 固守连势（rare/skill）：获得 10 点格挡，获得 4 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, swirling streams of momentum energy spiraling around the body, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_iron_curtain.png` — 铁幕降临（rare/skill）：获得 12 点格挡，获得 2 层金属化，抽 2 张牌。
+- `mx_a_iron_curtain.webp` — 铁幕降临（rare/skill）：获得 12 点格挡，获得 2 层金属化，抽 2 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, skin hardening into dark metallic plating, spectral cards and scrolls swirling toward the hand, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_momentum_ascension.png` — 连势升腾（rare/power）：获得 4 层连势，获得 2 层金属化。
+- `mx_a_momentum_ascension.webp` — 连势升腾（rare/power）：获得 4 层连势，获得 2 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, swirling streams of momentum energy spiraling around the body, skin hardening into dark metallic plating, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_momentum_crescendo.png` — 连势渐强（rare/attack）：造成 5 点伤害两次。消耗 2 层连势，额外造成 5 点伤害。
+- `mx_a_momentum_crescendo.webp` — 连势渐强（rare/attack）：造成 5 点伤害两次。消耗 2 层连势，额外造成 5 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a rapid multi-hit flurry of strikes, unleashing stored momentum as an explosive burst strike, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_momentum_devastation.png` — 连势毁灭（rare/attack）：造成 12 点伤害。消耗所有连势，每层额外造成 4 点伤害。抽 1 张牌。
+- `mx_a_momentum_devastation.webp` — 连势毁灭（rare/attack）：造成 12 点伤害。消耗所有连势，每层额外造成 4 点伤害。抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, spectral cards and scrolls swirling toward the hand, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_momentum_unleash.png` — 连势释放（rare/skill）：抽 3 张牌，获得 2 点能量。消耗 2 层连势。
+- `mx_a_momentum_unleash.webp` — 连势释放（rare/skill）：抽 3 张牌，获得 2 点能量。消耗 2 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, spectral cards and scrolls swirling toward the hand, converting swirling momentum into a fan of drawn cards, a surging radiant energy core flaring with power, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `mx_a_unyielding_guard.png` — 不屈守卫（rare/power）：获得 3 层金属化，获得 2 层稳势。
+- `mx_a_unyielding_guard.webp` — 不屈守卫（rare/power）：获得 3 层金属化，获得 2 层稳势。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, skin hardening into dark metallic plating, a steady braced stance ringed by layered translucent wards, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `cash_flow.png` — 转势（uncommon/skill）：抽 1 张牌，并消耗全部连势，每层额外抽 1 张牌。
+- `cash_flow.webp` — 转势（uncommon/skill）：抽 1 张牌，并消耗全部连势，每层额外抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, converting swirling momentum into a fan of drawn cards, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `momentum.png` — 蓄势（uncommon/skill）：获得 2 层连势（每次出牌后获得等同层数的格挡，并衰减 1 层）。
+- `momentum.webp` — 蓄势（uncommon/skill）：获得 2 层连势（每次出牌后获得等同层数的格挡，并衰减 1 层）。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, swirling streams of momentum energy spiraling around the body, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `release_flow.png` — 放势（uncommon/skill）：抽 1 张牌，并消耗至多 2 层连势，每层额外抽 1 张牌。
+- `release_flow.webp` — 放势（uncommon/skill）：抽 1 张牌，并消耗至多 2 层连势，每层额外抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, converting swirling momentum into a fan of drawn cards, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `prime_rhythm.png` — 起手式（common/skill）：获得 2 层连势，抽 1 张牌。
+- `prime_rhythm.webp` — 起手式（common/skill）：获得 2 层连势，抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, swirling streams of momentum energy spiraling around the body, spectral cards and scrolls swirling toward the hand, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `tempo_guard.png` — 守势（common/skill）：获得 3 点格挡，并获得 2 层连势。
+- `tempo_guard.webp` — 守势（common/skill）：获得 3 点格挡，并获得 2 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, swirling streams of momentum energy spiraling around the body, violet and magenta void energy accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
@@ -947,235 +947,235 @@ a hooded dark-armored void warrior performing a focused defensive or utility ges
 
 ### neutral（39）
 
-- `neutral_legendary_1.png` — 命运之轮（legendary/skill）：消耗所有连势。每消耗 1 层，抽 1 张牌。消耗。
+- `neutral_legendary_1.webp` — 命运之轮（legendary/skill）：消耗所有连势。每消耗 1 层，抽 1 张牌。消耗。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, converting swirling momentum into a fan of drawn cards, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_legendary_2.png` — 虚空契约（legendary/skill）：失去 6 点生命，获得 3 层连势和 3 层稳势。
+- `neutral_legendary_2.webp` — 虚空契约（legendary/skill）：失去 6 点生命，获得 3 层连势和 3 层稳势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, a single decisive heavy strike, swirling streams of momentum energy spiraling around the body, a steady braced stance ringed by layered translucent wards, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_atk_1.png` — 终极打击（rare/attack）：造成 20 点伤害。
+- `neutral_rare_atk_1.webp` — 终极打击（rare/attack）：造成 20 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_atk_2.png` — 连击风暴（rare/attack）：造成 5 点伤害四次。
+- `neutral_rare_atk_2.webp` — 连击风暴（rare/attack）：造成 5 点伤害四次。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a rapid multi-hit flurry of strikes, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_atk_3.png` — 顺劈风暴（rare/attack）：对所有敌人造成 15 点伤害。
+- `neutral_rare_atk_3.webp` — 顺劈风暴（rare/attack）：对所有敌人造成 15 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a sweeping area strike crashing into several enemies at once, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_atk_4.png` — 破甲风暴（rare/attack）：造成 12 点伤害，施加 3 层易伤。
+- `neutral_rare_atk_4.webp` — 破甲风暴（rare/attack）：造成 12 点伤害，施加 3 层易伤。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, target armor cracking apart with glowing red fissures, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_power_1.png` — 力量觉醒（rare/power）：获得 4 层力量。
+- `neutral_rare_power_1.webp` — 力量觉醒（rare/power）：获得 4 层力量。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, blade and arms glowing with empowering crimson runes, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_power_2.png` — 易伤精通（rare/power）：对所有敌人施加 3 层易伤。
+- `neutral_rare_power_2.webp` — 易伤精通（rare/power）：对所有敌人施加 3 层易伤。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, target armor cracking apart with glowing red fissures, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_power_3.png` — 虚弱精通（rare/power）：对所有敌人施加 3 层虚弱。
+- `neutral_rare_power_3.webp` — 虚弱精通（rare/power）：对所有敌人施加 3 层虚弱。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, draining grey mist sapping the strength of a foe, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_skill_1.png` — 铁壁防御（rare/skill）：获得 20 点格挡。
+- `neutral_rare_skill_1.webp` — 铁壁防御（rare/skill）：获得 20 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_skill_2.png` — 扫视风暴（rare/skill）：抽 5 张牌。
+- `neutral_rare_skill_2.webp` — 扫视风暴（rare/skill）：抽 5 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, spectral cards and scrolls swirling toward the hand, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_skill_3.png` — 涌能风暴（rare/skill）：获得 3 点能量。
+- `neutral_rare_skill_3.webp` — 涌能风暴（rare/skill）：获得 3 点能量。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, a surging radiant energy core flaring with power, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_skill_4.png` — 柔韧风暴（rare/skill）：获得 5 层力量。
+- `neutral_rare_skill_4.webp` — 柔韧风暴（rare/skill）：获得 5 层力量。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, blade and arms glowing with empowering crimson runes, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `neutral_rare_skill_5.png` — 治疗风暴（rare/skill）：回复 20 点生命。
+- `neutral_rare_skill_5.webp` — 治疗风暴（rare/skill）：回复 20 点生命。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, soft restorative light mending wounds, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_annihilation.png` — 毁灭横扫（rare/attack）：对所有敌人造成 14 点伤害。
+- `nt_d_annihilation.webp` — 毁灭横扫（rare/attack）：对所有敌人造成 14 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a sweeping area strike crashing into several enemies at once, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_citadel.png` — 堡垒（rare/skill）：获得 18 点格挡。
+- `nt_d_citadel.webp` — 堡垒（rare/skill）：获得 18 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_fortress.png` — 要塞（rare/power）：获得 3 层金属化。
+- `nt_d_fortress.webp` — 要塞（rare/power）：获得 3 层金属化。
 
 ```
 a hooded dark-armored void warrior wreathed in a persistent magical aura, ritual pose, skin hardening into dark metallic plating, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_judgement_cut.png` — 裁决之刃（rare/attack）：造成 20 点伤害。
+- `nt_d_judgement_cut.webp` — 裁决之刃（rare/attack）：造成 20 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_mighty_blow.png` — 万钧一击（rare/attack）：造成 16 点伤害，获得 8 点格挡。
+- `nt_d_mighty_blow.webp` — 万钧一击（rare/attack）：造成 16 点伤害，获得 8 点格挡。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, raising a glowing protective ward or shield, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_momentum_draw_burst.png` — 连势涌现（rare/skill）：抽 3 张牌。消耗 3 层连势，每层额外抽 1 张牌。
+- `nt_d_momentum_draw_burst.webp` — 连势涌现（rare/skill）：抽 3 张牌。消耗 3 层连势，每层额外抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, converting swirling momentum into a fan of drawn cards, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_momentum_overflow.png` — 连势满溢（rare/skill）：获得 5 层力量，获得 2 层连势。消耗。
+- `nt_d_momentum_overflow.webp` — 连势满溢（rare/skill）：获得 5 层力量，获得 2 层连势。消耗。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, blade and arms glowing with empowering crimson runes, swirling streams of momentum energy spiraling around the body, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_momentum_unleash.png` — 连势释放（rare/attack）：造成 8 点伤害。消耗所有连势，每层造成额外 4 点伤害。
+- `nt_d_momentum_unleash.webp` — 连势释放（rare/attack）：造成 8 点伤害。消耗所有连势，每层造成额外 4 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, unleashing stored momentum as an explosive burst strike, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_steady_fortification.png` — 稳固防线（rare/skill）：获得 2 层稳势，获得 10 点格挡。
+- `nt_d_steady_fortification.webp` — 稳固防线（rare/skill）：获得 2 层稳势，获得 10 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, a steady braced stance ringed by layered translucent wards, raising a glowing protective ward or shield, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `nt_d_storm_slash.png` — 风暴斩（rare/attack）：造成 5 点伤害四次。
+- `nt_d_storm_slash.webp` — 风暴斩（rare/attack）：造成 5 点伤害四次。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a rapid multi-hit flurry of strikes, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `burn_edge.png` — 燃锋（uncommon/attack）：造成 14 点伤害。消耗。
+- `burn_edge.webp` — 燃锋（uncommon/attack）：造成 14 点伤害。消耗。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `clear_mind.png` — 清念（uncommon/skill）：抽 2 张牌，获得 2 点能量。消耗。
+- `clear_mind.webp` — 清念（uncommon/skill）：抽 2 张牌，获得 2 点能量。消耗。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, spectral cards and scrolls swirling toward the hand, a surging radiant energy core flaring with power, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `bash.png` — 重击（common/attack）：造成 7 点伤害，施加 2 层易伤。
+- `bash.webp` — 重击（common/attack）：造成 7 点伤害，施加 2 层易伤。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, target armor cracking apart with glowing red fissures, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `cleave.png` — 顺劈（common/attack）：对所有敌人造成 8 点伤害。
+- `cleave.webp` — 顺劈（common/attack）：对所有敌人造成 8 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a sweeping area strike crashing into several enemies at once, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `defend.png` — 防御（common/skill）：获得 5 点格挡。
+- `defend.webp` — 防御（common/skill）：获得 5 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `flex.png` — 柔韧（common/skill）：获得 2 点力量。
+- `flex.webp` — 柔韧（common/skill）：获得 2 点力量。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, blade and arms glowing with empowering crimson runes, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `measured_rest.png` — 养息（common/skill）：回复 3 点生命，获得 4 点格挡，并获得 1 层连势。
+- `measured_rest.webp` — 养息（common/skill）：回复 3 点生命，获得 4 点格挡，并获得 1 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, soft restorative light mending wounds, raising a glowing protective ward or shield, swirling streams of momentum energy spiraling around the body, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `patch_breath.png` — 调息（common/skill）：回复 4 点生命，获得 4 点格挡。
+- `patch_breath.webp` — 调息（common/skill）：回复 4 点生命，获得 4 点格挡。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, soft restorative light mending wounds, raising a glowing protective ward or shield, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `recenter.png` — 回气（common/skill）：抽 1 张牌，获得 1 点能量。
+- `recenter.webp` — 回气（common/skill）：抽 1 张牌，获得 1 点能量。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, spectral cards and scrolls swirling toward the hand, a surging radiant energy core flaring with power, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `second_wind.png` — 续拍（common/skill）：获得 5 点格挡，获得 1 点能量。
+- `second_wind.webp` — 续拍（common/skill）：获得 5 点格挡，获得 1 点能量。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, a surging radiant energy core flaring with power, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `skim.png` — 扫视（common/skill）：抽 2 张牌。
+- `skim.webp` — 扫视（common/skill）：抽 2 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, spectral cards and scrolls swirling toward the hand, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `steady_step.png` — 整步（common/skill）：获得 6 点格挡，抽 1 张牌。
+- `steady_step.webp` — 整步（common/skill）：获得 6 点格挡，抽 1 张牌。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, raising a glowing protective ward or shield, spectral cards and scrolls swirling toward the hand, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `strike.png` — 打击（common/attack）：造成 6 点伤害。
+- `strike.webp` — 打击（common/attack）：造成 6 点伤害。
 
 ```
 a hooded dark-armored void warrior in a dynamic offensive action, a single decisive heavy strike, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `surge.png` — 涌能（common/skill）：获得 1 点能量。
+- `surge.webp` — 涌能（common/skill）：获得 1 点能量。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, a surging radiant energy core flaring with power, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024
 ```
 
-- `survey_field.png` — 观势（common/skill）：抽 2 张牌。获得 1 层连势。
+- `survey_field.webp` — 观势（common/skill）：抽 2 张牌。获得 1 层连势。
 
 ```
 a hooded dark-armored void warrior performing a focused defensive or utility gesture, spectral cards and scrolls swirling toward the hand, swirling streams of momentum energy spiraling around the body, muted grey-gold ethereal light accents, dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024

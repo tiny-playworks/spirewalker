@@ -13,10 +13,9 @@ import type { CardDefinition, CardInstance } from "@/game/core/model/card";
 import type { CombatUnit } from "@/game/core/model/unit";
 import { useGameStore } from "@/game/store/gameStore";
 import {
-  getCardArtFallbackUrl,
-  getCardArtUrl,
-  getIntentIconUrl,
-  getStatusIconUrl,
+  getCardArtSources,
+  getIntentIconSources,
+  getStatusIconSources,
   intentCategory,
   intentValueText,
   type IntentCategory,
@@ -294,7 +293,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
                   <FallbackImg
                     className={styles.cardArtImg}
                     alt=""
-                    sources={[getCardArtUrl(def.id), getCardArtFallbackUrl(def.id)]}
+                    sources={getCardArtSources(def.id)}
                     fallback={
                       <span
                         className={cx(
@@ -452,7 +451,7 @@ function EnemyPanel({
           <FallbackImg
             className={styles.intentIcon}
             alt=""
-            sources={[getIntentIconUrl(intent)]}
+            sources={getIntentIconSources(intent)}
           />
           <strong>{valueText ?? intentText}</strong>
         </span>
@@ -477,7 +476,7 @@ function StatusList({ unit }: { unit: CombatUnit }) {
             <FallbackImg
               className={styles.statusIcon}
               alt={meta.name}
-              sources={[getStatusIconUrl(status.id)]}
+              sources={getStatusIconSources(status.id)}
               fallback={<em className={styles.statusGlyph}>{meta.shortLabel}</em>}
             />
             <b className={styles.statusStacks}>{status.stacks}</b>

@@ -14,6 +14,9 @@ import type { CardDefinition, EffectDefinition } from '../src/game/core/model/ca
 const STYLE_SUFFIX =
   'dark fantasy game card illustration, ruined ancient temple and void spire setting, dramatic chiaroscuro lighting, painterly, highly detailed, centered composition, no text, no border, no UI, no card frame, square 1:1, 1024x1024';
 
+const ICON_STYLE_SUFFIX =
+  'glowing magical UI emblem, dark fantasy, centered, transparent background, crisp readable silhouette, simple icon design, 1:1, 256x256';
+
 const ARCHETYPE_PALETTE: Record<string, string> = {
   guard: 'cool cyan and steel-blue protective energy',
   burst: 'fiery crimson and molten-orange embers',
@@ -163,18 +166,18 @@ lines.push('## 尺寸与格式规格');
 lines.push('');
 lines.push('| 资产 | 出图尺寸 | 比例 | 格式 | 背景 | 备注 |');
 lines.push('| --- | --- | --- | --- | --- | --- |');
-lines.push('| 核心卡插画 / 兜底插画 | 1024×1024 | 1:1 | PNG | 深色或不透明均可 | 进 public 前建议压到 ~512 或转 webp |');
-lines.push('| 状态图标 | 1024×1024 出，downscale 到 256×256 | 1:1 | PNG | 必须透明 | 显示约 64px，需 alpha 通道 |');
-lines.push('| 意图图标 | 1024×1024 出，downscale 到 256×256 | 1:1 | PNG | 必须透明 | 显示约 32px，需 alpha 通道 |');
+lines.push('| 核心卡插画 / 兜底插画 | 1024×1024 | 1:1 | webp（优先）或 png | 深色或不透明均可 | 进 public 前可压到 ~512 |');
+lines.push('| 状态图标 | **256×256** | 1:1 | webp（优先）或 png | 必须透明 | UI 显示约 64px，无需 1024 |');
+lines.push('| 意图图标 | **256×256** | 1:1 | webp（优先）或 png | 必须透明 | UI 显示约 32px，无需 1024 |');
 lines.push('');
 lines.push('- 插画区在 UI 里用 `object-fit: cover` 裁切，统一 1:1 不会变形。');
 lines.push('- 图标叠在深色 chip/画框上，背景务必透明；GPT 偶尔不给 alpha，拿到后确认。');
 lines.push('- 164 张卡插画全 1024 会让仓库变重，建议批量压缩后再放入 public。');
 lines.push('');
 
-lines.push('## A. 状态图标（8 个） → public/assets/combat/statuses/<id>.png');
+lines.push('## A. 状态图标（8 个） → public/assets/combat/statuses/<id>.webp');
 lines.push('');
-lines.push('风格：1:1，透明底，发光符文宝石小图标，可在 64px 下清晰辨认，统一描边。');
+lines.push('风格：1:1 **256×256**，透明底，发光符文宝石小图标，可在 64px 下清晰辨认。');
 lines.push('');
 const STATUS_ICON_PROMPTS: Array<[string, string, string]> = [
   ['strength', '力量', 'a glowing crimson fist rune emblem, empowering aura'],
@@ -187,15 +190,15 @@ const STATUS_ICON_PROMPTS: Array<[string, string, string]> = [
   ['patience_power', '蓄势', 'a meditative gathering-energy rune, slow building violet glow'],
 ];
 for (const [id, cn, motif] of STATUS_ICON_PROMPTS) {
-  lines.push(`- \`${id}.png\`（${cn}）`);
+  lines.push(`- \`${id}.webp\`（${cn}）`);
   lines.push('');
   lines.push('```');
-  lines.push(`${motif}, glowing magical status icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG`);
+  lines.push(`${motif}, status icon, ${ICON_STYLE_SUFFIX}`);
   lines.push('```');
   lines.push('');
 }
 
-lines.push('## B. 意图图标（5 个） → public/assets/combat/intents/<id>.png');
+lines.push('## B. 意图图标（5 个） → public/assets/combat/intents/<id>.webp');
 lines.push('');
 const INTENT_ICON_PROMPTS: Array<[string, string, string]> = [
   ['attack', '攻击', 'crossed blades / weapon strike icon, aggressive red glow'],
@@ -205,21 +208,21 @@ const INTENT_ICON_PROMPTS: Array<[string, string, string]> = [
   ['unknown', '未知', 'a glowing question sigil shrouded in mist, neutral grey'],
 ];
 for (const [id, cn, motif] of INTENT_ICON_PROMPTS) {
-  lines.push(`- \`${id}.png\`（${cn}）`);
+  lines.push(`- \`${id}.webp\`（${cn}）`);
   lines.push('');
   lines.push('```');
-  lines.push(`${motif}, enemy intent icon, dark fantasy UI emblem, centered, transparent background, crisp readable silhouette, 1:1, 1024x1024 transparent PNG`);
+  lines.push(`${motif}, enemy intent icon, ${ICON_STYLE_SUFFIX}`);
   lines.push('```');
   lines.push('');
 }
 
-lines.push('## C. 兜底插画（12 张） → public/assets/cards/art_shared/<archetype>_<type>.png');
+lines.push('## C. 兜底插画（12 张） → public/assets/cards/art_shared/<archetype>_<type>.webp');
 lines.push('');
 lines.push('长尾卡未单独出图时使用，按流派×类型各一张。');
 lines.push('');
 for (const arch of ['guard', 'burst', 'mixed', 'neutral'] as const) {
   for (const type of ['attack', 'skill', 'power'] as const) {
-    lines.push(`- \`${arch}_${type}.png\``);
+    lines.push(`- \`${arch}_${type}.webp\``);
     lines.push('');
     lines.push('```');
     lines.push(`${TYPE_MOTIF[type]}, ${ARCHETYPE_PALETTE[arch]} accents, generic emblematic composition, ${STYLE_SUFFIX}`);
@@ -228,7 +231,7 @@ for (const arch of ['guard', 'burst', 'mixed', 'neutral'] as const) {
   }
 }
 
-lines.push(`## D. 核心卡插画（${coreSet.length} 张） → public/assets/cards/art/<cardId>.png`);
+lines.push(`## D. 核心卡插画（${coreSet.length} 张） → public/assets/cards/art/<cardId>.webp`);
 lines.push('');
 lines.push('文件名用卡的基础 id（升级版 +/++ 复用同一张图）。');
 lines.push('');
@@ -238,7 +241,7 @@ for (const arch of ['guard', 'burst', 'mixed', 'neutral'] as const) {
   lines.push(`### ${arch}（${group.length}）`);
   lines.push('');
   for (const def of group) {
-    lines.push(`- \`${def.id}.png\` — ${def.name}（${def.rarity}/${def.type}）：${def.description}`);
+    lines.push(`- \`${def.id}.webp\` — ${def.name}（${def.rarity}/${def.type}）：${def.description}`);
     lines.push('');
     lines.push('```');
     lines.push(buildPrompt(def));

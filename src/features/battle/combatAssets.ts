@@ -7,21 +7,25 @@ export function baseCardId(cardId: string): string {
   return cardId.replace(/\+*$/, '');
 }
 
-/** 核心卡独立插画路径（缺图时由 <CardArt> 自动回退到兜底图）。 */
-export function getCardArtUrl(cardId: string): string {
-  return `/assets/cards/art/${baseCardId(cardId)}.png`;
+/** 同 id 的 webp / png 路径，优先 webp。 */
+function assetSources(dir: string, id: string): string[] {
+  return [`${dir}/${id}.webp`, `${dir}/${id}.png`];
 }
 
-/** 按流派×类型的兜底插画路径，长尾卡或未出图时使用。 */
-export function getCardArtFallbackUrl(cardId: string): string {
-  const def = ALL_CARD_DEFINITIONS[cardId] ?? ALL_CARD_DEFINITIONS[baseCardId(cardId)];
+/** 卡牌插画加载链：核心独立图 → 流派兜底图，每级 webp 优先于 png。 */
+export function getCardArtSources(cardId: string): string[] {
+  const id = baseCardId(cardId);
+  const def = ALL_CARD_DEFINITIONS[cardId] ?? ALL_CARD_DEFINITIONS[id];
   const archetype = getCardArchetype(cardId);
   const type = def?.type === 'attack' || def?.type === 'power' ? def.type : 'skill';
-  return `/assets/cards/art_shared/${archetype}_${type}.png`;
+  return [
+    ...assetSources('/assets/cards/art', id),
+    ...assetSources('/assets/cards/art_shared', `${archetype}_${type}`),
+  ];
 }
 
-export function getStatusIconUrl(statusId: string): string {
-  return `/assets/combat/statuses/${statusId}.png`;
+export function getStatusIconSources(statusId: string): string[] {
+  return assetSources('/assets/combat/statuses', statusId);
 }
 
 export type IntentCategory = 'attack' | 'defend' | 'buff' | 'debuff' | 'unknown';
@@ -63,8 +67,8 @@ export function intentCategory(intent: MonsterIntent | null | undefined): Intent
   }
 }
 
-export function getIntentIconUrl(intent: MonsterIntent | null | undefined): string {
-  return `/assets/combat/intents/${intentCategory(intent)}.png`;
+export function getIntentIconSources(intent: MonsterIntent | null | undefined): string[] {
+  return assetSources('/assets/combat/intents', intentCategory(intent));
 }
 
 /** 意图的紧凑数值文本，例如「12」「12 ×2」，用于图标旁的醒目读数。无明确数值则返回 null。 */
