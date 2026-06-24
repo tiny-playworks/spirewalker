@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   buildCardKeywordHints,
   cardTargetLabel,
@@ -12,6 +12,15 @@ import type { BattleState } from "@/game/core/model/battle";
 import type { CardDefinition, CardInstance } from "@/game/core/model/card";
 import type { CombatUnit } from "@/game/core/model/unit";
 import { useGameStore } from "@/game/store/gameStore";
+import {
+  getCardArtFallbackUrl,
+  getCardArtUrl,
+  getIntentIconUrl,
+  getStatusIconUrl,
+  intentCategory,
+  intentValueText,
+  type IntentCategory,
+} from "./combatAssets";
 import * as styles from "./reactBattleStage.css";
 
 type DragPayload = { cardInstanceId: string };
@@ -23,6 +32,39 @@ const ENEMY_SPRITE_URL = "/assets/combat/enemy.png";
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(" ");
 }
+
+/** 依次尝试多个图片源，全部加载失败时回退到 fallback 节点（文字/CSS 占位）。 */
+function FallbackImg({
+  sources,
+  alt,
+  className,
+  fallback = null,
+}: {
+  sources: string[];
+  alt: string;
+  className?: string;
+  fallback?: ReactNode;
+}) {
+  const [index, setIndex] = useState(0);
+  if (index >= sources.length) return <>{fallback}</>;
+  return (
+    <img
+      className={className}
+      alt={alt}
+      src={sources[index]}
+      draggable={false}
+      onError={() => setIndex((i) => i + 1)}
+    />
+  );
+}
+
+const INTENT_CATEGORY_TONE: Record<IntentCategory, keyof typeof styles.intentTone> = {
+  attack: "attack",
+  defend: "block",
+  buff: "utility",
+  debuff: "attack",
+  unknown: "utility",
+};
 
 function effectiveCost(card: CardInstance, battle: BattleState): number {
   return Math.max(
@@ -68,18 +110,6 @@ function cardFocus(def: CardDefinition): {
   if (def.type === "power")
     return { value: "持", label: "能力", tone: "utility" };
   return { value: "技", label: cardTypeLabel(def.type), tone: "utility" };
-}
-
-function intentTone(intent: ReturnType<typeof formatMonsterIntentText>) {
-  if (
-    intent.includes("攻击") ||
-    intent.includes("连击") ||
-    intent.includes("重击")
-  )
-    return styles.intentTone.attack;
-  if (intent.includes("防御") || intent.includes("治疗"))
-    return styles.intentTone.block;
-  return styles.intentTone.utility;
 }
 
 export function ReactBattleStage({ className }: { className?: string }) {
@@ -162,12 +192,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
       </div>
 
       <section className={styles.combatLayer} aria-label="战斗场">
-        <UnitPanel
-          unit={player}
-          tone="player"
-          energy={`${battle.player.energy}/${battle.player.maxEnergy}`}
-          spriteUrl={PLAYER_SPRITE_URL}
-        />
+        <UnitPanel unit={player} tone="player" spriteUrl={PLAYER_SPRITE_URL} />
 
         <div className={styles.enemyRail}>
           {enemies.map((enemy) => (
@@ -266,15 +291,22 @@ export function ReactBattleStage({ className }: { className?: string }) {
                   className={cx(styles.cardArt, styles.cardArtTone[focus.tone])}
                   aria-hidden
                 >
-                  <span
-                    className={cx(
-                      styles.cardFocus,
-                      styles.cardFocusTone[focus.tone],
-                    )}
-                  >
-                    <strong>{focus.value}</strong>
-                    <span>{focus.label}</span>
-                  </span>
+                  <FallbackImg
+                    className={styles.cardArtImg}
+                    alt=""
+                    sources={[getCardArtUrl(def.id), getCardArtFallbackUrl(def.id)]}
+                    fallback={
+                      <span
+                        className={cx(
+                          styles.cardFocus,
+                          styles.cardFocusTone[focus.tone],
+                        )}
+                      >
+                        <strong>{focus.value}</strong>
+                        <span>{focus.label}</span>
+                      </span>
+                    }
+                  />
                 </span>
                 <span className={styles.cardDesc}>{def.description}</span>
                 <span className={styles.cardFoot}>
@@ -330,12 +362,10 @@ function canPlayCard(card: CardInstance, battle: BattleState): boolean {
 function UnitPanel({
   unit,
   tone,
-  energy,
   spriteUrl,
 }: {
   unit: CombatUnit;
   tone: "player" | "enemy";
-  energy?: string;
   spriteUrl: string;
 }) {
   const hpRatio =
@@ -366,7 +396,6 @@ function UnitPanel({
         </div>
         <div className={styles.unitHeader}>
           <strong>{unit.name}</strong>
-          {energy ? <span>{energy}</span> : null}
         </div>
         <StatusList unit={unit} />
         {unit.block > 0 ? (
@@ -392,7 +421,10 @@ function EnemyPanel({
   onDropCard: (cardInstanceId: string) => void;
   spriteUrl: string;
 }) {
-  const intentText = formatMonsterIntentText(battle.monsters[unit.id]?.intent);
+  const intent = battle.monsters[unit.id]?.intent;
+  const intentText = formatMonsterIntentText(intent);
+  const category = intentCategory(intent);
+  const valueText = intentValueText(intent);
   return (
     <button
       type="button"
@@ -412,24 +444,43 @@ function EnemyPanel({
         onDropCard(payload.cardInstanceId);
       }}
     >
-      <span className={cx(styles.intent, intentTone(intentText))}>
-        {intentText}
-      </span>
+      {unit.alive ? (
+        <span
+          className={cx(styles.intent, styles.intentTone[INTENT_CATEGORY_TONE[category]])}
+          title={intentText}
+        >
+          <FallbackImg
+            className={styles.intentIcon}
+            alt=""
+            sources={[getIntentIconUrl(intent)]}
+          />
+          <strong>{valueText ?? intentText}</strong>
+        </span>
+      ) : null}
       <UnitPanel unit={unit} tone="enemy" spriteUrl={spriteUrl} />
     </button>
   );
 }
 
 function StatusList({ unit }: { unit: CombatUnit }) {
-  if (unit.statuses.length === 0)
-    return <span className={styles.statusEmpty}>无状态</span>;
+  if (unit.statuses.length === 0) return null;
   return (
     <div className={styles.statusList}>
       {unit.statuses.map((status) => {
         const meta = getStatusMeta(status.id);
         return (
-          <span key={status.id} title={meta.description}>
-            {meta.shortLabel} {status.stacks}
+          <span
+            key={status.id}
+            className={styles.statusChip}
+            title={`${meta.name}：${meta.description}`}
+          >
+            <FallbackImg
+              className={styles.statusIcon}
+              alt={meta.name}
+              sources={[getStatusIconUrl(status.id)]}
+              fallback={<em className={styles.statusGlyph}>{meta.shortLabel}</em>}
+            />
+            <b className={styles.statusStacks}>{status.stacks}</b>
           </span>
         );
       })}

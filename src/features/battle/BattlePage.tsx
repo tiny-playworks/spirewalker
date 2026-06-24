@@ -1,3 +1,4 @@
+import { ScrollText, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { useGameStore } from '@/game/store/gameStore';
 import { BattleDeckPanel } from './BattleDeckPanel';
@@ -38,7 +39,8 @@ export function BattlePage() {
             aria-label={`查看牌组，共 ${deckSize} 张`}
             title={`牌组 ${deckSize}`}
           >
-            牌 {deckSize}
+            <WalletCards size={17} aria-hidden />
+            <span className={styles.toolCount}>{deckSize}</span>
           </button>
           <button
             className={styles.logToggle}
@@ -48,7 +50,7 @@ export function BattlePage() {
             aria-label="查看战斗日志"
             title="日志"
           >
-            记
+            <ScrollText size={17} aria-hidden />
           </button>
         </div>
       </div>

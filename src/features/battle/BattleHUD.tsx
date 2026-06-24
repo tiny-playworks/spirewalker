@@ -1,7 +1,10 @@
+import { Coins, Heart, Layers, Shield, Zap } from 'lucide-react';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectBattle } from '@/game/store/selectors/battleSelectors';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as styles from './battleHud.css';
+
+const ICON_SIZE = 15;
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
@@ -27,27 +30,30 @@ export function BattleHUD() {
         <div className={styles.primaryRow}>
           <span className={styles.brand}>SPIREWALKER</span>
           <span className={cx(styles.chip, styles.chipTone.health)}>
-            ♥ <strong>{run.player.currentHp}</strong>
+            <Heart size={ICON_SIZE} aria-hidden />
+            <strong>{run.player.currentHp}</strong>
             <span className={styles.muted}>/{run.player.maxHp}</span>
           </span>
           <span className={cx(styles.chip, styles.chipTone.block)}>
-            ◇ <strong>{player?.block ?? 0}</strong>
+            <Shield size={ICON_SIZE} aria-hidden />
+            <strong>{player?.block ?? 0}</strong>
           </span>
           <span className={cx(styles.chip, styles.chipTone.gold)}>
-            ▣ <strong>{run.meta.gold}</strong>
+            <Coins size={ICON_SIZE} aria-hidden />
+            <strong>{run.meta.gold}</strong>
           </span>
           <span
             className={cx(styles.chip, styles.chipTone.energy)}
             title={`能量 ${battle.player.energy}/${battle.player.maxEnergy}`}
           >
-            ◎
+            <Zap size={ICON_SIZE} aria-hidden />
           </span>
           <span
             className={cx(styles.chip, styles.chipTone.accent)}
             data-testid="battle-draw-count"
             title={`${PILE_DRAW_TITLE}\n抽牌 ${drawPile.length}，手牌 ${hand.length}，弃牌 ${discardPile.length}，消耗 ${exhaustPile.length}`}
           >
-            ✣
+            <Layers size={ICON_SIZE} aria-hidden />
           </span>
           {battle.phase === 'victory' ? (
             <span className={cx(styles.chip, styles.chipTone.win)}>胜利</span>

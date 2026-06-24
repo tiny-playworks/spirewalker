@@ -1,6 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
-import { battleBarControlMinHeight } from './battleHud.css';
 
 const tablet = '(max-width: 900px)';
 
@@ -140,14 +139,14 @@ export const logToggle = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  minHeight: battleBarControlMinHeight,
-  minWidth: '1.75rem',
-  minHeight: '1.75rem',
-  padding: 0,
-  border: 0,
-  background: 'transparent',
+  gap: '0.26rem',
+  minHeight: '1.95rem',
+  minWidth: '1.95rem',
+  padding: '0 0.4rem',
+  border: '1px solid rgba(208, 188, 255, 0.16)',
+  background: 'rgba(10, 10, 11, 0.4)',
   color: sceneVars.color.textMuted,
-  borderRadius: '7px',
+  borderRadius: '8px',
   fontSize: '0.76rem',
   lineHeight: 1,
   letterSpacing: '0.01em',
@@ -165,6 +164,12 @@ export const logToggle = style({
       boxShadow: '0 0 0 1px rgba(208, 188, 255, 0.2), 0 0 24px rgba(139, 92, 246, 0.18)',
     },
   },
+});
+
+export const toolCount = style({
+  fontSize: '0.7rem',
+  fontWeight: 800,
+  color: sceneVars.color.textMuted,
 });
 
 export const stageColumn = style({

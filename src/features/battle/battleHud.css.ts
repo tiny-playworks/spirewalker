@@ -102,6 +102,7 @@ globalStyle(`${chip}`, {
   minHeight: battleBarControlMinHeight,
   display: 'inline-flex',
   alignItems: 'center',
+  gap: '0.34rem',
   padding: '0 0.82rem',
   fontSize: '0.78rem',
   lineHeight: 1,

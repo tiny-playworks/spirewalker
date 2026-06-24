@@ -127,19 +127,13 @@ export const spriteFrame = style({
   position: 'relative',
   width: '100%',
   height: 'clamp(10rem, 25vh, 16rem)',
-  selectors: {
-    '&::after': {
-      content: '""',
-      position: 'absolute',
-      left: '12%',
-      right: '12%',
-      bottom: '0.1rem',
-      height: '1.2rem',
-      borderRadius: '50%',
-      background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.58), transparent 70%)',
-      filter: 'blur(2px)',
-    },
-  },
+  overflow: 'hidden',
+  borderRadius: '18px',
+  border: '1px solid rgba(208, 188, 255, 0.32)',
+  background:
+    'radial-gradient(circle at 50% 30%, rgba(139, 92, 246, 0.16), transparent 62%), linear-gradient(180deg, rgba(18, 18, 22, 0.72), rgba(8, 8, 10, 0.92))',
+  boxShadow:
+    'inset 0 0 38px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 18px 40px rgba(0, 0, 0, 0.5)',
 });
 
 export const unitSprite = style({
@@ -147,7 +141,7 @@ export const unitSprite = style({
   inset: 0,
   backgroundRepeat: 'no-repeat',
   backgroundPosition: 'center bottom',
-  backgroundSize: 'contain',
+  backgroundSize: 'cover',
 });
 
 export const unitBody = style({
@@ -214,24 +208,46 @@ export const statusList = style({
   marginTop: '0.45rem',
 });
 
-globalStyle(`${statusList} span`, {
-  display: 'grid',
+export const statusChip = style({
+  position: 'relative',
+  display: 'inline-grid',
   placeItems: 'center',
-  minWidth: '1.8rem',
-  height: '1.55rem',
-  padding: '0.1rem 0.3rem',
-  borderRadius: '7px',
+  width: '1.85rem',
+  height: '1.85rem',
+  borderRadius: '8px',
   color: sceneVars.color.textMuted,
   background: 'rgba(208, 188, 255, 0.1)',
-  border: '1px solid rgba(208, 188, 255, 0.18)',
-  fontSize: '0.7rem',
+  border: '1px solid rgba(208, 188, 255, 0.2)',
 });
 
-export const statusEmpty = style({
-  display: 'inline-block',
-  marginTop: '0.45rem',
-  color: sceneVars.color.textFaint,
-  fontSize: '0.72rem',
+export const statusIcon = style({
+  width: '1.45rem',
+  height: '1.45rem',
+  objectFit: 'contain',
+});
+
+export const statusGlyph = style({
+  fontStyle: 'normal',
+  fontSize: '0.78rem',
+  fontWeight: 800,
+  color: sceneVars.color.textStrong,
+});
+
+export const statusStacks = style({
+  position: 'absolute',
+  right: '-0.28rem',
+  bottom: '-0.32rem',
+  minWidth: '1rem',
+  height: '1rem',
+  padding: '0 0.18rem',
+  display: 'grid',
+  placeItems: 'center',
+  borderRadius: '999px',
+  color: '#0a0a0b',
+  background: 'linear-gradient(135deg, #e9ddff, #d0bcff)',
+  fontSize: '0.62rem',
+  fontWeight: 900,
+  boxShadow: '0 0 8px rgba(208, 188, 255, 0.4)',
 });
 
 export const enemyTarget = style({
@@ -263,14 +279,23 @@ globalStyle(`${enemyTargetActive} ${unit}`, {
 
 export const intent = style({
   alignSelf: 'center',
-  padding: '0.5rem 0.9rem',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.4rem',
+  padding: '0.4rem 0.85rem',
   borderRadius: sceneVars.radii.md,
-  fontSize: '0.9rem',
+  fontSize: '1rem',
   fontWeight: 800,
   border: '1px solid currentColor',
-  background: 'rgba(26, 24, 20, 0.48)',
+  background: 'rgba(26, 24, 20, 0.5)',
   backdropFilter: 'blur(16px)',
   boxShadow: '0 0 20px rgba(212, 132, 106, 0.2)',
+});
+
+export const intentIcon = style({
+  width: '1.15rem',
+  height: '1.15rem',
+  objectFit: 'contain',
 });
 
 export const intentTone = styleVariants({
@@ -577,6 +602,16 @@ export const cardArt = style({
       filter: 'blur(0.2px)',
     },
   },
+});
+
+export const cardArtImg = style({
+  position: 'absolute',
+  inset: 0,
+  zIndex: 4,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  borderRadius: '8px',
 });
 
 export const cardArtTone = styleVariants({
