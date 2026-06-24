@@ -21,10 +21,11 @@ export function PotionBar() {
               <button
                 type="button"
                 className={styles.potionButton}
+                aria-label={def ? `使用药水：${def.name}` : `使用药水：${potionId}`}
                 title={def ? `${def.name}\n${def.description}\n点击后会立即在当前战斗中使用。` : potionId}
                 onClick={() => dispatchCommand({ type: 'USE_POTION', slotIndex })}
               >
-                {def?.name ?? potionId}
+                {(def?.name ?? potionId).slice(0, 1)}
               </button>
             </li>
           );

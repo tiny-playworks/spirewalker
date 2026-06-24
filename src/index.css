@@ -1,13 +1,16 @@
 :root {
   font-family:
+    'Hanken Grotesk',
     system-ui,
     -apple-system,
     'Segoe UI',
     Roboto,
     'Helvetica Neue',
     sans-serif;
-  color: #e8e4dc;
-  background: #1a1814;
+  color: #e5e2e3;
+  background: #0a0a0b;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
 }
 
 *,
@@ -22,6 +25,10 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
+  background:
+    radial-gradient(circle at 22% 8%, rgba(139, 92, 246, 0.2), transparent 30rem),
+    radial-gradient(circle at 86% 78%, rgba(45, 212, 191, 0.12), transparent 24rem),
+    linear-gradient(135deg, #0a0a0b 0%, #131314 48%, #0e0e0f 100%);
 }
 
 #root {
@@ -38,6 +45,17 @@ body {
   justify-content: center;
   padding: 2rem;
   text-align: center;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  letter-spacing: 0;
 }
 
 /* —— 主菜单（全屏氛围 + 卡片操作区） —— */
@@ -87,11 +105,11 @@ body[data-cursor-mode='custom'] * {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(244, 213, 141, 0.5);
-  background: radial-gradient(circle, rgba(244, 213, 141, 0.12), transparent 62%);
+  border: 1px solid rgba(251, 191, 36, 0.62);
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.15), transparent 62%);
   box-shadow:
-    0 0 18px rgba(244, 213, 141, 0.18),
-    inset 0 0 10px rgba(244, 213, 141, 0.08);
+    0 0 18px rgba(251, 191, 36, 0.26),
+    inset 0 0 10px rgba(208, 188, 255, 0.12);
   animation: main-menu-cursor-orbit 3.4s linear infinite;
 }
 
@@ -100,8 +118,8 @@ body[data-cursor-mode='custom'] * {
   z-index: 1;
   font-size: 0.76rem;
   line-height: 1;
-  color: #f5ddb0;
-  text-shadow: 0 0 12px rgba(244, 213, 141, 0.38);
+  color: #fbbf24;
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
 }
 
 .app-cursor-trail {
@@ -110,8 +128,8 @@ body[data-cursor-mode='custom'] * {
   margin-left: -1.45rem;
   margin-top: -1.45rem;
   border-radius: 50%;
-  border: 1px solid rgba(244, 213, 141, 0.12);
-  background: radial-gradient(circle, rgba(244, 213, 141, 0.08), transparent 70%);
+  border: 1px solid rgba(208, 188, 255, 0.16);
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.1), transparent 70%);
   filter: blur(1px);
 }
 
@@ -120,10 +138,10 @@ body[data-cursor-mode='custom'] * {
 }
 
 .app-cursor[data-hovered='true'] .app-cursor-ring {
-  border-color: rgba(255, 232, 182, 0.78);
+  border-color: rgba(244, 232, 212, 0.86);
   box-shadow:
-    0 0 24px rgba(244, 213, 141, 0.28),
-    inset 0 0 14px rgba(244, 213, 141, 0.14);
+    0 0 24px rgba(251, 191, 36, 0.34),
+    inset 0 0 14px rgba(208, 188, 255, 0.18);
 }
 
 .app-cursor[data-hovered='true'] .app-cursor-trail {
@@ -139,7 +157,7 @@ body[data-cursor-mode='custom'] * {
 }
 
 .app-cursor[data-pressed='true'] .app-cursor-ring {
-  background: radial-gradient(circle, rgba(255, 232, 182, 0.24), transparent 62%);
+  background: radial-gradient(circle, rgba(255, 232, 182, 0.24), rgba(139, 92, 246, 0.12) 42%, transparent 70%);
 }
 
 @keyframes main-menu-cursor-orbit {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppCursor } from '@/app/AppCursor';
+import { ArchivePage, type ArchiveView } from '@/features/archive/ArchivePage';
 import { BattlePage } from '@/features/battle/BattlePage';
 import { EventPage } from '@/features/event/EventPage';
 import { DebugPanel } from '@/features/debug/DebugPanel';
@@ -20,14 +21,30 @@ function cx(...classNames: Array<string | false | null | undefined>) {
 
 export function App() {
   const run = useGameStore((s) => s.run);
+  const initRun = useGameStore((s) => s.initRun);
   const [overviewOpen, setOverviewOpen] = useState(false);
+  const [archiveView, setArchiveView] = useState<ArchiveView | null>(null);
 
   useEffect(() => {
     if (!run) setOverviewOpen(false);
   }, [run]);
 
   const page = (() => {
-    if (!run) return <MainMenuPage />;
+    if (archiveView) {
+      return (
+        <ArchivePage
+          view={archiveView}
+          run={run}
+          onChangeView={setArchiveView}
+          onClose={() => setArchiveView(null)}
+          onStartRun={() => {
+            setArchiveView(null);
+            initRun(createMapRun(Date.now() & 0xffff_ffff));
+          }}
+        />
+      );
+    }
+    if (!run) return <MainMenuPage onOpenArchive={setArchiveView} />;
     switch (run.screen.type) {
       case 'map':
         return <MapPage />;

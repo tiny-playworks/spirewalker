@@ -12,7 +12,7 @@ interface GameStoreState {
   pendingEvents: GameEvent[];
   /** 当前战斗可读日志（非权威状态，仅展示） */
   battleLog: string[];
-  /** 缩短 Phaser 飘字等表现耗时 */
+  /** 缩短战斗表现耗时 */
   fastMode: boolean;
   engine: GameEngine;
   initRun: (run: RunState) => void;

@@ -13,7 +13,7 @@ export const page = style({
   overflow: 'auto',
   padding: 'clamp(0.45rem, 1.4vw, 0.85rem)',
   background:
-    'radial-gradient(ellipse 90% 55% at 50% 0%, rgba(192, 132, 87, 0.1) 0%, transparent 52%), radial-gradient(ellipse 60% 45% at 100% 60%, rgba(90, 111, 78, 0.06) 0%, transparent 42%), linear-gradient(175deg, #131210 0%, #1a1814 42%, #161412 100%)',
+    'radial-gradient(ellipse 90% 55% at 50% 0%, rgba(139, 92, 246, 0.18) 0%, transparent 52%), radial-gradient(ellipse 60% 45% at 100% 60%, rgba(45, 212, 191, 0.1) 0%, transparent 42%), linear-gradient(175deg, #0a0a0b 0%, #131314 42%, #0e0e0f 100%)',
   selectors: {
     '&::after': {
       content: '""',
@@ -23,7 +23,7 @@ export const page = style({
       zIndex: 0,
       opacity: 0.035,
       backgroundImage:
-        'linear-gradient(rgba(232, 228, 220, 0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(232, 228, 220, 0.55) 1px, transparent 1px)',
+        'linear-gradient(rgba(208, 188, 255, 0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(208, 188, 255, 0.55) 1px, transparent 1px)',
       backgroundSize: '40px 40px',
     },
   },
@@ -42,10 +42,10 @@ export const hud = style({
   marginBottom: '0.45rem',
   padding: '0.45rem 0.65rem 0.35rem',
   borderRadius: sceneVars.radii.md,
-  background: 'linear-gradient(180deg, rgba(40, 35, 28, 0.78) 0%, rgba(31, 28, 23, 0.46) 100%)',
-  border: '1px solid rgba(84, 72, 57, 0.58)',
-  boxShadow: '0 8px 22px rgba(0, 0, 0, 0.14)',
-  backdropFilter: 'blur(8px)',
+  background: 'linear-gradient(180deg, rgba(32, 31, 32, 0.78) 0%, rgba(14, 14, 15, 0.5) 100%)',
+  border: '1px solid rgba(208, 188, 255, 0.3)',
+  boxShadow: sceneVars.shadow.panel,
+  backdropFilter: 'blur(16px)',
 });
 
 export const hudTop = style({
@@ -79,8 +79,8 @@ const chipBase = style({
   gap: '0.25rem',
   padding: '0.28rem 0.55rem',
   fontSize: '0.78rem',
-  color: '#b8b0a4',
-  background: 'rgba(20, 18, 16, 0.45)',
+  color: sceneVars.color.textMuted,
+  background: 'rgba(10, 10, 11, 0.45)',
   border: `1px solid ${sceneVars.color.borderSoft}`,
   borderRadius: sceneVars.radii.pill,
 });
@@ -92,16 +92,16 @@ export const chipFloor = style([
   {
     fontWeight: 700,
     letterSpacing: '0.06em',
-    color: sceneVars.color.accentGlow,
-    borderColor: 'rgba(192, 132, 87, 0.45)',
-    background: 'rgba(192, 132, 87, 0.1)',
+    color: sceneVars.color.fortune,
+    borderColor: 'rgba(251, 191, 36, 0.45)',
+    background: 'rgba(251, 191, 36, 0.1)',
   },
 ]);
 
 globalStyle(`${chipBase} strong`, {
   fontSize: '0.88rem',
   fontWeight: 700,
-  color: '#f0ebe3',
+  color: sceneVars.color.textStrong,
 });
 
 export const hudCurrent = style({
@@ -111,8 +111,8 @@ export const hudCurrent = style({
   gap: '0.15rem',
   padding: '0.3rem 0.55rem',
   borderRadius: '10px',
-  border: '1px solid rgba(192, 132, 87, 0.24)',
-  background: 'rgba(192, 132, 87, 0.05)',
+  border: '1px solid rgba(251, 191, 36, 0.28)',
+  background: 'rgba(251, 191, 36, 0.06)',
   minWidth: '8rem',
 });
 
@@ -128,13 +128,13 @@ export const hudCurrentKey = style({
   fontWeight: 600,
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
-  color: '#9a9488',
+  color: sceneVars.color.textSubtle,
 });
 
 export const hudCurrentValue = style({
   fontSize: '0.92rem',
   fontWeight: 700,
-  color: sceneVars.color.accentGlow,
+  color: sceneVars.color.fortune,
   textAlign: 'right',
   lineHeight: 1.25,
   maxWidth: '12rem',
@@ -142,7 +142,7 @@ export const hudCurrentValue = style({
 
 export const hudCurrentSub = style({
   fontSize: '0.72rem',
-  color: '#aca08d',
+  color: sceneVars.color.textSubtle,
   textAlign: 'right',
 });
 
@@ -153,7 +153,7 @@ export const hudRelics = style({
   alignItems: 'baseline',
   paddingTop: '0.3rem',
   marginTop: '0.15rem',
-  borderTop: '1px solid rgba(61, 53, 40, 0.55)',
+  borderTop: '1px solid rgba(208, 188, 255, 0.18)',
   fontSize: '0.8rem',
   lineHeight: 1.45,
   color: sceneVars.color.textMuted,
@@ -162,7 +162,7 @@ export const hudRelics = style({
 export const hudRelicsKey = style({
   flexShrink: 0,
   fontWeight: 700,
-  color: sceneVars.color.accent,
+  color: sceneVars.color.fortune,
 });
 
 export const body = style({
@@ -209,8 +209,8 @@ export const routeIntro = style({
   gap: '0.3rem',
   padding: '0.8rem 0.9rem',
   borderRadius: sceneVars.radii.md,
-  background: 'linear-gradient(180deg, rgba(22, 19, 16, 0.52) 0%, rgba(22, 19, 16, 0.22) 100%)',
-  border: '1px solid rgba(84, 72, 57, 0.32)',
+  background: 'linear-gradient(180deg, rgba(32, 31, 32, 0.58) 0%, rgba(10, 10, 11, 0.3) 100%)',
+  border: '1px solid rgba(208, 188, 255, 0.22)',
 });
 
 export const boardTitle = style({
@@ -253,7 +253,7 @@ export const stageRoute = style({
   padding: '0.5rem 0.2rem 0.35rem',
   borderRadius: '20px',
   background:
-    'radial-gradient(circle at 50% 42%, rgba(192, 132, 87, 0.08), transparent 34%), radial-gradient(circle at 84% 48%, rgba(85, 117, 160, 0.06), transparent 24%)',
+    'radial-gradient(circle at 50% 42%, rgba(139, 92, 246, 0.14), transparent 34%), radial-gradient(circle at 84% 48%, rgba(45, 212, 191, 0.08), transparent 24%)',
   overflow: 'hidden',
   '@media': {
     [tablet]: {
@@ -268,8 +268,8 @@ export const legend = style({
   gap: '0.5rem',
   padding: '0.7rem 0.8rem',
   borderRadius: sceneVars.radii.sm,
-  background: 'rgba(13, 12, 10, 0.26)',
-  border: '1px solid rgba(74, 67, 54, 0.34)',
+  background: 'rgba(10, 10, 11, 0.36)',
+  border: '1px solid rgba(208, 188, 255, 0.2)',
 });
 
 export const legendRow = style({
@@ -281,7 +281,7 @@ export const legendRow = style({
 
 globalStyle(`${legendRow} + ${legendRow}`, {
   paddingTop: '0.45rem',
-  borderTop: '1px solid rgba(74, 67, 54, 0.4)',
+  borderTop: '1px solid rgba(208, 188, 255, 0.18)',
 });
 
 export const legendTitle = style({
@@ -291,7 +291,7 @@ export const legendTitle = style({
   fontWeight: 600,
   letterSpacing: '0.04em',
   textTransform: 'uppercase',
-  color: '#7a7368',
+  color: sceneVars.color.textSubtle,
 });
 
 const legendListBase = style({
@@ -322,7 +322,7 @@ const legendItemBase = style({
   alignItems: 'center',
   gap: '0.35rem',
   fontSize: '0.78rem',
-  color: '#b8b2a6',
+  color: sceneVars.color.textMuted,
 });
 
 export const legendItem = legendItemBase;
@@ -346,20 +346,20 @@ export const legendGlyphBase = style({
   fontWeight: 700,
   lineHeight: 1,
   border: `2px solid ${sceneVars.color.border}`,
-  background: 'linear-gradient(165deg, #353026 0%, #2c2820 100%)',
+  background: 'linear-gradient(165deg, rgba(53, 52, 54, 0.78) 0%, rgba(10, 10, 11, 0.74) 100%)',
   color: sceneVars.color.textSubtle,
   boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
 });
 
 export const legendGlyphTone = styleVariants({
-  battle: { color: '#d49b79' },
-  elite: { color: '#cf8577' },
-  boss: { color: '#cf8577' },
-  shop: { color: '#dbc16e' },
-  treasure: { color: '#dbc16e' },
-  event: { color: '#99b8ff' },
-  rest: { color: '#9fc9ab' },
-  camp: { color: sceneVars.color.accentGlow },
+  battle: { color: sceneVars.color.hazard },
+  elite: { color: sceneVars.color.hazard },
+  boss: { color: sceneVars.color.hazard },
+  shop: { color: sceneVars.color.fortune },
+  treasure: { color: sceneVars.color.fortune },
+  event: { color: sceneVars.color.accentGlow },
+  rest: { color: sceneVars.color.relief },
+  camp: { color: sceneVars.color.fortune },
 });
 
 export const legendIcon = style({
@@ -368,7 +368,7 @@ export const legendIcon = style({
 });
 
 export const legendLabel = style({
-  color: '#a69f94',
+  color: sceneVars.color.textMuted,
 });
 
 export const objectiveCard = style({
@@ -377,26 +377,26 @@ export const objectiveCard = style({
   gap: '0.25rem',
   padding: '0.8rem 0.9rem',
   borderRadius: sceneVars.radii.md,
-  background: 'rgba(24, 21, 18, 0.34)',
-  border: '1px solid rgba(109, 89, 60, 0.35)',
+  background: 'rgba(10, 10, 11, 0.42)',
+  border: '1px solid rgba(251, 191, 36, 0.26)',
 });
 
 export const objectiveKey = style({
   fontSize: '0.72rem',
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
-  color: '#9b9286',
+  color: sceneVars.color.textSubtle,
 });
 
 export const objectiveValue = style({
   fontSize: '1.02rem',
-  color: sceneVars.color.accentGlow,
+  color: sceneVars.color.fortune,
 });
 
 export const objectiveText = style({
   fontSize: '0.82rem',
   lineHeight: 1.45,
-  color: '#b6ab9a',
+  color: sceneVars.color.textMuted,
 });
 
 const edgeSwatchBase = style({
@@ -411,7 +411,7 @@ const edgeSwatchBase = style({
 export const edgeSwatchBright = style([
   edgeSwatchBase,
   {
-    background: 'rgba(140, 124, 98, 0.85)',
+    background: 'rgba(251, 191, 36, 0.85)',
     opacity: 0.9,
   },
 ]);
@@ -443,8 +443,8 @@ export const toolButtonBase = style({
   fontSize: '0.78rem',
   fontWeight: 600,
   cursor: 'pointer',
-  color: '#d4cfc4',
-  background: 'rgba(35, 32, 26, 0.75)',
+  color: sceneVars.color.textMuted,
+  background: 'rgba(10, 10, 11, 0.55)',
   border: `1px solid ${sceneVars.color.border}`,
   borderRadius: sceneVars.radii.sm,
   transition: [
@@ -459,33 +459,33 @@ export const toolButtonTone = styleVariants({
 });
 
 globalStyle(`${toolButtonBase}:hover`, {
-  borderColor: '#8a7358',
-  background: 'rgba(48, 44, 36, 0.9)',
+  borderColor: 'rgba(251, 191, 36, 0.62)',
+  background: 'rgba(32, 31, 32, 0.9)',
 });
 
 globalStyle(`${toolButtonTone.danger}:hover`, {
-  borderColor: '#a65c4a',
-  color: '#f0c4bc',
+  borderColor: 'rgba(212, 132, 106, 0.72)',
+  color: '#ffb4ab',
 });
 
 export const done = style({
   margin: 0,
   padding: '0.65rem 0.85rem',
   borderRadius: '10px',
-  border: '1px dashed #5a5346',
-  color: sceneVars.color.accentGlow,
+  border: '1px dashed rgba(251, 191, 36, 0.42)',
+  color: sceneVars.color.fortune,
   fontSize: '0.95rem',
   textAlign: 'center',
-  background: 'rgba(192, 132, 87, 0.06)',
+  background: 'rgba(251, 191, 36, 0.06)',
 });
 
 export const selectionPrompt = style({
   margin: 0,
   padding: '0.85rem 1rem',
   borderRadius: sceneVars.radii.md,
-  border: '1px dashed rgba(95, 81, 62, 0.85)',
-  background: 'rgba(20, 18, 16, 0.26)',
-  color: '#cdbda3',
+  border: '1px dashed rgba(208, 188, 255, 0.36)',
+  background: 'rgba(10, 10, 11, 0.32)',
+  color: sceneVars.color.textMuted,
   textAlign: 'center',
 });
 
@@ -495,9 +495,9 @@ export const decisionPanel = style({
   gap: '0.95rem',
   padding: '1rem 1.05rem 1.05rem',
   borderRadius: sceneVars.radii.lg,
-  border: '1px solid rgba(88, 74, 58, 0.92)',
-  background: 'linear-gradient(180deg, rgba(44, 40, 32, 0.82) 0%, rgba(26, 23, 18, 0.96) 100%)',
-  boxShadow: '0 14px 30px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+  border: '1px solid rgba(208, 188, 255, 0.32)',
+  background: 'linear-gradient(180deg, rgba(32, 31, 32, 0.84) 0%, rgba(10, 10, 11, 0.82) 100%)',
+  boxShadow: sceneVars.shadow.panel,
 });
 
 export const decisionHead = style({
@@ -537,7 +537,7 @@ export const decisionDesc = style({
   margin: '0.4rem 0 0',
   fontSize: '0.9rem',
   lineHeight: 1.55,
-  color: '#bcb4a8',
+  color: sceneVars.color.textMuted,
 });
 
 export const decisionBadges = style({

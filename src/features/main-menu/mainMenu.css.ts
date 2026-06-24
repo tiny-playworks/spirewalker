@@ -111,10 +111,42 @@ export const root = style({
   padding: 'clamp(1.5rem, 4vw, 3rem)',
   overflow: 'hidden',
   background:
-    'radial-gradient(ellipse 60% 40% at 50% 16%, rgba(244, 213, 141, 0.08) 0%, transparent 60%), radial-gradient(ellipse 85% 65% at 50% 18%, rgba(192, 132, 87, 0.16) 0%, transparent 55%), radial-gradient(ellipse 70% 50% at 80% 80%, rgba(90, 111, 78, 0.08) 0%, transparent 45%), linear-gradient(180deg, #120f0d 0%, #191612 42%, #151311 100%)',
+    'radial-gradient(ellipse 60% 40% at 50% 16%, rgba(208, 188, 255, 0.13) 0%, transparent 60%), radial-gradient(ellipse 85% 65% at 50% 18%, rgba(139, 92, 246, 0.18) 0%, transparent 55%), radial-gradient(ellipse 70% 50% at 80% 80%, rgba(45, 212, 191, 0.08) 0%, transparent 45%), linear-gradient(180deg, #0a0a0b 0%, #131314 42%, #0e0e0f 100%)',
   '@media': {
     [mobile]: {
       padding: '1.25rem 1rem',
+    },
+  },
+});
+
+export const archiveActions = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+  gap: '0.45rem',
+  marginTop: '0.85rem',
+  '@media': {
+    [mobile]: {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+  },
+});
+
+export const archiveButton = style({
+  minHeight: '2.25rem',
+  padding: '0 0.6rem',
+  borderRadius: sceneVars.radii.sm,
+  border: '1px solid rgba(208, 188, 255, 0.24)',
+  background: 'rgba(10, 10, 11, 0.38)',
+  color: sceneVars.color.textMuted,
+  fontSize: '0.78rem',
+  fontWeight: 800,
+  cursor: 'pointer',
+  transition: 'border-color 140ms ease, color 140ms ease, box-shadow 140ms ease',
+  selectors: {
+    '&:hover': {
+      color: sceneVars.color.textStrong,
+      borderColor: 'rgba(251, 191, 36, 0.62)',
+      boxShadow: '0 0 20px rgba(251, 191, 36, 0.12)',
     },
   },
 });

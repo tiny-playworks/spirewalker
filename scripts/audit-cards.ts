@@ -1,8 +1,9 @@
 import { ALL_CARD_DEFINITIONS } from '../src/game/core/definitions/cards';
+import type { EffectDefinition } from '../src/game/core/model/card';
 
-function fingerprintEffects(effects: any[]): string {
+function fingerprintEffects(effects: EffectDefinition[]): string {
   return JSON.stringify(
-    effects.map((e: any) => {
+    effects.map((e) => {
       if (e.type === 'repeat') {
         return { type: 'repeat', times: e.times, inner: fingerprintEffects(e.effects) };
       }
@@ -61,7 +62,7 @@ for (const c of cards) {
         if ('value' in ie && typeof ie.value === 'number') effectNums.push(ie.value);
       }
     }
-    if (e.type === 'apply_status' && typeof (e as any).stacks === 'number') effectNums.push((e as any).stacks);
+    if (e.type === 'apply_status' && typeof e.stacks === 'number') effectNums.push(e.stacks);
   }
   if (descNums.length > 0 && effectNums.length > 0) {
     const descSet = new Set(descNums);

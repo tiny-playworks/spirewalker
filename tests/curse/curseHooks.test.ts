@@ -1,6 +1,7 @@
 import { describe, expect, test } from '@rstest/core';
 import { CURSE_CARDS } from '@/game/core/definitions/cards/curse/curse';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import type { BattleState } from '@/game/core/model/battle';
 import {
   applyCurseBattleStart,
 } from '@/game/core/systems/status/statusHooks';
@@ -47,7 +48,7 @@ const EXTERNALLY_HANDLED_CURSE_IDS = new Set([
 
 describe('curse cards', () => {
   test('所有 CURSE_CARDS 中的诅咒都存在于 CARD_DEFINITIONS', () => {
-    for (const [id, def] of Object.entries(CURSE_CARDS)) {
+    for (const id of Object.keys(CURSE_CARDS)) {
       expect(CARD_DEFINITIONS[id]).toBeDefined();
       expect(CARD_DEFINITIONS[id]!.type).toBe('curse');
       expect(CARD_DEFINITIONS[id]!.cost).toBe(-1);
@@ -71,6 +72,36 @@ describe('curse cards', () => {
   test('applyCurseBattleStart 不会崩溃', () => {
     // 模拟一个最小的 BattleState
     const battle = {
+      id: 'curse-test',
+      encounter: {
+        id: 'curse-test',
+        poolId: 'test',
+        tier: 'normal',
+        name: 'Curse Test',
+        tags: [],
+      },
+      turn: 1,
+      playerCardsPlayedThisTurn: 0,
+      playerConsumedMomentumThisTurn: false,
+      relicIds: [],
+      playerPlayedAttackThisTurn: false,
+      playerPlayedSkillThisTurn: false,
+      playerExhaustedCardThisTurn: false,
+      playerAttacksPlayedThisTurn: 0,
+      prevTurnPlayerPlayedAttack: false,
+      blazeCoreAttackBonus: 0,
+      pendingFortifyConvert: false,
+      twinCoreNextAttackBonus: 0,
+      twinCoreFirstBlockUsed: false,
+      twinCoreNextSkillBonus: 0,
+      twinCoreFirstAttackUsed: false,
+      harmonyEmblemTriggeredThisTurn: false,
+      playerGainedBlockThisTurn: false,
+      playerMomentumConsumedAmountThisTurn: 0,
+      playerTurnBlockGained: 0,
+      cycleEngineDrawsThisTurn: 0,
+      chainBoltActive: false,
+      memoryShardActive: false,
       activeCurseIds: new Set(['curse_dread', 'curse_greed', 'curse_pride']),
       playerUnitId: 'player',
       units: {
@@ -81,22 +112,41 @@ describe('curse cards', () => {
           block: 0,
           alive: true,
           statuses: [],
-          stats: { strength: 0 },
+          stats: { strength: 0, dexterity: 0 },
           side: 'player' as const,
           name: 'Test',
         },
       },
       enemyUnitIds: [],
+      phase: 'battle_init',
+      inputMode: 'idle',
+      player: {
+        unitId: 'player',
+        energy: 3,
+        maxEnergy: 3,
+        drawPile: [],
+        hand: [],
+        discardPile: [],
+        exhaustPile: [],
+        cards: {},
+        lockedCardInstanceIds: [],
+        pendingHandLocks: 0,
+        drawPressure: 0,
+      },
+      monsters: {},
+      nextEnemyUnitSeq: 0,
+      pendingAction: null,
+      lastResolvedEvents: [],
       cursePrideCostPressure: 0,
       curseSlothDrawPressure: 0,
       curseConfusionCostDelta: 0,
       curseBurdenBlockDecay: 0,
-    } as any;
+    } satisfies BattleState;
 
     applyCurseBattleStart(battle);
 
     // dread: +2 weak, +2 vulnerable
-    const weak = battle.units.player.statuses.find((s: any) => s.id === 'weak');
+    const weak = battle.units.player.statuses.find((s) => s.id === 'weak');
     expect(weak?.stacks).toBe(2);
 
     // greed: -5 hp
@@ -108,6 +158,36 @@ describe('curse cards', () => {
 
   test('applyCurseBattleStart 无诅咒时不改变状态', () => {
     const battle = {
+      id: 'curse-test-empty',
+      encounter: {
+        id: 'curse-test-empty',
+        poolId: 'test',
+        tier: 'normal',
+        name: 'Curse Test',
+        tags: [],
+      },
+      turn: 1,
+      playerCardsPlayedThisTurn: 0,
+      playerConsumedMomentumThisTurn: false,
+      relicIds: [],
+      playerPlayedAttackThisTurn: false,
+      playerPlayedSkillThisTurn: false,
+      playerExhaustedCardThisTurn: false,
+      playerAttacksPlayedThisTurn: 0,
+      prevTurnPlayerPlayedAttack: false,
+      blazeCoreAttackBonus: 0,
+      pendingFortifyConvert: false,
+      twinCoreNextAttackBonus: 0,
+      twinCoreFirstBlockUsed: false,
+      twinCoreNextSkillBonus: 0,
+      twinCoreFirstAttackUsed: false,
+      harmonyEmblemTriggeredThisTurn: false,
+      playerGainedBlockThisTurn: false,
+      playerMomentumConsumedAmountThisTurn: 0,
+      playerTurnBlockGained: 0,
+      cycleEngineDrawsThisTurn: 0,
+      chainBoltActive: false,
+      memoryShardActive: false,
       activeCurseIds: new Set(),
       playerUnitId: 'player',
       units: {
@@ -118,17 +198,36 @@ describe('curse cards', () => {
           block: 0,
           alive: true,
           statuses: [],
-          stats: { strength: 0 },
+          stats: { strength: 0, dexterity: 0 },
           side: 'player' as const,
           name: 'Test',
         },
       },
       enemyUnitIds: [],
+      phase: 'battle_init',
+      inputMode: 'idle',
+      player: {
+        unitId: 'player',
+        energy: 3,
+        maxEnergy: 3,
+        drawPile: [],
+        hand: [],
+        discardPile: [],
+        exhaustPile: [],
+        cards: {},
+        lockedCardInstanceIds: [],
+        pendingHandLocks: 0,
+        drawPressure: 0,
+      },
+      monsters: {},
+      nextEnemyUnitSeq: 0,
+      pendingAction: null,
+      lastResolvedEvents: [],
       cursePrideCostPressure: 0,
       curseSlothDrawPressure: 0,
       curseConfusionCostDelta: 0,
       curseBurdenBlockDecay: 0,
-    } as any;
+    } satisfies BattleState;
 
     applyCurseBattleStart(battle);
 

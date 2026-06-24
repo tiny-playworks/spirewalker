@@ -9,7 +9,7 @@ SpireWalker 是一个受《杀戮尖塔》启发的 Roguelike Deckbuilder 项目
 ### 技术架构
 
 - React + TypeScript
-- Phaser.js（战斗/地图表现）
+- React DOM（战斗/地图表现）
 - 纯 TypeScript Core（游戏规则）
 - 数据驱动设计
 - 卡牌 / Relic / 事件 / 敌人全部结构化配置

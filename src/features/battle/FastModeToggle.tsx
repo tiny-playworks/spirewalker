@@ -6,13 +6,13 @@ export function FastModeToggle() {
   const setFastMode = useGameStore((s) => s.setFastMode);
 
   return (
-    <label className={styles.fastModeToggle}>
+    <label className={styles.fastModeToggle} title="快速表现">
       <input
         type="checkbox"
         checked={fastMode}
         onChange={(e) => setFastMode(e.target.checked)}
       />
-      快速表现
+      FAST
     </label>
   );
 }

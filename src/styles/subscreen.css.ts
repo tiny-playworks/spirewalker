@@ -8,6 +8,12 @@ export const screenRoot = style({
   width: '100%',
   maxWidth: '28rem',
   padding: '1.25rem 1.5rem',
+  borderRadius: sceneVars.radii.lg,
+  border: `1px solid ${sceneVars.color.border}`,
+  background:
+    'linear-gradient(145deg, rgba(32, 31, 32, 0.82), rgba(10, 10, 11, 0.68))',
+  boxShadow: sceneVars.shadow.panelHeavy,
+  backdropFilter: 'blur(18px)',
 });
 
 export const screenWidth = styleVariants({
@@ -24,8 +30,9 @@ export const screenStack = style({
 
 export const title = style({
   margin: '0 0 0.5rem',
-  fontSize: '1.35rem',
-  color: sceneVars.color.accentGlow,
+  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontSize: '1.65rem',
+  color: sceneVars.color.textStrong,
 });
 
 export const tip = style({
@@ -39,10 +46,13 @@ export const actionButton = style({
   fontWeight: 600,
   cursor: 'pointer',
   borderRadius: sceneVars.radii.sm,
-  border: '1px solid rgba(90, 60, 40, 0.45)',
-  boxShadow: '0 2px 0 rgba(0, 0, 0, 0.18)',
-  transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}, background ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
+  border: `1px solid ${sceneVars.color.border}`,
+  boxShadow: sceneVars.shadow.button,
+  transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}, background ${sceneVars.motion.fast} ${sceneVars.motion.ease}, transform ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
   selectors: {
+    '&:hover:not(:disabled)': {
+      transform: 'translateY(-1px)',
+    },
     '&:disabled': {
       opacity: 0.45,
       cursor: 'not-allowed',
@@ -52,16 +62,16 @@ export const actionButton = style({
 
 export const actionButtonTone = styleVariants({
   primary: {
-    color: '#1a1814',
-    background: 'linear-gradient(180deg, #d4a078 0%, #c08457 100%)',
+    color: '#261a00',
+    background: 'linear-gradient(135deg, #c08457 0%, #fbbf24 100%)',
   },
   ghost: {
     color: sceneVars.color.text,
     background: 'transparent',
-    borderColor: '#5a5346',
+    borderColor: 'rgba(208, 188, 255, 0.28)',
     selectors: {
       '&:hover:not(:disabled)': {
-        borderColor: sceneVars.color.accent,
+        borderColor: sceneVars.color.accentGlow,
       },
     },
   },
@@ -121,8 +131,9 @@ export const choiceButton = style([
   choiceButtonBase,
   {
     padding: '0.85rem 1rem',
-    background: sceneVars.color.panel,
+    background: 'linear-gradient(145deg, rgba(32, 31, 32, 0.78), rgba(10, 10, 11, 0.52))',
     border: `1px solid ${sceneVars.color.border}`,
+    boxShadow: '0 0 24px rgba(139, 92, 246, 0.08)',
   },
 ]);
 
@@ -130,7 +141,7 @@ export const compactChoiceButton = style([
   choiceButtonBase,
   {
     padding: '0.65rem 0.85rem',
-    background: sceneVars.color.panel,
+    background: 'linear-gradient(145deg, rgba(32, 31, 32, 0.72), rgba(10, 10, 11, 0.5))',
     border: `1px solid ${sceneVars.color.border}`,
   },
 ]);
@@ -139,28 +150,28 @@ export const skipButton = style([
   choiceButtonBase,
   {
     padding: '0.75rem 1rem',
-    background: sceneVars.color.panelAlt,
-    border: '1px solid #5a5346',
+    background: 'rgba(10, 10, 11, 0.58)',
+    border: '1px solid rgba(251, 191, 36, 0.34)',
   },
 ]);
 
 export const choiceDesc = style({
   fontSize: '0.85rem',
-  color: '#9a9488',
+  color: sceneVars.color.textMuted,
 });
 
 export const banner = style({
   margin: '0 0 1rem',
   padding: '0.65rem 0.85rem',
-  background: '#2a261d',
-  border: '1px solid #5a4e3a',
+  background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(10, 10, 11, 0.48))',
+  border: '1px solid rgba(251, 191, 36, 0.34)',
   borderRadius: sceneVars.radii.sm,
 });
 
 export const bannerTone = styleVariants({
   reward: {},
   potion: {
-    borderColor: '#4a6b55',
+    borderColor: 'rgba(45, 212, 191, 0.4)',
   },
 });
 
@@ -168,7 +179,7 @@ export const bannerLine = style({
   margin: 0,
   fontSize: '0.9rem',
   lineHeight: 1.45,
-  color: '#d4cbb8',
+  color: sceneVars.color.textMuted,
 });
 
 export const bannerTag = style({
@@ -178,15 +189,16 @@ export const bannerTag = style({
   fontSize: '0.72rem',
   fontWeight: 600,
   letterSpacing: '0.05em',
-  color: '#1a1814',
-  background: sceneVars.color.accent,
+  color: '#261a00',
+  background: sceneVars.color.fortune,
   borderRadius: '4px',
 });
 
 export const bannerTagTone = styleVariants({
   reward: {},
   potion: {
-    background: '#5a8f6e',
+    color: '#00201c',
+    background: sceneVars.color.relief,
   },
 });
 
@@ -195,7 +207,7 @@ export const bannerNote = style({
   marginTop: '0.25rem',
   fontSize: '0.78rem',
   fontWeight: 400,
-  color: '#8a9488',
+  color: sceneVars.color.textSubtle,
 });
 
 export const skipSection = style({
@@ -207,14 +219,14 @@ export const skipSection = style({
 export const skipLabel = style({
   margin: '0 0 0.5rem',
   fontSize: '0.85rem',
-  color: '#9a9488',
+  color: sceneVars.color.textSubtle,
 });
 
 export const sectionTitle = style({
   margin: '0 0 0.5rem',
   fontSize: '1rem',
   fontWeight: 600,
-  color: '#c9c2b4',
+  color: sceneVars.color.textStrong,
 });
 
 export const sectionList = style({
@@ -230,7 +242,7 @@ export const removeHint = style({
   margin: '0 0 0.65rem',
   fontSize: '0.85rem',
   lineHeight: 1.45,
-  color: '#8a8378',
+  color: sceneVars.color.textSubtle,
 });
 
 export const removeList = style({

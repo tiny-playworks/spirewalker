@@ -4,6 +4,7 @@ import {
   clearSavedRun,
   loadRunFromLocalStorage,
 } from "@/game/core/persistence/saveRun";
+import type { ArchiveView } from "@/features/archive/ArchivePage";
 import { useGameStore } from "@/game/store/gameStore";
 import { sceneThemeClass } from "@/styles/sceneTheme.css";
 import * as styles from "./mainMenu.css";
@@ -41,7 +42,7 @@ function describeSavedRun(run: RunState) {
   return `你停在 Act ${run.meta.act} 第 ${run.meta.actFloor} 层（全局第 ${run.meta.floor} 层）的${describeScreen(run.screen.type)}，携带 ${run.meta.relics.length} 件遗物与 ${run.meta.gold} 枚金币。`;
 }
 
-export function MainMenuPage() {
+export function MainMenuPage({ onOpenArchive }: { onOpenArchive?: (view: ArchiveView) => void }) {
   const initRun = useGameStore((s) => s.initRun);
   const savedRun = loadRunFromLocalStorage();
   const canContinue = savedRun !== null;
@@ -152,6 +153,23 @@ export function MainMenuPage() {
                 ↟
               </span>
             </button>
+            <div className={styles.archiveActions} aria-label="资料入口">
+              <button type="button" className={styles.archiveButton} onClick={() => onOpenArchive?.('fate')}>
+                命运校准
+              </button>
+              <button type="button" className={styles.archiveButton} onClick={() => onOpenArchive?.('codex')}>
+                卡牌图鉴
+              </button>
+              <button type="button" className={styles.archiveButton} onClick={() => onOpenArchive?.('relics')}>
+                遗物档案
+              </button>
+              <button type="button" className={styles.archiveButton} onClick={() => onOpenArchive?.('collection')}>
+                收藏馆
+              </button>
+              <button type="button" className={styles.archiveButton} onClick={() => onOpenArchive?.('achievements')}>
+                成就
+              </button>
+            </div>
           </div>
         </section>
 

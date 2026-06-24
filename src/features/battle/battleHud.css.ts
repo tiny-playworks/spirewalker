@@ -5,29 +5,29 @@ import { infoChip } from '@/styles/uiPrimitives.css';
 const tablet = '(max-width: 900px)';
 
 /** 战斗顶栏一行：状态芯片、主操作、药水、快捷按钮共用，便于垂直对齐 */
-export const battleBarControlMinHeight = '1.875rem';
+export const battleBarControlMinHeight = '2rem';
 
 export const root = style({
   position: 'relative',
   flexShrink: 0,
   width: '100%',
-  padding: '0 0 0.24rem',
+  padding: 0,
 });
 
 export const inner = style({
   display: 'block',
-  padding: '0.32rem 0.52rem',
-  borderRadius: '10px',
-  background:
-    'linear-gradient(180deg, rgba(31, 28, 23, 0.86) 0%, rgba(20, 18, 15, 0.8) 100%)',
-  border: '1px solid rgba(82, 70, 52, 0.56)',
-  boxShadow: '0 8px 18px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(244, 213, 141, 0.04)',
+  padding: 0,
+  borderRadius: 0,
+  background: 'transparent',
+  border: 0,
+  boxShadow: 'none',
+  backdropFilter: 'none',
 });
 
 export const primaryRow = style({
   display: 'flex',
   alignItems: 'center',
-  gap: '0.36rem',
+  gap: '0.72rem',
   minHeight: battleBarControlMinHeight,
   overflowX: 'auto',
   overflowY: 'hidden',
@@ -43,6 +43,31 @@ export const primaryRow = style({
       overflowX: 'visible',
     },
   },
+});
+
+export const brand = style({
+  flexShrink: 0,
+  color: sceneVars.color.fortune,
+  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontSize: '1.44rem',
+  fontWeight: 900,
+  letterSpacing: '0.09em',
+  textShadow: '0 0 10px rgba(251, 191, 36, 0.32)',
+});
+
+export const encounterTitle = style({
+  flex: '0 1 auto',
+  minWidth: 0,
+  maxWidth: '18rem',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  color: sceneVars.color.fortune,
+  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontSize: '0.74rem',
+  fontWeight: 900,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
 });
 
 export const row = style({
@@ -65,7 +90,7 @@ export const rowTone = styleVariants({
     alignItems: 'flex-end',
     gap: '0.55rem',
     paddingTop: '0.25rem',
-    borderTop: '1px solid rgba(61, 53, 40, 0.55)',
+    borderTop: '1px solid rgba(208, 188, 255, 0.18)',
   },
 });
 
@@ -77,34 +102,54 @@ globalStyle(`${chip}`, {
   minHeight: battleBarControlMinHeight,
   display: 'inline-flex',
   alignItems: 'center',
-  padding: '0 0.5rem',
-  fontSize: '0.72rem',
+  padding: '0 0.82rem',
+  fontSize: '0.78rem',
   lineHeight: 1,
-  background: 'rgba(12, 11, 9, 0.32)',
-  borderColor: 'rgba(82, 70, 52, 0.58)',
+  background: 'rgba(10, 10, 11, 0.52)',
+  borderColor: 'rgba(208, 188, 255, 0.16)',
 });
 
 globalStyle(`${chip} strong`, {
-  fontSize: '0.74rem',
-  fontWeight: 700,
+  fontSize: '0.84rem',
+  fontWeight: 900,
   lineHeight: 1,
 });
 
 export const chipTone = styleVariants({
   default: {},
+  health: {
+    color: '#d0bcff',
+    borderColor: 'rgba(208, 188, 255, 0.22)',
+  },
+  block: {
+    color: '#6da7e6',
+    borderColor: 'rgba(106, 157, 212, 0.22)',
+  },
+  gold: {
+    color: sceneVars.color.fortune,
+    borderColor: 'rgba(251, 191, 36, 0.24)',
+  },
   energy: {
-    color: '#f2dfb6',
-    borderColor: 'rgba(212, 160, 100, 0.54)',
-    background: 'rgba(192, 132, 87, 0.1)',
+    color: sceneVars.color.fortune,
+    width: '2.1rem',
+    padding: 0,
+    justifyContent: 'center',
+    borderColor: 'rgba(251, 191, 36, 0.68)',
+    background: 'rgba(251, 191, 36, 0.12)',
+    boxShadow: '0 0 22px rgba(251, 191, 36, 0.24)',
   },
   accent: {
-    borderColor: 'rgba(192, 132, 87, 0.44)',
-    background: 'rgba(192, 132, 87, 0.1)',
+    width: '2.1rem',
+    padding: 0,
+    justifyContent: 'center',
+    color: '#3cddc7',
+    borderColor: 'rgba(45, 212, 191, 0.6)',
+    background: 'rgba(45, 212, 191, 0.1)',
   },
   win: {
-    borderColor: 'rgba(90, 111, 78, 0.55)',
-    background: 'rgba(90, 111, 78, 0.12)',
-    color: '#c4d2b4',
+    borderColor: 'rgba(45, 212, 191, 0.55)',
+    background: 'rgba(45, 212, 191, 0.12)',
+    color: '#62fae3',
     fontWeight: 700,
   },
 });
@@ -115,29 +160,29 @@ globalStyle(`${chipTone.accent} strong`, {
 
 export const energyHint = style({
   marginLeft: '0.18rem',
-  fontSize: '0.66rem',
+  fontSize: '0.6rem',
   fontWeight: 400,
-  color: '#d9a48b',
+  color: '#ffb4ab',
 });
 
 export const muted = style({
   marginLeft: '-0.18rem',
-  color: '#8f877a',
+  color: sceneVars.color.textSubtle,
 });
 
 export const blockText = style({
   marginLeft: '0.12rem',
-  color: '#9ccfeb',
+  color: '#3cddc7',
   fontWeight: 700,
 });
 
 export const intentText = style({
   marginLeft: '0.16rem',
-  color: '#a79d8e',
+  color: sceneVars.color.textSubtle,
 });
 
-/** 仅自动化：主按钮在 Phaser 画布内，DOM 保留可聚焦的等价入口供 Playwright 使用 */
-export const e2ePhaserBridge = style({
+/** 仅自动化：胜利按钮在主舞台内，DOM 保留可聚焦的等价入口供 Playwright 使用 */
+export const e2eRewardBridge = style({
   position: 'absolute',
   width: '1px',
   height: '1px',
@@ -167,14 +212,14 @@ export const actionButton = style({
   alignItems: 'center',
   justifyContent: 'center',
   minHeight: battleBarControlMinHeight,
-  padding: '0 0.72rem',
-  fontSize: '0.72rem',
+  padding: '0 0.56rem',
+  fontSize: '0.66rem',
   lineHeight: 1,
   fontWeight: 600,
   cursor: 'pointer',
   borderRadius: '999px',
-  border: '1px solid rgba(90, 60, 40, 0.45)',
-  boxShadow: '0 2px 0 rgba(0, 0, 0, 0.18)',
+  border: '1px solid rgba(208, 188, 255, 0.28)',
+  boxShadow: sceneVars.shadow.button,
   transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}, background ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
   selectors: {
     '&:disabled': {
@@ -186,16 +231,16 @@ export const actionButton = style({
 
 export const actionButtonTone = styleVariants({
   primary: {
-    color: '#1a1814',
-    background: 'linear-gradient(180deg, #d4a078 0%, #c08457 100%)',
+    color: '#261a00',
+    background: 'linear-gradient(135deg, #c08457 0%, #fbbf24 100%)',
   },
   ghost: {
     color: sceneVars.color.text,
     background: 'transparent',
-    borderColor: '#5a5346',
+    borderColor: 'rgba(208, 188, 255, 0.28)',
     selectors: {
       '&:hover:not(:disabled)': {
-        borderColor: sceneVars.color.accent,
+        borderColor: sceneVars.color.accentGlow,
       },
     },
   },
@@ -228,19 +273,20 @@ export const potionButton = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  minHeight: battleBarControlMinHeight,
-  padding: '0 0.55rem',
+  minHeight: '1.75rem',
+  minWidth: '1.75rem',
+  padding: 0,
   fontSize: '0.72rem',
   lineHeight: 1,
   cursor: 'pointer',
-  color: '#d9e7f2',
-  background: 'rgba(42, 53, 68, 0.82)',
-  border: '1px solid rgba(95, 121, 150, 0.72)',
-  borderRadius: '999px',
+  color: '#d9f7ff',
+  background: 'rgba(45, 212, 191, 0.12)',
+  border: '1px solid rgba(45, 212, 191, 0.42)',
+  borderRadius: '8px',
   transition: `border-color ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
   selectors: {
     '&:hover': {
-      borderColor: '#7ab0d4',
+      borderColor: '#62fae3',
     },
   },
 });
