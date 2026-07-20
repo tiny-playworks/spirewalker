@@ -3,7 +3,7 @@
  *
  * 用于商店升级服务与战后奖励「改为升级一张卡」入口。
  */
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import {
   canUpgradeCardId,
   nextUpgradedId,

@@ -12,7 +12,7 @@ import {
   BRACE_RHYTHM,
   MEASURED_REST,
   CARD_DEFINITIONS,
-} from './cards/starter';
+} from './cards';
 import { isRewardEligible } from './cards/rewardPoolRules';
 
 function buildRewardCardPool(): string[] {

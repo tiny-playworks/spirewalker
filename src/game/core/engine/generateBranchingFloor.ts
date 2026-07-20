@@ -1,5 +1,4 @@
 import type { MapAct, MapNode, MapNodeType, MapRouteBias } from '../model/map';
-import { PILOT_EVENT_IDS } from '../systems/event/eventRuntime';
 import { EVENTS_BY_CHAPTER } from '../definitions/events';
 import { mulberry32 } from '../utils/rng';
 
@@ -56,11 +55,11 @@ function buildChapterPool(chapter: 1 | 2 | 3, count: number, legacy: string[]): 
       seen.add(e.id);
     }
   }
-  return [...picked, ...legacy];
+  return [...legacy, ...picked];
 }
 
 export const EVENT_POOLS: Record<MapAct, string[]> = {
-  1: [WANDERING_MERCHANT_EVENT_ID, STILLNESS_SHRINE_EVENT_ID, ...PILOT_EVENT_IDS],
+  1: buildChapterPool(1, 8, [WANDERING_MERCHANT_EVENT_ID, STILLNESS_SHRINE_EVENT_ID]),
   2: buildChapterPool(2, 8, [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, STILLNESS_SHRINE_EVENT_ID]),
   3: buildChapterPool(3, 8, [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, WANDERING_MERCHANT_EVENT_ID]),
 };

@@ -4,7 +4,7 @@ import {
   MOMENTUM_SETUP_CARD_IDS,
   MOMENTUM_PAYOFF_CARD_IDS,
   TEMPO_RECOVERY_CARD_IDS,
-} from './starter';
+} from './index';
 
 const ALWAYS_SKIP = new Set(['strike', 'defend']);
 
@@ -20,6 +20,8 @@ const NEUTRAL_WHITELIST = new Set<string>([
 
 export function isRewardEligible(id: string, def: CardDefinition): boolean {
   if (ALWAYS_SKIP.has(id)) return false;
+  // 升级卡只存在于牌组和图鉴，不作为独立奖励重复出现。
+  if (id.endsWith('+') || id.endsWith('++')) return false;
   if (def.type === 'curse' || def.type === 'status') return false;
   if (def.cost < 0) return false;
   if (id.startsWith('junk_')) return false;

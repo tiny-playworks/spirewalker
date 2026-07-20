@@ -1,7 +1,9 @@
 import type { RunState } from '../../model/run';
 import type { GameEvent } from '../../events/types';
 import { EVENT_DEFINITIONS, type EventOutcome } from '../../definitions/events';
-import { applyRelicPickupEffect } from '../../definitions/relics';
+import { CARD_DEFINITIONS } from '../../definitions/cards';
+import { RELIC_DEFINITIONS } from '../../definitions/relics';
+import { applyRelicPickupHooks } from '../relic/relicHooks';
 
 /**
  * 通用 EventOutcome → RunState 执行器。
@@ -27,18 +29,18 @@ function applyOutcome(run: RunState, outcome: EventOutcome): boolean {
       run.player.currentHp = Math.min(run.player.currentHp, run.player.maxHp);
       return true;
     case 'gain_card':
-      if (outcome.cardId) {
-        run.masterDeck.push(outcome.cardId);
-      }
+      if (!outcome.cardId || !CARD_DEFINITIONS[outcome.cardId]) return false;
+      run.masterDeck.push(outcome.cardId);
       return true;
     case 'gain_relic':
-      if (outcome.relicId && !run.meta.relics.includes(outcome.relicId)) {
-        run.meta.relics.push(outcome.relicId);
-        applyRelicPickupEffect(run, outcome.relicId);
-      }
+      if (!outcome.relicId || !RELIC_DEFINITIONS[outcome.relicId]) return false;
+      if (run.meta.relics.includes(outcome.relicId)) return false;
+      run.meta.relics.push(outcome.relicId);
+      applyRelicPickupHooks(run, outcome.relicId);
       return true;
     case 'gain_momentum':
-      // gain_momentum 由战斗状态处理，事件中暂不处理
+      run.meta.pendingBattleMomentum =
+        (run.meta.pendingBattleMomentum ?? 0) + Math.max(0, outcome.value ?? 1);
       return true;
     case 'nothing':
       return true;
@@ -77,17 +79,3 @@ export function resolveGenericEvent(
   events.push({ type: 'EVENT_RESOLVED', eventId, optionId });
   return true;
 }
-
-/** 10 个试点 event ID，后续可扩展 */
-export const PILOT_EVENT_IDS: readonly string[] = [
-  'ruins_whisper',
-  'abandoned_camp',
-  'mysterious_merchant',
-  'glowing_runes',
-  'rusted_chest',
-  'cursed_spring',
-  'ancient_mural',
-  'broken_golem',
-  'shadow_bazaar',
-  'gambling_den',
-] as const;

@@ -1,5 +1,4 @@
 import { describe, expect, test } from '@rstest/core';
-import '@/game/core/definitions/cards/upgradeRules';
 import {
   getCardArchetype,
   getDominantArchetype,

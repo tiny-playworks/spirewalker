@@ -3,7 +3,7 @@ import {
   MOMENTUM_PAYOFF_CARD_IDS,
   MOMENTUM_SETUP_CARD_IDS,
   TEMPO_RECOVERY_CARD_IDS,
-} from '@/game/core/definitions/cards/starter';
+} from '@/game/core/definitions/cards';
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import type { MapNode } from '@/game/core/model/map';

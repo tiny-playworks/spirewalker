@@ -3,7 +3,6 @@ import { Coins, FlaskConical, Gem } from 'lucide-react';
 import { buildCardTooltipText, cardTypeLabel } from '@/game/core/battleUiText';
 import { ALL_CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { getCardArchetype } from '@/game/core/definitions/cards/archetypes';
-import '@/game/core/definitions/cards/upgradeRules';
 import { listUpgradableDeckIndices } from '@/game/core/definitions/cards/upgradeRules';
 import { POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';

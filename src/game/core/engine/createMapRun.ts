@@ -1,6 +1,4 @@
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
-// Side-effect: 确保升级后的 CardDefinition（strike+ / strike++）在 CARD_DEFINITIONS 中可见
-import '../definitions/cards/upgradeRules';
 import type { MapAct, MapNode } from '../model/map';
 import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
@@ -46,6 +44,7 @@ export function createMapRun(seed: number): RunState {
       relics: [...character.startingRelics],
       potions: [...character.startingPotions],
       encounterHistory: createEmptyEncounterHistory(),
+      pendingBattleMomentum: 0,
       validationCompleted: false,
       enteredAct2EliteBranch: false,
     },

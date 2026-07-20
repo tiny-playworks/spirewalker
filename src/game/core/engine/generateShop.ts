@@ -2,7 +2,7 @@ import {
   MOMENTUM_PAYOFF_CARD_IDS,
   MOMENTUM_SETUP_CARD_IDS,
   TEMPO_RECOVERY_CARD_IDS,
-} from '../definitions/cards/starter';
+} from '../definitions/cards';
 import type { MapAct } from '../model/map';
 import type { ShopState } from '../model/shop';
 import { mulberry32 } from '../utils/rng';

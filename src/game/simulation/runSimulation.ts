@@ -1,5 +1,5 @@
 import type { GameCommand } from "@/game/core/commands/types";
-import { CARD_DEFINITIONS } from "@/game/core/definitions/cards/starter";
+import { CARD_DEFINITIONS } from "@/game/core/definitions/cards";
 import { getCharacterDefinition } from "@/game/core/definitions/characters";
 import { GameEngine } from "@/game/core/engine/GameEngine";
 import { WANDERING_MERCHANT_EVENT_ID } from "@/game/core/engine/generateBranchingFloor";

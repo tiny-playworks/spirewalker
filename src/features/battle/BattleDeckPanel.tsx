@@ -1,4 +1,4 @@
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import type { CardDefinition, CardType } from '@/game/core/model/card';
 import { useGameStore } from '@/game/store/gameStore';
 import { ArchetypeDot } from '../cards/ArchetypeDot';

@@ -4,11 +4,24 @@ import { formatBattleLogLine } from '../core/battleLogFormat';
 import { GameEngine } from '../core/engine/GameEngine';
 import type { GameCommand } from '../core/commands/types';
 import type { GameEvent } from '../core/events/types';
+import {
+  clearProfileFromLocalStorage,
+  loadProfileFromLocalStorage,
+  saveProfileToLocalStorage,
+} from '../core/persistence/saveProfile';
 import { clearSavedRun, saveRunToLocalStorage } from '../core/persistence/saveRun';
+import {
+  createEmptyProfile,
+  observeRun,
+  recordRunStarted,
+  recordRunWin,
+  type ProfileState,
+} from '../core/model/profile';
 import type { RunState } from '../core/model/run';
 
 interface GameStoreState {
   run: RunState | null;
+  profile: ProfileState;
   pendingEvents: GameEvent[];
   /** 当前战斗可读日志（非权威状态，仅展示） */
   battleLog: string[];
@@ -16,6 +29,8 @@ interface GameStoreState {
   fastMode: boolean;
   engine: GameEngine;
   initRun: (run: RunState) => void;
+  startRun: (run: RunState) => void;
+  resetProfile: () => void;
   /** 回到标题界面，不清 localStorage（可再点「继续」） */
   returnToMainMenu: () => void;
   dispatchCommand: (command: GameCommand) => void;
@@ -25,6 +40,7 @@ interface GameStoreState {
 
 export const useGameStore = create<GameStoreState>((set, get) => ({
   run: null,
+  profile: loadProfileFromLocalStorage(),
   pendingEvents: [],
   battleLog: [],
   fastMode: false,
@@ -33,9 +49,24 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   setFastMode: (value) => set({ fastMode: value }),
 
   initRun: (run) => {
-    set({ run, pendingEvents: [], battleLog: [] });
+    const profile = observeRun(get().profile, run);
+    set({ run, profile, pendingEvents: [], battleLog: [] });
+    saveProfileToLocalStorage(profile);
     if (run.screen.type === 'game_over') clearSavedRun();
     else saveRunToLocalStorage(run);
+  },
+
+  startRun: (run) => {
+    const profile = recordRunStarted(get().profile, run);
+    set({ run, profile, pendingEvents: [], battleLog: [] });
+    saveProfileToLocalStorage(profile);
+    saveRunToLocalStorage(run);
+  },
+
+  resetProfile: () => {
+    const profile = createEmptyProfile();
+    set({ profile });
+    clearProfileFromLocalStorage();
   },
 
   returnToMainMenu: () => {
@@ -47,6 +78,10 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     if (!run) return;
 
     const result = engine.dispatch(run, command);
+    let profile = observeRun(get().profile, result.nextRun);
+    if (run.screen.type !== 'victory' && result.nextRun.screen.type === 'victory') {
+      profile = recordRunWin(profile, result.nextRun);
+    }
     const lines = result.events.flatMap((event) => {
       const nextLines = [formatBattleLogLine(run, event)];
       if (event.type === 'ENTERED_BATTLE_FROM_MAP') {
@@ -58,11 +93,13 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
 
     set({
       run: result.nextRun,
+      profile,
       pendingEvents: [...pendingEvents, ...result.events],
       battleLog: [...get().battleLog, ...lines].slice(-100),
     });
 
     const next = get().run;
+    saveProfileToLocalStorage(profile);
     if (next?.screen.type === 'game_over') clearSavedRun();
     else if (next) saveRunToLocalStorage(next);
   },

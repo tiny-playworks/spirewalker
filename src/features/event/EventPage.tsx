@@ -7,9 +7,13 @@ import {
   Footprints,
   Gem,
   HeartPulse,
+  Sparkles,
   type LucideProps,
   Triangle,
 } from 'lucide-react';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
+import { EVENT_DEFINITIONS } from '@/game/core/definitions/events';
+import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import {
   BURST_ALTAR_EVENT_ID,
   PURGING_POOL_EVENT_ID,
@@ -40,6 +44,51 @@ interface EventView {
   title: string;
   story: string;
   options: EventOption[];
+}
+
+function genericOptionTone(choice: { outcomes: Array<{ type: string }> }): Tone {
+  if (choice.outcomes.some((outcome) => ['lose_hp', 'lose_max_hp', 'lose_gold'].includes(outcome.type))) {
+    return 'sacrifice';
+  }
+  if (choice.outcomes.some((outcome) => outcome.type === 'gain_hp')) return 'heal';
+  if (choice.outcomes.some((outcome) => outcome.type === 'gain_gold')) return 'gold';
+  if (choice.outcomes.some((outcome) => ['gain_card', 'gain_relic', 'gain_momentum'].includes(outcome.type))) {
+    return 'gain';
+  }
+  return 'leave';
+}
+
+function genericOptionIcon(choice: { outcomes: Array<{ type: string }> }): ComponentType<LucideProps> {
+  const tone = genericOptionTone(choice);
+  if (tone === 'gold') return Coins;
+  if (tone === 'heal') return HeartPulse;
+  if (tone === 'gain') {
+    return choice.outcomes.some((outcome) => outcome.type === 'gain_momentum') ? Sparkles : BookOpen;
+  }
+  if (tone === 'sacrifice') return Flame;
+  return Footprints;
+}
+
+function genericOptionDescription(choice: { outcomes: Array<{ description: string }> }): string {
+  return choice.outcomes.map((outcome) => outcome.description).join('；');
+}
+
+function hasEnoughGold(run: RunState, requirements?: string): boolean {
+  const match = requirements?.match(/gold\s*>=\s*(\d+)/);
+  return !match || run.meta.gold >= Number(match[1]);
+}
+
+function hasValidAndAvailableOutcomes(
+  run: RunState,
+  outcomes: Array<{ type: string; cardId?: string; relicId?: string }>,
+): boolean {
+  return outcomes.every((outcome) => {
+    if (outcome.type === 'gain_card') return Boolean(outcome.cardId && CARD_DEFINITIONS[outcome.cardId]);
+    if (outcome.type === 'gain_relic') {
+      return Boolean(outcome.relicId && RELIC_DEFINITIONS[outcome.relicId] && !run.meta.relics.includes(outcome.relicId));
+    }
+    return true;
+  });
 }
 
 function buildEventView(run: RunState): EventView | null {
@@ -133,8 +182,23 @@ function buildEventView(run: RunState): EventView | null {
         ],
       };
     }
-    default:
-      return null;
+    default: {
+      const definition = eventId ? EVENT_DEFINITIONS[eventId] : undefined;
+      if (!definition) return null;
+      return {
+        title: definition.name,
+        story: definition.description,
+        options: definition.choices.map((choice) => ({
+          optionId: choice.id,
+          tone: genericOptionTone(choice),
+          icon: genericOptionIcon(choice),
+          title: choice.text,
+          desc: genericOptionDescription(choice),
+          disabled: !hasEnoughGold(run, choice.requirements)
+            || !hasValidAndAvailableOutcomes(run, choice.outcomes),
+        })),
+      };
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@rstest/core';
-import { CARD_DEFINITIONS, BRACE_RHYTHM, BREAK_OPENING, STRIKE, SURVEY_FIELD } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS, BRACE_RHYTHM, BREAK_OPENING, STRIKE, SURVEY_FIELD } from '@/game/core/definitions/cards';
 import { walkerBurstPolicy, walkerGuardPolicy, walkerMixedPolicy } from '@/game/simulation/policies/walkerPersonas';
 import type { SimulationBattleContext, SimulationPlayableCommand } from '@/game/simulation/types';
 

@@ -1,5 +1,4 @@
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from './characters';
-import type { RunState } from '../model/run';
 import { mulberry32 } from '../utils/rng';
 
 export interface RelicDefinition {
@@ -145,14 +144,6 @@ export function rollBossRelicReward(
   if (available.length === 0) return null;
   const rng = mulberry32((seed ^ salt ^ 0xb055) >>> 0);
   return available[Math.floor(rng() * available.length)]!;
-}
-
-/** 获得遗物时的即时效果（非战斗开局类） */
-export function applyRelicPickupEffect(run: RunState, relicId: string): void {
-  if (relicId === 'anchor') {
-    run.player.maxHp += 5;
-    run.player.currentHp += 5;
-  }
 }
 
 // ─── Generated relics ──────────────────────────────────────────

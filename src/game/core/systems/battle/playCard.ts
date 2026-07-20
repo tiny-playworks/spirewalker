@@ -1,5 +1,5 @@
 import { addStatusStacks, decayStatus, getStatusStacks } from '../../combat/statusCombat';
-import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { CARD_DEFINITIONS } from '../../definitions/cards';
 import { STATUS_MOMENTUM, STATUS_PRIMED_BREAK } from '../../definitions/statuses';
 import type { GameCommand } from '../../commands/types';
 import type { GameEvent } from '../../events/types';
@@ -14,6 +14,7 @@ import type {
 } from '../../model/card';
 import type { RunState } from '../../model/run';
 import { applyEnemyReactionToPlayerCard, dealDamageToUnit } from '../enemy/runtimeHooks';
+import { resolveRelicHooks } from '../relic/relicHooks';
 
 function pickRandomLivingEnemyId(battle: BattleState, random: () => number): string | undefined {
   const living = battle.enemyUnitIds.filter((id) => battle.units[id]?.alive);
@@ -27,9 +28,12 @@ function notifyCardExhausted(
   events?: GameEvent[],
 ): void {
   battle.playerExhaustedCardThisTurn = true;
-  if (relicIds.includes('blaze_core')) {
-    battle.blazeCoreAttackBonus += 2;
-  }
+  const relicResult = resolveRelicHooks(relicIds, {
+    battle,
+    trigger: 'cardExhausted',
+    events,
+  });
+  battle.blazeCoreAttackBonus += relicResult.damageBonus ?? 0;
   if (relicIds.includes('resonance_plating')) {
     const player = battle.units[battle.playerUnitId];
     if (player) {
@@ -152,6 +156,14 @@ function applyMomentumBurstDamage(
     params.consumeMode === 'all' ? currentStacks : Math.max(0, params.consumeValue ?? 0);
   const consumedStacks = Math.min(currentStacks, requestedConsume);
   const firstConsumeThisTurn = consumedStacks > 0 && !battle.playerConsumedMomentumThisTurn;
+  const relicResult = resolveRelicHooks(relicIds, {
+    battle,
+    trigger: 'momentumConsumed',
+    events,
+    consumedStacks,
+    momentumKind: 'damage',
+    firstConsumeThisTurn,
+  });
 
   if (consumedStacks > 0) {
     decayStatus(source, STATUS_MOMENTUM, consumedStacks);
@@ -186,9 +198,7 @@ function applyMomentumBurstDamage(
   }
 
   const primedBonus = consumedStacks > 0 ? consumePrimedBreakBonus(battle, sourceUnitId, 'damage') : 0;
-  const relicBonus =
-    (relicIds.includes('burst_emblem') ? 2 : 0)
-    + (relicIds.includes('sighted_edge') ? consumedStacks : 0);
+  const relicBonus = relicResult.damageBonus ?? 0;
   let damage = params.baseDamage + consumedStacks * params.damagePerStack + primedBonus + relicBonus;
   if (effectCtx?.cardType === 'attack') {
     damage += battle.blazeCoreAttackBonus;
@@ -200,14 +210,14 @@ function applyMomentumBurstDamage(
   }
   dealDamageToUnit(battle, sourceUnitId, targetUnitId, damage, events);
 
-  if (consumedStacks > 0 && relicIds.includes('burst_emblem') && firstConsumeThisTurn) {
-    drawAdditionalCards(battle, 1, events, random);
+  if ((relicResult.draw ?? 0) > 0) {
+    drawAdditionalCards(battle, relicResult.draw ?? 0, events, random);
   }
   if (consumedStacks > 0 && typeof params.gainEnergyIfConsumed === 'number') {
     grantEnergy(battle, params.gainEnergyIfConsumed, events);
   }
-  if (consumedStacks > 0 && (relicIds.includes('quick_fuse') || relicIds.includes('flare_banner')) && firstConsumeThisTurn) {
-    grantEnergy(battle, 1, events);
+  if ((relicResult.energy ?? 0) > 0) {
+    grantEnergy(battle, relicResult.energy ?? 0, events);
   }
 }
 
@@ -227,6 +237,14 @@ function applyMomentumBurstDraw(
     params.consumeMode === 'all' ? currentStacks : Math.max(0, params.consumeValue ?? 0);
   const consumedStacks = Math.min(currentStacks, requestedConsume);
   const firstConsumeThisTurn = consumedStacks > 0 && !battle.playerConsumedMomentumThisTurn;
+  const relicResult = resolveRelicHooks(relicIds, {
+    battle,
+    trigger: 'momentumConsumed',
+    events,
+    consumedStacks,
+    momentumKind: 'draw',
+    firstConsumeThisTurn,
+  });
 
   if (consumedStacks > 0) {
     decayStatus(source, STATUS_MOMENTUM, consumedStacks);
@@ -261,12 +279,12 @@ function applyMomentumBurstDraw(
   }
 
   const primedBonus = consumedStacks > 0 ? consumePrimedBreakBonus(battle, sourceUnitId, 'draw') : 0;
-  const relicBonus = relicIds.includes('insight_lens') ? 1 : 0;
+  const relicBonus = relicResult.draw ?? 0;
   const drawCount = params.baseDraw + consumedStacks * params.drawPerStack + primedBonus + relicBonus;
   drawAdditionalCards(battle, drawCount, events, random);
 
-  if (consumedStacks > 0 && (relicIds.includes('quick_fuse') || relicIds.includes('flare_banner')) && firstConsumeThisTurn) {
-    grantEnergy(battle, 1, events);
+  if ((relicResult.energy ?? 0) > 0) {
+    grantEnergy(battle, relicResult.energy ?? 0, events);
   }
 }
 
@@ -280,20 +298,46 @@ function applyMomentumGuardByStacks(
   const source = battle.units[sourceUnitId];
   if (!source) return;
   const stacks = getStatusStacks(source, STATUS_MOMENTUM);
-  let blockGain = params.baseBlock + stacks * params.blockPerStack;
-  if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
-    blockGain += 2;
-  }
+  const blockGain = params.baseBlock + stacks * params.blockPerStack;
   if (blockGain <= 0) return;
-  source.block += blockGain;
-  events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
-  if (sourceUnitId === battle.playerUnitId) {
-    battle.playerGainedBlockThisTurn = true;
-    if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
+  applyBlockGain(battle, sourceUnitId, blockGain, relicIds, events);
+}
+
+function applyBlockGain(
+  battle: BattleState,
+  targetUnitId: string,
+  baseAmount: number,
+  relicIds: string[],
+  events: GameEvent[],
+  cardType?: CardType,
+): number {
+  const target = battle.units[targetUnitId];
+  if (!target || baseAmount <= 0) return 0;
+
+  let amount = baseAmount;
+  if (targetUnitId === battle.playerUnitId) {
+    const relicResult = resolveRelicHooks(relicIds, {
+      battle,
+      trigger: 'blockGained',
+      events,
+      amount: baseAmount,
+      cardType,
+      firstBlockThisTurn: !battle.twinCoreFirstBlockUsed,
+    });
+    amount += relicResult.block ?? 0;
+    if (relicResult.nextAttackBonus && !battle.twinCoreFirstBlockUsed) {
       battle.twinCoreFirstBlockUsed = true;
-      battle.twinCoreNextAttackBonus = 5;
+      battle.twinCoreNextAttackBonus += relicResult.nextAttackBonus;
     }
   }
+
+  target.block += amount;
+  events.push({ type: 'BLOCK_GAINED', unitId: targetUnitId, value: amount });
+  if (targetUnitId === battle.playerUnitId) {
+    battle.playerGainedBlockThisTurn = true;
+    battle.playerTurnBlockGained += amount;
+  }
+  return amount;
 }
 
 function applyEffects(
@@ -346,9 +390,6 @@ function applyEffects(
       const target = battle.units[targetId];
       if (!target) continue;
       let amount = e.value;
-      if (targetId === battle.playerUnitId && relicIds.includes('iron_heart')) {
-        amount += 2;
-      }
       // Relic: stone_bulwark — if current block == 0, gain +3 extra
       if (targetId === battle.playerUnitId && relicIds.includes('stone_bulwark') && target.block === 0) {
         amount += 3;
@@ -366,15 +407,8 @@ function applyEffects(
         amount += battle.twinCoreNextSkillBonus;
         battle.twinCoreNextSkillBonus = 0;
       }
-      target.block += amount;
-      events.push({ type: 'BLOCK_GAINED', unitId: targetId, value: amount });
+      applyBlockGain(battle, targetId, amount, relicIds, events, effectCtx?.cardType);
       if (targetId === battle.playerUnitId) {
-        battle.playerGainedBlockThisTurn = true;
-        battle.playerTurnBlockGained += amount;
-        if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
-          battle.twinCoreFirstBlockUsed = true;
-          battle.twinCoreNextAttackBonus = 5;
-        }
         // Relic: guard_momentum_link — gain 1 momentum on block card (max 2/turn)
         if (relicIds.includes('guard_momentum_link') && effectCtx?.cardType === 'skill' && battle.playerCardsPlayedThisTurn < 2) {
           addStatusStacks(target, STATUS_MOMENTUM, 1);
@@ -492,15 +526,7 @@ function applyEffects(
         if (battle.prevTurnPlayerPlayedAttack) {
           const player = battle.units[battle.playerUnitId];
           if (player) {
-            let block = 12;
-            if (relicIds.includes('iron_heart')) block += 2;
-            player.block += block;
-            events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: block });
-            battle.playerGainedBlockThisTurn = true;
-            if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
-              battle.twinCoreFirstBlockUsed = true;
-              battle.twinCoreNextAttackBonus = 5;
-            }
+            applyBlockGain(battle, battle.playerUnitId, 12, relicIds, events, effectCtx?.cardType);
           }
         } else {
           const eid = pickRandomLivingEnemyId(battle, random);
@@ -596,19 +622,8 @@ function applyEffects(
           decayStatus(source, 'momentum', consumedStacks);
           battle.playerConsumedMomentumThisTurn = true;
         }
-        let blockGain = params.baseBlock;
-        if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
-          blockGain += 2;
-        }
-        source.block += blockGain;
-        events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
-        if (sourceUnitId === battle.playerUnitId) {
-          battle.playerGainedBlockThisTurn = true;
-          if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
-            battle.twinCoreFirstBlockUsed = true;
-            battle.twinCoreNextAttackBonus = 5;
-          }
-        }
+        const blockGain = params.baseBlock;
+        applyBlockGain(battle, sourceUnitId, blockGain, relicIds, events, effectCtx?.cardType);
       } else if (e.scriptId === 'metallicize_to_block') {
         const params = e.params as { baseDamage: number } | undefined;
         if (!params) continue;
@@ -627,19 +642,7 @@ function applyEffects(
         }
         dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
         if (metallicizeStacks > 0) {
-          let blockGain = metallicizeStacks;
-          if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
-            blockGain += 2;
-          }
-          source.block += blockGain;
-          events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
-          if (sourceUnitId === battle.playerUnitId) {
-            battle.playerGainedBlockThisTurn = true;
-            if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
-              battle.twinCoreFirstBlockUsed = true;
-              battle.twinCoreNextAttackBonus = 5;
-            }
-          }
+          applyBlockGain(battle, sourceUnitId, metallicizeStacks, relicIds, events, effectCtx?.cardType);
         }
       } else if (e.scriptId === 'momentum_conditional_block') {
         const params = e.params as { baseBlock: number; blockIfNoConsume: number } | undefined;
@@ -650,18 +653,7 @@ function applyEffects(
         if (!battle.playerConsumedMomentumThisTurn) {
           blockGain += params.blockIfNoConsume;
         }
-        if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
-          blockGain += 2;
-        }
-        source.block += blockGain;
-        events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
-        if (sourceUnitId === battle.playerUnitId) {
-          battle.playerGainedBlockThisTurn = true;
-          if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
-            battle.twinCoreFirstBlockUsed = true;
-            battle.twinCoreNextAttackBonus = 5;
-          }
-        }
+        applyBlockGain(battle, sourceUnitId, blockGain, relicIds, events, effectCtx?.cardType);
       } else if (e.scriptId === 'steady_guard_burst_damage') {
         const params = e.params as { baseDamage: number; damagePerStack: number } | undefined;
         if (!params) continue;
@@ -721,19 +713,7 @@ function applyEffects(
           }
           const source = battle.units[sourceUnitId];
           if (source) {
-            let blockGain = params.blockPerHit;
-            if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
-              blockGain += 2;
-            }
-            source.block += blockGain;
-            events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
-            if (sourceUnitId === battle.playerUnitId) {
-              battle.playerGainedBlockThisTurn = true;
-              if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
-                battle.twinCoreFirstBlockUsed = true;
-                battle.twinCoreNextAttackBonus = 5;
-              }
-            }
+            applyBlockGain(battle, sourceUnitId, params.blockPerHit, relicIds, events, effectCtx?.cardType);
           }
         }
       } else if (e.scriptId === 'energy_to_damage') {
@@ -790,18 +770,7 @@ function applyEffects(
         } else if (params.condition === 'has_block') {
           if (source.block > 0) blockGain += params.bonusBlock;
         }
-        if (sourceUnitId === battle.playerUnitId && relicIds.includes('iron_heart')) {
-          blockGain += 2;
-        }
-        source.block += blockGain;
-        events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: blockGain });
-        if (sourceUnitId === battle.playerUnitId) {
-          battle.playerGainedBlockThisTurn = true;
-          if (relicIds.includes('twin_core') && !battle.twinCoreFirstBlockUsed) {
-            battle.twinCoreFirstBlockUsed = true;
-            battle.twinCoreNextAttackBonus = 5;
-          }
-        }
+        applyBlockGain(battle, sourceUnitId, blockGain, relicIds, events, effectCtx?.cardType);
       }
     }
   }
@@ -861,8 +830,19 @@ export function playCardFlow(
   const hadAttackBefore = battle.playerPlayedAttackThisTurn;
   const isAttack = def.type === 'attack';
   const isFirstAttackThisTurn = isAttack && battle.playerAttacksPlayedThisTurn === 0;
-  const useFractureExhaust =
-    run.meta.relics.includes('fractured_blade') && isFirstAttackThisTurn;
+  const cardRelicResult = resolveRelicHooks(run.meta.relics, {
+    run,
+    battle,
+    trigger: 'cardPlayed',
+    cardId: card.definitionId,
+    cardType: def.type,
+    firstAttackThisTurn: isFirstAttackThisTurn,
+    playedAttackThisTurn: hadAttackBefore,
+    playedSkillThisTurn: hadSkillBefore,
+    harmonyTriggeredThisTurn: battle.harmonyEmblemTriggeredThisTurn,
+    events,
+  });
+  const useFractureExhaust = Boolean(cardRelicResult.forceExhaustAttack);
 
   battle.player.energy -= Math.max(0, effectiveCost);
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
@@ -875,9 +855,9 @@ export function playCardFlow(
     battle.player.discardPile.push(cardInstanceId);
   }
 
-  if (isAttack && run.meta.relics.includes('twin_core') && isFirstAttackThisTurn) {
+  if (cardRelicResult.nextSkillBonus) {
     battle.twinCoreFirstAttackUsed = true;
-    battle.twinCoreNextSkillBonus = 5;
+    battle.twinCoreNextSkillBonus += cardRelicResult.nextSkillBonus;
   }
   if (isAttack) {
     battle.playerAttacksPlayedThisTurn += 1;
@@ -916,15 +896,14 @@ export function playCardFlow(
     { cardType: def.type, fractureDoubleAttack: useFractureExhaust },
   );
 
-  if (
-    run.meta.relics.includes('harmony_emblem')
-    && !battle.harmonyEmblemTriggeredThisTurn
-    && ((def.type === 'attack' && hadSkillBefore)
-      || ((def.type === 'skill' || def.type === 'power') && hadAttackBefore))
-  ) {
+  if (cardRelicResult.harmonyTriggered) {
     battle.harmonyEmblemTriggeredThisTurn = true;
-    drawAdditionalCards(battle, 1, events, () => effectRng());
-    grantEnergy(battle, 1, events);
+  }
+  if ((cardRelicResult.draw ?? 0) > 0) {
+    drawAdditionalCards(battle, cardRelicResult.draw ?? 0, events, () => effectRng());
+  }
+  if ((cardRelicResult.energy ?? 0) > 0) {
+    grantEnergy(battle, cardRelicResult.energy ?? 0, events);
   }
   // Relic: cycle_engine — after playing both attack and skill in a turn, draw 1 (max 2/turn)
   if (

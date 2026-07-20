@@ -2,7 +2,7 @@ import {
   DEFENSE_LINE_CARD_IDS,
   MOMENTUM_PAYOFF_CARD_IDS,
   MOMENTUM_SETUP_CARD_IDS,
-} from "@/game/core/definitions/cards/starter";
+} from "@/game/core/definitions/cards";
 import {
   BURST_ALTAR_EVENT_ID,
   PURGING_POOL_EVENT_ID,

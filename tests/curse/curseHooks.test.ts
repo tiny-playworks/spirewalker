@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@rstest/core';
 import { CURSE_CARDS } from '@/game/core/definitions/cards/curse/curse';
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import type { BattleState } from '@/game/core/model/battle';
 import {
   applyCurseBattleStart,
@@ -71,7 +71,7 @@ describe('curse cards', () => {
 
   test('applyCurseBattleStart 不会崩溃', () => {
     // 模拟一个最小的 BattleState
-    const battle = {
+    const battle: BattleState = {
       id: 'curse-test',
       encounter: {
         id: 'curse-test',
@@ -141,7 +141,7 @@ describe('curse cards', () => {
       curseSlothDrawPressure: 0,
       curseConfusionCostDelta: 0,
       curseBurdenBlockDecay: 0,
-    } satisfies BattleState;
+    };
 
     applyCurseBattleStart(battle);
 

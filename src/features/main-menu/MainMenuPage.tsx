@@ -44,6 +44,7 @@ function describeSavedRun(run: RunState) {
 
 export function MainMenuPage({ onOpenArchive }: { onOpenArchive?: (view: ArchiveView) => void }) {
   const initRun = useGameStore((s) => s.initRun);
+  const startRun = useGameStore((s) => s.startRun);
   const savedRun = loadRunFromLocalStorage();
   const canContinue = savedRun !== null;
   const journeyState = canContinue ? "火种仍在燃烧" : "你的旅途尚未开始";
@@ -137,7 +138,7 @@ export function MainMenuPage({ onOpenArchive }: { onOpenArchive?: (view: Archive
               data-testid="new-game-button"
               onClick={() => {
                 clearSavedRun();
-                initRun(createMapRun(Date.now() & 0xffff_ffff));
+                startRun(createMapRun(Date.now() & 0xffff_ffff));
               }}
             >
               <span className={styles.actionButtonFlare} />

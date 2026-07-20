@@ -177,7 +177,7 @@ export function MapRoute({
               onPointerLeave={isSelectable ? () => onHoverNode(null) : undefined}
             >
               {isSelectable ? (
-                <circle className={styles.nodeHit} r={nodeRadius + 12} cx={0} cy={0} />
+                <circle className={styles.nodeHit} r={nodeRadius + 16} cx={0} cy={0} />
               ) : null}
               <g className={styles.nodeCore}>
                 {isBoss ? (

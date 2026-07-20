@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test';
 export async function startNewRun(page: Page) {
   await page.goto('/');
   await page.getByTestId('new-game-button').click();
-  await expect(page.getByText('本层路线')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
 }
 
 export async function chooseFirstReachableNode(page: Page) {

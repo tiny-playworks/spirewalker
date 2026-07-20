@@ -1,5 +1,6 @@
 import type { CardDefinition } from '../../model/card';
 import { CARD_DEFINITIONS as STARTER_CARDS } from './starter';
+import { registerUpgradedCardDefinitions } from './upgradeRules';
 
 // 导入各流派卡牌
 import { GUARD_CARDS } from './guard/index';
@@ -9,9 +10,15 @@ import { NEUTRAL_CARDS } from './neutral/index';
 import { CURSE_CARDS } from './curse/index';
 import { STATUS_CARDS } from './status/index';
 
+// upgradeRules 为旧模块保留了 starter 表的兼容写入；聚合表只从基础卡开始，
+// 再由同一份规则在下方生成升级卡，避免升级定义被重复加入。
+const BASE_STARTER_CARDS = Object.fromEntries(
+  Object.entries(STARTER_CARDS).filter(([id]) => !id.endsWith('+') && !id.endsWith('++')),
+) as Record<string, CardDefinition>;
+
 // 合并所有卡牌
 export const ALL_CARD_DEFINITIONS: Record<string, CardDefinition> = {
-  ...STARTER_CARDS,
+  ...BASE_STARTER_CARDS,
   ...GUARD_CARDS,
   ...BURST_CARDS,
   ...MIXED_CARDS,
@@ -20,8 +27,14 @@ export const ALL_CARD_DEFINITIONS: Record<string, CardDefinition> = {
   ...STATUS_CARDS,
 };
 
+// 升级规则必须在所有消费方拿到注册表前完成，避免 starter 表与 UI 快照分裂。
+registerUpgradedCardDefinitions(ALL_CARD_DEFINITIONS);
+
 // 导出所有卡牌 ID
 export const ALL_CARD_IDS = Object.keys(ALL_CARD_DEFINITIONS);
+
+/** 所有运行时和展示层统一读取的卡牌注册表。 */
+export const CARD_DEFINITIONS = ALL_CARD_DEFINITIONS;
 
 // 按流派分组
 export const GUARD_CARD_IDS = Object.keys(GUARD_CARDS);
@@ -39,7 +52,6 @@ export const LEGENDARY_CARDS = Object.values(ALL_CARD_DEFINITIONS).filter(c => c
 
 // 重新导出 starter.ts 的原始导出，保持兼容性
 export {
-  CARD_DEFINITIONS,
   STRIKE,
   DEFEND,
   BASH,

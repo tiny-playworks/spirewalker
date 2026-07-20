@@ -9,7 +9,6 @@
  * - `CardInstance.upgraded` 在战斗时由 `definitionId.endsWith('+')` 判定，保留旧字段。
  */
 
-import { CARD_DEFINITIONS } from './starter';
 import type { CardDefinition, EffectDefinition } from '../../model/card';
 import { GENERATED_UPGRADE_RULES } from './generated_upgrade_rules';
 
@@ -716,11 +715,11 @@ export function deriveUpgradedDefinition(
 }
 
 /**
- * 模块初始化时被调用：根据 `CARD_UPGRADE_RULES` 向 `CARD_DEFINITIONS` 注入
+ * 由卡牌聚合表调用：根据 `CARD_UPGRADE_RULES` 向传入注册表注入
  * 所有升级版卡定义（例如 `strike+`、`strike++`）。重复调用是幂等的。
  */
 export function registerUpgradedCardDefinitions(
-  registry: Record<string, CardDefinition> = CARD_DEFINITIONS,
+  registry: Record<string, CardDefinition>,
 ): void {
   for (const [baseId, rule] of Object.entries(CARD_UPGRADE_RULES)) {
     const base = registry[baseId];
@@ -738,8 +737,6 @@ export function registerUpgradedCardDefinitions(
 
 // 合并生成的升级规则
 Object.assign(CARD_UPGRADE_RULES, GENERATED_UPGRADE_RULES);
-
-registerUpgradedCardDefinitions();
 
 /**
  * 升级 masterDeck 里指定下标的卡；若不可升级则返回 false，不修改状态。

@@ -1,5 +1,5 @@
 import { parseCardId } from './upgradeRules';
-import { CARD_DEFINITIONS } from './starter';
+import { CARD_DEFINITIONS } from './index';
 
 /**
  * 流派身份标签（对应创始人反馈 #8）：

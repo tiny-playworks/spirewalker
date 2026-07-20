@@ -1,9 +1,10 @@
-import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { CARD_DEFINITIONS } from '../../definitions/cards';
 import { MAX_POTIONS, POTION_DEFINITIONS } from '../../definitions/potions';
-import { applyRelicPickupEffect, RELIC_DEFINITIONS } from '../../definitions/relics';
+import { RELIC_DEFINITIONS } from '../../definitions/relics';
 import type { RunState } from '../../model/run';
 import { SHOP_MIN_MASTER_DECK_SIZE } from '../../engine/generateShop';
 import { canUpgradeCardId, upgradeMasterDeckAt } from '../../definitions/cards/upgradeRules';
+import { applyRelicPickupHooks } from '../relic/relicHooks';
 
 export function resolveShopCardPurchase(run: RunState, definitionId: string): boolean {
   if (run.screen.type !== 'shop' || !run.shop) return false;
@@ -27,7 +28,7 @@ export function resolveShopRelicPurchase(run: RunState, relicId: string): boolea
   if (run.meta.gold < offer.price) return false;
   run.meta.gold -= offer.price;
   run.meta.relics.push(relicId);
-  applyRelicPickupEffect(run, relicId);
+  applyRelicPickupHooks(run, relicId);
   run.shop.relics.splice(idx, 1);
   return true;
 }

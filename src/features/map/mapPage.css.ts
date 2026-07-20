@@ -168,6 +168,11 @@ export const body = style({
   flex: 1,
   minHeight: 0,
   display: 'flex',
+  '@media': {
+    [tablet]: {
+      flexDirection: 'column',
+    },
+  },
 });
 
 export const legend = style({
@@ -189,7 +194,42 @@ export const legend = style({
     [tablet]: {
       position: 'static',
       width: 'auto',
-      margin: '0.75rem',
+      margin: '0.5rem 0.75rem 0.25rem',
+      padding: '0.45rem 0.6rem',
+      gap: '0.35rem',
+    },
+  },
+});
+
+export const legendToggle = style({
+  display: 'none',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  minHeight: '2.5rem',
+  padding: '0 0.2rem',
+  border: 0,
+  background: 'transparent',
+  color: sceneVars.color.textStrong,
+  fontSize: '0.78rem',
+  fontWeight: 800,
+  cursor: 'pointer',
+  '@media': {
+    [tablet]: {
+      display: 'flex',
+    },
+  },
+});
+
+export const legendContent = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.6rem',
+});
+
+export const legendContentCollapsed = style({
+  '@media': {
+    [tablet]: {
+      display: 'none',
     },
   },
 });
@@ -210,6 +250,13 @@ export const legendList = style({
   margin: 0,
   padding: 0,
   listStyle: 'none',
+  '@media': {
+    [tablet]: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: '0.35rem 0.65rem',
+    },
+  },
 });
 
 export const legendItem = style({
@@ -275,6 +322,11 @@ export const mapScroll = style({
   justifyContent: 'center',
   padding: '1.5rem 1rem 2.5rem',
   scrollbarWidth: 'thin',
+  '@media': {
+    [tablet]: {
+      padding: '0.35rem 0.5rem 1.5rem',
+    },
+  },
 });
 
 /* —— 底部操作坞 —— */

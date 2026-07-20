@@ -1,6 +1,6 @@
 import { addStatusStacks } from '../../combat/statusCombat';
 import type { GameCommand } from '../../commands/types';
-import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { CARD_DEFINITIONS } from '../../definitions/cards';
 import { generateShop } from '../../engine/generateShop';
 import { generateBattleRewards } from '../reward/rewardGenerator';
 import { createInstanceId } from '../../utils/id';

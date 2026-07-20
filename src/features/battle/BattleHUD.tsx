@@ -16,9 +16,8 @@ const PILE_DRAW_TITLE =
 export function BattleHUD() {
   const run = useGameStore((s) => s.run);
   const battle = selectBattle(run);
-  const dispatchCommand = useGameStore((s) => s.dispatchCommand);
 
-  if (!battle) return null;
+  if (!run || !battle) return null;
 
   const player = battle.units[battle.playerUnitId];
   const { drawPile, hand, discardPile, exhaustPile } = battle.player;
@@ -62,18 +61,6 @@ export function BattleHUD() {
             <span className={cx(styles.chip, styles.chipTone.accent)}>
               选择目标中
             </span>
-          ) : null}
-          {battle.phase === 'victory' ? (
-            <button
-              type="button"
-              aria-hidden="true"
-              tabIndex={-1}
-              className={styles.e2eRewardBridge}
-              data-testid="leave-battle-to-reward"
-              onClick={() => dispatchCommand({ type: 'LEAVE_BATTLE_TO_REWARD' })}
-            >
-              领取奖励
-            </button>
           ) : null}
         </div>
       </div>

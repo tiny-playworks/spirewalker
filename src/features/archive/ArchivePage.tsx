@@ -2,7 +2,9 @@ import { BookOpen, Medal, ScrollText, Sparkles, Trophy } from 'lucide-react';
 import { ALL_CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { getCardArchetype } from '@/game/core/definitions/cards/archetypes';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
+import { EVENT_DEFINITIONS } from '@/game/core/definitions/events';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
+import type { ProfileState } from '@/game/core/model/profile';
 import type { RunState } from '@/game/core/model/run';
 import * as styles from './archivePage.css';
 
@@ -11,9 +13,11 @@ export type ArchiveView = 'fate' | 'codex' | 'relics' | 'collection' | 'achievem
 interface ArchivePageProps {
   view: ArchiveView;
   run: RunState | null;
+  profile: ProfileState;
   onChangeView: (view: ArchiveView) => void;
   onClose: () => void;
   onStartRun: () => void;
+  onResetProfile: () => void;
 }
 
 const NAV_ITEMS: Array<{ view: ArchiveView; label: string; icon: typeof Sparkles }> = [
@@ -28,7 +32,7 @@ function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
 }
 
-export function ArchivePage({ view, run, onChangeView, onClose, onStartRun }: ArchivePageProps) {
+export function ArchivePage({ view, run, profile, onChangeView, onClose, onStartRun, onResetProfile }: ArchivePageProps) {
   return (
     <main className={styles.page}>
       <aside className={styles.sidebar}>
@@ -52,27 +56,36 @@ export function ArchivePage({ view, run, onChangeView, onClose, onStartRun }: Ar
             );
           })}
         </nav>
+        <button
+          type="button"
+          className={styles.resetButton}
+          onClick={() => {
+            if (window.confirm('确定清空本机长期档案吗？当前对局存档不会被删除。')) onResetProfile();
+          }}
+        >
+          清空长期档案
+        </button>
         <button type="button" className={styles.closeButton} onClick={onClose}>
           返回
         </button>
       </aside>
-      <section className={styles.content}>{renderView(view, run, onStartRun)}</section>
+      <section className={styles.content}>{renderView(view, run, profile, onStartRun)}</section>
     </main>
   );
 }
 
-function renderView(view: ArchiveView, run: RunState | null, onStartRun: () => void) {
+function renderView(view: ArchiveView, run: RunState | null, profile: ProfileState, onStartRun: () => void) {
   switch (view) {
     case 'fate':
       return <FateView run={run} onStartRun={onStartRun} />;
     case 'codex':
-      return <CodexView />;
+      return <CodexView profile={profile} />;
     case 'relics':
-      return <RelicsView run={run} />;
+      return <RelicsView run={run} profile={profile} />;
     case 'collection':
       return <CollectionView run={run} />;
     case 'achievements':
-      return <AchievementsView run={run} />;
+      return <AchievementsView profile={profile} />;
     default:
       return null;
   }
@@ -108,8 +121,10 @@ function FateView({ run, onStartRun }: { run: RunState | null; onStartRun: () =>
   );
 }
 
-function CodexView() {
+function CodexView({ profile }: { profile: ProfileState }) {
   const cards = Object.values(ALL_CARD_DEFINITIONS);
+  const events = Object.values(EVENT_DEFINITIONS);
+  const knownCards = new Set(profile.unlockedCards);
   return (
     <div className={styles.panel}>
       <p className={styles.kicker}>Restored Archive Logic</p>
@@ -119,10 +134,15 @@ function CodexView() {
         <Metric label="攻击" value={cards.filter((card) => card.type === 'attack').length} />
         <Metric label="技能" value={cards.filter((card) => card.type === 'skill').length} />
         <Metric label="能力" value={cards.filter((card) => card.type === 'power').length} />
+        <Metric label="已发现" value={knownCards.size} />
       </div>
       <div className={styles.cardGrid}>
-        {cards.slice(0, 48).map((card) => (
-          <article key={card.id} className={cx(styles.codexCard, styles.archetypeTone[getCardArchetype(card.id)])}>
+        {cards.map((card) => (
+          <article
+            key={card.id}
+            className={cx(styles.codexCard, styles.archetypeTone[getCardArchetype(card.id)], knownCards.has(card.id) && styles.codexKnown)}
+            data-known={knownCards.has(card.id) ? 'true' : 'false'}
+          >
             <div>
               <strong>{card.name}</strong>
               <span>{card.rarity} · {card.cost} 费</span>
@@ -131,25 +151,41 @@ function CodexView() {
           </article>
         ))}
       </div>
+      <div className={styles.archiveSubsection}>
+        <p className={styles.kicker}>Event Index</p>
+        <h3 className={styles.subsectionTitle}>事件档案 · {events.length}</h3>
+        <div className={styles.eventGrid}>
+          {events.map((event) => (
+            <article key={event.id} className={styles.eventCard}>
+              <strong>{event.name}</strong>
+              <span>Act {event.chapter} · {event.type}</span>
+              <p>{event.description}</p>
+              <small>{event.choices.length} 个选择</small>
+            </article>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-function RelicsView({ run }: { run: RunState | null }) {
+function RelicsView({ run, profile }: { run: RunState | null; profile: ProfileState }) {
   const owned = new Set(run?.meta.relics ?? []);
+  const known = new Set(profile.unlockedRelics);
   const relics = Object.values(RELIC_DEFINITIONS);
   return (
     <div className={styles.panel}>
       <p className={styles.kicker}>Void Collection</p>
       <h2 className={styles.sectionTitle}>遗物档案</h2>
       <div className={styles.metricRow}>
-        <Metric label="已识别" value={relics.length} />
+        <Metric label="遗物总数" value={relics.length} />
+        <Metric label="已发现" value={known.size} />
         <Metric label="本局持有" value={owned.size} />
       </div>
       <div className={styles.relicGrid}>
-        {relics.slice(0, 60).map((relic) => (
-          <article key={relic.id} className={cx(styles.relicCard, owned.has(relic.id) && styles.relicOwned)}>
-            <span className={styles.relicGlyph}>{owned.has(relic.id) ? '✦' : '◇'}</span>
+        {relics.map((relic) => (
+          <article key={relic.id} className={cx(styles.relicCard, known.has(relic.id) && styles.relicKnown, owned.has(relic.id) && styles.relicOwned)}>
+            <span className={styles.relicGlyph}>{owned.has(relic.id) ? '✦' : known.has(relic.id) ? '◆' : '◇'}</span>
             <strong>{relic.name}</strong>
             <p>{relic.description}</p>
           </article>
@@ -187,18 +223,23 @@ function CollectionView({ run }: { run: RunState | null }) {
   );
 }
 
-function AchievementsView({ run }: { run: RunState | null }) {
+function AchievementsView({ profile }: { profile: ProfileState }) {
   const achievements = [
-    { label: '第一步', done: Boolean(run), text: '创建一局尖塔行者探索。' },
-    { label: '卡组雏形', done: (run?.masterDeck.length ?? 0) >= 12, text: '让牌组达到 12 张以上。' },
-    { label: '遗物回响', done: (run?.meta.relics.length ?? 0) > 0, text: '携带至少 1 件遗物。' },
-    { label: '深入尖塔', done: (run?.meta.floor ?? 0) >= 5, text: '抵达全局第 5 层。' },
-    { label: 'Act II', done: (run?.meta.act ?? 1) >= 2, text: '进入第二幕。' },
+    { label: '第一步', done: profile.achievements.includes('first_step'), text: '创建一局尖塔行者探索。' },
+    { label: '卡组雏形', done: profile.achievements.includes('card_collection'), text: '让牌组达到 12 张以上。' },
+    { label: '遗物回响', done: profile.achievements.includes('relic_echo'), text: '携带至少 1 件遗物。' },
+    { label: '深入尖塔', done: profile.achievements.includes('deep_spire'), text: '抵达全局第 5 层。' },
+    { label: 'Act II', done: profile.achievements.includes('act_two'), text: '进入第二幕。' },
   ];
   return (
     <div className={styles.panel}>
       <p className={styles.kicker}>Void Legends</p>
       <h2 className={styles.sectionTitle}>成就</h2>
+      <div className={styles.metricRow}>
+        <Metric label="探索次数" value={profile.lifetimeStats.runs} />
+        <Metric label="胜利次数" value={profile.lifetimeStats.wins} />
+        <Metric label="最高幕数" value={profile.lifetimeStats.highestAct} />
+      </div>
       <div className={styles.achievementList}>
         {achievements.map((achievement) => (
           <article key={achievement.label} className={cx(styles.achievement, achievement.done && styles.achievementDone)}>

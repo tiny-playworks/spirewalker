@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Coins, Gem, Heart, Layers, Menu } from 'lucide-react';
 import { actFloorCount, createMapRun } from '@/game/core/engine/createMapRun';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
@@ -80,8 +80,11 @@ export function MapPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [panel, setPanel] = useState<PanelKey | null>(null);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const mapScrollRef = useRef<HTMLDivElement>(null);
 
   const nextIds = mapState?.nextNodeIds ?? [];
+  const currentNodeId = mapState?.map.currentNodeId ?? null;
   useEffect(() => {
     if (nextIds.length === 0) {
       setSelectedNodeId(null);
@@ -91,6 +94,28 @@ export function MapPage() {
     if (selectedNodeId && !nextIds.includes(selectedNodeId)) setSelectedNodeId(null);
     if (hoveredNodeId && !nextIds.includes(hoveredNodeId)) setHoveredNodeId(null);
   }, [nextIds, selectedNodeId, hoveredNodeId]);
+
+  useEffect(() => {
+    if (!currentNodeId || !mapState) return;
+    const container = mapScrollRef.current;
+    if (!container) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const target = container.querySelector<SVGGElement>(
+        `[data-testid="map-node-${currentNodeId}"]`,
+      );
+      if (!target) return;
+      const targetRect = target.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const targetTop = targetRect.top - containerRect.top + container.scrollTop;
+      const targetOffset = container.clientHeight * 0.72;
+      container.scrollTo({
+        top: Math.max(0, targetTop - targetOffset),
+        behavior: 'auto',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentNodeId, mapState?.map.nodes]);
 
   const deck = useMemo(() => deckCounts(run?.masterDeck ?? []), [run?.masterDeck]);
 
@@ -118,7 +143,7 @@ export function MapPage() {
           <p className={styles.brandMark}>Spirewalker</p>
           <span className={styles.brandDivider} aria-hidden />
           <div className={styles.actBlock}>
-            <span className={styles.actName}>
+            <span className={styles.actName} data-testid="current-act">
               第 {meta.act} 章 · {actTitle}
             </span>
             <span className={styles.floorLabel}>第 {meta.actFloor} 层</span>
@@ -147,29 +172,40 @@ export function MapPage() {
 
       <div className={styles.body}>
         <aside className={styles.legend} aria-label="地图图例">
-          <h2 className={styles.legendTitle}>图例</h2>
-          <ul className={styles.legendList}>
-            {MAP_LEGEND.map(({ kind, label }) => (
-              <li key={kind} className={styles.legendItem}>
-                <span
-                  className={cx(styles.legendGlyphBase, styles.legendGlyphTone[kind])}
-                  aria-hidden
-                >
-                  <MapNodeIcon kind={kind} className={styles.legendIcon} />
-                </span>
-                <span className={styles.legendLabel}>{label}</span>
-              </li>
-            ))}
-          </ul>
-          <p className={styles.legendHint}>
-            <strong>本层路线</strong>
-            ：点亮前方节点后，再点一次同一节点即可进入。
-            {isBossRestNode ? ' 下一层就是 Boss，先决定是否在此休整。' : ''}
-            {cur ? ` 当前位置：${nodeTitle(cur)}。` : ''}
-          </p>
+          <button
+            type="button"
+            className={styles.legendToggle}
+            aria-expanded={legendOpen}
+            onClick={() => setLegendOpen((open) => !open)}
+          >
+            <span>地图图例</span>
+            <span>{legendOpen ? '收起' : '查看'}</span>
+          </button>
+          <div className={cx(styles.legendContent, !legendOpen && styles.legendContentCollapsed)}>
+            <h2 className={styles.legendTitle}>图例</h2>
+            <ul className={styles.legendList}>
+              {MAP_LEGEND.map(({ kind, label }) => (
+                <li key={kind} className={styles.legendItem}>
+                  <span
+                    className={cx(styles.legendGlyphBase, styles.legendGlyphTone[kind])}
+                    aria-hidden
+                  >
+                    <MapNodeIcon kind={kind} className={styles.legendIcon} />
+                  </span>
+                  <span className={styles.legendLabel}>{label}</span>
+                </li>
+              ))}
+            </ul>
+            <p className={styles.legendHint}>
+              <strong>本层路线</strong>
+              ：点亮前方节点后，再点一次同一节点即可进入。
+              {isBossRestNode ? ' 下一层就是 Boss，先决定是否在此休整。' : ''}
+              {cur ? ` 当前位置：${nodeTitle(cur)}。` : ''}
+            </p>
+          </div>
         </aside>
 
-        <div className={styles.mapScroll}>
+        <div ref={mapScrollRef} className={styles.mapScroll}>
           <MapRoute
             map={map}
             currentNodeId={curId}

@@ -1,10 +1,10 @@
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
 import {
+  CARD_DEFINITIONS,
   DEFENSE_LINE_CARD_IDS,
   MOMENTUM_PAYOFF_CARD_IDS,
   MOMENTUM_SETUP_CARD_IDS,
   TEMPO_RECOVERY_CARD_IDS,
-} from '@/game/core/definitions/cards/starter';
+} from '@/game/core/definitions/cards';
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
 import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
@@ -328,6 +328,43 @@ function buildMapContext(run: RunState): SimulationMapContext {
     currentNodeId: run.map.currentNodeId!,
     nextNodes: availableMapNodes(run),
   };
+}
+
+function nextNodeTowardType(
+  run: RunState,
+  ctx: SimulationMapContext,
+  targetType: MapNodeType,
+): string | null {
+  const queue = ctx.nextNodes.map((node) => ({ nodeId: node.id, firstNodeId: node.id }));
+  const visited = new Set<string>();
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (visited.has(current.nodeId)) continue;
+    visited.add(current.nodeId);
+    const node = run.map.nodes[current.nodeId];
+    if (!node) continue;
+    if (node.type === targetType) return current.firstNodeId;
+    for (const nextNodeId of node.nextNodeIds) {
+      if (!visited.has(nextNodeId)) {
+        queue.push({ nodeId: nextNodeId, firstNodeId: current.firstNodeId });
+      }
+    }
+  }
+  return null;
+}
+
+function chooseMapNodeForValidation(
+  run: RunState,
+  ctx: SimulationMapContext,
+  policy: SimulationPolicy,
+  firstEliteResolved: boolean,
+): string {
+  if (!firstEliteResolved) {
+    const eliteRoute = nextNodeTowardType(run, ctx, 'elite');
+    if (eliteRoute) return eliteRoute;
+  }
+  const chosen = policy.chooseMapNode(ctx);
+  return ctx.nextNodes.some((node) => node.id === chosen) ? chosen : ctx.nextNodes[0]!.id;
 }
 
 function buildRewardContext(run: RunState): SimulationRewardContext {
@@ -803,7 +840,7 @@ function simulateSingleAct1(
             ['地图结束未打 Boss', '无可选节点但未胜负'],
           );
         }
-        const nextNodeId = policy.chooseMapNode(ctx);
+        const nextNodeId = chooseMapNodeForValidation(run, ctx, policy, eliteResolved);
         const nextNode = ctx.nextNodes.find((node) => node.id === nextNodeId);
         if (!nextNode) {
           return finishNonBattleRun(

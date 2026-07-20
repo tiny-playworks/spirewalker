@@ -1,5 +1,5 @@
 import type { GameCommand } from '../../commands/types';
-import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { CARD_DEFINITIONS } from '../../definitions/cards';
 import type { GameEvent } from '../../events/types';
 import type { RunState } from '../../model/run';
 import { generateBattleRewards } from './rewardGenerator';

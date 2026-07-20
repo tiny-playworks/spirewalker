@@ -14,6 +14,7 @@ type CliOptions = {
   includeElitePriority: boolean;
   nonBattleTop: number;
   compareBattleGuards: boolean;
+  minSamplesPerTarget: number;
 };
 
 const PERSONA_CN: Record<string, string> = {
@@ -46,6 +47,7 @@ function parseArgs(argv: string[]): CliOptions {
     includeElitePriority: false,
     nonBattleTop: 3,
     compareBattleGuards: false,
+    minSamplesPerTarget: 30,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -78,6 +80,11 @@ function parseArgs(argv: string[]): CliOptions {
       options.compareBattleGuards = true;
       continue;
     }
+    if (arg === '--min-samples-per-target' && next) {
+      options.minSamplesPerTarget = Number(next);
+      index += 1;
+      continue;
+    }
     if (arg === '--with-elite-priority') options.includeElitePriority = true;
   }
 
@@ -92,6 +99,9 @@ function parseArgs(argv: string[]): CliOptions {
   }
   if (!Number.isFinite(options.nonBattleTop) || options.nonBattleTop <= 0) {
     throw new Error('invalid --non-battle-top');
+  }
+  if (!Number.isFinite(options.minSamplesPerTarget) || options.minSamplesPerTarget < 0) {
+    throw new Error('invalid --min-samples-per-target');
   }
 
   return options;
@@ -339,6 +349,33 @@ function printAggregateSummary(results: SeedRunResult[]): void {
   console.log('');
 }
 
+function validateAct1SampleSize(
+  results: SeedRunResult[],
+  minimum: number,
+  report = true,
+): boolean {
+  if (minimum === 0) return true;
+  const byPolicy = new Map<string, { firstElite: number; boss: number }>();
+  for (const result of results) {
+    for (const summary of result.summaries) {
+      const current = byPolicy.get(summary.policyId) ?? { firstElite: 0, boss: 0 };
+      current.firstElite += summary.firstElite.attempts;
+      current.boss += summary.boss.attempts;
+      byPolicy.set(summary.policyId, current);
+    }
+  }
+  const insufficient = [...byPolicy.entries()].filter(([, counts]) => (
+    counts.firstElite < minimum || counts.boss < minimum
+  ));
+  if (insufficient.length === 0) return true;
+  if (!report) return false;
+  console.error(`样本不足：每个策略的首精英和 Boss 均需至少 ${minimum} 个有效样本。`);
+  for (const [policyId, counts] of insufficient) {
+    console.error(`- ${personaName(policyId)}: firstElite=${counts.firstElite}, boss=${counts.boss}`);
+  }
+  return false;
+}
+
 function printSummaryBlock(
   summaries: Awaited<ReturnType<typeof runAct1ValidationSuite>>,
   options: CliOptions,
@@ -414,12 +451,16 @@ function printCompareBlock(
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
-  const seedList = options.seeds ?? [options.seed];
+  const requestedSeeds = options.seeds;
+  const maxSeedBatches = requestedSeeds?.length ?? 64;
+  const seedList: number[] = [];
   const policies = options.includeElitePriority
     ? [...walkerBasePolicies, ...walkerElitePriorityPolicies]
     : [...walkerBasePolicies];
   const results: SeedRunResult[] = [];
-  for (const seed of seedList) {
+  for (let seedIndex = 0; seedIndex < maxSeedBatches; seedIndex += 1) {
+    const seed = requestedSeeds?.[seedIndex] ?? ((options.seed + seedIndex * 7919) >>> 0);
+    seedList.push(seed);
     const summaries = runAct1ValidationSuite({
       seed,
       runsPerPolicy: options.runsPerPolicy,
@@ -446,10 +487,12 @@ function main() {
       printCompareBlock(baseline, summaries);
     }
     printChineseQuickView(summaries, guardDiagnosis);
+    if (!requestedSeeds && validateAct1SampleSize(results, options.minSamplesPerTarget, false)) break;
   }
   if (seedList.length > 1) {
     printAggregateSummary(results);
   }
+  if (!validateAct1SampleSize(results, options.minSamplesPerTarget)) process.exitCode = 1;
 }
 
 main();

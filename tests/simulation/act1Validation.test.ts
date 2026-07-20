@@ -60,6 +60,17 @@ describe('simulation/act1Validation', () => {
     expect(first).toEqual(second);
   });
 
+  test('固定采样路线会让三种基础 persona 都遇到首个精英', () => {
+    const summaries = runAct1ValidationSuite({
+      seed: 1001,
+      runsPerPolicy: 30,
+      policies: [...walkerBasePolicies],
+      characterId: 'walker',
+    });
+
+    expect(summaries.every((summary) => summary.firstElite.attempts > 0)).toBe(true);
+  });
+
   test('可以显式跑 baseline_200 口径做对照', () => {
     const summary = runAct1Validation({
       seed: 7121,

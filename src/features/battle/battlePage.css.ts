@@ -35,7 +35,7 @@ globalStyle(`${page} > *`, {
 /** 顶栏：HUD 与快捷条同一行 flex，避免绝对定位叠在 HUD 上 */
 export const headerArea = style({
   display: 'flex',
-  flexWrap: 'nowrap',
+  flexWrap: 'wrap',
   alignItems: 'center',
   position: 'relative',
   minHeight: '5rem',
@@ -73,6 +73,16 @@ export const levelTitle = style({
   color: sceneVars.color.fortune,
   textAlign: 'center',
   pointerEvents: 'none',
+  '@media': {
+    [tablet]: {
+      position: 'static',
+      order: 3,
+      flex: '1 1 100%',
+      transform: 'none',
+      minWidth: 0,
+      marginTop: '0.15rem',
+    },
+  },
 });
 
 globalStyle(`${levelTitle} strong`, {
@@ -127,6 +137,7 @@ export const topBar = style({
   },
   '@media': {
     [tablet]: {
+      order: 2,
       justifyContent: 'flex-start',
       width: '100%',
       opacity: 1,
@@ -194,7 +205,7 @@ export const stageWrap = style({
   position: 'relative',
   width: '100%',
   height: '100%',
-  minHeight: 'calc(100vh - 5rem)',
+  minHeight: 0,
   borderRadius: 0,
   border: 0,
   background:
@@ -203,7 +214,7 @@ export const stageWrap = style({
   overflow: 'hidden',
   '@media': {
     [tablet]: {
-      minHeight: '32rem',
+      minHeight: 0,
     },
   },
 });

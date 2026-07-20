@@ -28,7 +28,7 @@ import {
   STEADY_STEP,
   SURVEY_FIELD,
   TEMPO_GUARD,
-} from '@/game/core/definitions/cards/starter';
+} from '@/game/core/definitions/cards';
 import { COMMON_RELIC_POOL, RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { resolveEncounterTemplate } from '@/game/core/definitions/encounters';
 import {

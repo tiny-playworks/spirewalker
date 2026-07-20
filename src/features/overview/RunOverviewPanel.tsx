@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
-import '@/game/core/definitions/cards/upgradeRules';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { ARCHETYPE_DISPLAY, summarizeDeckArchetypes } from '@/game/core/definitions/cards/archetypes';
 import { ArchetypeDot } from '@/features/cards/ArchetypeDot';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';

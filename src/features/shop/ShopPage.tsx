@@ -12,7 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { buildCardTooltipText } from '@/game/core/battleUiText';
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { MAX_POTIONS, POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { SHOP_MIN_MASTER_DECK_SIZE } from '@/game/core/engine/generateShop';

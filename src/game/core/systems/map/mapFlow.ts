@@ -13,6 +13,8 @@ import { generateShop } from '../../engine/generateShop';
 import { rollPostBattlePotionOffer } from '../../engine/postBattleExtras';
 import { globalFloorFor } from '../../engine/generateBranchingFloor';
 import { hashMapNodeId } from '../common/runGuards';
+import { addStatusStacks } from '../../combat/statusCombat';
+import { STATUS_MOMENTUM } from '../../definitions/statuses';
 
 export function chooseMapNodeFlow(
   run: RunState,
@@ -85,6 +87,12 @@ export function chooseMapNodeFlow(
         pressureProfile: encounter.pressureProfile,
       },
     );
+    const pendingMomentum = run.meta.pendingBattleMomentum ?? 0;
+    if (pendingMomentum > 0) {
+      const player = run.battle.units[run.battle.playerUnitId];
+      if (player) addStatusStacks(player, STATUS_MOMENTUM, pendingMomentum);
+      run.meta.pendingBattleMomentum = 0;
+    }
     run.screen = { type: 'battle' };
     events.push({ type: 'ENTERED_BATTLE_FROM_MAP', nodeId });
     return;

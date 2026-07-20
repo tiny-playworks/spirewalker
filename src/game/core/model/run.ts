@@ -57,5 +57,7 @@ export interface RunState {
     enteredAct2EliteBranch?: boolean;
     /** 为 false 时本局奖励卡池不做流派权重倾斜（仍受 `rewardTuning.REWARD_ARCHETYPE_TILT_ENABLED` 总开关约束）。 */
     rewardArchetypeTiltEnabled?: boolean;
+    /** 事件中获得、等待下一场战斗消费的连势。 */
+    pendingBattleMomentum?: number;
   };
 }

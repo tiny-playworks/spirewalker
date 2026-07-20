@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { AppCursor } from '@/app/AppCursor';
-import { ArchivePage, type ArchiveView } from '@/features/archive/ArchivePage';
+import type { ArchiveView } from '@/features/archive/ArchivePage';
 import { BattlePage } from '@/features/battle/BattlePage';
 import { EventPage } from '@/features/event/EventPage';
 import { DebugPanel } from '@/features/debug/DebugPanel';
@@ -15,13 +15,17 @@ import { useGameStore } from '@/game/store/gameStore';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as subscreenStyles from '@/styles/subscreen.css';
 
+const ArchivePage = lazy(() => import('@/features/archive/ArchivePage').then((module) => ({ default: module.ArchivePage })));
+
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
 }
 
 export function App() {
   const run = useGameStore((s) => s.run);
-  const initRun = useGameStore((s) => s.initRun);
+  const profile = useGameStore((s) => s.profile);
+  const startRun = useGameStore((s) => s.startRun);
+  const resetProfile = useGameStore((s) => s.resetProfile);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [archiveView, setArchiveView] = useState<ArchiveView | null>(null);
 
@@ -31,18 +35,18 @@ export function App() {
 
   const page = (() => {
     if (archiveView) {
-      return (
-        <ArchivePage
-          view={archiveView}
-          run={run}
-          onChangeView={setArchiveView}
-          onClose={() => setArchiveView(null)}
-          onStartRun={() => {
-            setArchiveView(null);
-            initRun(createMapRun(Date.now() & 0xffff_ffff));
-          }}
-        />
-      );
+      return <Suspense fallback={<div className="boot">正在展开档案…</div>}><ArchivePage
+        view={archiveView}
+        run={run}
+        profile={profile}
+        onChangeView={setArchiveView}
+        onClose={() => setArchiveView(null)}
+        onResetProfile={resetProfile}
+        onStartRun={() => {
+          setArchiveView(null);
+          startRun(createMapRun(Date.now() & 0xffff_ffff));
+        }}
+      /></Suspense>;
     }
     if (!run) return <MainMenuPage onOpenArchive={setArchiveView} />;
     switch (run.screen.type) {
@@ -88,7 +92,7 @@ export function App() {
 }
 
 function GameOverScreen() {
-  const initRun = useGameStore((s) => s.initRun);
+  const startRun = useGameStore((s) => s.startRun);
   const returnToMainMenu = useGameStore((s) => s.returnToMainMenu);
   return (
     <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenStack)}>
@@ -97,7 +101,7 @@ function GameOverScreen() {
         <button
           type="button"
           className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.primary)}
-          onClick={() => initRun(createMapRun(Date.now() & 0xffff_ffff))}
+          onClick={() => startRun(createMapRun(Date.now() & 0xffff_ffff))}
         >
           再来一局
         </button>
@@ -114,7 +118,7 @@ function GameOverScreen() {
 }
 
 function VictoryScreen() {
-  const initRun = useGameStore((s) => s.initRun);
+  const startRun = useGameStore((s) => s.startRun);
   const returnToMainMenu = useGameStore((s) => s.returnToMainMenu);
   return (
     <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenStack)}>
@@ -124,7 +128,7 @@ function VictoryScreen() {
         <button
           type="button"
           className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.primary)}
-          onClick={() => initRun(createMapRun(Date.now() & 0xffff_ffff))}
+          onClick={() => startRun(createMapRun(Date.now() & 0xffff_ffff))}
         >
           再来一局
         </button>

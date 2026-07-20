@@ -15,6 +15,7 @@ type CliOptions = {
   bypassAct1Elite: boolean;
   bypassAct1ToBoss: boolean;
   reportAct1PreBossLoss: boolean;
+  minSamplesPerPolicy: number;
 };
 
 const PERSONA_CN: Record<string, string> = {
@@ -34,6 +35,7 @@ function parseArgs(argv: string[]): CliOptions {
     bypassAct1Elite: false,
     bypassAct1ToBoss: false,
     reportAct1PreBossLoss: false,
+    minSamplesPerPolicy: 30,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -82,6 +84,11 @@ function parseArgs(argv: string[]): CliOptions {
       options.reportAct1PreBossLoss = true;
       continue;
     }
+    if (arg === '--min-samples-per-policy' && next) {
+      options.minSamplesPerPolicy = Number(next);
+      index += 1;
+      continue;
+    }
   }
 
   if (!Number.isFinite(options.seed)) throw new Error('invalid --seed');
@@ -92,7 +99,28 @@ function parseArgs(argv: string[]): CliOptions {
   if (!Number.isFinite(options.progressEvery) || options.progressEvery < 0) {
     throw new Error('invalid --progress-every');
   }
+  if (!Number.isFinite(options.minSamplesPerPolicy) || options.minSamplesPerPolicy < 0) {
+    throw new Error('invalid --min-samples-per-policy');
+  }
   return options;
+}
+
+function validateSampleSize(
+  summaries: AggregatedPolicySummary[],
+  minimum: number,
+  report = true,
+): boolean {
+  if (minimum === 0) return true;
+  const insufficient = summaries.filter((summary) => summary.act2EntrySamples < minimum);
+  if (insufficient.length === 0) return true;
+  if (!report) return false;
+  console.error(`样本不足：每个策略的 Act2 入口均需至少 ${minimum} 个有效样本。`);
+  for (const summary of insufficient) {
+    console.error(
+      `- ${personaName(summary.policyId)}: act2Entry=${summary.act2EntrySamples}`,
+    );
+  }
+  return false;
 }
 
 function formatPercent(value: number): string {
@@ -490,9 +518,15 @@ function printAct1PreBossLossBlock(title: string, report: Act1PreBossLossPolicyR
 
 function printSummary(): void {
   const options = parseArgs(process.argv.slice(2));
-  const seedList = options.seeds ?? [options.seed];
-  const batches = seedList.map((seed, seedIndex) => {
-    console.log(`[进度] seed ${seed} 开始（${seedIndex + 1}/${seedList.length}）`);
+  const requestedSeeds = options.seeds;
+  const maxSeedBatches = requestedSeeds?.length ?? 64;
+  const seedList: number[] = [];
+  const batches: Array<ReturnType<typeof runAct2EntryValidation>> = [];
+
+  for (let seedIndex = 0; seedIndex < maxSeedBatches; seedIndex += 1) {
+    const seed = requestedSeeds?.[seedIndex] ?? ((options.seed + seedIndex * 7919) >>> 0);
+    seedList.push(seed);
+    console.log(`[进度] seed ${seed} 开始（${seedIndex + 1}/${maxSeedBatches}）`);
     const summaries = runAct2EntryValidation({
       seed,
       runsPerPolicy: options.runsPerPolicy,
@@ -511,8 +545,9 @@ function printSummary(): void {
         : undefined,
     });
     console.log(`[进度] seed ${seed} 完成`);
-    return summaries;
-  });
+    batches.push(summaries);
+    if (!requestedSeeds && validateSampleSize(aggregateSummaries(batches), options.minSamplesPerPolicy, false)) break;
+  }
   const summaries = aggregateSummaries(batches);
   const totalAct2Samples = summaries.reduce((sum, item) => sum + item.act2EntrySamples, 0);
   const printEncounterBreakdown = totalAct2Samples >= 10;
@@ -523,7 +558,8 @@ function printSummary(): void {
     + ` | bypassAct1Midgame=${options.bypassAct1Midgame}`
     + ` | bypassAct1Elite=${options.bypassAct1Elite}`
     + ` | bypassAct1ToBoss=${options.bypassAct1ToBoss}`
-    + ` | reportAct1PreBossLoss=${options.reportAct1PreBossLoss}`,
+    + ` | reportAct1PreBossLoss=${options.reportAct1PreBossLoss}`
+    + ` | minSamplesPerPolicy=${options.minSamplesPerPolicy}`,
   );
   console.log('');
   printGlobalSummary(summaries);
@@ -592,6 +628,8 @@ function printSummary(): void {
       printAct1EndgameDiagnosticsConclusion(globalMerged);
     }
   }
+
+  if (!validateSampleSize(summaries, options.minSamplesPerPolicy)) process.exitCode = 1;
 }
 
 printSummary();

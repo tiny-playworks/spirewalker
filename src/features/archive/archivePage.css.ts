@@ -125,6 +125,21 @@ export const closeButton = style({
   cursor: 'pointer',
 });
 
+export const resetButton = style({
+  minHeight: '2.25rem',
+  borderRadius: sceneVars.radii.sm,
+  color: sceneVars.color.textMuted,
+  border: '1px solid rgba(239, 68, 68, 0.3)',
+  background: 'rgba(127, 29, 29, 0.12)',
+  cursor: 'pointer',
+  selectors: {
+    '&:hover': {
+      color: '#fecaca',
+      borderColor: 'rgba(239, 68, 68, 0.64)',
+    },
+  },
+});
+
 export const content = style({
   minWidth: 0,
   minHeight: 0,
@@ -271,6 +286,11 @@ export const codexCard = style({
   border: '1px solid rgba(208, 188, 255, 0.22)',
 });
 
+export const codexKnown = style({
+  borderColor: 'rgba(45, 212, 191, 0.52)',
+  boxShadow: '0 0 20px rgba(45, 212, 191, 0.08)',
+});
+
 export const archetypeTone = styleVariants({
   guard: { background: 'linear-gradient(180deg, rgba(106, 157, 212, 0.26), rgba(10, 10, 11, 0.58))' },
   burst: { background: 'linear-gradient(180deg, rgba(212, 132, 106, 0.26), rgba(10, 10, 11, 0.58))' },
@@ -315,6 +335,10 @@ export const relicOwned = style({
   boxShadow: '0 0 28px rgba(251, 191, 36, 0.1)',
 });
 
+export const relicKnown = style({
+  borderColor: 'rgba(45, 212, 191, 0.42)',
+});
+
 export const relicGlyph = style({
   gridRow: '1 / span 2',
   color: '#fbbf24',
@@ -330,6 +354,48 @@ globalStyle(`${relicCard} p`, {
   margin: 0,
   color: sceneVars.color.textMuted,
   lineHeight: 1.45,
+});
+
+export const archiveSubsection = style({
+  marginTop: '2rem',
+  paddingTop: '1.2rem',
+  borderTop: '1px solid rgba(208, 188, 255, 0.16)',
+});
+
+export const subsectionTitle = style({
+  margin: '0.35rem 0 0.8rem',
+  color: sceneVars.color.textStrong,
+  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontSize: '1.45rem',
+});
+
+export const eventGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(16rem, 1fr))',
+  gap: '0.75rem',
+});
+
+export const eventCard = style({
+  display: 'grid',
+  gap: '0.35rem',
+  minHeight: '8.5rem',
+  padding: '0.85rem',
+  borderRadius: sceneVars.radii.md,
+  border: '1px solid rgba(45, 212, 191, 0.2)',
+  background: 'linear-gradient(145deg, rgba(45, 212, 191, 0.1), rgba(10, 10, 11, 0.48))',
+});
+
+globalStyle(`${eventCard} strong`, {
+  color: sceneVars.color.textStrong,
+});
+
+globalStyle(`${eventCard} span, ${eventCard} p, ${eventCard} small`, {
+  color: sceneVars.color.textMuted,
+  lineHeight: 1.45,
+});
+
+globalStyle(`${eventCard} p`, {
+  margin: 0,
 });
 
 export const timeline = style({

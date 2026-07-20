@@ -9,5 +9,5 @@ test('可跳转事件并完成一次最小事件选择', async ({ page }) => {
   await expect(page.getByTestId('event-page')).toBeVisible();
 
   await page.getByTestId('event-page').getByRole('button').first().click();
-  await expect(page.getByText('本层路线')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
 });

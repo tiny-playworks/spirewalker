@@ -16,7 +16,7 @@ import {
   PRIME_RHYTHM,
   BRACE_RHYTHM,
   SOFT_STEP,
-} from '@/game/core/definitions/cards/starter';
+} from '@/game/core/definitions/cards';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { FLASH_POWDER, STILLWATER_TONIC } from '@/game/core/definitions/potions';
 import { MOMENTUM_BURST_RELIC_IDS, MOMENTUM_STABILITY_RELIC_IDS } from '@/game/core/definitions/relics';

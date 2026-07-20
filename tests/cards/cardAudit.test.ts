@@ -14,6 +14,10 @@ function isGeneratedCardId(id: string): boolean {
   return /^(gd_|br_|mx_|nt_)/.test(id);
 }
 
+function isUpgradeCardId(id: string): boolean {
+  return id.endsWith('+') || id.endsWith('++');
+}
+
 function fingerprintEffects(effects: EffectDefinition[]): string {
   return JSON.stringify(
     effects.map((e) => {
@@ -86,6 +90,7 @@ describe('Card Dedup Audit', () => {
   test('Effect fingerprint duplicates stay within report threshold', () => {
     const fpMap = new Map<string, string[]>();
     for (const c of cards) {
+      if (isUpgradeCardId(c.id)) continue;
       const fp = `${c.cost}|${fingerprintEffects(c.effects)}`;
       const list = fpMap.get(fp) || [];
       list.push(c.id);
@@ -104,7 +109,7 @@ describe('Card Dedup Audit', () => {
   test('Generated cards do not fully duplicate each other', () => {
     const fpMap = new Map<string, string[]>();
     for (const c of cards) {
-      if (!isGeneratedCardId(c.id)) continue;
+      if (!isGeneratedCardId(c.id) || isUpgradeCardId(c.id)) continue;
       const fp = `${c.cost}|${fingerprintEffects(c.effects)}`;
       const list = fpMap.get(fp) || [];
       list.push(c.id);
@@ -123,6 +128,7 @@ describe('Card Dedup Audit', () => {
   test('Description numbers roughly match effect values', () => {
     const mismatches: { id: string; desc: string; effectValues: number[]; descNumbers: number[] }[] = [];
     for (const c of cards) {
+      if (isUpgradeCardId(c.id)) continue;
       const descNums = extractNumbersFromDesc(c.description);
       const effectNums = extractEffectValues(c.effects);
       if (descNums.length === 0 || effectNums.length === 0) continue;

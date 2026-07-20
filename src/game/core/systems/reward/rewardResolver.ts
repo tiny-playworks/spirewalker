@@ -1,7 +1,7 @@
-import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { CARD_DEFINITIONS } from '../../definitions/cards';
 import { canUpgradeCardId, upgradeMasterDeckAt } from '../../definitions/cards/upgradeRules';
 import { MAX_POTIONS, POTION_DEFINITIONS } from '../../definitions/potions';
-import { applyRelicPickupEffect, RELIC_DEFINITIONS } from '../../definitions/relics';
+import { RELIC_DEFINITIONS } from '../../definitions/relics';
 import type { GameEvent } from '../../events/types';
 import { buildAct2EntryNodes } from '../../engine/createMapRun';
 import type { RunState } from '../../model/run';
@@ -9,6 +9,7 @@ import { buildActNodes, isLastAct } from '../../engine/createMapRun';
 import { globalFloorFor } from '../../engine/generateBranchingFloor';
 import { rewardEncounterTierFromRun } from '../../engine/rewardEncounter';
 import { skipCardGoldAmount } from '../../engine/postBattleExtras';
+import { applyRelicPickupHooks } from '../relic/relicHooks';
 
 export function canResolveRewardCard(run: RunState, definitionId: string): boolean {
   if (run.screen.type !== 'reward' || !run.reward || run.reward.claimed) return false;
@@ -51,7 +52,7 @@ export function resolveRewardPick(
   for (const it of run.reward.items) {
     if (it.type === 'relic' && RELIC_DEFINITIONS[it.relicId] && !run.meta.relics.includes(it.relicId)) {
       run.meta.relics.push(it.relicId);
-      applyRelicPickupEffect(run, it.relicId);
+      applyRelicPickupHooks(run, it.relicId);
     }
   }
   for (const it of run.reward.items) {

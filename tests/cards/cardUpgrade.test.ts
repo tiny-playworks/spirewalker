@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@rstest/core';
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import {
   CARD_UPGRADE_RULES,
   canUpgradeCardId,

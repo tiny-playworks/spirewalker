@@ -1,12 +1,13 @@
 import { addStatusStacks, decayStatus, getStatusStacks } from '../../combat/statusCombat';
 import { buildInitialMonsterRuntime, getMonsterDefinition } from '../../definitions/monsters';
-import { CARD_DEFINITIONS } from '../../definitions/cards/starter';
+import { CARD_DEFINITIONS } from '../../definitions/cards';
 import { STATUS_MOMENTUM, STATUS_STRENGTH } from '../../definitions/statuses';
 import type { GameEvent } from '../../events/types';
 import type { BattleState, CountdownEffect } from '../../model/battle';
 import type { CardInstance } from '../../model/card';
 import { createInstanceId } from '../../utils/id';
 import { runOnBeforeDealDamage, runOnBeforeTakeDamage } from '../status/statusHooks';
+import { resolveRelicHooks } from '../relic/relicHooks';
 import { setInitialEnemyIntent } from './enemyAi';
 
 function buildRuntimeCardInstance(definitionId: string): CardInstance {
@@ -206,11 +207,16 @@ export function dealDamageToUnit(
     target.side === 'player'
     && targetUnitId === battle.playerUnitId
     && blockAbsorb > 0
-    && battle.relicIds.includes('counter_sigil')
     && source?.side === 'enemy'
   ) {
-    // Guard 纯度：仅按「实际被格挡吸收」的伤害做反击，不包含本次扣血部分。
-    const reflected = Math.floor(blockAbsorb * 0.3);
+    const relicResult = resolveRelicHooks(battle.relicIds, {
+      battle,
+      trigger: 'damageTaken',
+      events,
+      amount: blockAbsorb,
+    });
+    // 保持现有战斗语义：反击只按本次被格挡吸收的部分计算。
+    const reflected = Math.floor(blockAbsorb * (relicResult.reflectRatio ?? 0));
     if (reflected > 0 && source.alive) {
       dealDamageToUnit(battle, battle.playerUnitId, sourceId, reflected, events);
     }

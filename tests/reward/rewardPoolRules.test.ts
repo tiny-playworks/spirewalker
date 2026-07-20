@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@rstest/core';
 import { isRewardEligible, buildCardPools } from '@/game/core/definitions/cards/rewardPoolRules';
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { generateCardRewardChoices } from '@/game/core/engine/generateRewardChoices';
 

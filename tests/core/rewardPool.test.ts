@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@rstest/core';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
-import { COMMON_REWARD_CARD_POOL } from '@/game/core/definitions/cards/starter';
+import { COMMON_REWARD_CARD_POOL } from '@/game/core/definitions/cards';
 import { rollBossRelicReward } from '@/game/core/definitions/relics';
 import { generateCardRewardChoices } from '@/game/core/engine/generateRewardChoices';
 

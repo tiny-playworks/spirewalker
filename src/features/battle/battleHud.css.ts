@@ -182,21 +182,6 @@ export const intentText = style({
   color: sceneVars.color.textSubtle,
 });
 
-/** 仅自动化：胜利按钮在主舞台内，DOM 保留可聚焦的等价入口供 Playwright 使用 */
-export const e2eRewardBridge = style({
-  position: 'absolute',
-  width: '1px',
-  height: '1px',
-  padding: 0,
-  margin: '-1px',
-  overflow: 'hidden',
-  clip: 'rect(0, 0, 0, 0)',
-  whiteSpace: 'nowrap',
-  border: 0,
-  opacity: 0,
-  pointerEvents: 'auto',
-});
-
 export const actions = style({
   marginLeft: 'auto',
   display: 'flex',

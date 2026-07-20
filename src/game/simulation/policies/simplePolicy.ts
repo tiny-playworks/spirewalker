@@ -1,4 +1,4 @@
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import type { GameCommand } from '@/game/core/commands/types';
 import type {

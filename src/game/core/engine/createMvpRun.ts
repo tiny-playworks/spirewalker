@@ -1,7 +1,5 @@
 import { addStatusStacks, getStatusStacks } from '../combat/statusCombat';
-import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards/starter';
-// Side-effect: 注册 strike+ / strike++ 等升级版 CardDefinition 到 CARD_DEFINITIONS
-import '../definitions/cards/upgradeRules';
+import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards';
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
 import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STEADY_GUARD, STATUS_STRENGTH } from '../definitions/statuses';
 import type { BattleEncounterMeta, BattleState } from '../model/battle';
@@ -12,6 +10,7 @@ import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
 import { buildInitialMonsterRuntime, getMonsterDefinition } from '../definitions/monsters';
 import { setInitialEnemyIntent } from '../systems/enemy/enemyAi';
 import { applyCurseBattleStart } from '../systems/status/statusHooks';
+import { resolveRelicHooks } from '../systems/relic/relicHooks';
 import { createInstanceId, resetIdCounter } from '../utils/id';
 import { mulberry32 } from '../utils/rng';
 import { shuffleInPlace } from '../utils/shuffle';
@@ -115,7 +114,7 @@ export function buildInitialBattle(
   shuffleInPlace(pile, random);
 
   const hand: string[] = [];
-  const openingHandSize = relicIds.includes('tactical_gloves') ? 6 : 5;
+  const openingHandSize = 5;
   for (let i = 0; i < openingHandSize; i++) {
     const id = pile.shift();
     if (id) hand.push(id);
@@ -160,24 +159,6 @@ export function buildInitialBattle(
     monsters[slot.unitId] = monsterState;
   }
 
-  if (relicIds.includes('vajra')) {
-    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STRENGTH, 1);
-  }
-  if (relicIds.includes('wind_chime')) {
-    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 2);
-  }
-  if (relicIds.includes('still_core')) {
-    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_METALLICIZE, 1);
-    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STEADY_GUARD, 1);
-  }
-  if (relicIds.includes('guard_knot')) {
-    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_STEADY_GUARD, 1);
-  }
-  if (relicIds.includes('ward_banner')) {
-    units[PLAYER_UNIT_ID].block += 6;
-  } else if (relicIds.includes('soft_guard')) {
-    units[PLAYER_UNIT_ID].block += 4;
-  }
   if (character?.passive.type === 'battle_start_status') {
     addStatusStacks(units[PLAYER_UNIT_ID], character.passive.statusId, character.passive.stacks);
   }
@@ -246,6 +227,29 @@ export function buildInitialBattle(
     lastResolvedEvents: [],
   };
 
+  const battleStartRelics = resolveRelicHooks(relicIds, {
+    battle,
+    trigger: 'battleStart',
+  });
+  const battleStartPlayer = battle.units[PLAYER_UNIT_ID]!;
+  if (battleStartRelics.strength) {
+    addStatusStacks(battleStartPlayer, STATUS_STRENGTH, battleStartRelics.strength);
+  }
+  if (battleStartRelics.momentum) {
+    addStatusStacks(battleStartPlayer, STATUS_MOMENTUM, battleStartRelics.momentum);
+  }
+  if (battleStartRelics.metallicize) {
+    addStatusStacks(battleStartPlayer, STATUS_METALLICIZE, battleStartRelics.metallicize);
+  }
+  if (battleStartRelics.steadyGuard) {
+    addStatusStacks(battleStartPlayer, STATUS_STEADY_GUARD, battleStartRelics.steadyGuard);
+  }
+  if (battleStartRelics.block) battleStartPlayer.block += battleStartRelics.block;
+  for (let index = 0; index < (battleStartRelics.openingHandDraw ?? 0); index += 1) {
+    const cardId = battle.player.drawPile.shift();
+    if (cardId) battle.player.hand.push(cardId);
+  }
+
   for (const enemyUnitId of enemyUnitIds) {
     setInitialEnemyIntent(battle, enemyUnitId);
   }
@@ -278,6 +282,7 @@ export function createMvpRun(seed: number): RunState {
       relics: [],
       potions: [],
       encounterHistory: createEmptyEncounterHistory(),
+      pendingBattleMomentum: 0,
     },
   };
 }

@@ -37,6 +37,9 @@ export function normalizeRunState(raw: unknown): RunState | null {
   if (run.meta.validationSegment !== 'act2_entry') delete run.meta.validationSegment;
   if (typeof run.meta.validationCompleted !== 'boolean') run.meta.validationCompleted = false;
   if (typeof run.meta.enteredAct2EliteBranch !== 'boolean') run.meta.enteredAct2EliteBranch = false;
+  if (typeof run.meta.pendingBattleMomentum !== 'number' || run.meta.pendingBattleMomentum < 0) {
+    run.meta.pendingBattleMomentum = 0;
+  }
   if (typeof run.meta.act !== 'number' || typeof run.meta.actFloor !== 'number') return null;
   return run as RunState;
 }

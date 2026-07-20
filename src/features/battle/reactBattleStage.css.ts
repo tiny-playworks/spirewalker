@@ -15,9 +15,9 @@ export const root = style({
   color: sceneVars.color.text,
   '@media': {
     [mobile]: {
-      minHeight: '32rem',
-      padding: '0.7rem',
-      gridTemplateRows: 'minmax(0, 1fr) minmax(15rem, 34%)',
+      minHeight: 0,
+      padding: '0.35rem',
+      gridTemplateRows: 'minmax(11rem, 1fr) minmax(12rem, 42%)',
     },
   },
 });
@@ -76,8 +76,8 @@ export const combatLayer = style({
     [mobile]: {
       gridTemplateColumns: '1fr',
       alignContent: 'center',
-      gap: '0.7rem',
-      padding: '0.4rem',
+      gap: '0.35rem',
+      padding: '0.35rem',
     },
   },
 });
@@ -100,12 +100,18 @@ export const unit = style({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  width: 'clamp(12rem, 16vw, 15rem)',
-  minWidth: '12rem',
+  width: 'clamp(8rem, 16vw, 15rem)',
+  minWidth: '8rem',
   padding: 0,
   border: 0,
   background: 'transparent',
   boxShadow: 'none',
+  '@media': {
+    [mobile]: {
+      width: '7.5rem',
+      minWidth: '7.5rem',
+    },
+  },
 });
 
 export const unitTone = styleVariants({
@@ -113,8 +119,14 @@ export const unitTone = styleVariants({
     filter: 'drop-shadow(0 0 20px rgba(106, 157, 212, 0.34))',
   },
   enemy: {
-    width: 'clamp(15.5rem, 22vw, 21rem)',
+    width: 'clamp(9rem, 22vw, 21rem)',
     filter: 'drop-shadow(0 0 30px rgba(139, 92, 246, 0.42))',
+    '@media': {
+      [mobile]: {
+        width: '9.5rem',
+        minWidth: '9.5rem',
+      },
+    },
   },
 });
 
@@ -134,6 +146,12 @@ export const spriteFrame = style({
     'radial-gradient(circle at 50% 30%, rgba(139, 92, 246, 0.16), transparent 62%), linear-gradient(180deg, rgba(18, 18, 22, 0.72), rgba(8, 8, 10, 0.92))',
   boxShadow:
     'inset 0 0 38px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 18px 40px rgba(0, 0, 0, 0.5)',
+  '@media': {
+    [mobile]: {
+      height: 'clamp(6.25rem, 16vh, 8rem)',
+      borderRadius: '12px',
+    },
+  },
 });
 
 export const unitSprite = style({
@@ -266,6 +284,12 @@ export const enemyTarget = style({
       cursor: 'default',
     },
   },
+  '@media': {
+    [mobile]: {
+      minWidth: '9.5rem',
+      gap: '0.3rem',
+    },
+  },
 });
 
 export const enemyTargetActive = style({
@@ -290,6 +314,12 @@ export const intent = style({
   background: 'rgba(26, 24, 20, 0.5)',
   backdropFilter: 'blur(16px)',
   boxShadow: '0 0 20px rgba(212, 132, 106, 0.2)',
+  '@media': {
+    [mobile]: {
+      padding: '0.25rem 0.55rem',
+      fontSize: '0.78rem',
+    },
+  },
 });
 
 export const intentIcon = style({
@@ -316,8 +346,10 @@ export const bottomDock = style({
     'linear-gradient(180deg, transparent 0%, rgba(10, 10, 11, 0.54) 22%, rgba(10, 10, 11, 0.9) 100%)',
   '@media': {
     [mobile]: {
-      gridTemplateColumns: '1fr',
-      alignItems: 'stretch',
+      gridTemplateColumns: '4.25rem minmax(0, 1fr) 6.8rem',
+      alignItems: 'end',
+      gap: '0.35rem',
+      padding: '0 0.2rem 0.2rem',
     },
   },
 });
@@ -328,6 +360,15 @@ export const leftDock = style({
   alignItems: 'end',
   gap: '0.45rem',
   minWidth: '14rem',
+  '@media': {
+    [mobile]: {
+      minWidth: 0,
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: '0.25rem',
+    },
+  },
 });
 
 export const rightDock = style({
@@ -336,6 +377,16 @@ export const rightDock = style({
   justifyContent: 'flex-end',
   gap: '0.9rem',
   flexWrap: 'wrap',
+  '@media': {
+    [mobile]: {
+      alignItems: 'stretch',
+      justifyContent: 'flex-end',
+      flexDirection: 'column',
+      flexWrap: 'nowrap',
+      gap: '0.3rem',
+      minWidth: 0,
+    },
+  },
 });
 
 export const energyCore = style({
@@ -350,11 +401,22 @@ export const energyCore = style({
     'radial-gradient(circle, rgba(208, 188, 255, 0.28) 0%, rgba(139, 92, 246, 0.6) 42%, rgba(10, 10, 11, 0.92) 72%)',
   boxShadow:
     '0 0 0 2.2rem rgba(139, 92, 246, 0.16), 0 0 62px rgba(139, 92, 246, 0.62), inset 0 0 30px rgba(208, 188, 255, 0.28)',
+  '@media': {
+    [mobile]: {
+      width: '4rem',
+      boxShadow: '0 0 0 0.8rem rgba(139, 92, 246, 0.12), 0 0 28px rgba(139, 92, 246, 0.42), inset 0 0 18px rgba(208, 188, 255, 0.24)',
+    },
+  },
 });
 
 globalStyle(`${energyCore} strong`, {
   fontSize: '2.45rem',
   lineHeight: 1,
+  '@media': {
+    [mobile]: {
+      fontSize: '1.5rem',
+    },
+  },
 });
 
 globalStyle(`${energyCore} span`, {
@@ -363,6 +425,12 @@ globalStyle(`${energyCore} span`, {
   fontSize: '0.58rem',
   fontWeight: 900,
   letterSpacing: '0.16em',
+  '@media': {
+    [mobile]: {
+      marginTop: '-0.8rem',
+      fontSize: '0.45rem',
+    },
+  },
 });
 
 export const pile = style({
@@ -377,6 +445,13 @@ export const pile = style({
   background:
     'linear-gradient(145deg, rgba(32, 31, 32, 0.92), rgba(10, 10, 11, 0.88))',
   boxShadow: '0 14px 28px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+  '@media': {
+    [mobile]: {
+      width: '3.35rem',
+      height: '4.25rem',
+      padding: '0.25rem',
+    },
+  },
 });
 
 export const pileMuted = style({
@@ -432,6 +507,10 @@ const commandButton = style({
   '@media': {
     [mobile]: {
       justifySelf: 'stretch',
+      minHeight: '3.1rem',
+      minWidth: '6.8rem',
+      padding: '0 0.45rem',
+      fontSize: '0.7rem',
     },
   },
 });
@@ -467,6 +546,18 @@ export const hand = style({
   padding: '0 0.2rem 0.65rem',
   perspective: '1000px',
   transform: 'translateY(-4rem)',
+  '@media': {
+    [mobile]: {
+      justifyContent: 'flex-start',
+      gap: '0.35rem',
+      overflowX: 'auto',
+      overflowY: 'visible',
+      padding: '0 0.1rem 0.2rem',
+      transform: 'none',
+      WebkitOverflowScrolling: 'touch',
+      scrollbarWidth: 'thin',
+    },
+  },
 });
 
 export const card = style({
@@ -500,6 +591,14 @@ export const card = style({
       opacity: 0.66,
     },
   },
+  '@media': {
+    [mobile]: {
+      flexBasis: '6.8rem',
+      minHeight: '9.5rem',
+      padding: '0.45rem',
+      gap: '0.2rem',
+    },
+  },
 });
 
 export const cardTone = styleVariants({
@@ -521,6 +620,11 @@ export const cardSelected = style({
   transform: 'translateY(-2.3rem) scale(1.06) rotate(0deg) !important',
   borderColor: '#fbbf24',
   boxShadow: '0 0 0 1px rgba(251, 191, 36, 0.32), 0 0 42px rgba(251, 191, 36, 0.22)',
+  '@media': {
+    [mobile]: {
+      transform: 'translateY(-0.55rem) scale(1.03) rotate(0deg) !important',
+    },
+  },
 });
 
 export const cardDisabled = style({

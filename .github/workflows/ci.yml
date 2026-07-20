@@ -53,3 +53,18 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+      - name: Run typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Check initial bundle size
+        run: pnpm check:bundle-size
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E
+        run: pnpm test:e2e

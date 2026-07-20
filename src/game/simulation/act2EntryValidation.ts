@@ -1,5 +1,5 @@
 import { GameEngine } from '@/game/core/engine/GameEngine';
-import { CARD_DEFINITIONS } from '@/game/core/definitions/cards/starter';
+import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
 import { createMapRun } from '@/game/core/engine/createMapRun';

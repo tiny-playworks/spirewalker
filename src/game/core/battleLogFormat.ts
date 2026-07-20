@@ -1,4 +1,4 @@
-import { CARD_DEFINITIONS } from './definitions/cards/starter';
+import { CARD_DEFINITIONS } from './definitions/cards';
 import { getStatusMeta } from './definitions/statuses';
 import { POTION_DEFINITIONS } from './definitions/potions';
 import type { GameEvent } from './events/types';

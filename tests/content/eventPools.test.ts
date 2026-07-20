@@ -23,9 +23,13 @@ describe('Event map pools', () => {
     }
   });
 
-  test('Act1 池保持原有 pilot + legacy', () => {
+  test('Act1 池由可运行事件与 legacy 事件组成', () => {
     expect(EVENT_POOLS[1].length).toBeGreaterThanOrEqual(10);
     expect(EVENT_POOLS[1]).toContain('wandering_merchant');
     expect(EVENT_POOLS[1]).toContain('stillness_shrine');
+    for (const id of EVENT_POOLS[1]) {
+      if (id === 'wandering_merchant' || id === 'stillness_shrine') continue;
+      expect(EVENT_DEFINITIONS[id]).toBeDefined();
+    }
   });
 });

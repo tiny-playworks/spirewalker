@@ -1,5 +1,4 @@
 import { addStatusStacks, decayStatus, getStatusStacks } from '../../combat/statusCombat';
-import { STATUS_MOMENTUM } from '../../definitions/statuses';
 import type { GameEvent } from '../../events/types';
 import type { BattleState, MonsterIntent } from '../../model/battle';
 import {
@@ -12,6 +11,7 @@ import {
   healEnemiesByMode,
   spawnEnemyUnit,
 } from './runtimeHooks';
+import { resolveRelicHooks } from '../relic/relicHooks';
 
 function executeDirectAttack(
   battle: BattleState,
@@ -69,9 +69,14 @@ export function executeMonsterIntent(
     return;
   }
   if (intent.type === 'reduce_status') {
-    const reduction = intent.statusId === STATUS_MOMENTUM && relicIds.includes('guard_knot')
-      ? Math.max(0, intent.value - 1)
-      : intent.value;
+    const relicResult = resolveRelicHooks(relicIds, {
+      battle,
+      trigger: 'statusReduced',
+      statusId: intent.statusId,
+      amount: intent.value,
+      events,
+    });
+    const reduction = Math.max(0, intent.value - (relicResult.momentumReduction ?? 0));
     decayStatus(player, intent.statusId, reduction);
     events.push({ type: 'STATUS_APPLIED', unitId: battle.playerUnitId, statusId: intent.statusId, value: getStatusStacks(player, intent.statusId) });
     return;

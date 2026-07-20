@@ -3,7 +3,7 @@ import {
   getCardArchetype,
   getDominantArchetype,
 } from '../definitions/cards/archetypes';
-import { CARD_DEFINITIONS } from '../definitions/cards/starter';
+import { CARD_DEFINITIONS } from '../definitions/cards';
 import { isRewardEligible } from '../definitions/cards/rewardPoolRules';
 import {
   DEFAULT_CHARACTER_ID,
