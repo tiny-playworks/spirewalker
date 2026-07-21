@@ -1,25 +1,26 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AppCursor } from '@/app/AppCursor';
+import { MobileLandscapeGate } from '@/app/MobileLandscapeGate';
 import type { ArchiveView } from '@/features/archive/ArchivePage';
-import { BattlePage } from '@/features/battle/BattlePage';
-import { EventPage } from '@/features/event/EventPage';
-import { DebugPanel } from '@/features/debug/DebugPanel';
 import { MainMenuPage } from '@/features/main-menu/MainMenuPage';
-import { MapPage } from '@/features/map/MapPage';
-import { RunOverviewPanel } from '@/features/overview/RunOverviewPanel';
-import { RestPage } from '@/features/rest/RestPage';
-import { RewardPage } from '@/features/reward/RewardPage';
-import { ShopPage } from '@/features/shop/ShopPage';
+import { NodeResultOverlay, type NodeResultSource } from '@/features/run-scene/NodeResultOverlay';
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import { useGameStore } from '@/game/store/gameStore';
-import { sceneThemeClass } from '@/styles/sceneTheme.css';
-import * as subscreenStyles from '@/styles/subscreen.css';
+import type { ScreenState } from '@/game/core/model/run';
+import * as noticeStyles from './actionNotice.css';
+import './routeStyles';
 
 const ArchivePage = lazy(() => import('@/features/archive/ArchivePage').then((module) => ({ default: module.ArchivePage })));
-
-function cx(...classNames: Array<string | false | null | undefined>) {
-  return classNames.filter(Boolean).join(' ');
-}
+const BattlePage = lazy(() => import('@/features/battle/BattlePage').then((module) => ({ default: module.BattlePage })));
+const EventPage = lazy(() => import('@/features/event/EventPage').then((module) => ({ default: module.EventPage })));
+const DebugPanel = lazy(() => import('@/features/debug/DebugPanel').then((module) => ({ default: module.DebugPanel })));
+const MapPage = lazy(() => import('@/features/map/MapPage').then((module) => ({ default: module.MapPage })));
+const RunOverviewPanel = lazy(() => import('@/features/overview/RunOverviewPanel').then((module) => ({ default: module.RunOverviewPanel })));
+const RestPage = lazy(() => import('@/features/rest/RestPage').then((module) => ({ default: module.RestPage })));
+const RewardPage = lazy(() => import('@/features/reward/RewardPage').then((module) => ({ default: module.RewardPage })));
+const ShopPage = lazy(() => import('@/features/shop/ShopPage').then((module) => ({ default: module.ShopPage })));
+const SettlementPage = lazy(() => import('@/features/settlement/SettlementPage').then((module) => ({ default: module.SettlementPage })));
+const ActTransitionPage = lazy(() => import('@/features/settlement/ActTransitionPage').then((module) => ({ default: module.ActTransitionPage })));
 
 export function App() {
   const run = useGameStore((s) => s.run);
@@ -28,10 +29,27 @@ export function App() {
   const resetProfile = useGameStore((s) => s.resetProfile);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [archiveView, setArchiveView] = useState<ArchiveView | null>(null);
+  const [nodeResult, setNodeResult] = useState<{ source: NodeResultSource; message: string } | null>(null);
+  const previousScreen = useRef<ScreenState['type'] | null>(run?.screen.type ?? null);
 
   useEffect(() => {
     if (!run) setOverviewOpen(false);
   }, [run]);
+
+  useEffect(() => {
+    const nextScreen = run?.screen.type ?? null;
+    const from = previousScreen.current;
+    if (
+      nextScreen === 'map'
+      && from
+      && (from === 'reward' || from === 'shop' || from === 'event' || from === 'rest')
+      && useGameStore.getState().actionNotice
+    ) {
+      setNodeResult({ source: from, message: useGameStore.getState().actionNotice ?? '节点结果已记录。' });
+    }
+    if (!run) setNodeResult(null);
+    previousScreen.current = nextScreen;
+  }, [run, run?.screen.type]);
 
   const page = (() => {
     if (archiveView) {
@@ -49,6 +67,7 @@ export function App() {
       /></Suspense>;
     }
     if (!run) return <MainMenuPage onOpenArchive={setArchiveView} />;
+    if (run.meta.actTransitionFrom) return <Suspense fallback={<div className="boot">正在开启下一章…</div>}><ActTransitionPage /></Suspense>;
     switch (run.screen.type) {
       case 'map':
         return <MapPage />;
@@ -63,9 +82,9 @@ export function App() {
       case 'event':
         return <EventPage />;
       case 'game_over':
-        return <GameOverScreen />;
+        return <Suspense fallback={<div className="boot">正在整理本局记录…</div>}><SettlementPage outcome="defeat" onOpenArchive={() => setArchiveView('collection')} /></Suspense>;
       case 'victory':
-        return <VictoryScreen />;
+        return <Suspense fallback={<div className="boot">正在整理本局记录…</div>}><SettlementPage outcome="victory" onOpenArchive={() => setArchiveView('collection')} /></Suspense>;
       default:
         return (
           <div className="boot">
@@ -76,70 +95,47 @@ export function App() {
   })();
   return (
     <>
-      {page}
-      {run ? (
-        <RunOverviewPanel
-          run={run}
-          open={overviewOpen}
-          onToggle={() => setOverviewOpen((value) => !value)}
-          onClose={() => setOverviewOpen(false)}
-        />
-      ) : null}
-      <DebugPanel />
+      <MobileLandscapeGate active={Boolean(run)}>
+        <Suspense fallback={<div className="boot"><span className="boot-rune">正在读取尖塔回响…</span></div>}>{page}</Suspense>
+        {run ? (
+          <Suspense fallback={null}><RunOverviewPanel
+            run={run}
+            open={overviewOpen}
+            onToggle={() => setOverviewOpen((value) => !value)}
+            onClose={() => setOverviewOpen(false)}
+          /></Suspense>
+        ) : null}
+        <Suspense fallback={null}><DebugPanel /></Suspense>
+        <ActionNotice />
+        {nodeResult ? (
+          <NodeResultOverlay
+            source={nodeResult.source}
+            message={nodeResult.message}
+            onContinue={() => {
+              setNodeResult(null);
+              useGameStore.getState().clearActionNotice();
+            }}
+          />
+        ) : null}
+      </MobileLandscapeGate>
       <AppCursor />
     </>
   );
 }
 
-function GameOverScreen() {
-  const startRun = useGameStore((s) => s.startRun);
-  const returnToMainMenu = useGameStore((s) => s.returnToMainMenu);
+function ActionNotice() {
+  const message = useGameStore((s) => s.actionNotice);
+  const clear = useGameStore((s) => s.clearActionNotice);
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(clear, 3200);
+    return () => window.clearTimeout(timer);
+  }, [message, clear]);
+  if (!message) return null;
   return (
-    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenStack)}>
-      <p>本次探索结束</p>
-      <div className={subscreenStyles.actionsRow}>
-        <button
-          type="button"
-          className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.primary)}
-          onClick={() => startRun(createMapRun(Date.now() & 0xffff_ffff))}
-        >
-          再来一局
-        </button>
-        <button
-          type="button"
-          className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.ghost)}
-          onClick={returnToMainMenu}
-        >
-          返回主菜单
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function VictoryScreen() {
-  const startRun = useGameStore((s) => s.startRun);
-  const returnToMainMenu = useGameStore((s) => s.returnToMainMenu);
-  return (
-    <div className={cx('boot', sceneThemeClass, subscreenStyles.screenRoot, subscreenStyles.screenStack)}>
-      <h2 className={subscreenStyles.title}>试玩通关</h2>
-      <p className={subscreenStyles.tip}>你已击败第二层 Boss，本局试玩路线完结。</p>
-      <div className={subscreenStyles.actionsRow}>
-        <button
-          type="button"
-          className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.primary)}
-          onClick={() => startRun(createMapRun(Date.now() & 0xffff_ffff))}
-        >
-          再来一局
-        </button>
-        <button
-          type="button"
-          className={cx(subscreenStyles.actionButton, subscreenStyles.actionButtonTone.ghost)}
-          onClick={returnToMainMenu}
-        >
-          返回主菜单
-        </button>
-      </div>
+    <div className={noticeStyles.notice} role="status">
+      <span>{message}</span>
+      <button type="button" className={noticeStyles.dismiss} aria-label="关闭提示" onClick={clear}>×</button>
     </div>
   );
 }

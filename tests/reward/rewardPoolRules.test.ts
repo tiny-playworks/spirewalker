@@ -55,10 +55,14 @@ describe('reward/rewardPoolRules', () => {
     }
   });
 
-  test('角色池规模合理（~250–350，Phase B 收紧后）', () => {
+  test('Act 1 正式角色池固定为 36 张精选卡', () => {
     const pool = getCharacterDefinition('walker').rewardCardPool;
-    expect(pool.length).toBeGreaterThanOrEqual(250);
-    expect(pool.length).toBeLessThanOrEqual(350);
+    expect(pool).toHaveLength(36);
+    expect(new Set(pool).size).toBe(36);
+    for (const id of pool) {
+      expect(CARD_DEFINITIONS[id]).toBeDefined();
+      expect(isRewardEligible(id, CARD_DEFINITIONS[id]!)).toBe(true);
+    }
   });
 
   test('early 池 ≤ 50', () => {

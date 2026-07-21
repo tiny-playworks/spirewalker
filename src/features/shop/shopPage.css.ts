@@ -2,6 +2,7 @@ import { keyframes, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
 const SERIF = '"Libre Caslon Text", Georgia, serif';
+const mobileLandscape = '(max-width: 900px) and (orientation: landscape)';
 
 const portraitPulse = keyframes({
   '0%, 100%': { opacity: 0.6 },
@@ -89,6 +90,15 @@ export const body = style({
   maxWidth: '78rem',
   margin: '0 auto',
   padding: 'clamp(1.25rem, 3vh, 2rem) clamp(1rem, 3vw, 2.5rem) 2.5rem',
+  minHeight: 0,
+  '@media': {
+    [mobileLandscape]: {
+      flexWrap: 'nowrap',
+      gap: '.55rem',
+      padding: '.45rem max(.6rem, env(safe-area-inset-right, 0px)) max(.45rem, env(safe-area-inset-bottom, 0px)) max(.6rem, env(safe-area-inset-left, 0px))',
+      overflow: 'hidden',
+    },
+  },
 });
 
 /* ---- merchant ---- */
@@ -104,8 +114,15 @@ export const merchant = style({
   overflow: 'hidden',
   border: '1px solid rgba(73, 68, 84, 0.5)',
   background:
-    'radial-gradient(circle at 50% 32%, rgba(120, 80, 200, 0.42) 0%, rgba(20, 16, 30, 0.9) 48%, #0b0b0e 78%), linear-gradient(180deg, #16121f 0%, #0b0b0e 100%)',
+    'radial-gradient(circle at 50% 32%, rgba(120, 80, 200, 0.42) 0%, rgba(20, 16, 30, 0.9) 48%, #0b0b0e 78%)',
   boxShadow: 'inset 0 0 70px rgba(0, 0, 0, 0.7)',
+  '@media': {
+    [mobileLandscape]: {
+      flexBasis: '8.5rem',
+      minHeight: 0,
+      padding: '.65rem',
+    },
+  },
 });
 
 export const merchantRune = style({
@@ -115,16 +132,17 @@ export const merchantRune = style({
   transform: 'translateX(-50%)',
   fontFamily: SERIF,
   fontSize: '4rem',
-  color: 'rgba(208, 188, 255, 0.55)',
+  color: 'rgba(208, 188, 255, 0.32)',
   textShadow: '0 0 28px rgba(160, 120, 255, 0.7)',
   animation: `${portraitPulse} 3.8s ease-in-out infinite`,
   pointerEvents: 'none',
+  '@media': { [mobileLandscape]: { top: '20%', fontSize: '2.5rem' } },
 });
 
 export const merchantFade = style({
   position: 'absolute',
   inset: 0,
-  background: 'linear-gradient(to top, #0b0b0e 6%, transparent 55%)',
+  background: 'linear-gradient(to top, #0b0b0e 2%, transparent 58%), radial-gradient(circle at 50% 45%, transparent 38%, rgba(0,0,0,.42) 100%)',
 });
 
 export const merchantInfo = style({ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' });
@@ -135,6 +153,7 @@ export const merchantName = style({
   fontSize: '1.35rem',
   fontWeight: 700,
   color: sceneVars.color.accentGlow,
+  '@media': { [mobileLandscape]: { fontSize: '.88rem' } },
 });
 
 export const merchantQuote = style({
@@ -143,6 +162,7 @@ export const merchantQuote = style({
   fontSize: '0.85rem',
   lineHeight: 1.5,
   color: sceneVars.color.textMuted,
+  '@media': { [mobileLandscape]: { display: 'none' } },
 });
 
 export const merchantNote = style({
@@ -155,6 +175,7 @@ export const merchantNote = style({
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
   color: '#ffc640',
+  '@media': { [mobileLandscape]: { fontSize: '.5rem', letterSpacing: '.08em' } },
 });
 
 export const noteIcon = style({ width: '0.85rem', height: '0.85rem' });
@@ -165,6 +186,8 @@ export const goods = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '1.1rem',
+  minWidth: 0,
+  '@media': { [mobileLandscape]: { gap: '.48rem', overflowY: 'auto', overscrollBehavior: 'contain' } },
 });
 
 export const sectionHead = style({
@@ -176,6 +199,7 @@ export const sectionHead = style({
   fontSize: '1.1rem',
   fontWeight: 700,
   color: sceneVars.color.textStrong,
+  '@media': { [mobileLandscape]: { fontSize: '.78rem' } },
 });
 
 export const sectionIcon = style({ width: '1.1rem', height: '1.1rem', color: sceneVars.color.accentGlow });
@@ -184,6 +208,7 @@ export const cardGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(9.5rem, 1fr))',
   gap: '0.7rem',
+  '@media': { [mobileLandscape]: { gridTemplateColumns: 'repeat(2, minmax(7.2rem, 1fr))', gap: '.4rem' } },
 });
 
 const tileBase = style({
@@ -207,6 +232,7 @@ const tileBase = style({
     },
     '&:disabled': { cursor: 'not-allowed', opacity: 0.45 },
   },
+  '@media': { [mobileLandscape]: { gap: '.18rem', minHeight: '5.3rem', padding: '.42rem .48rem' } },
 });
 
 export const cardTile = tileBase;
@@ -219,6 +245,7 @@ export const tileName = style({
   fontSize: '1rem',
   fontWeight: 700,
   color: sceneVars.color.textStrong,
+  '@media': { [mobileLandscape]: { fontSize: '.72rem' } },
 });
 
 export const tileType = style({
@@ -226,6 +253,7 @@ export const tileType = style({
   fontWeight: 700,
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
+  '@media': { [mobileLandscape]: { fontSize: '.47rem', letterSpacing: '.08em' } },
 });
 
 export const tileTypeTone = styleVariants({
@@ -240,6 +268,7 @@ export const tileDesc = style({
   lineHeight: 1.45,
   color: sceneVars.color.textSubtle,
   flex: 1,
+  '@media': { [mobileLandscape]: { fontSize: '.56rem', lineHeight: 1.3 } },
 });
 
 export const tilePrice = style({
@@ -250,6 +279,15 @@ export const tilePrice = style({
   fontSize: '0.92rem',
   fontWeight: 800,
   color: '#ffc640',
+  '@media': { [mobileLandscape]: { fontSize: '.68rem' } },
+});
+
+export const priceReason = style({
+  marginLeft: '.15rem',
+  color: 'currentColor',
+  fontSize: '.62rem',
+  fontWeight: 700,
+  opacity: .86,
 });
 
 export const tilePriceAffordable = style({});
@@ -260,6 +298,7 @@ export const relicGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(11rem, 1fr))',
   gap: '0.7rem',
+  '@media': { [mobileLandscape]: { gridTemplateColumns: 'repeat(2, minmax(7.2rem, 1fr))', gap: '.4rem' } },
 });
 
 /* ---- rituals ---- */
@@ -281,6 +320,7 @@ export const ritualButton = style({
     '&:hover:not(:disabled)': { transform: 'translateY(-3px)' },
     '&:disabled': { cursor: 'not-allowed', opacity: 0.45 },
   },
+  '@media': { [mobileLandscape]: { minHeight: '4.4rem', padding: '.45rem' } },
 });
 
 export const ritualButtonActive = style({ borderColor: sceneVars.color.accent });
@@ -292,6 +332,7 @@ export const ritualIconWrap = style({
   height: '2.6rem',
   borderRadius: '999px',
   border: '1px solid currentColor',
+  '@media': { [mobileLandscape]: { width: '1.9rem', height: '1.9rem' } },
 });
 
 export const ritualIconPurge = style({ color: '#ffb4ab' });
@@ -359,6 +400,15 @@ export const rail = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '0.85rem',
+  '@media': {
+    [mobileLandscape]: {
+      flexBasis: '9.25rem',
+      alignSelf: 'stretch',
+      gap: '.4rem',
+      overflowY: 'auto',
+      overscrollBehavior: 'contain',
+    },
+  },
 });
 
 export const railPanel = style({
@@ -367,6 +417,7 @@ export const railPanel = style({
   border: '1px solid rgba(73, 68, 84, 0.45)',
   background: 'rgba(20, 20, 22, 0.6)',
   backdropFilter: 'blur(10px)',
+  '@media': { [mobileLandscape]: { padding: '.48rem .55rem' } },
 });
 
 export const railPanelWealth = style({
@@ -390,6 +441,7 @@ export const wealthValue = style({
   fontSize: '1.9rem',
   fontWeight: 800,
   color: '#ffc640',
+  '@media': { [mobileLandscape]: { fontSize: '1.15rem' } },
 });
 
 export const wealthIcon = style({ width: '1.5rem', height: '1.5rem' });
@@ -451,6 +503,7 @@ export const leaveButton = style({
   selectors: {
     '&:hover': { borderColor: sceneVars.color.accentGlow, background: 'rgba(40, 38, 44, 0.8)' },
   },
+  '@media': { [mobileLandscape]: { minHeight: '2.25rem', padding: '.4rem .55rem', fontSize: '.68rem' } },
 });
 
 export const leaveIcon = style({ width: '1rem', height: '1rem' });

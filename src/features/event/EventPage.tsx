@@ -22,7 +22,7 @@ import {
 } from '@/game/core/engine/generateBranchingFloor';
 import type { RunState } from '@/game/core/model/run';
 import { useGameStore } from '@/game/store/gameStore';
-import { sceneThemeClass } from '@/styles/sceneTheme.css';
+import { RunSceneHeader, RunSceneShell } from '@/features/run-scene/RunSceneShell';
 import * as styles from './eventPage.css';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
@@ -218,23 +218,8 @@ export function EventPage() {
   }
 
   return (
-    <div className={cx(sceneThemeClass, styles.page)} data-testid="event-page">
-      <header className={styles.topBar}>
-        <p className={styles.brandMark}>Spirewalker</p>
-        <span className={styles.topMeta}>
-          第 {run.meta.act} 章 · 第 {run.meta.actFloor} 层
-        </span>
-        <div className={styles.topStats}>
-          <span className={cx(styles.statPill, styles.statPillHp)}>
-            <HeartPulse className={styles.statIcon} aria-hidden />
-            {run.player.currentHp}/{run.player.maxHp}
-          </span>
-          <span className={cx(styles.statPill, styles.statPillGold)}>
-            <Coins className={styles.statIcon} aria-hidden />
-            {run.meta.gold}
-          </span>
-        </div>
-      </header>
+    <RunSceneShell tone="event" className={styles.page} testId="event-page">
+      <RunSceneHeader title={view.title} eyebrow="神秘事件" />
 
       <div className={styles.body}>
         <div className={styles.leftCol}>
@@ -243,7 +228,13 @@ export function EventPage() {
             神秘事件
           </span>
           <h1 className={styles.title}>{view.title}</h1>
-          <div className={styles.artPanel} aria-hidden>
+          <div
+            className={styles.artPanel}
+            style={{
+              background: "linear-gradient(to top, rgba(7,7,10,.72), transparent 58%), url('/assets/scenes/event-rift.webp') center / cover no-repeat, #0b0b0e",
+            }}
+            aria-hidden
+          >
             <span className={styles.artShards} />
             <span className={styles.artGlow} />
           </div>
@@ -279,6 +270,6 @@ export function EventPage() {
           </ul>
         </div>
       </div>
-    </div>
+    </RunSceneShell>
   );
 }

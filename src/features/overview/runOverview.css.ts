@@ -48,6 +48,20 @@ export const toggle = style({
     },
   },
   '@media': {
+    '(pointer: coarse)': {
+      transform: 'translateY(-50%) translateX(0)',
+      opacity: 0.92,
+    },
+    '(max-width: 900px) and (orientation: landscape)': {
+      top: '3.65rem',
+      right: 'max(.25rem, env(safe-area-inset-right, 0px))',
+      padding: '.38rem .52rem',
+      borderRight: '1px solid rgba(95, 81, 62, 0.5)',
+      borderRadius: '10px',
+      fontSize: '.66rem',
+      transform: 'none',
+      opacity: .86,
+    },
     '(prefers-reduced-motion: reduce)': {
       transition: 'none',
       transform: 'translateY(-50%) translateX(0)',
@@ -109,6 +123,12 @@ export const panel = style([
     borderBottom: 0,
     background: 'linear-gradient(180deg, rgba(33, 29, 24, 0.98) 0%, rgba(23, 21, 18, 0.98) 100%)',
     boxShadow: '-18px 0 44px rgba(0, 0, 0, 0.34)',
+    '@media': {
+      '(max-width: 900px) and (orientation: landscape)': {
+        width: 'min(24rem, 78vw)',
+        padding: 'max(.6rem, env(safe-area-inset-top, 0px)) max(.7rem, env(safe-area-inset-right, 0px)) max(.7rem, env(safe-area-inset-bottom, 0px)) .7rem',
+      },
+    },
   },
 ]);
 
@@ -140,6 +160,34 @@ export const closeButton = style({
   color: '#f0ebe3',
   cursor: 'pointer',
 });
+
+export const motionSetting = style({
+  display: 'grid',
+  gridTemplateColumns: 'auto 1fr auto',
+  alignItems: 'center',
+  gap: '.6rem',
+  width: '100%',
+  marginBottom: '.8rem',
+  padding: '.65rem .7rem',
+  textAlign: 'left',
+  borderRadius: sceneVars.radii.md,
+  border: '1px solid rgba(95,81,62,.7)',
+  color: sceneVars.color.textMuted,
+  background: 'rgba(12,11,10,.5)',
+  cursor: 'pointer',
+  selectors: {
+    '&[aria-pressed="true"]': {
+      color: sceneVars.color.relief,
+      borderColor: 'rgba(45,212,191,.45)',
+      background: 'rgba(45,212,191,.07)',
+    },
+  },
+});
+globalStyle(`${motionSetting} svg`, { width: '1rem', height: '1rem' });
+globalStyle(`${motionSetting} span`, { display: 'grid', gap: '.1rem' });
+globalStyle(`${motionSetting} strong`, { color: sceneVars.color.textStrong, fontSize: '.78rem' });
+globalStyle(`${motionSetting} small`, { color: sceneVars.color.textSubtle, fontSize: '.68rem' });
+globalStyle(`${motionSetting} b`, { fontSize: '.7rem' });
 
 export const section = style({
   padding: '0.8rem 0',

@@ -30,6 +30,7 @@ import { applyGameOverIfDefeat, syncRunPlayerFromBattle } from '../systems/commo
 import { playCardFlow } from '../systems/battle/playCard';
 import { endTurnFlow, resolveAnimationDoneFlow } from '../systems/battle/turnFlow';
 import { beginDragCardFlow, cancelDragCardFlow, cancelTargetSelectionFlow } from '../systems/battle/inputFlow';
+import { accumulateRunStats } from '../model/runStats';
 
 export interface EngineResult {
   nextRun: RunState;
@@ -102,6 +103,9 @@ export class GameEngine {
       case 'BUY_SHOP_UPGRADE_CARD':
         buyShopUpgradeCardFlow(nextRun, command, events);
         break;
+      case 'CONTINUE_ACT_TRANSITION':
+        delete nextRun.meta.actTransitionFrom;
+        break;
       case 'DEBUG_SET_PLAYER_HP':
         debugSetPlayerHp(nextRun, command.hp);
         break;
@@ -123,6 +127,7 @@ export class GameEngine {
 
     syncRunPlayerFromBattle(nextRun);
     applyGameOverIfDefeat(nextRun, events);
+    accumulateRunStats(run, nextRun, events);
     return { nextRun, events };
   }
 }

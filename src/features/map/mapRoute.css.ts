@@ -64,6 +64,7 @@ const nodeSelectFlash = keyframes({
 const reducedMotion = '(prefers-reduced-motion: reduce)';
 
 export const route = style({
+  flexShrink: 0,
   margin: 0,
   width: '100%',
   display: 'flex',
@@ -74,7 +75,8 @@ export const route = style({
 export const routeSvg = style({
   display: 'block',
   width: '100%',
-  maxWidth: '40rem',
+  maxWidth: '46rem',
+  filter: 'drop-shadow(0 22px 48px rgba(0,0,0,.28))',
 });
 
 export const routeEdgeBase = style({

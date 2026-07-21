@@ -12,6 +12,8 @@ import { getStatusMeta } from "@/game/core/definitions/statuses";
 import type { BattleState } from "@/game/core/model/battle";
 import type { CardDefinition, CardInstance } from "@/game/core/model/card";
 import type { CombatUnit } from "@/game/core/model/unit";
+import { previewCardPlay, type BattlePreview } from "@/game/core/presentation/battlePreview";
+import { buildFeedbackTimeline, feedbackDurationMs, type FeedbackCue } from "@/game/core/presentation/feedbackTimeline";
 import { useGameStore } from "@/game/store/gameStore";
 import {
   getCardArtSources,
@@ -22,12 +24,12 @@ import {
   type IntentCategory,
 } from "./combatAssets";
 import * as styles from "./reactBattleStage.css";
+import { getEnemyVisual } from "./enemyVisuals";
 
 type DragPayload = { cardInstanceId: string };
 
 const BATTLE_BACKDROP_URL = "/assets/combat/gilded-ruins.webp";
 const PLAYER_SPRITE_URL = "/assets/combat/player.webp";
-const ENEMY_SPRITE_URL = "/assets/combat/enemy.webp";
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(" ");
@@ -41,6 +43,14 @@ const INTENT_CATEGORY_TONE: Record<IntentCategory, keyof typeof styles.intentTon
   unknown: "utility",
 };
 
+const INTENT_CATEGORY_LABEL: Record<IntentCategory, string> = {
+  attack: "攻击",
+  defend: "防御",
+  buff: "强化",
+  debuff: "削弱",
+  unknown: "异动",
+};
+
 function effectiveCost(card: CardInstance, battle: BattleState): number {
   return Math.max(
     0,
@@ -50,11 +60,17 @@ function effectiveCost(card: CardInstance, battle: BattleState): number {
   );
 }
 
-function cardFocus(def: CardDefinition): {
+function cardFocus(def: CardDefinition, preview?: BattlePreview): {
   value: string;
   label: string;
   tone: "attack" | "block" | "utility";
 } {
+  if (preview?.playable && preview.damage > 0) {
+    return { value: String(preview.damage), label: "预计伤害", tone: "attack" };
+  }
+  if (preview?.playable && preview.block > 0) {
+    return { value: String(preview.block), label: "预计格挡", tone: "block" };
+  }
   let damage = 0;
   let block = 0;
   for (const effect of def.effects) {
@@ -99,7 +115,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
     if (!battle || battle.inputMode !== "animation_lock") return;
     const timer = window.setTimeout(
       () => dispatchCommand({ type: "RESOLVE_ANIMATION_DONE" }),
-      fastMode ? 120 : 360,
+      feedbackDurationMs(battle.lastResolvedEvents, fastMode),
     );
     return () => window.clearTimeout(timer);
   }, [
@@ -126,6 +142,36 @@ export function ReactBattleStage({ className }: { className?: string }) {
     if (!battle) return [];
     return battle.enemyUnitIds.map((id) => battle.units[id]).filter(Boolean);
   }, [battle]);
+  const feedbackCues = useMemo(
+    () => buildFeedbackTimeline(battle?.lastResolvedEvents ?? []),
+    [battle?.lastResolvedEvents],
+  );
+  const previewByCardId = useMemo(() => {
+    if (!run || !battle) return new Map<string, BattlePreview>();
+    return new Map(
+      battle.player.hand.map((cardId) => [cardId, previewCardPlay(run, cardId)]),
+    );
+  }, [run, battle]);
+  const activePreview = activeCardId ? previewByCardId.get(activeCardId) : undefined;
+  const targetPreviewByEnemyId = useMemo(() => {
+    const previews = new Map<string, BattlePreview>();
+    if (!run || !activeCardId) return previews;
+    for (const enemy of enemies) {
+      previews.set(enemy.id, previewCardPlay(run, activeCardId, enemy.id));
+    }
+    return previews;
+  }, [activeCardId, enemies, run]);
+
+  useEffect(() => {
+    if (!activeCardId) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      dispatchCommand({ type: "CANCEL_TARGET_SELECTION" });
+      setSelectedCardId(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeCardId, dispatchCommand]);
 
   if (!battle || !player) return <div className={className} />;
 
@@ -167,7 +213,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
       </div>
 
       <section className={styles.combatLayer} aria-label="战斗场">
-        <UnitPanel unit={player} tone="player" spriteUrl={PLAYER_SPRITE_URL} />
+        <UnitPanel unit={player} tone="player" spriteUrl={PLAYER_SPRITE_URL} feedback={feedbackCues.filter((cue) => cue.unitId === player.id)} />
 
         <div className={styles.enemyRail}>
           {enemies.map((enemy) => (
@@ -178,7 +224,9 @@ export function ReactBattleStage({ className }: { className?: string }) {
               targetActive={Boolean(activeCardId)}
               onTarget={() => handleEnemyTarget(enemy.id)}
               onDropCard={(cardId) => playCard(cardId, enemy.id)}
-              spriteUrl={ENEMY_SPRITE_URL}
+              spriteUrl={getEnemyVisual(battle.monsters[enemy.id]?.monsterId ?? '').portraitUrl}
+              feedback={feedbackCues.filter((cue) => cue.unitId === enemy.id)}
+              preview={targetPreviewByEnemyId.get(enemy.id)}
             />
           ))}
         </div>
@@ -186,13 +234,13 @@ export function ReactBattleStage({ className }: { className?: string }) {
 
       <section className={styles.bottomDock} aria-label="战斗操作">
         <div className={styles.leftDock}>
-          <Pile label="DRAW" value={battle.player.drawPile.length} />
+          <Pile label="抽牌" value={battle.player.drawPile.length} />
           <div
             className={styles.energyCore}
             aria-label={`能量 ${battle.player.energy}/${battle.player.maxEnergy}`}
           >
             <strong>{battle.player.energy}</strong>
-            <span>ENERGY</span>
+            <span>能量</span>
           </div>
         </div>
 
@@ -201,7 +249,8 @@ export function ReactBattleStage({ className }: { className?: string }) {
             const card = battle.player.cards[cardInstanceId];
             const def = card ? ALL_CARD_DEFINITIONS[card.definitionId] : null;
             if (!card || !def) return null;
-            const focus = cardFocus(def);
+            const preview = previewByCardId.get(card.instanceId);
+            const focus = cardFocus(def, preview);
             const playable = canPlayCard(card, battle);
             const selected = activeCardId === card.instanceId;
             const spread =
@@ -292,9 +341,23 @@ export function ReactBattleStage({ className }: { className?: string }) {
           })}
         </section>
 
+        {activeCardId ? (
+          <div className={styles.targetGuide} role="status">
+            <span>选择目标</span>
+            {activePreview?.damage ? <strong>预计造成 {activePreview.damage} 点伤害</strong> : null}
+            <button
+              type="button"
+              onClick={() => {
+                dispatchCommand({ type: "CANCEL_TARGET_SELECTION" });
+                setSelectedCardId(null);
+              }}
+            >取消 Esc</button>
+          </div>
+        ) : null}
+
         <div className={styles.rightDock}>
-          <Pile label="DISCARD" value={battle.player.discardPile.length} muted />
-          <Pile label="EXHAUST" value={battle.player.exhaustPile.length} muted />
+          <Pile label="弃牌" value={battle.player.discardPile.length} muted />
+          <Pile label="消耗" value={battle.player.exhaustPile.length} muted />
           {battle.phase === "victory" ? (
             <button
               type="button"
@@ -315,7 +378,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
               }
               onClick={() => dispatchCommand({ type: "END_TURN" })}
             >
-              END TURN »
+              结束回合
             </button>
           )}
         </div>
@@ -338,18 +401,24 @@ function UnitPanel({
   unit,
   tone,
   spriteUrl,
+  feedback = [],
 }: {
   unit: CombatUnit;
   tone: "player" | "enemy";
   spriteUrl: string;
+  feedback?: FeedbackCue[];
 }) {
   const hpRatio =
     unit.maxHp > 0 ? Math.max(0, Math.min(1, unit.hp / unit.maxHp)) : 0;
+  const hit = feedback.some((cue) => cue.tone === 'damage');
+  const guarded = feedback.some((cue) => cue.tone === 'block');
   return (
     <article
       className={cx(
         styles.unit,
         styles.unitTone[tone],
+        hit && styles.unitHit,
+        guarded && styles.unitGuarded,
         !unit.alive && styles.unitDead,
       )}
     >
@@ -358,6 +427,15 @@ function UnitPanel({
           className={styles.unitSprite}
           style={{ backgroundImage: `url(${spriteUrl})` }}
         />
+        <div className={styles.feedbackLayer} aria-live="polite">
+          {feedback.map((cue) => (
+            <span
+              key={cue.id}
+              className={cx(styles.feedbackCue, styles.feedbackCueTone[cue.tone])}
+              style={{ animationDelay: `${cue.delayMs}ms` }}
+            >{cue.text}</span>
+          ))}
+        </div>
       </div>
       <div className={styles.unitBody}>
         <div
@@ -388,6 +466,8 @@ function EnemyPanel({
   onTarget,
   onDropCard,
   spriteUrl,
+  feedback,
+  preview,
 }: {
   battle: BattleState;
   unit: CombatUnit;
@@ -395,45 +475,65 @@ function EnemyPanel({
   onTarget: () => void;
   onDropCard: (cardInstanceId: string) => void;
   spriteUrl: string;
+  feedback: FeedbackCue[];
+  preview?: BattlePreview;
 }) {
   const intent = battle.monsters[unit.id]?.intent;
   const intentText = formatMonsterIntentText(intent);
   const category = intentCategory(intent);
   const valueText = intentValueText(intent);
+  const previewText = !preview?.playable
+    ? null
+    : preview.damage > 0
+      ? `预计造成 ${preview.damage} 点伤害`
+      : preview.statuses.length > 0
+        ? `${getStatusMeta(preview.statuses[0].statusId).name} +${preview.statuses[0].value}`
+        : null;
   return (
-    <button
-      type="button"
+    <div
       className={cx(
         styles.enemyTarget,
         targetActive && unit.alive && styles.enemyTargetActive,
       )}
-      disabled={!targetActive || !unit.alive}
-      data-testid={`battle-enemy-${unit.id}`}
-      onClick={onTarget}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault();
-        const raw = event.dataTransfer.getData("application/spirewalker-card");
-        if (!raw) return;
-        const payload = JSON.parse(raw) as DragPayload;
-        onDropCard(payload.cardInstanceId);
-      }}
     >
       {unit.alive ? (
-        <span
-          className={cx(styles.intent, styles.intentTone[INTENT_CATEGORY_TONE[category]])}
-          title={intentText}
-        >
-          <FallbackImg
-            className={styles.intentIcon}
-            alt=""
-            sources={getIntentIconSources(intent)}
-          />
-          <strong>{valueText ?? intentText}</strong>
-        </span>
+        <details className={styles.intentDetails}>
+          <summary
+            className={cx(styles.intent, styles.intentTone[INTENT_CATEGORY_TONE[category]])}
+            title={intentText}
+          >
+            <FallbackImg
+              className={styles.intentIcon}
+              alt=""
+              sources={getIntentIconSources(intent)}
+            />
+            <span className={styles.intentCopy}>
+              <small>{INTENT_CATEGORY_LABEL[category]}</small>
+              <strong>{valueText ?? "?"}</strong>
+            </span>
+          </summary>
+          <span className={styles.intentPopover}>{intentText}</span>
+        </details>
       ) : null}
-      <UnitPanel unit={unit} tone="enemy" spriteUrl={spriteUrl} />
-    </button>
+      <button
+        type="button"
+        className={styles.enemyHitTarget}
+        disabled={!targetActive || !unit.alive}
+        data-testid={`battle-enemy-${unit.id}`}
+        onClick={onTarget}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          const raw = event.dataTransfer.getData("application/spirewalker-card");
+          if (!raw) return;
+          const payload = JSON.parse(raw) as DragPayload;
+          onDropCard(payload.cardInstanceId);
+        }}
+      >
+        <UnitPanel unit={unit} tone="enemy" spriteUrl={spriteUrl} feedback={feedback} />
+        {targetActive && previewText ? <span className={styles.targetPreview}>{previewText}</span> : null}
+      </button>
+    </div>
   );
 }
 

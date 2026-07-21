@@ -38,5 +38,6 @@ export type GameCommand =
   | { type: 'DEBUG_ADD_STATUS'; statusId: string; stacks: number; unitId?: string }
   | { type: 'DEBUG_ADD_HAND_CARD'; definitionId: string }
   | { type: 'DEBUG_FORCE_BATTLE_OUTCOME'; outcome: 'victory' | 'defeat' }
-  | { type: 'DEBUG_JUMP_SCREEN'; screen: 'map' | 'shop' | 'event' | 'reward' }
-  | { type: 'RESOLVE_ANIMATION_DONE' };
+  | { type: 'DEBUG_JUMP_SCREEN'; screen: 'map' | 'shop' | 'event' | 'reward' | 'rest' }
+  | { type: 'RESOLVE_ANIMATION_DONE' }
+  | { type: 'CONTINUE_ACT_TRANSITION' };

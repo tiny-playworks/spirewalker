@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openDebugPanel, startNewRun } from './helpers';
+import { confirmNodeResult, openDebugPanel, startNewRun } from './helpers';
 
 const FIXED_SEED = 1001;
 
@@ -7,13 +7,23 @@ async function chooseNode(page: Page, nodeId: string) {
   const node = page.getByTestId(`map-node-${nodeId}`);
   await expect(node).toHaveAttribute('data-cursor-target', 'true');
   await node.click();
-  await node.click();
+  await page.getByTestId('enter-selected-map-node').click();
 }
 
 async function skipReward(page: Page) {
   await expect(page.getByTestId('reward-page')).toBeVisible();
   await page.getByRole('button', { name: /放弃卡牌/ }).click();
-  await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
+  const transition = page.getByTestId('act-transition');
+  const map = page.getByRole('navigation', { name: '本层路线概览' });
+  await confirmNodeResult(page);
+  await Promise.race([
+    transition.waitFor({ state: 'visible' }),
+    map.waitFor({ state: 'visible' }),
+  ]);
+  if (await transition.isVisible()) {
+    await transition.getByRole('button', { name: /进入下一章/ }).click();
+  }
+  await expect(map).toBeVisible();
 }
 
 async function finishBattle(page: Page) {
@@ -28,6 +38,7 @@ async function finishBattle(page: Page) {
 async function resolveEvent(page: Page) {
   await expect(page.getByTestId('event-page')).toBeVisible();
   await page.getByTestId('event-page').locator('button:not([disabled])').first().click();
+  await confirmNodeResult(page);
   await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
 }
 
@@ -57,10 +68,12 @@ test('固定种子可以从 Act 1 走到 Act 2', async ({ page }) => {
   await chooseNode(page, 'a1_d10_r3');
   await expect(page.getByTestId('shop-page')).toBeVisible();
   await page.getByRole('button', { name: '离开商店' }).click();
+  await confirmNodeResult(page);
   await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
   await chooseNode(page, 'a1_d11_r3');
-  await expect(page.getByRole('button', { name: '休息并返回地图' })).toBeVisible();
-  await page.getByRole('button', { name: '休息并返回地图' }).click();
+  await expect(page.getByRole('button', { name: /在营火旁休息/ })).toBeVisible();
+  await page.getByRole('button', { name: /在营火旁休息/ }).click();
+  await confirmNodeResult(page);
   await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
   await chooseNode(page, 'a1_d12_r3');
   await finishBattle(page);

@@ -8,7 +8,7 @@ import type { MapNode } from '@/game/core/model/map';
 import { clearSavedRun } from '@/game/core/persistence/saveRun';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectMapRunState } from '@/game/store/selectors/mapSelectors';
-import { sceneThemeClass } from '@/styles/sceneTheme.css';
+import { RunSceneShell } from '@/features/run-scene/RunSceneShell';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { MapRoute } from './MapRoute';
 import * as styles from './mapPage.css';
@@ -23,7 +23,7 @@ const ACT_TITLES: Record<number, string> = {
 const MAP_LEGEND: { kind: MapNodeVisualKind; label: string }[] = [
   { kind: 'battle', label: '普通战斗' },
   { kind: 'elite', label: '精英战' },
-  { kind: 'boss', label: 'Boss' },
+  { kind: 'boss', label: '首领' },
   { kind: 'event', label: '未知事件' },
   { kind: 'shop', label: '商人' },
   { kind: 'rest', label: '休整营火' },
@@ -44,7 +44,7 @@ function nodeTitle(n: MapNode): string {
     case 'elite':
       return '精英战';
     case 'boss':
-      return 'Boss';
+      return '首领战';
     case 'shop':
       return '商人营地';
     case 'rest':
@@ -55,6 +55,19 @@ function nodeTitle(n: MapNode): string {
       return '宝藏';
     default:
       return n.id;
+  }
+}
+
+function nodeDescription(n: MapNode): string {
+  switch (n.type) {
+    case 'battle': return '稳定获取卡牌与金币，检验当前构筑的基础循环。';
+    case 'elite': return '更高压力的战斗，胜利后有机会取得关键遗物。';
+    case 'boss': return '本章最终考验。击破后完成 Act 1 并进入下一章。';
+    case 'shop': return '使用金币购买卡牌、遗物和药水，也可精简或升级牌组。';
+    case 'rest': return '回复生命，为下一段路线调整风险承受能力。';
+    case 'event': return '未知抉择，可能改变生命、金币、卡牌或下一战连势。';
+    case 'treasure': return '获得一份无需战斗的补给。';
+    default: return '继续向尖塔深处前进。';
   }
 }
 
@@ -108,7 +121,10 @@ export function MapPage() {
       const targetRect = target.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
       const targetTop = targetRect.top - containerRect.top + container.scrollTop;
-      const targetOffset = container.clientHeight * 0.72;
+      const isCompactLandscape = window.matchMedia(
+        '(max-width: 900px) and (orientation: landscape)',
+      ).matches;
+      const targetOffset = container.clientHeight * (isCompactLandscape ? 0.44 : 0.72);
       container.scrollTo({
         top: Math.max(0, targetTop - targetOffset),
         behavior: 'auto',
@@ -124,23 +140,20 @@ export function MapPage() {
   const curId = map.currentNodeId;
   const isBossRestNode = cur?.type === 'rest' && meta.actFloor === actFloorCount(meta.act) - 1;
   const actTitle = ACT_TITLES[meta.act] ?? '未知之地';
+  const selectedNode = selectedNodeId ? map.nodes[selectedNodeId] : undefined;
 
   const handleSelectNode = (nodeId: string) => {
     if (!nextIds.includes(nodeId)) return;
-    if (selectedNodeId === nodeId) {
-      dispatchCommand({ type: 'CHOOSE_MAP_NODE', nodeId });
-      return;
-    }
     setSelectedNodeId(nodeId);
   };
 
   const togglePanel = (key: PanelKey) => setPanel((p) => (p === key ? null : key));
 
   return (
-    <div className={cx(sceneThemeClass, styles.page)}>
+    <RunSceneShell tone="map" className={styles.page} testId="map-page">
       <header className={styles.topBar}>
         <div className={styles.brand}>
-          <p className={styles.brandMark}>Spirewalker</p>
+          <p className={styles.brandMark}>SPIREWALKER</p>
           <span className={styles.brandDivider} aria-hidden />
           <div className={styles.actBlock}>
             <span className={styles.actName} data-testid="current-act">
@@ -198,7 +211,7 @@ export function MapPage() {
             </ul>
             <p className={styles.legendHint}>
               <strong>本层路线</strong>
-              ：点亮前方节点后，再点一次同一节点即可进入。
+              ：点亮前方节点，查看说明后通过“进入节点”确认。
               {isBossRestNode ? ' 下一层就是 Boss，先决定是否在此休整。' : ''}
               {cur ? ` 当前位置：${nodeTitle(cur)}。` : ''}
             </p>
@@ -217,6 +230,24 @@ export function MapPage() {
             onHoverNode={setHoveredNodeId}
           />
         </div>
+
+        {selectedNode ? (
+          <aside className={styles.nodeDetail} aria-live="polite">
+            <span className={cx(styles.nodeDetailIcon, styles.legendGlyphTone[selectedNode.type])} aria-hidden>
+              <MapNodeIcon kind={selectedNode.type} className={styles.legendIcon} />
+            </span>
+            <div className={styles.nodeDetailCopy}>
+              <strong>{nodeTitle(selectedNode)}</strong>
+              <p>{nodeDescription(selectedNode)}</p>
+            </div>
+            <button
+              type="button"
+              className={styles.enterNodeButton}
+              data-testid="enter-selected-map-node"
+              onClick={() => dispatchCommand({ type: 'CHOOSE_MAP_NODE', nodeId: selectedNode.id })}
+            >进入节点</button>
+          </aside>
+        ) : null}
 
         {panel === 'menu' ? (
           <div className={styles.popoverMenu} role="menu">
@@ -315,6 +346,6 @@ export function MapPage() {
           牌组 · {masterDeckSize}
         </button>
       </footer>
-    </div>
+    </RunSceneShell>
   );
 }

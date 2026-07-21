@@ -18,6 +18,8 @@ import {
   type ProfileState,
 } from '../core/model/profile';
 import type { RunState } from '../core/model/run';
+import { buildCommandNotice } from '../core/presentation/commandNotice';
+import { playGameCommandSounds } from '../core/audio/gameAudio';
 
 interface GameStoreState {
   run: RunState | null;
@@ -27,6 +29,7 @@ interface GameStoreState {
   battleLog: string[];
   /** 缩短战斗表现耗时 */
   fastMode: boolean;
+  actionNotice: string | null;
   engine: GameEngine;
   initRun: (run: RunState) => void;
   startRun: (run: RunState) => void;
@@ -36,6 +39,7 @@ interface GameStoreState {
   dispatchCommand: (command: GameCommand) => void;
   consumeEvents: () => GameEvent[];
   setFastMode: (value: boolean) => void;
+  clearActionNotice: () => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => ({
@@ -44,13 +48,15 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   pendingEvents: [],
   battleLog: [],
   fastMode: false,
+  actionNotice: null,
   engine: new GameEngine(),
 
   setFastMode: (value) => set({ fastMode: value }),
+  clearActionNotice: () => set({ actionNotice: null }),
 
   initRun: (run) => {
     const profile = observeRun(get().profile, run);
-    set({ run, profile, pendingEvents: [], battleLog: [] });
+    set({ run, profile, pendingEvents: [], battleLog: [], actionNotice: null });
     saveProfileToLocalStorage(profile);
     if (run.screen.type === 'game_over') clearSavedRun();
     else saveRunToLocalStorage(run);
@@ -58,7 +64,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
 
   startRun: (run) => {
     const profile = recordRunStarted(get().profile, run);
-    set({ run, profile, pendingEvents: [], battleLog: [] });
+    set({ run, profile, pendingEvents: [], battleLog: [], actionNotice: null });
     saveProfileToLocalStorage(profile);
     saveRunToLocalStorage(run);
   },
@@ -70,7 +76,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   },
 
   returnToMainMenu: () => {
-    set({ run: null, pendingEvents: [], battleLog: [] });
+    set({ run: null, pendingEvents: [], battleLog: [], actionNotice: null });
   },
 
   dispatchCommand: (command) => {
@@ -78,6 +84,8 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     if (!run) return;
 
     const result = engine.dispatch(run, command);
+    playGameCommandSounds(command, result.events);
+    const actionNotice = buildCommandNotice(command, run, result.nextRun);
     let profile = observeRun(get().profile, result.nextRun);
     if (run.screen.type !== 'victory' && result.nextRun.screen.type === 'victory') {
       profile = recordRunWin(profile, result.nextRun);
@@ -96,6 +104,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
       profile,
       pendingEvents: [...pendingEvents, ...result.events],
       battleLog: [...get().battleLog, ...lines].slice(-100),
+      actionNotice: actionNotice ?? get().actionNotice,
     });
 
     const next = get().run;

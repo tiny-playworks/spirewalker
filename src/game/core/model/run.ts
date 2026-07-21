@@ -2,6 +2,7 @@ import type { BattleState } from './battle';
 import type { MapState } from './map';
 import type { RewardState } from './reward';
 import type { ShopState } from './shop';
+import type { RunStats } from './runStats';
 
 export type ScreenState =
   | { type: 'main_menu' }
@@ -43,6 +44,8 @@ export interface RunState {
   reward?: RewardState;
   /** 商店库存（进入商店节点时生成） */
   shop?: ShopState;
+  /** 本局可读结算数据；旧测试夹具可省略，由引擎首次分发时补齐。 */
+  stats?: RunStats;
   meta: {
     act: 1 | 2 | 3;
     actFloor: number;
@@ -59,5 +62,7 @@ export interface RunState {
     rewardArchetypeTiltEnabled?: boolean;
     /** 事件中获得、等待下一场战斗消费的连势。 */
     pendingBattleMomentum?: number;
+    /** Boss 奖励结算后先展示章节过渡，确认后才露出下一章地图。 */
+    actTransitionFrom?: 1 | 2;
   };
 }

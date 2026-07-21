@@ -1,6 +1,7 @@
 import { ScrollText, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { useGameStore } from '@/game/store/gameStore';
+import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import { BattleDeckPanel } from './BattleDeckPanel';
 import { BattleHUD } from './BattleHUD';
 import { BattleLogPanel } from './BattleLogPanel';
@@ -8,27 +9,29 @@ import { FastModeToggle } from './FastModeToggle';
 import { PotionBar } from './PotionBar';
 import { ReactBattleStage } from './ReactBattleStage';
 import * as styles from './battlePage.css';
+import { AudioToggle } from './AudioToggle';
 
 export function BattlePage() {
   const [sidePanel, setSidePanel] = useState<'deck' | 'log' | null>(null);
   const run = useGameStore((s) => s.run);
   const deckSize = run?.masterDeck.length ?? 0;
   const levelTitle = run
-    ? `LEVEL ${run.meta.act}-${run.meta.actFloor}: THE GILDED RUINS`
-    : 'LEVEL 1-1: THE GILDED RUINS';
+    ? `第 ${run.meta.act}-${run.meta.actFloor} 层 · ${run.battle?.encounter.name ?? '镀金废墟'}`
+    : '第 1-1 层 · 镀金废墟';
   const turn = run?.battle?.turn ?? 1;
 
   return (
-    <div className={styles.page}>
+    <div className={`${sceneThemeClass} ${styles.page}`} data-scene-ready="true" data-scene-tone="battle">
       <div className={styles.headerArea}>
         <div className={styles.headerMain}>
           <BattleHUD />
         </div>
         <div className={styles.levelTitle} aria-label={`${levelTitle}，第 ${turn} 回合`}>
           <strong>{levelTitle}</strong>
-          <span>Turn {turn}</span>
+          <span>第 {turn} 回合</span>
         </div>
         <div className={styles.topBar}>
+          <AudioToggle />
           <FastModeToggle />
           <PotionBar />
           <button

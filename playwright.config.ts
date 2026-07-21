@@ -19,13 +19,28 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      testIgnore: [/responsiveSmoke\.spec\.ts/, /mobilePortrait\.spec\.ts/],
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
+      },
     },
     {
-      name: 'mobile',
+      name: 'mobile-landscape',
+      testMatch: /responsiveSmoke\.spec\.ts/,
+      use: {
+        ...devices['Pixel 5'],
+        viewport: { width: 844, height: 390 },
+        screen: { width: 844, height: 390 },
+      },
+    },
+    {
+      name: 'mobile-portrait',
+      testMatch: /mobilePortrait\.spec\.ts/,
       use: {
         ...devices['Pixel 5'],
         viewport: { width: 390, height: 844 },
+        screen: { width: 390, height: 844 },
       },
     },
   ],

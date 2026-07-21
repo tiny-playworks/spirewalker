@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Activity } from 'lucide-react';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { ARCHETYPE_DISPLAY, summarizeDeckArchetypes } from '@/game/core/definitions/cards/archetypes';
 import { ArchetypeDot } from '@/features/cards/ArchetypeDot';
@@ -8,6 +9,7 @@ import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { getStatusMeta } from '@/game/core/definitions/statuses';
 import type { CardDefinition, CardType } from '@/game/core/model/card';
 import type { RunState } from '@/game/core/model/run';
+import { applyReducedMotion, loadReducedMotion } from '@/game/core/presentation/motionSettings';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as styles from './runOverview.css';
 
@@ -116,6 +118,7 @@ export function RunOverviewPanel({
   onClose: () => void;
 }) {
   const character = getCharacterDefinition(run.meta.characterId);
+  const [reducedMotion, setReducedMotion] = useState(loadReducedMotion);
   const deck = useMemo(() => deckRows(run.masterDeck), [run.masterDeck]);
   const battleStatuses = run.screen.type === 'battle' && run.battle
     ? run.battle.units[run.battle.playerUnitId]?.statuses ?? []
@@ -149,6 +152,21 @@ export function RunOverviewPanel({
             关闭
           </button>
         </div>
+
+        <button
+          type="button"
+          className={styles.motionSetting}
+          aria-pressed={reducedMotion}
+          onClick={() => {
+            const next = !reducedMotion;
+            setReducedMotion(next);
+            applyReducedMotion(next);
+          }}
+        >
+          <Activity aria-hidden />
+          <span><strong>减少动态效果</strong><small>{reducedMotion ? '已开启 · 动画与震动已压缩' : '已关闭 · 保留完整战斗反馈'}</small></span>
+          <b>{reducedMotion ? '开' : '关'}</b>
+        </button>
 
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>角色</h3>

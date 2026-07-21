@@ -1,23 +1,37 @@
-import { globalStyle, style, styleVariants } from '@vanilla-extract/css';
+import { globalStyle, keyframes, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
-const mobile = '(max-width: 760px)';
+const mobile = '(max-width: 900px) and (orientation: landscape)';
+
+const hitFlash = keyframes({
+  '0%': { filter: 'brightness(1)' },
+  '35%': { filter: 'brightness(1.85) saturate(.7)', transform: 'translateX(-4px)' },
+  '68%': { transform: 'translateX(3px)' },
+  '100%': { filter: 'brightness(1)', transform: 'translateX(0)' },
+});
+
+const guardPulse = keyframes({
+  '0%': { boxShadow: '0 0 0 rgba(45,212,191,0)' },
+  '45%': { boxShadow: '0 0 32px rgba(45,212,191,.42)' },
+  '100%': { boxShadow: '0 0 0 rgba(45,212,191,0)' },
+});
 
 export const root = style({
   position: 'relative',
   isolation: 'isolate',
   display: 'grid',
-  gridTemplateRows: 'minmax(0, 1fr) minmax(15.5rem, 34%)',
+  gridTemplateRows: 'minmax(0, 1fr) minmax(13.8rem, 33%)',
   gap: 0,
-  minHeight: 'calc(100vh - 5rem)',
-  padding: '0.45rem 0.75rem 0.35rem',
+  minHeight: 0,
+  height: '100%',
+  padding: 0,
   overflow: 'hidden',
   color: sceneVars.color.text,
   '@media': {
     [mobile]: {
       minHeight: 0,
-      padding: '0.35rem',
-      gridTemplateRows: 'minmax(11rem, 1fr) minmax(12rem, 42%)',
+      padding: 0,
+      gridTemplateRows: 'minmax(0, 1fr) 9.85rem',
     },
   },
 });
@@ -35,9 +49,9 @@ export const backdropImage = style({
   inset: 0,
   backgroundPosition: 'center',
   backgroundSize: 'cover',
-  opacity: 0.4,
-  mixBlendMode: 'screen',
-  filter: 'brightness(0.46) saturate(1.12)',
+  opacity: 0.72,
+  mixBlendMode: 'normal',
+  filter: 'brightness(0.5) saturate(1.08)',
 });
 
 export const grid = style({
@@ -67,17 +81,18 @@ export const spire = style({
 export const combatLayer = style({
   display: 'grid',
   gridTemplateColumns: 'minmax(16rem, 0.72fr) minmax(0, 1fr)',
-  alignItems: 'start',
+  alignItems: 'center',
   justifyItems: 'center',
-  gap: 'clamp(3rem, 13vw, 13rem)',
+  gap: 'clamp(2rem, 11vw, 10rem)',
   minHeight: 0,
-  padding: 'clamp(1.8rem, 7vh, 4.2rem) clamp(1rem, 5vw, 5rem) 0',
+  padding: 'clamp(.75rem, 3vh, 1.5rem) clamp(1rem, 5vw, 5rem) 2.8rem',
   '@media': {
     [mobile]: {
-      gridTemplateColumns: '1fr',
+      gridTemplateColumns: 'minmax(0, 0.82fr) minmax(0, 1.18fr)',
+      alignItems: 'center',
       alignContent: 'center',
-      gap: '0.35rem',
-      padding: '0.35rem',
+      gap: '.6rem',
+      padding: '.15rem max(.5rem, env(safe-area-inset-right, 0px)) .2rem max(.5rem, env(safe-area-inset-left, 0px))',
     },
   },
 });
@@ -90,7 +105,10 @@ export const enemyRail = style({
   minWidth: 0,
   '@media': {
     [mobile]: {
-      flexWrap: 'wrap',
+      width: '100%',
+      flexWrap: 'nowrap',
+      justifyContent: 'flex-start',
+      overflowX: 'auto',
     },
   },
 });
@@ -108,8 +126,8 @@ export const unit = style({
   boxShadow: 'none',
   '@media': {
     [mobile]: {
-      width: '7.5rem',
-      minWidth: '7.5rem',
+      width: '6.8rem',
+      minWidth: '6.8rem',
     },
   },
 });
@@ -123,8 +141,8 @@ export const unitTone = styleVariants({
     filter: 'drop-shadow(0 0 30px rgba(139, 92, 246, 0.42))',
     '@media': {
       [mobile]: {
-        width: '9.5rem',
-        minWidth: '9.5rem',
+        width: '8.2rem',
+        minWidth: '8.2rem',
       },
     },
   },
@@ -135,21 +153,37 @@ export const unitDead = style({
   filter: 'grayscale(0.5)',
 });
 
+export const unitHit = style({ animation: `${hitFlash} 190ms ease-out` });
+export const unitGuarded = style({ animation: `${guardPulse} 260ms ease-out` });
+
 export const spriteFrame = style({
   position: 'relative',
   width: '100%',
   height: 'clamp(10rem, 25vh, 16rem)',
-  overflow: 'hidden',
-  borderRadius: '18px',
-  border: '1px solid rgba(208, 188, 255, 0.32)',
+  overflow: 'visible',
+  borderRadius: '42% 42% 24% 24%',
+  border: 0,
   background:
     'radial-gradient(circle at 50% 30%, rgba(139, 92, 246, 0.16), transparent 62%), linear-gradient(180deg, rgba(18, 18, 22, 0.72), rgba(8, 8, 10, 0.92))',
-  boxShadow:
-    'inset 0 0 38px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 18px 40px rgba(0, 0, 0, 0.5)',
+  boxShadow: 'inset 0 -44px 36px rgba(0,0,0,.45), 0 24px 48px rgba(0,0,0,.36)',
+  selectors: {
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      left: '12%',
+      right: '12%',
+      bottom: '-.4rem',
+      height: '1.25rem',
+      zIndex: -1,
+      borderRadius: '50%',
+      background: 'rgba(0,0,0,.72)',
+      filter: 'blur(8px)',
+    },
+  },
   '@media': {
     [mobile]: {
-      height: 'clamp(6.25rem, 16vh, 8rem)',
-      borderRadius: '12px',
+      height: '7rem',
+      borderRadius: '40% 40% 18% 18%',
     },
   },
 });
@@ -159,7 +193,9 @@ export const unitSprite = style({
   inset: 0,
   backgroundRepeat: 'no-repeat',
   backgroundPosition: 'center bottom',
-  backgroundSize: 'cover',
+  backgroundSize: 'contain',
+  borderRadius: 'inherit',
+  maskImage: 'linear-gradient(to bottom, #000 0 76%, transparent 100%)',
 });
 
 export const unitBody = style({
@@ -197,6 +233,7 @@ globalStyle(`${hpTrack} > span`, {
   inset: '0 auto 0 0',
   background: 'linear-gradient(90deg, #d4846a, #ffb4ab)',
   boxShadow: '0 0 18px rgba(212, 132, 106, 0.34)',
+  transition: `width ${sceneVars.motion.normal} ${sceneVars.motion.ease}`,
 });
 
 globalStyle(`${hpTrack} > strong`, {
@@ -279,21 +316,16 @@ export const enemyTarget = style({
   background: 'transparent',
   color: 'inherit',
   textAlign: 'left',
-  selectors: {
-    '&:disabled': {
-      cursor: 'default',
-    },
-  },
   '@media': {
     [mobile]: {
-      minWidth: '9.5rem',
+      minWidth: '7.4rem',
       gap: '0.3rem',
     },
   },
 });
 
 export const enemyTargetActive = style({
-  cursor: 'crosshair',
+  cursor: 'default',
 });
 
 globalStyle(`${enemyTargetActive} ${unit}`, {
@@ -306,9 +338,9 @@ export const intent = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: '0.4rem',
-  padding: '0.4rem 0.85rem',
+  padding: '0.34rem 0.7rem',
   borderRadius: sceneVars.radii.md,
-  fontSize: '1rem',
+  fontSize: '.9rem',
   fontWeight: 800,
   border: '1px solid currentColor',
   background: 'rgba(26, 24, 20, 0.5)',
@@ -316,8 +348,8 @@ export const intent = style({
   boxShadow: '0 0 20px rgba(212, 132, 106, 0.2)',
   '@media': {
     [mobile]: {
-      padding: '0.25rem 0.55rem',
-      fontSize: '0.78rem',
+      padding: '.2rem .45rem',
+      fontSize: '.72rem',
     },
   },
 });
@@ -334,6 +366,75 @@ export const intentTone = styleVariants({
   utility: { color: '#d0bcff' },
 });
 
+export const intentDetails = style({
+  position: 'relative',
+  zIndex: 24,
+  alignSelf: 'center',
+});
+
+globalStyle(`${intentDetails} summary`, { listStyle: 'none', cursor: 'help' });
+globalStyle(`${intentDetails} summary::-webkit-details-marker`, { display: 'none' });
+
+export const intentCopy = style({ display: 'grid', gap: '.02rem', minWidth: '2rem' });
+globalStyle(`${intentCopy} small`, {
+  fontSize: '.55rem',
+  fontWeight: 900,
+  letterSpacing: '.08em',
+  opacity: .72,
+});
+globalStyle(`${intentCopy} strong`, { fontSize: '.95rem', lineHeight: 1 });
+
+export const intentPopover = style({
+  position: 'absolute',
+  left: '50%',
+  top: 'calc(100% + .4rem)',
+  zIndex: 60,
+  transform: 'translateX(-50%)',
+  width: 'max-content',
+  maxWidth: '15rem',
+  padding: '.48rem .62rem',
+  borderRadius: sceneVars.radii.sm,
+  border: `1px solid ${sceneVars.color.border}`,
+  color: sceneVars.color.textStrong,
+  background: 'rgba(8,8,10,.96)',
+  boxShadow: sceneVars.shadow.panel,
+  fontSize: '.7rem',
+  lineHeight: 1.4,
+});
+
+export const enemyHitTarget = style({
+  position: 'relative',
+  display: 'grid',
+  justifyItems: 'center',
+  padding: 0,
+  border: 0,
+  color: 'inherit',
+  background: 'transparent',
+  selectors: {
+    '&:disabled': { cursor: 'default' },
+    '&:not(:disabled)': { cursor: 'crosshair' },
+  },
+});
+
+export const targetPreview = style({
+  position: 'absolute',
+  left: '50%',
+  bottom: '-2.2rem',
+  zIndex: 40,
+  transform: 'translateX(-50%)',
+  width: 'max-content',
+  maxWidth: '13rem',
+  padding: '.34rem .58rem',
+  borderRadius: sceneVars.radii.pill,
+  border: '1px solid rgba(251,191,36,.58)',
+  color: '#fff1c7',
+  background: 'rgba(20,14,7,.94)',
+  boxShadow: '0 0 28px rgba(251,191,36,.2)',
+  fontSize: '.7rem',
+  fontWeight: 900,
+  '@media': { [mobile]: { bottom: '-1.65rem', fontSize: '.58rem', padding: '.2rem .38rem' } },
+});
+
 export const bottomDock = style({
   position: 'relative',
   display: 'grid',
@@ -346,10 +447,10 @@ export const bottomDock = style({
     'linear-gradient(180deg, transparent 0%, rgba(10, 10, 11, 0.54) 22%, rgba(10, 10, 11, 0.9) 100%)',
   '@media': {
     [mobile]: {
-      gridTemplateColumns: '4.25rem minmax(0, 1fr) 6.8rem',
+      gridTemplateColumns: '3.7rem minmax(0, 1fr) 6.8rem',
       alignItems: 'end',
       gap: '0.35rem',
-      padding: '0 0.2rem 0.2rem',
+      padding: '0 max(.2rem, env(safe-area-inset-right, 0px)) max(.15rem, env(safe-area-inset-bottom, 0px)) max(.2rem, env(safe-area-inset-left, 0px))',
     },
   },
 });
@@ -366,7 +467,7 @@ export const leftDock = style({
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-end',
-      gap: '0.25rem',
+      gap: '.12rem',
     },
   },
 });
@@ -383,7 +484,7 @@ export const rightDock = style({
       justifyContent: 'flex-end',
       flexDirection: 'column',
       flexWrap: 'nowrap',
-      gap: '0.3rem',
+      gap: '.18rem',
       minWidth: 0,
     },
   },
@@ -403,7 +504,7 @@ export const energyCore = style({
     '0 0 0 2.2rem rgba(139, 92, 246, 0.16), 0 0 62px rgba(139, 92, 246, 0.62), inset 0 0 30px rgba(208, 188, 255, 0.28)',
   '@media': {
     [mobile]: {
-      width: '4rem',
+      width: '3.35rem',
       boxShadow: '0 0 0 0.8rem rgba(139, 92, 246, 0.12), 0 0 28px rgba(139, 92, 246, 0.42), inset 0 0 18px rgba(208, 188, 255, 0.24)',
     },
   },
@@ -457,6 +558,9 @@ export const pile = style({
 export const pileMuted = style({
   opacity: 0.76,
   transform: 'rotate(4deg)',
+  '@media': {
+    [mobile]: { display: 'none' },
+  },
 });
 
 globalStyle(`${pile} small`, {
@@ -508,7 +612,8 @@ const commandButton = style({
     [mobile]: {
       justifySelf: 'stretch',
       minHeight: '3.1rem',
-      minWidth: '6.8rem',
+      width: '100%',
+      minWidth: 0,
       padding: '0 0.45rem',
       fontSize: '0.7rem',
     },
@@ -545,7 +650,7 @@ export const hand = style({
   overflow: 'visible',
   padding: '0 0.2rem 0.65rem',
   perspective: '1000px',
-  transform: 'translateY(-4rem)',
+  transform: 'translateY(-3.15rem)',
   '@media': {
     [mobile]: {
       justifyContent: 'flex-start',
@@ -562,12 +667,12 @@ export const hand = style({
 
 export const card = style({
   position: 'relative',
-  flex: '0 0 clamp(8.3rem, 10.6vw, 10rem)',
+  flex: '0 0 clamp(8.6rem, 11.6vw, 9.4rem)',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'stretch',
   gap: '0.28rem',
-  minHeight: '12.2rem',
+  minHeight: '13rem',
   padding: '0.62rem',
   color: sceneVars.color.text,
   textAlign: 'left',
@@ -593,10 +698,14 @@ export const card = style({
   },
   '@media': {
     [mobile]: {
-      flexBasis: '6.8rem',
-      minHeight: '9.5rem',
-      padding: '0.45rem',
-      gap: '0.2rem',
+      flexBasis: '6.5rem',
+      height: '9.25rem',
+      minHeight: 0,
+      maxHeight: '9.25rem',
+      padding: '.3rem',
+      gap: '.1rem',
+      overflow: 'hidden',
+      transform: 'none !important',
     },
   },
 });
@@ -645,6 +754,7 @@ export const cardCost = style({
   fontWeight: 900,
   background: 'linear-gradient(135deg, #e9ddff, #d0bcff)',
   boxShadow: '0 0 22px rgba(208, 188, 255, 0.28)',
+  '@media': { [mobile]: { top: '.24rem', right: '.24rem', width: '1.5rem', fontSize: '.7rem' } },
 });
 
 export const cardHead = style({
@@ -653,6 +763,7 @@ export const cardHead = style({
   gap: '0.2rem',
   paddingRight: '2.2rem',
   minHeight: '2.15rem',
+  '@media': { [mobile]: { gap: '.05rem', minHeight: '1.35rem', paddingRight: '1.55rem' } },
 });
 
 globalStyle(`${cardHead} strong`, {
@@ -660,12 +771,14 @@ globalStyle(`${cardHead} strong`, {
   fontFamily: '"Libre Caslon Text", Georgia, serif',
   fontSize: '1rem',
   lineHeight: 1.15,
+  '@media': { [mobile]: { fontSize: '.7rem', lineHeight: 1.05 } },
 });
 
 globalStyle(`${cardHead} span`, {
   color: sceneVars.color.textSubtle,
   fontSize: '0.62rem',
   fontWeight: 800,
+  '@media': { [mobile]: { fontSize: '.46rem' } },
 });
 
 export const cardFocus = style({
@@ -706,6 +819,7 @@ export const cardArt = style({
       filter: 'blur(0.2px)',
     },
   },
+  '@media': { [mobile]: { minHeight: '3.2rem', borderRadius: '6px' } },
 });
 
 export const cardArtImg = style({
@@ -780,10 +894,93 @@ export const cardDesc = style({
   padding: '0.42rem',
   borderRadius: '8px',
   background: 'rgba(10, 10, 11, 0.34)',
+  '@media': {
+    [mobile]: {
+      display: '-webkit-box',
+      padding: '.2rem',
+      overflow: 'hidden',
+      fontSize: '.52rem',
+      lineHeight: 1.2,
+      WebkitBoxOrient: 'vertical',
+      WebkitLineClamp: 3,
+    },
+  },
 });
 
 export const cardFoot = style({
   color: sceneVars.color.textSubtle,
   fontSize: '0.62rem',
   fontWeight: 800,
+  '@media': { [mobile]: { fontSize: '.46rem' } },
+});
+
+const cuePop = keyframes({
+  '0%': { opacity: 0, transform: 'translate(-50%, 0.65rem) scale(0.72)' },
+  '22%': { opacity: 1, transform: 'translate(-50%, -0.2rem) scale(1.12)' },
+  '72%': { opacity: 1, transform: 'translate(-50%, -1.15rem) scale(1)' },
+  '100%': { opacity: 0, transform: 'translate(-50%, -2rem) scale(0.94)' },
+});
+
+export const feedbackLayer = style({
+  position: 'absolute',
+  inset: 0,
+  zIndex: 12,
+  pointerEvents: 'none',
+});
+
+export const feedbackCue = style({
+  position: 'absolute',
+  left: '50%',
+  top: '34%',
+  padding: '0.25rem 0.55rem',
+  borderRadius: '999px',
+  fontSize: 'clamp(0.9rem, 2vw, 1.35rem)',
+  fontWeight: 900,
+  letterSpacing: '0.04em',
+  textShadow: '0 2px 12px rgba(0, 0, 0, 0.9)',
+  opacity: 0,
+  animation: `${cuePop} 520ms ease-out both`,
+  '@media': {
+    '(prefers-reduced-motion: reduce)': { animationDuration: '1ms' },
+  },
+});
+
+export const feedbackCueTone = styleVariants({
+  damage: { color: '#fff4ef', background: 'rgba(185, 70, 52, 0.78)', border: '1px solid #ffb4ab' },
+  block: { color: '#eafffb', background: 'rgba(20, 117, 112, 0.78)', border: '1px solid #3cddc7' },
+  status: { color: '#f6efff', background: 'rgba(91, 55, 146, 0.8)', border: '1px solid #d0bcff' },
+  momentum: { color: '#eafffb', background: 'rgba(10, 94, 92, .88)', border: '1px solid #62fae3', boxShadow: '0 0 22px rgba(45,212,191,.32)' },
+  defeat: { color: '#fff1c7', background: 'rgba(122, 78, 12, 0.85)', border: '1px solid #fbbf24' },
+});
+
+export const targetGuide = style({
+  position: 'absolute',
+  left: '50%',
+  bottom: 'calc(100% + 0.35rem)',
+  zIndex: 30,
+  transform: 'translateX(-50%)',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.65rem',
+  padding: '0.48rem 0.7rem',
+  whiteSpace: 'nowrap',
+  borderRadius: sceneVars.radii.pill,
+  color: sceneVars.color.textStrong,
+  border: '1px solid rgba(251, 191, 36, 0.45)',
+  background: 'rgba(10, 10, 11, 0.9)',
+  boxShadow: '0 12px 34px rgba(0, 0, 0, 0.45)',
+  '@media': {
+    [mobile]: { bottom: 'calc(100% + 0.1rem)', fontSize: '0.72rem', gap: '0.35rem' },
+  },
+});
+
+globalStyle(`${targetGuide} > span`, { color: '#fbbf24', fontWeight: 900 });
+globalStyle(`${targetGuide} > strong`, { fontSize: '0.78rem' });
+globalStyle(`${targetGuide} > button`, {
+  minHeight: '2rem',
+  padding: '0.25rem 0.6rem',
+  borderRadius: '999px',
+  color: sceneVars.color.text,
+  border: '1px solid rgba(208, 188, 255, 0.3)',
+  background: 'rgba(208, 188, 255, 0.1)',
 });

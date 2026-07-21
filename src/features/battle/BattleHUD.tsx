@@ -20,6 +20,7 @@ export function BattleHUD() {
   if (!run || !battle) return null;
 
   const player = battle.units[battle.playerUnitId];
+  const momentum = player?.statuses.find((status) => status.id === 'momentum')?.stacks ?? 0;
   const { drawPile, hand, discardPile, exhaustPile } = battle.player;
   const selectingTarget = battle.inputMode === 'selecting_target' && battle.pendingAction?.type === 'play_card';
 
@@ -46,13 +47,22 @@ export function BattleHUD() {
             title={`能量 ${battle.player.energy}/${battle.player.maxEnergy}`}
           >
             <Zap size={ICON_SIZE} aria-hidden />
+            <strong>{battle.player.energy}/{battle.player.maxEnergy}</strong>
           </span>
           <span
             className={cx(styles.chip, styles.chipTone.accent)}
+            title={`连势 ${momentum} 层`}
+          >
+            <span className={styles.momentumGlyph} aria-hidden>◈</span>
+            <strong>{momentum}</strong>
+          </span>
+          <span
+            className={cx(styles.chip, styles.chipTone.draw)}
             data-testid="battle-draw-count"
             title={`${PILE_DRAW_TITLE}\n抽牌 ${drawPile.length}，手牌 ${hand.length}，弃牌 ${discardPile.length}，消耗 ${exhaustPile.length}`}
           >
             <Layers size={ICON_SIZE} aria-hidden />
+            <strong>{drawPile.length}</strong>
           </span>
           {battle.phase === 'victory' ? (
             <span className={cx(styles.chip, styles.chipTone.win)}>胜利</span>

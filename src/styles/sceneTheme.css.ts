@@ -2,6 +2,9 @@ import { createTheme } from '@vanilla-extract/css';
 
 export const [sceneThemeClass, sceneVars] = createTheme({
   color: {
+    canvas: '#09090b',
+    canvasRaised: '#121118',
+    sceneGlow: 'rgba(139, 92, 246, 0.16)',
     text: '#e5e2e3',
     textStrong: '#f4e8d4',
     textMuted: '#cbc3d7',
@@ -19,6 +22,13 @@ export const [sceneThemeClass, sceneVars] = createTheme({
     relief: 'rgba(45, 212, 191, 0.92)',
     edgeDim: '#494454',
   },
+  space: {
+    xs: '0.35rem',
+    sm: '0.55rem',
+    md: '0.85rem',
+    lg: '1.25rem',
+    xl: '1.75rem',
+  },
   radii: {
     sm: '8px',
     md: '12px',
@@ -31,10 +41,10 @@ export const [sceneThemeClass, sceneVars] = createTheme({
     button: '0 12px 28px rgba(0, 0, 0, 0.36), 0 0 26px rgba(251, 191, 36, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
   },
   motion: {
-    fast: '140ms',
-    normal: '180ms',
-    slow: '320ms',
-    ease: 'ease',
-    easeInOut: 'ease-in-out',
+    fast: '120ms',
+    normal: '200ms',
+    slow: '420ms',
+    ease: 'cubic-bezier(.2,.75,.25,1)',
+    easeInOut: 'cubic-bezier(.45,0,.2,1)',
   },
 });

@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
-const tablet = '(max-width: 900px)';
+const tablet = '(max-width: 900px) and (orientation: landscape)';
 
 export const page = style({
   position: 'relative',
@@ -9,6 +9,8 @@ export const page = style({
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
+  height: '100dvh',
+  overflow: 'hidden',
   padding: 0,
   background:
     'radial-gradient(ellipse 90% 55% at 50% 0%, rgba(139, 92, 246, 0.18) 0%, transparent 52%), radial-gradient(ellipse 60% 45% at 100% 60%, rgba(45, 212, 191, 0.1) 0%, transparent 42%), linear-gradient(175deg, #0a0a0b 0%, #131314 42%, #0e0e0f 100%)',
@@ -34,64 +36,63 @@ globalStyle(`${page} > *`, {
 
 /** 顶栏：HUD 与快捷条同一行 flex，避免绝对定位叠在 HUD 上 */
 export const headerArea = style({
-  display: 'flex',
-  flexWrap: 'wrap',
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1.15fr) auto minmax(0, .85fr)',
   alignItems: 'center',
   position: 'relative',
-  minHeight: '5rem',
-  gap: '0.24rem 0.55rem',
+  minHeight: '4rem',
+  gap: '0.7rem',
   width: '100%',
   flexShrink: 0,
-  padding: '0 1.8rem',
+  padding: 'max(.42rem, env(safe-area-inset-top, 0px)) max(1.25rem, env(safe-area-inset-right, 0px)) .42rem max(1.25rem, env(safe-area-inset-left, 0px))',
   boxSizing: 'border-box',
   background: 'linear-gradient(180deg, rgba(22, 22, 23, 0.98), rgba(12, 12, 13, 0.96))',
   borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
   boxShadow: '0 12px 34px rgba(0, 0, 0, 0.34)',
-});
-
-export const headerMain = style({
-  flex: '0 1 34rem',
-  minWidth: 0,
-  display: 'flex',
-  alignItems: 'center',
   '@media': {
     [tablet]: {
-      flex: '1 1 100%',
+      gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+      minHeight: '2.75rem',
+      gap: '.3rem',
+      padding: 'max(.22rem, env(safe-area-inset-top, 0px)) max(.45rem, env(safe-area-inset-right, 0px)) .22rem max(.45rem, env(safe-area-inset-left, 0px))',
     },
   },
 });
 
+export const headerMain = style({
+  minWidth: 0,
+  display: 'flex',
+  alignItems: 'center',
+  '@media': {
+    [tablet]: { overflow: 'hidden' },
+  },
+});
+
 export const levelTitle = style({
-  position: 'absolute',
-  left: '50%',
-  top: '0.55rem',
-  transform: 'translateX(-50%)',
+  position: 'static',
   display: 'grid',
   justifyItems: 'center',
   gap: '0.28rem',
-  minWidth: '26rem',
+  minWidth: '18rem',
   color: sceneVars.color.fortune,
   textAlign: 'center',
   pointerEvents: 'none',
   '@media': {
     [tablet]: {
-      position: 'static',
-      order: 3,
-      flex: '1 1 100%',
-      transform: 'none',
-      minWidth: 0,
-      marginTop: '0.15rem',
+      minWidth: '10rem',
+      gap: '.08rem',
     },
   },
 });
 
 globalStyle(`${levelTitle} strong`, {
   fontFamily: '"Libre Caslon Text", Georgia, serif',
-  fontSize: '1.34rem',
+  fontSize: '1.08rem',
   fontWeight: 900,
   letterSpacing: '0.08em',
   lineHeight: 1,
   textShadow: '0 0 16px rgba(251, 191, 36, 0.24)',
+  '@media': { [tablet]: { fontSize: '.78rem', letterSpacing: '.03em' } },
 });
 
 globalStyle(`${levelTitle} span`, {
@@ -99,6 +100,7 @@ globalStyle(`${levelTitle} span`, {
   color: sceneVars.color.textSubtle,
   fontSize: '0.78rem',
   fontWeight: 700,
+  '@media': { [tablet]: { fontSize: '.58rem' } },
 });
 
 export const main = style({
@@ -120,7 +122,6 @@ export const mainExpanded = style({
 });
 
 export const topBar = style({
-  flex: '1 1 auto',
   display: 'flex',
   flexWrap: 'wrap',
   justifyContent: 'flex-end',
@@ -137,9 +138,8 @@ export const topBar = style({
   },
   '@media': {
     [tablet]: {
-      order: 2,
-      justifyContent: 'flex-start',
-      width: '100%',
+      justifyContent: 'flex-end',
+      flexWrap: 'nowrap',
       opacity: 1,
     },
   },
@@ -234,10 +234,7 @@ export const sidebar = style({
   flexDirection: 'column',
   '@media': {
     [tablet]: {
-      top: 'auto',
-      left: 0,
-      width: '100%',
-      maxHeight: '18rem',
+      width: 'min(18rem, 58vw)',
     },
   },
 });

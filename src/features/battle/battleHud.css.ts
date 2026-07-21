@@ -2,7 +2,7 @@ import { globalStyle, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 import { infoChip } from '@/styles/uiPrimitives.css';
 
-const tablet = '(max-width: 900px)';
+const mobileLandscape = '(max-width: 900px) and (orientation: landscape)';
 
 /** 战斗顶栏一行：状态芯片、主操作、药水、快捷按钮共用，便于垂直对齐 */
 export const battleBarControlMinHeight = '2rem';
@@ -27,7 +27,7 @@ export const inner = style({
 export const primaryRow = style({
   display: 'flex',
   alignItems: 'center',
-  gap: '0.72rem',
+  gap: '0.28rem',
   minHeight: battleBarControlMinHeight,
   overflowX: 'auto',
   overflowY: 'hidden',
@@ -38,9 +38,9 @@ export const primaryRow = style({
     },
   },
   '@media': {
-    [tablet]: {
-      flexWrap: 'wrap',
-      overflowX: 'visible',
+    [mobileLandscape]: {
+      gap: '.24rem',
+      overflowX: 'hidden',
     },
   },
 });
@@ -49,10 +49,13 @@ export const brand = style({
   flexShrink: 0,
   color: sceneVars.color.fortune,
   fontFamily: '"Libre Caslon Text", Georgia, serif',
-  fontSize: '1.44rem',
+  fontSize: '1rem',
   fontWeight: 900,
-  letterSpacing: '0.09em',
+  letterSpacing: '0.045em',
   textShadow: '0 0 10px rgba(251, 191, 36, 0.32)',
+  '@media': {
+    [mobileLandscape]: { display: 'none' },
+  },
 });
 
 export const encounterTitle = style({
@@ -103,11 +106,18 @@ globalStyle(`${chip}`, {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '0.34rem',
-  padding: '0 0.82rem',
+  padding: '0 0.42rem',
   fontSize: '0.78rem',
   lineHeight: 1,
   background: 'rgba(10, 10, 11, 0.52)',
   borderColor: 'rgba(208, 188, 255, 0.16)',
+  '@media': {
+    [mobileLandscape]: {
+      minHeight: '1.7rem',
+      padding: '0 .4rem',
+      fontSize: '.68rem',
+    },
+  },
 });
 
 globalStyle(`${chip} strong`, {
@@ -132,20 +142,24 @@ export const chipTone = styleVariants({
   },
   energy: {
     color: sceneVars.color.fortune,
-    width: '2.1rem',
-    padding: 0,
+    padding: '0 .48rem',
     justifyContent: 'center',
     borderColor: 'rgba(251, 191, 36, 0.68)',
     background: 'rgba(251, 191, 36, 0.12)',
     boxShadow: '0 0 22px rgba(251, 191, 36, 0.24)',
+    '@media': { [mobileLandscape]: { display: 'none' } },
   },
   accent: {
-    width: '2.1rem',
-    padding: 0,
+    padding: '0 .48rem',
     justifyContent: 'center',
     color: '#3cddc7',
     borderColor: 'rgba(45, 212, 191, 0.6)',
     background: 'rgba(45, 212, 191, 0.1)',
+  },
+  draw: {
+    color: sceneVars.color.textMuted,
+    borderColor: 'rgba(208,188,255,.2)',
+    '@media': { [mobileLandscape]: { display: 'none' } },
   },
   win: {
     borderColor: 'rgba(45, 212, 191, 0.55)',
@@ -169,6 +183,12 @@ export const energyHint = style({
 export const muted = style({
   marginLeft: '-0.18rem',
   color: sceneVars.color.textSubtle,
+});
+
+export const momentumGlyph = style({
+  color: '#62fae3',
+  fontSize: '.72rem',
+  textShadow: '0 0 10px rgba(45,212,191,.55)',
 });
 
 export const blockText = style({

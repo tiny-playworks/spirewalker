@@ -2,6 +2,7 @@ import { globalStyle, keyframes, style, styleVariants } from '@vanilla-extract/c
 import { sceneVars } from '@/styles/sceneTheme.css';
 
 const SERIF = '"Libre Caslon Text", Georgia, serif';
+const mobileLandscape = '(max-width: 900px) and (orientation: landscape)';
 
 const pulseGlow = keyframes({
   '0%, 100%': { opacity: 0.65, transform: 'scale(1)' },
@@ -88,6 +89,7 @@ export const header = style({
   position: 'relative',
   textAlign: 'center',
   margin: '1.4rem 0 0.4rem',
+  '@media': { [mobileLandscape]: { margin: '.25rem 0 0' } },
 });
 
 export const headerHalo = style({
@@ -99,6 +101,7 @@ export const headerHalo = style({
   filter: 'blur(48px)',
   animation: `${pulseGlow} 3.4s ease-in-out infinite`,
   pointerEvents: 'none',
+  '@media': { [mobileLandscape]: { display: 'none' } },
 });
 
 export const title = style({
@@ -114,6 +117,7 @@ export const title = style({
   backgroundClip: 'text',
   color: 'transparent',
   animation: `${shimmer} 4s linear infinite`,
+  '@media': { [mobileLandscape]: { fontSize: '1.45rem', letterSpacing: '.12em' } },
 });
 
 export const subtitle = style({
@@ -123,6 +127,7 @@ export const subtitle = style({
   letterSpacing: '0.3em',
   textTransform: 'uppercase',
   color: 'rgba(255, 198, 64, 0.8)',
+  '@media': { [mobileLandscape]: { marginTop: '.08rem', fontSize: '.58rem', letterSpacing: '.16em' } },
 });
 
 export const main = style({
@@ -133,6 +138,17 @@ export const main = style({
   justifyContent: 'center',
   gap: 'clamp(1.5rem, 4vw, 3rem)',
   padding: '1rem clamp(1rem, 4vw, 3rem) 0',
+  minHeight: 0,
+  '@media': {
+    [mobileLandscape]: {
+      flexWrap: 'nowrap',
+      alignItems: 'stretch',
+      justifyContent: 'flex-start',
+      gap: '.55rem',
+      padding: '.35rem max(.55rem, env(safe-area-inset-right, 0px)) 0 max(.55rem, env(safe-area-inset-left, 0px))',
+      overflow: 'hidden',
+    },
+  },
 });
 
 export const logPanel = style({
@@ -147,6 +163,20 @@ export const logPanel = style({
   background: 'rgba(28, 27, 28, 0.6)',
   backdropFilter: 'blur(12px)',
   boxShadow: '0 18px 50px rgba(0, 0, 0, 0.4)',
+  '@media': {
+    [mobileLandscape]: {
+      width: '8.5rem',
+      gap: '.28rem',
+      padding: '.55rem .65rem',
+      overflowY: 'auto',
+    },
+  },
+});
+export const balanceSpacer = style({
+  width: '15rem',
+  flexShrink: 0,
+  visibility: 'hidden',
+  '@media': { [mobileLandscape]: { display: 'none' } },
 });
 
 export const logTitle = style({
@@ -157,6 +187,7 @@ export const logTitle = style({
   fontSize: '1.15rem',
   fontWeight: 700,
   color: sceneVars.color.accentGlow,
+  '@media': { [mobileLandscape]: { marginBottom: '.15rem', paddingBottom: '.3rem', fontSize: '.78rem' } },
 });
 
 export const logRow = style({
@@ -172,6 +203,7 @@ export const logKey = style({
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: sceneVars.color.textSubtle,
+  '@media': { [mobileLandscape]: { fontSize: '.54rem', letterSpacing: '.08em' } },
 });
 
 export const logVal = style({
@@ -179,6 +211,7 @@ export const logVal = style({
   fontWeight: 800,
   letterSpacing: '-0.01em',
   color: sceneVars.color.textStrong,
+  '@media': { [mobileLandscape]: { fontSize: '.82rem' } },
 });
 
 export const logValTone = styleVariants({
@@ -193,6 +226,8 @@ export const center = style({
   flexDirection: 'column',
   alignItems: 'center',
   gap: '1.4rem',
+  minWidth: 0,
+  '@media': { [mobileLandscape]: { flex: 1, alignItems: 'stretch', gap: '.35rem', overflow: 'hidden' } },
 });
 
 export const cardRow = style({
@@ -201,6 +236,20 @@ export const cardRow = style({
   justifyContent: 'center',
   alignItems: 'stretch',
   gap: '1.1rem',
+  '@media': {
+    [mobileLandscape]: {
+      flex: 1,
+      flexWrap: 'nowrap',
+      justifyContent: 'flex-start',
+      gap: '.55rem',
+      width: '100%',
+      minHeight: 0,
+      padding: '.15rem .15rem .35rem',
+      overflowX: 'auto',
+      overflowY: 'hidden',
+      scrollSnapType: 'x proximity',
+    },
+  },
 });
 
 const cardBase = style({
@@ -225,6 +274,14 @@ const cardBase = style({
     '&:disabled': {
       cursor: 'not-allowed',
       opacity: 0.5,
+    },
+  },
+  '@media': {
+    [mobileLandscape]: {
+      width: '7.4rem',
+      minWidth: '7.4rem',
+      minHeight: '10.6rem',
+      scrollSnapAlign: 'start',
     },
   },
 });
@@ -311,6 +368,7 @@ export const cardBody = style({
   flexDirection: 'column',
   gap: '0.3rem',
   padding: '0.85rem 1rem 1rem',
+  '@media': { [mobileLandscape]: { gap: '.12rem', padding: '.38rem .5rem .48rem' } },
 });
 
 export const cardName = style({
@@ -319,6 +377,7 @@ export const cardName = style({
   fontSize: '1.18rem',
   fontWeight: 700,
   color: sceneVars.color.accentGlow,
+  '@media': { [mobileLandscape]: { fontSize: '.78rem' } },
 });
 
 export const cardMeta = style({
@@ -327,6 +386,7 @@ export const cardMeta = style({
   fontWeight: 700,
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
+  '@media': { [mobileLandscape]: { fontSize: '.48rem', letterSpacing: '.08em' } },
 });
 
 export const cardMetaTone = styleVariants({
@@ -340,6 +400,7 @@ export const cardDesc = style({
   fontSize: '0.82rem',
   lineHeight: 1.5,
   color: sceneVars.color.textMuted,
+  '@media': { [mobileLandscape]: { fontSize: '.58rem', lineHeight: 1.3 } },
 });
 
 export const cardAccent = style({
@@ -366,6 +427,16 @@ export const pills = style({
   backdropFilter: 'blur(10px)',
   flexWrap: 'wrap',
   justifyContent: 'center',
+  '@media': {
+    [mobileLandscape]: {
+      flexWrap: 'nowrap',
+      justifyContent: 'flex-start',
+      gap: '.15rem',
+      minHeight: '2.1rem',
+      padding: '.18rem .45rem',
+      overflowX: 'auto',
+    },
+  },
 });
 
 export const pill = style({
@@ -410,6 +481,15 @@ export const footer = style({
   alignItems: 'center',
   gap: '0.7rem',
   padding: '1.5rem 1rem 2rem',
+  '@media': {
+    [mobileLandscape]: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: '.35rem',
+      padding: '.35rem max(.7rem, env(safe-area-inset-right, 0px)) max(.35rem, env(safe-area-inset-bottom, 0px)) max(.7rem, env(safe-area-inset-left, 0px))',
+    },
+  },
 });
 
 export const skipButton = style({
@@ -436,6 +516,7 @@ export const skipButton = style({
       boxShadow: '0 0 32px rgba(255, 198, 64, 0.55)',
     },
   },
+  '@media': { [mobileLandscape]: { minHeight: '2.25rem', padding: '.4rem .8rem', fontSize: '.62rem' } },
 });
 
 export const ghostButton = style({
@@ -451,6 +532,7 @@ export const ghostButton = style({
   selectors: {
     '&:hover': { borderColor: sceneVars.color.accentGlow, color: sceneVars.color.textStrong },
   },
+  '@media': { [mobileLandscape]: { minHeight: '2.25rem', padding: '.38rem .72rem', fontSize: '.62rem' } },
 });
 
 export const upgradePanel = style({

@@ -6,6 +6,7 @@ import type { BattleEncounterMeta, BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
 import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
 import { createEmptyEncounterHistory, type RunState } from '../model/run';
+import { createEmptyRunStats } from '../model/runStats';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
 import { buildInitialMonsterRuntime, getMonsterDefinition } from '../definitions/monsters';
 import { setInitialEnemyIntent } from '../systems/enemy/enemyAi';
@@ -273,6 +274,7 @@ export function createMvpRun(seed: number): RunState {
     map: { nodes: {}, currentNodeId: null },
     screen: { type: 'battle' },
     battle,
+    stats: createEmptyRunStats(),
     meta: {
       act: 1,
       actFloor: 1,

@@ -12,7 +12,7 @@ export function FastModeToggle() {
         checked={fastMode}
         onChange={(e) => setFastMode(e.target.checked)}
       />
-      FAST
+      快速
     </label>
   );
 }

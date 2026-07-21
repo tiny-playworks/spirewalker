@@ -14,11 +14,13 @@ import {
   CARD_DEFINITIONS,
 } from './cards';
 import { isRewardEligible } from './cards/rewardPoolRules';
+import { ACT1_REWARD_CARD_IDS } from './act1Content';
 
 function buildRewardCardPool(): string[] {
-  return Object.entries(CARD_DEFINITIONS)
-    .filter(([id, def]) => isRewardEligible(id, def))
-    .map(([id]) => id);
+  return ACT1_REWARD_CARD_IDS.filter((id) => {
+    const definition = CARD_DEFINITIONS[id];
+    return definition && isRewardEligible(id, definition);
+  });
 }
 
 export type CharacterPassive =

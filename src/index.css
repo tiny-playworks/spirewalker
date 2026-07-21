@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   font-family:
     'Hanken Grotesk',
     system-ui,
@@ -31,6 +32,11 @@ body {
     linear-gradient(135deg, #0a0a0b 0%, #131314 48%, #0e0e0f 100%);
 }
 
+body[data-orientation-blocked='true'] {
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
 #root {
   height: 100%;
   min-height: 100dvh;
@@ -45,6 +51,20 @@ body {
   justify-content: center;
   padding: 2rem;
   text-align: center;
+  color: #cbc3d7;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(139, 92, 246, 0.18), transparent 18rem),
+    #09090b;
+}
+
+.boot-rune {
+  padding: 0.65rem 1rem;
+  border: 1px solid rgba(208, 188, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(14, 14, 18, 0.72);
+  box-shadow: 0 0 34px rgba(139, 92, 246, 0.12);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
 }
 
 button,
@@ -55,7 +75,24 @@ textarea {
 }
 
 button {
+  appearance: none;
+  border: 0;
+  color: inherit;
+  background: none;
   letter-spacing: 0;
+}
+
+button:focus-visible,
+[role='button']:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 3px;
+}
+
+img {
+  display: block;
+  max-width: 100%;
 }
 
 /* —— 主菜单（全屏氛围 + 卡片操作区） —— */
@@ -186,6 +223,15 @@ body[data-cursor-mode='custom'] * {
   .app-cursor {
     display: none;
   }
+}
+
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
 }
 
 .debug-panel {

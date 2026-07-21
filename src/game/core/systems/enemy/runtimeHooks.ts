@@ -165,6 +165,12 @@ function dealRawDamageToUnit(
   const blockAbsorb = Math.min(target.block, amount);
   if (blockAbsorb > 0) {
     target.block -= blockAbsorb;
+    events.push({
+      type: 'BLOCK_ABSORBED',
+      unitId: targetUnitId,
+      value: blockAbsorb,
+      remainingBlock: target.block,
+    });
   }
   const hpLoss = Math.min(target.hp, amount - blockAbsorb);
   target.hp -= hpLoss;
@@ -196,6 +202,12 @@ export function dealDamageToUnit(
   if (blockAbsorb > 0) {
     target.block -= blockAbsorb;
     remaining -= blockAbsorb;
+    events.push({
+      type: 'BLOCK_ABSORBED',
+      unitId: targetUnitId,
+      value: blockAbsorb,
+      remainingBlock: target.block,
+    });
   }
   const hpLoss = Math.min(target.hp, remaining);
   target.hp -= hpLoss;

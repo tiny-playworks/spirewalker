@@ -5,7 +5,6 @@ import {
   Coins,
   FlaskConical,
   Gem,
-  HeartPulse,
   Info,
   LogOut,
   Sparkles,
@@ -19,7 +18,7 @@ import { SHOP_MIN_MASTER_DECK_SIZE } from '@/game/core/engine/generateShop';
 import type { CardType } from '@/game/core/model/card';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectShopRunState } from '@/game/store/selectors/shopSelectors';
-import { sceneThemeClass } from '@/styles/sceneTheme.css';
+import { RunSceneHeader, RunSceneShell } from '@/features/run-scene/RunSceneShell';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { CardUpgradeList } from '../cards/CardUpgradeList';
 import * as styles from './shopPage.css';
@@ -61,24 +60,17 @@ export function ShopPage() {
   const hpPct = Math.max(0, Math.min(100, (run.player.currentHp / run.player.maxHp) * 100));
 
   return (
-    <div className={cx(sceneThemeClass, styles.page)} data-testid="shop-page">
-      <header className={styles.topBar}>
-        <p className={styles.brandMark}>Spirewalker</p>
-        <div className={styles.topStats}>
-          <span className={cx(styles.statPill, styles.statPillHp)}>
-            <HeartPulse className={styles.statIcon} aria-hidden />
-            {run.player.currentHp}/{run.player.maxHp}
-          </span>
-          <span className={cx(styles.statPill, styles.statPillGold)}>
-            <Coins className={styles.statIcon} aria-hidden />
-            {meta.gold}
-          </span>
-        </div>
-      </header>
+    <RunSceneShell tone="shop" className={styles.page} testId="shop-page">
+      <RunSceneHeader title="虚空收藏者" eyebrow="行商节点" />
 
       <div className={styles.body}>
         {/* 商人立绘 */}
-        <aside className={styles.merchant}>
+        <aside
+          className={styles.merchant}
+          style={{
+            background: "linear-gradient(to top, rgba(6,6,9,.98) 4%, rgba(6,6,9,.08) 62%), url('/assets/scenes/shop-collector.webp') center 24% / cover no-repeat, #0b0b0e",
+          }}
+        >
           <span className={styles.merchantRune} aria-hidden>
             ◈
           </span>
@@ -125,6 +117,7 @@ export function ShopPage() {
                   <span className={cx(styles.tilePrice, !canBuy && styles.tilePriceTooHigh)}>
                     <Coins className={styles.priceIcon} aria-hidden />
                     {o.price}
+                    {!canBuy ? <small className={styles.priceReason}>还差 {o.price - meta.gold} 金</small> : null}
                   </span>
                 </button>
               );
@@ -158,6 +151,7 @@ export function ShopPage() {
                       <span className={cx(styles.tilePrice, !canBuy && styles.tilePriceTooHigh)}>
                         <Coins className={styles.priceIcon} aria-hidden />
                         {o.price}
+                        {!canBuy ? <small className={styles.priceReason}>还差 {o.price - meta.gold} 金</small> : null}
                       </span>
                     </button>
                   );
@@ -175,7 +169,8 @@ export function ShopPage() {
               <div className={styles.relicGrid}>
                 {potions.map((o) => {
                   const def = POTION_DEFINITIONS[o.potionId];
-                  const canBuy = meta.gold >= o.price && meta.potions.length < MAX_POTIONS;
+                  const hasSpace = meta.potions.length < MAX_POTIONS;
+                  const canBuy = meta.gold >= o.price && hasSpace;
                   return (
                     <button
                       key={o.potionId}
@@ -190,6 +185,11 @@ export function ShopPage() {
                       <span className={cx(styles.tilePrice, !canBuy && styles.tilePriceTooHigh)}>
                         <Coins className={styles.priceIcon} aria-hidden />
                         {o.price}
+                        {!canBuy ? (
+                          <small className={styles.priceReason}>
+                            {hasSpace ? `还差 ${o.price - meta.gold} 金` : '药水栏已满'}
+                          </small>
+                        ) : null}
                       </span>
                     </button>
                   );
@@ -341,6 +341,6 @@ export function ShopPage() {
           </button>
         </aside>
       </div>
-    </div>
+    </RunSceneShell>
   );
 }

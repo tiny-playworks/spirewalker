@@ -10,9 +10,9 @@ import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
 import type { CardRarity, CardType } from '@/game/core/model/card';
 import { useGameStore } from '@/game/store/gameStore';
-import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import { FallbackImg } from '@/features/cards/FallbackImg';
 import { getCardArtSources } from '@/features/battle/combatAssets';
+import { RunSceneHeader, RunSceneShell } from '@/features/run-scene/RunSceneShell';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { CardUpgradeList } from '../cards/CardUpgradeList';
 import * as styles from './rewardPage.css';
@@ -61,17 +61,8 @@ export function RewardPage() {
   const upgradable = listUpgradableDeckIndices(run.masterDeck);
 
   return (
-    <div className={cx(sceneThemeClass, styles.page)} data-testid="reward-page">
-      <header className={styles.topBar}>
-        <p className={styles.brandMark}>Spirewalker</p>
-        <span className={styles.topMeta}>
-          第 {run.meta.act} 章 · 第 {run.meta.actFloor} 层 · 全局第 {run.meta.floor} 层
-        </span>
-        <span className={styles.topGold}>
-          <Coins className={styles.topGoldIcon} aria-hidden />
-          {run.meta.gold}
-        </span>
-      </header>
+    <RunSceneShell tone="reward" className={styles.page} testId="reward-page">
+      <RunSceneHeader title={isTreasure ? '宝藏抉择' : '战后抉择'} eyebrow="奖励结算" />
 
       <div className={styles.header}>
         <span className={styles.headerHalo} aria-hidden />
@@ -201,7 +192,7 @@ export function RewardPage() {
           </div>
         </section>
 
-        <div className={styles.logPanel} style={{ visibility: 'hidden' }} aria-hidden />
+        <div className={styles.balanceSpacer} aria-hidden />
       </div>
 
       <footer className={styles.footer}>
@@ -237,6 +228,6 @@ export function RewardPage() {
           </div>
         ) : null}
       </footer>
-    </div>
+    </RunSceneShell>
   );
 }

@@ -2,6 +2,7 @@ import { createStarterMasterDeck } from '../engine/starterDeck';
 import { DEFAULT_CHARACTER_ID } from '../definitions/characters';
 import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { RUN_SAVE_VERSION } from './saveVersion';
+import { createEmptyRunStats } from '../model/runStats';
 
 const KEY = 'sljt_run_v3';
 
@@ -41,6 +42,7 @@ export function normalizeRunState(raw: unknown): RunState | null {
     run.meta.pendingBattleMomentum = 0;
   }
   if (typeof run.meta.act !== 'number' || typeof run.meta.actFloor !== 'number') return null;
+  if (!run.stats || typeof run.stats !== 'object') run.stats = createEmptyRunStats();
   return run as RunState;
 }
 

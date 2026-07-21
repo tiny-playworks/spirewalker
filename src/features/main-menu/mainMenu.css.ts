@@ -751,3 +751,24 @@ export const footer = style({
   letterSpacing: '0.04em',
   color: sceneVars.color.textFaint,
 });
+
+export const introBackdrop = style({
+  position: 'fixed', inset: 0, zIndex: 80, display: 'grid', placeItems: 'center', padding: '1rem',
+  background: 'rgba(5,5,7,.78)', backdropFilter: 'blur(12px)',
+});
+export const introPanel = style({
+  width: 'min(42rem, 100%)', padding: 'clamp(1.2rem, 4vw, 2rem)', borderRadius: '22px',
+  border: '1px solid rgba(208,188,255,.34)', color: sceneVars.color.text,
+  background: 'radial-gradient(circle at 85% 0%, rgba(139,92,246,.22), transparent 18rem), linear-gradient(145deg, rgba(28,27,33,.98), rgba(10,10,12,.98))',
+  boxShadow: '0 28px 90px rgba(0,0,0,.68)',
+});
+export const introKicker = style({ margin: 0, color: '#f4cd7a', fontSize: '.68rem', fontWeight: 900, letterSpacing: '.2em' });
+export const introTitle = style({ margin: '.5rem 0', color: sceneVars.color.textStrong, fontFamily: '"Libre Caslon Text", Georgia, serif', fontSize: 'clamp(1.55rem, 4vw, 2.5rem)' });
+export const introLead = style({ margin: '0 0 1rem', color: sceneVars.color.textMuted, lineHeight: 1.65 });
+export const introRules = style({ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '.55rem', '@media': { '(max-width: 620px)': { gridTemplateColumns: '1fr' } } });
+globalStyle(`${introRules} article`, { display: 'grid', gap: '.35rem', padding: '.75rem', borderRadius: '12px', border: '1px solid rgba(208,188,255,.15)', background: 'rgba(255,255,255,.035)' });
+globalStyle(`${introRules} strong`, { color: sceneVars.color.accentGlow, fontSize: '.82rem' });
+globalStyle(`${introRules} span`, { color: sceneVars.color.textMuted, fontSize: '.74rem', lineHeight: 1.5 });
+export const introActions = style({ display: 'flex', justifyContent: 'flex-end', gap: '.55rem', marginTop: '1rem' });
+export const introPrimary = style({ minHeight: '2.8rem', padding: '.6rem 1rem', borderRadius: '10px', border: '1px solid #f4cd7a', color: '#171008', background: 'linear-gradient(135deg,#ffe2a3,#d6a64d)', fontWeight: 900, cursor: 'pointer' });
+export const introSecondary = style({ minHeight: '2.8rem', padding: '.6rem 1rem', borderRadius: '10px', border: '1px solid rgba(208,188,255,.25)', color: sceneVars.color.text, background: 'rgba(208,188,255,.08)', cursor: 'pointer' });

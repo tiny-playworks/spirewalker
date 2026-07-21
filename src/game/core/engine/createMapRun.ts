@@ -1,6 +1,7 @@
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
 import type { MapAct, MapNode } from '../model/map';
 import { createEmptyEncounterHistory, type RunState } from '../model/run';
+import { createEmptyRunStats } from '../model/runStats';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
 import { resetIdCounter } from '../utils/id';
 import { buildAct2EntryValidationMap } from './buildAct2EntryValidationMap';
@@ -35,6 +36,7 @@ export function createMapRun(seed: number): RunState {
       currentNodeId: startId,
     },
     screen: { type: 'map' },
+    stats: createEmptyRunStats(),
     meta: {
       act: 1,
       actFloor: 1,

@@ -1,7 +1,7 @@
 import { globalStyle, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
-const tablet = '(max-width: 900px)';
+const tablet = '(max-width: 900px) and (orientation: landscape)';
 
 export const page = style({
   position: 'relative',
@@ -44,6 +44,13 @@ export const topBar = style({
   borderBottom: '1px solid rgba(208, 188, 255, 0.16)',
   background: 'linear-gradient(180deg, rgba(14, 14, 15, 0.85) 0%, rgba(14, 14, 15, 0.2) 100%)',
   backdropFilter: 'blur(10px)',
+  '@media': {
+    [tablet]: {
+      minHeight: '2.75rem',
+      gap: '.35rem',
+      padding: 'max(.25rem, env(safe-area-inset-top, 0px)) max(.55rem, env(safe-area-inset-right, 0px)) .25rem max(.55rem, env(safe-area-inset-left, 0px))',
+    },
+  },
 });
 
 export const brand = style({
@@ -62,12 +69,14 @@ export const brandMark = style({
   color: sceneVars.color.textStrong,
   textTransform: 'uppercase',
   whiteSpace: 'nowrap',
+  '@media': { [tablet]: { display: 'none' } },
 });
 
 export const brandDivider = style({
   width: '1px',
   height: '1.4rem',
   background: 'rgba(208, 188, 255, 0.3)',
+  '@media': { [tablet]: { display: 'none' } },
 });
 
 export const actBlock = style({
@@ -84,6 +93,7 @@ export const actName = style({
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
+  '@media': { [tablet]: { fontSize: '0.78rem' } },
 });
 
 export const floorLabel = style({
@@ -109,6 +119,7 @@ const statPillBase = style({
   border: '1px solid rgba(208, 188, 255, 0.2)',
   background: 'rgba(10, 10, 11, 0.55)',
   color: sceneVars.color.textStrong,
+  '@media': { [tablet]: { gap: '0.25rem', padding: '0.25rem 0.45rem', fontSize: '0.74rem' } },
 });
 
 export const statPillHp = style([
@@ -168,11 +179,6 @@ export const body = style({
   flex: 1,
   minHeight: 0,
   display: 'flex',
-  '@media': {
-    [tablet]: {
-      flexDirection: 'column',
-    },
-  },
 });
 
 export const legend = style({
@@ -183,8 +189,8 @@ export const legend = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '0.6rem',
-  width: '12.5rem',
-  padding: '0.85rem 0.95rem',
+  width: '10.5rem',
+  padding: '.45rem .6rem',
   borderRadius: sceneVars.radii.md,
   background: 'linear-gradient(180deg, rgba(20, 19, 22, 0.86) 0%, rgba(12, 12, 14, 0.7) 100%)',
   border: '1px solid rgba(208, 188, 255, 0.2)',
@@ -192,17 +198,19 @@ export const legend = style({
   backdropFilter: 'blur(14px)',
   '@media': {
     [tablet]: {
-      position: 'static',
-      width: 'auto',
-      margin: '0.5rem 0.75rem 0.25rem',
-      padding: '0.45rem 0.6rem',
-      gap: '0.35rem',
+      position: 'absolute',
+      top: '.45rem',
+      left: 'max(.45rem, env(safe-area-inset-left, 0px))',
+      width: '9.5rem',
+      margin: 0,
+      padding: '.25rem .45rem',
+      gap: '.25rem',
     },
   },
 });
 
 export const legendToggle = style({
-  display: 'none',
+  display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   minHeight: '2.5rem',
@@ -213,11 +221,6 @@ export const legendToggle = style({
   fontSize: '0.78rem',
   fontWeight: 800,
   cursor: 'pointer',
-  '@media': {
-    [tablet]: {
-      display: 'flex',
-    },
-  },
 });
 
 export const legendContent = style({
@@ -227,11 +230,7 @@ export const legendContent = style({
 });
 
 export const legendContentCollapsed = style({
-  '@media': {
-    [tablet]: {
-      display: 'none',
-    },
-  },
+  display: 'none',
 });
 
 export const legendTitle = style({
@@ -319,12 +318,15 @@ export const mapScroll = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   display: 'flex',
-  justifyContent: 'center',
-  padding: '1.5rem 1rem 2.5rem',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  padding: '1.5rem 1rem 13rem',
   scrollbarWidth: 'thin',
+  scrollBehavior: 'smooth',
   '@media': {
     [tablet]: {
-      padding: '0.35rem 0.5rem 1.5rem',
+      padding: '.2rem max(.45rem, env(safe-area-inset-right, 0px)) 8.75rem max(.45rem, env(safe-area-inset-left, 0px))',
     },
   },
 });
@@ -340,6 +342,13 @@ export const bottomBar = style({
   borderTop: '1px solid rgba(208, 188, 255, 0.16)',
   background: 'linear-gradient(0deg, rgba(14, 14, 15, 0.9) 0%, rgba(14, 14, 15, 0.2) 100%)',
   backdropFilter: 'blur(10px)',
+  '@media': {
+    [tablet]: {
+      minHeight: '2.55rem',
+      gap: '1.2rem',
+      padding: '.2rem max(.65rem, env(safe-area-inset-right, 0px)) max(.2rem, env(safe-area-inset-bottom, 0px)) max(.65rem, env(safe-area-inset-left, 0px))',
+    },
+  },
 });
 
 export const dockButton = style({
@@ -506,4 +515,63 @@ globalStyle(`${menuButton}:hover`, {
 export const menuButtonDanger = style({
   borderColor: 'rgba(224, 86, 70, 0.4)',
   color: '#ffb4ab',
+});
+
+export const nodeDetail = style({
+  position: 'absolute',
+  left: '50%',
+  bottom: '0.8rem',
+  zIndex: 20,
+  transform: 'translateX(-50%)',
+  display: 'grid',
+  gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+  alignItems: 'center',
+  gap: '0.75rem',
+  width: 'min(38rem, calc(100% - 2rem))',
+  padding: '0.7rem 0.8rem',
+  borderRadius: sceneVars.radii.lg,
+  border: '1px solid rgba(208, 188, 255, 0.34)',
+  background: 'linear-gradient(135deg, rgba(29, 27, 34, 0.96), rgba(11, 11, 13, 0.96))',
+  boxShadow: sceneVars.shadow.panelHeavy,
+  '@media': {
+    [tablet]: {
+      bottom: '0.45rem',
+      width: 'calc(100% - 0.8rem)',
+      gap: '0.5rem',
+      padding: '0.55rem',
+    },
+  },
+});
+
+export const nodeDetailIcon = style({
+  display: 'grid',
+  placeItems: 'center',
+  width: '2.7rem',
+  height: '2.7rem',
+  borderRadius: '50%',
+  border: '1px solid currentColor',
+  '@media': { [tablet]: { width: '2.25rem', height: '2.25rem' } },
+});
+
+export const nodeDetailCopy = style({ minWidth: 0 });
+globalStyle(`${nodeDetailCopy} strong`, { color: sceneVars.color.textStrong, fontSize: '0.95rem' });
+globalStyle(`${nodeDetailCopy} p`, {
+  margin: '0.14rem 0 0',
+  color: sceneVars.color.textMuted,
+  fontSize: '0.76rem',
+  lineHeight: 1.35,
+  '@media': { [tablet]: { display: 'none' } },
+});
+
+export const enterNodeButton = style({
+  minHeight: '2.75rem',
+  padding: '0.55rem 0.9rem',
+  borderRadius: sceneVars.radii.md,
+  color: '#171008',
+  border: '1px solid #f4cd7a',
+  background: 'linear-gradient(135deg, #ffe2a3, #d6a64d)',
+  fontWeight: 900,
+  cursor: 'pointer',
+  boxShadow: '0 0 22px rgba(251, 191, 36, 0.2)',
+  '@media': { [tablet]: { minHeight: '2.4rem', padding: '.4rem .65rem' } },
 });

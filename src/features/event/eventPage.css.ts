@@ -2,6 +2,7 @@ import { keyframes, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
 const SERIF = '"Libre Caslon Text", Georgia, serif';
+const mobileLandscape = '(max-width: 900px) and (orientation: landscape)';
 
 const titleGlow = keyframes({
   '0%, 100%': { textShadow: '0 0 18px rgba(160, 120, 255, 0.35)' },
@@ -101,6 +102,18 @@ export const body = style({
   maxWidth: '70rem',
   margin: '0 auto',
   padding: 'clamp(1.5rem, 5vh, 3.5rem) clamp(1rem, 4vw, 2.5rem)',
+  minHeight: 0,
+  '@media': {
+    [mobileLandscape]: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, .95fr)',
+      alignItems: 'stretch',
+      justifyContent: 'stretch',
+      gap: '.7rem',
+      padding: '.45rem max(.65rem, env(safe-area-inset-right, 0px)) max(.45rem, env(safe-area-inset-bottom, 0px)) max(.65rem, env(safe-area-inset-left, 0px))',
+      overflow: 'hidden',
+    },
+  },
 });
 
 export const leftCol = style({
@@ -109,6 +122,8 @@ export const leftCol = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '1rem',
+  minHeight: 0,
+  '@media': { [mobileLandscape]: { maxWidth: 'none', gap: '.38rem' } },
 });
 
 export const badge = style({
@@ -125,6 +140,7 @@ export const badge = style({
   color: sceneVars.color.accentGlow,
   background: 'rgba(160, 120, 255, 0.16)',
   border: '1px solid rgba(160, 120, 255, 0.35)',
+  '@media': { [mobileLandscape]: { padding: '.16rem .45rem', fontSize: '.5rem', letterSpacing: '.14em' } },
 });
 
 export const badgeIcon = style({ width: '0.85rem', height: '0.85rem' });
@@ -138,6 +154,7 @@ export const title = style({
   lineHeight: 1.05,
   color: sceneVars.color.textStrong,
   animation: `${titleGlow} 4s ease-in-out infinite`,
+  '@media': { [mobileLandscape]: { fontSize: '1.35rem' } },
 });
 
 export const artPanel = style({
@@ -148,8 +165,9 @@ export const artPanel = style({
   overflow: 'hidden',
   border: '1px solid rgba(73, 68, 84, 0.5)',
   background:
-    'radial-gradient(circle at 50% 78%, rgba(160, 120, 255, 0.45) 0%, rgba(60, 221, 199, 0.12) 35%, rgba(10, 10, 12, 0.95) 70%), linear-gradient(180deg, #14121c 0%, #0b0b0e 100%)',
+    'radial-gradient(circle at 50% 78%, rgba(160, 120, 255, 0.45) 0%, rgba(60, 221, 199, 0.12) 35%, rgba(10, 10, 12, 0.95) 70%)',
   boxShadow: 'inset 0 0 60px rgba(0, 0, 0, 0.6)',
+  '@media': { [mobileLandscape]: { flex: 1, minHeight: 0, aspectRatio: 'auto' } },
 });
 
 export const artGlow = style({
@@ -160,8 +178,7 @@ export const artGlow = style({
   height: '55%',
   transform: 'translateX(-50%)',
   borderRadius: '999px 999px 40% 40%',
-  background:
-    'radial-gradient(circle at 50% 100%, rgba(208, 188, 255, 0.9) 0%, rgba(160, 120, 255, 0.4) 40%, transparent 72%)',
+  background: 'radial-gradient(circle at 50% 100%, rgba(208, 188, 255, 0.44) 0%, rgba(160, 120, 255, 0.18) 40%, transparent 72%)',
   filter: 'blur(6px)',
   animation: `${artPulse} 3.6s ease-in-out infinite`,
 });
@@ -181,6 +198,15 @@ export const rightCol = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '0.75rem',
+  minHeight: 0,
+  '@media': {
+    [mobileLandscape]: {
+      maxWidth: 'none',
+      gap: '.4rem',
+      overflowY: 'auto',
+      overscrollBehavior: 'contain',
+    },
+  },
 });
 
 export const story = style({
@@ -192,6 +218,7 @@ export const story = style({
   fontSize: '0.92rem',
   lineHeight: 1.65,
   color: sceneVars.color.textMuted,
+  '@media': { [mobileLandscape]: { padding: '.55rem .65rem', fontSize: '.66rem', lineHeight: 1.42 } },
 });
 
 export const optionList = style({
@@ -201,9 +228,11 @@ export const optionList = style({
   margin: 0,
   padding: 0,
   listStyle: 'none',
+  '@media': { [mobileLandscape]: { gap: '.38rem' } },
 });
 
 export const option = style({
+  boxSizing: 'border-box',
   display: 'flex',
   alignItems: 'flex-start',
   gap: '0.85rem',
@@ -224,6 +253,7 @@ export const option = style({
     },
     '&:disabled': { cursor: 'not-allowed', opacity: 0.45 },
   },
+  '@media': { [mobileLandscape]: { gap: '.5rem', padding: '.48rem .58rem' } },
 });
 
 export const optionTone = styleVariants({
@@ -239,6 +269,7 @@ export const optionIcon = style({
   width: '1.6rem',
   height: '1.6rem',
   marginTop: '0.1rem',
+  '@media': { [mobileLandscape]: { width: '1.15rem', height: '1.15rem' } },
 });
 
 export const optionIconTone = styleVariants({
@@ -256,6 +287,7 @@ export const optionTitle = style({
   fontFamily: SERIF,
   fontSize: '1.1rem',
   fontWeight: 700,
+  '@media': { [mobileLandscape]: { fontSize: '.76rem' } },
 });
 
 export const optionTitleTone = styleVariants({
@@ -271,4 +303,5 @@ export const optionDesc = style({
   fontSize: '0.82rem',
   lineHeight: 1.5,
   color: sceneVars.color.textSubtle,
+  '@media': { [mobileLandscape]: { fontSize: '.58rem', lineHeight: 1.35 } },
 });

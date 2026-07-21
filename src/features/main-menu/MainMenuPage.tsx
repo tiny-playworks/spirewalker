@@ -8,8 +8,14 @@ import type { ArchiveView } from "@/features/archive/ArchivePage";
 import { useGameStore } from "@/game/store/gameStore";
 import { sceneThemeClass } from "@/styles/sceneTheme.css";
 import * as styles from "./mainMenu.css";
+import { useState } from "react";
 
 const WORLD_ECHOES = ["裂响纹章", "连势", "黏液怪"] as const;
+const WALKER_INTRO_KEY = 'sljt_walker_intro_v1';
+
+function hasSeenWalkerIntro(): boolean {
+  try { return localStorage.getItem(WALKER_INTRO_KEY) === 'seen'; } catch { return false; }
+}
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(" ");
@@ -47,13 +53,14 @@ export function MainMenuPage({ onOpenArchive }: { onOpenArchive?: (view: Archive
   const startRun = useGameStore((s) => s.startRun);
   const savedRun = loadRunFromLocalStorage();
   const canContinue = savedRun !== null;
+  const [introOpen, setIntroOpen] = useState(false);
   const journeyState = canContinue ? "火种仍在燃烧" : "你的旅途尚未开始";
   const journeyHint = canContinue
     ? describeSavedRun(savedRun)
     : "没有留下任何足迹，但尖塔已经在雾中等待新的闯入者。";
 
   return (
-    <div className={`boot ${sceneThemeClass} ${styles.root}`}>
+    <div className={`boot ${sceneThemeClass} ${styles.root}`} data-scene-ready="true">
       <div className={styles.backdrop} aria-hidden>
         <div className={styles.heartbeat} />
         <div className={styles.aurora} />
@@ -138,7 +145,8 @@ export function MainMenuPage({ onOpenArchive }: { onOpenArchive?: (view: Archive
               data-testid="new-game-button"
               onClick={() => {
                 clearSavedRun();
-                startRun(createMapRun(Date.now() & 0xffff_ffff));
+                if (hasSeenWalkerIntro()) startRun(createMapRun(Date.now() & 0xffff_ffff));
+                else setIntroOpen(true);
               }}
             >
               <span className={styles.actionButtonFlare} />
@@ -176,6 +184,33 @@ export function MainMenuPage({ onOpenArchive }: { onOpenArchive?: (view: Archive
 
         <footer className={styles.footer}>存档仅保存在本机浏览器中，火种不会跨设备流转。</footer>
       </div>
+      {introOpen ? (
+        <div className={styles.introBackdrop} role="dialog" aria-modal="true" aria-labelledby="walker-intro-title">
+          <section className={styles.introPanel}>
+            <p className={styles.introKicker}>唯一可用角色</p>
+            <h2 id="walker-intro-title" className={styles.introTitle}>行者 · 以节奏穿过裂隙</h2>
+            <p className={styles.introLead}>你不靠单次蛮力取胜。先建立连势，再选择守住节奏或在窗口中兑现。</p>
+            <div className={styles.introRules}>
+              <article><strong>1 · 起势</strong><span>每场战斗开局获得 1 层连势；部分卡牌会继续累积。</span></article>
+              <article><strong>2 · 兑现</strong><span>爆发牌消耗连势换取伤害、抽牌或能量；卡面会显示真实预估。</span></article>
+              <article><strong>3 · 操作</strong><span>点卡后点敌人，或拖到目标；按 Esc 或点“取消”可退出选目标。</span></article>
+            </div>
+            <div className={styles.introActions}>
+              <button type="button" className={styles.introSecondary} onClick={() => setIntroOpen(false)}>返回</button>
+              <button
+                type="button"
+                className={styles.introPrimary}
+                data-testid="confirm-new-game"
+                onClick={() => {
+                  try { localStorage.setItem(WALKER_INTRO_KEY, 'seen'); } catch { /* 不影响开局 */ }
+                  setIntroOpen(false);
+                  startRun(createMapRun(Date.now() & 0xffff_ffff));
+                }}
+              >开始攀登</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

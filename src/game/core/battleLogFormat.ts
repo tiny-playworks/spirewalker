@@ -23,8 +23,14 @@ export function formatBattleLogLine(run: RunState, e: GameEvent): string {
       return `${getUnitName(run, e.sourceUnitId)} 对 ${getUnitName(run, e.targetUnitId)} 造成 ${e.value} 点伤害`;
     case 'BLOCK_GAINED':
       return `${getUnitName(run, e.unitId)} 获得 ${e.value} 点格挡`;
+    case 'BLOCK_ABSORBED':
+      return e.remainingBlock === 0
+        ? `${getUnitName(run, e.unitId)} 的格挡吸收 ${e.value} 点伤害后破碎`
+        : `${getUnitName(run, e.unitId)} 的格挡吸收 ${e.value} 点伤害，剩余 ${e.remainingBlock}`;
     case 'STATUS_APPLIED':
       return `${getUnitName(run, e.unitId)} 的${getStatusMeta(e.statusId).name}变为 ${e.value}`;
+    case 'MOMENTUM_CONSUMED':
+      return `${getUnitName(run, e.unitId)} 兑现 ${e.value} 层连势，剩余 ${e.remaining}`;
     case 'CARD_PLAYED':
       return e.targetUnitId
         ? `${getUnitName(run, e.unitId)} 打出 ${getCardName(run, e.cardInstanceId)}，目标 ${getUnitName(run, e.targetUnitId)}`

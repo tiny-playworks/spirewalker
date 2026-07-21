@@ -79,6 +79,7 @@ export function resolveRewardPick(
     return;
   }
   if (beatBoss && !isLastAct(run.meta.act)) {
+    const completedAct = run.meta.act as 1 | 2;
     const nextAct = (run.meta.act + 1) as 2 | 3;
     run.meta.act = nextAct;
     run.meta.actFloor = 1;
@@ -99,6 +100,7 @@ export function resolveRewardPick(
     }
     run.map = { nodes: nextMap, currentNodeId: nextStart };
     run.screen = { type: 'map' };
+    run.meta.actTransitionFrom = completedAct;
   } else if (beatBoss && isLastAct(run.meta.act)) {
     run.screen = { type: 'victory' };
   } else {

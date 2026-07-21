@@ -5,7 +5,9 @@ export type GameEvent =
   | { type: 'ENERGY_CHANGED'; unitId: string; value: number }
   | { type: 'DAMAGE_DEALT'; sourceUnitId: string; targetUnitId: string; value: number }
   | { type: 'BLOCK_GAINED'; unitId: string; value: number }
+  | { type: 'BLOCK_ABSORBED'; unitId: string; value: number; remainingBlock: number }
   | { type: 'STATUS_APPLIED'; unitId: string; statusId: string; value: number }
+  | { type: 'MOMENTUM_CONSUMED'; unitId: string; value: number; remaining: number }
   | { type: 'UNIT_DIED'; unitId: string }
   | { type: 'TURN_ENDED'; unitId: string }
   | { type: 'CARD_EXHAUSTED'; unitId: string; cardInstanceId: string }

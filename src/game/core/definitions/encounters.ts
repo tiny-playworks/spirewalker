@@ -3,6 +3,7 @@ import type { EncounterHistoryState } from '../model/run';
 import type { BattleEnemySlot } from '../model/monster';
 import type { MapAct } from '../model/map';
 import { mulberry32 } from '../utils/rng';
+import { ACT1_FORMAL_ENCOUNTER_IDS } from './act1Content';
 
 export type BattleEncounterTier = 'normal' | 'elite' | 'boss';
 export type PressureProfile = 'frontload' | 'attrition' | 'snowball' | 'disruption' | 'execution_check';
@@ -238,11 +239,17 @@ export function getEncounterById(id: string): EncounterTemplate | undefined {
 
 export function listEncountersByPool(encounterPoolId: string | null): EncounterTemplate[] {
   if (!encounterPoolId) return [];
-  return ENCOUNTERS.filter((encounter) => encounterPoolIdFor(encounter.chapter, encounter.tier) === encounterPoolId);
+  return ENCOUNTERS.filter((encounter) => {
+    if (encounterPoolIdFor(encounter.chapter, encounter.tier) !== encounterPoolId) return false;
+    return encounter.chapter !== 1 || ACT1_FORMAL_ENCOUNTER_IDS.has(encounter.id);
+  });
 }
 
 export function listEncountersByActAndTier(act: MapAct, tier: BattleEncounterTier): EncounterTemplate[] {
-  return ENCOUNTERS.filter((encounter) => encounter.chapter === act && encounter.tier === tier);
+  return ENCOUNTERS.filter((encounter) => {
+    if (encounter.chapter !== act || encounter.tier !== tier) return false;
+    return act !== 1 || ACT1_FORMAL_ENCOUNTER_IDS.has(encounter.id);
+  });
 }
 
 export function hydrateEncounterEnemySlots(encounter: EncounterTemplate): BattleEnemySlot[] {

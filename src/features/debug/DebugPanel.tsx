@@ -237,6 +237,15 @@ export function DebugPanel() {
         >
           跳奖励
         </button>
+        <button
+          type="button"
+          data-testid="debug-jump-rest"
+          onClick={() =>
+            dispatchCommand({ type: "DEBUG_JUMP_SCREEN", screen: "rest" })
+          }
+        >
+          跳营地
+        </button>
       </div>
     </aside>
   );

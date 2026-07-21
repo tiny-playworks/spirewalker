@@ -167,6 +167,12 @@ function applyMomentumBurstDamage(
 
   if (consumedStacks > 0) {
     decayStatus(source, STATUS_MOMENTUM, consumedStacks);
+    events.push({
+      type: 'MOMENTUM_CONSUMED',
+      unitId: sourceUnitId,
+      value: consumedStacks,
+      remaining: getStatusStacks(source, STATUS_MOMENTUM),
+    });
     battle.playerConsumedMomentumThisTurn = true;
     battle.playerMomentumConsumedAmountThisTurn += consumedStacks;
     // Relic: momentum_siphon — gain block equal to consumed stacks
@@ -248,6 +254,12 @@ function applyMomentumBurstDraw(
 
   if (consumedStacks > 0) {
     decayStatus(source, STATUS_MOMENTUM, consumedStacks);
+    events.push({
+      type: 'MOMENTUM_CONSUMED',
+      unitId: sourceUnitId,
+      value: consumedStacks,
+      remaining: getStatusStacks(source, STATUS_MOMENTUM),
+    });
     battle.playerConsumedMomentumThisTurn = true;
     battle.playerMomentumConsumedAmountThisTurn += consumedStacks;
     // Relic: momentum_siphon — gain block equal to consumed stacks
