@@ -63,7 +63,7 @@
   "npmClient": "pnpm",
   "pnpm": {
     "overrides": {
-      "@rsbuild/core": "2.0.0"
+      "@rsbuild/core": "2.1.0"
     }
   }
 }
