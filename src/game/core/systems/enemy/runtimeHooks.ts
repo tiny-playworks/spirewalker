@@ -7,8 +7,17 @@ import type { BattleState, CountdownEffect } from '../../model/battle';
 import type { CardInstance } from '../../model/card';
 import { createInstanceId } from '../../utils/id';
 import { runOnBeforeDealDamage, runOnBeforeTakeDamage } from '../status/statusHooks';
-import { resolveRelicHooks } from '../relic/relicHooks';
+import {
+  applyRelicResourceResult,
+  ensureRelicRuntime,
+  resolveRelicHooks,
+} from '../relic/relicHooks';
 import { setInitialEnemyIntent } from './enemyAi';
+
+function runtimeNumber(runtime: NonNullable<BattleState['relicRuntime']>, key: string): number {
+  const value = runtime[key];
+  return typeof value === 'number' ? value : 0;
+}
 
 function buildRuntimeCardInstance(definitionId: string): CardInstance {
   const def = CARD_DEFINITIONS[definitionId] ?? CARD_DEFINITIONS.junk_sludge;
@@ -186,17 +195,91 @@ function dealRawDamageToUnit(
   }
 }
 
+export interface DamageContext {
+  isPlayerAttack?: boolean;
+  isMomentumAttack?: boolean;
+  isSecondaryDamage?: boolean;
+  consumedStacks?: number;
+}
+
+function applyDirectRelicBlock(
+  battle: BattleState,
+  amount: number | undefined,
+  events: GameEvent[],
+): void {
+  if (!amount || amount <= 0) return;
+  const player = battle.units[battle.playerUnitId];
+  if (!player?.alive) return;
+  player.block += amount;
+  events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: amount });
+  battle.playerGainedBlockThisTurn = true;
+  battle.playerTurnBlockGained += amount;
+}
+
 export function dealDamageToUnit(
   battle: BattleState,
   sourceId: string,
   targetUnitId: string,
   baseAmount: number,
   events: GameEvent[],
+  damageContext: DamageContext = {},
 ): void {
   const target = battle.units[targetUnitId];
   if (!target?.alive) return;
   const source = battle.units[sourceId];
-  let remaining = source ? runOnBeforeDealDamage(source, baseAmount) : baseAmount;
+  const isPlayerAttack = damageContext.isPlayerAttack ?? false;
+  const isSecondaryDamage = damageContext.isSecondaryDamage ?? false;
+  const isPlayerToEnemy = source?.side === 'player' && target.side === 'enemy';
+  const isEnemyToPlayer = source?.side === 'enemy' && target.side === 'player';
+  const runtime = ensureRelicRuntime(battle);
+
+  let outgoingRelicResult = {} as ReturnType<typeof resolveRelicHooks>;
+  if (isPlayerToEnemy && !isSecondaryDamage) {
+    outgoingRelicResult = resolveRelicHooks(battle.relicIds, {
+      battle,
+      trigger: 'damageDealt',
+      events,
+      amount: baseAmount,
+      actualAmount: baseAmount,
+      damagePhase: 'before',
+      sourceUnitId: sourceId,
+      targetUnitId,
+      targetAlive: target.alive,
+      isPlayerAttack,
+      isMomentumAttack: damageContext.isMomentumAttack,
+      isSecondaryDamage,
+      consumedStacks: damageContext.consumedStacks,
+      attackCountAfterPlay: battle.playerAttacksPlayedThisTurn,
+      firstAttackThisTurn: battle.playerAttacksPlayedThisTurn <= 1,
+    });
+  }
+  let incomingRelicResult = {} as ReturnType<typeof resolveRelicHooks>;
+  if (isEnemyToPlayer && !isSecondaryDamage) {
+    incomingRelicResult = resolveRelicHooks(battle.relicIds, {
+      battle,
+      trigger: 'damageTaken',
+      events,
+      amount: baseAmount,
+      damagePhase: 'before',
+      sourceUnitId: sourceId,
+      targetUnitId,
+      isPlayerAttack: false,
+    });
+    runtime.playerWasAttackedThisTurn = true;
+  }
+
+  let modifiedBase = baseAmount;
+  if (isPlayerToEnemy && isPlayerAttack) {
+    modifiedBase += outgoingRelicResult.damageBonus ?? 0;
+    modifiedBase += runtimeNumber(runtime, 'turnAttackBonus');
+    modifiedBase += runtimeNumber(runtime, 'battleAttackBonus');
+    modifiedBase += runtimeNumber(runtime, 'currentCardDamageBonus');
+    modifiedBase *= outgoingRelicResult.damageMultiplier ?? 1;
+  }
+  if (isEnemyToPlayer) {
+    modifiedBase = Math.max(0, modifiedBase - (incomingRelicResult.damageReduction ?? 0));
+  }
+  let remaining = source ? runOnBeforeDealDamage(source, Math.max(0, modifiedBase)) : Math.max(0, modifiedBase);
   remaining = runOnBeforeTakeDamage(target, remaining);
   const blockAbsorb = Math.min(target.block, remaining);
   if (blockAbsorb > 0) {
@@ -215,22 +298,95 @@ export function dealDamageToUnit(
     events.push({ type: 'DAMAGE_DEALT', sourceUnitId: sourceId, targetUnitId, value: hpLoss });
   }
   target.alive = target.hp > 0;
-  if (
-    target.side === 'player'
-    && targetUnitId === battle.playerUnitId
-    && blockAbsorb > 0
-    && source?.side === 'enemy'
-  ) {
+  const fatal = !target.alive;
+
+  if (isEnemyToPlayer && !isSecondaryDamage) {
     const relicResult = resolveRelicHooks(battle.relicIds, {
       battle,
       trigger: 'damageTaken',
       events,
-      amount: blockAbsorb,
+      amount: hpLoss + blockAbsorb,
+      actualAmount: hpLoss + blockAbsorb,
+      damagePhase: 'after',
+      sourceUnitId: sourceId,
+      targetUnitId,
+      hpLoss,
+      blockAbsorbed: blockAbsorb,
+      wasFatal: fatal,
+      isPlayerAttack: false,
     });
+    applyRelicResourceResult(battle, relicResult, events);
+    applyDirectRelicBlock(battle, relicResult.block, events);
+    if (relicResult.nextAttackBonus) {
+      const player = battle.units[battle.playerUnitId];
+      if (player) battle.twinCoreNextAttackBonus += relicResult.nextAttackBonus;
+    }
+    if (relicResult.extraDamage && source?.alive) {
+      dealDamageToUnit(battle, battle.playerUnitId, sourceId, relicResult.extraDamage, events, {
+        isSecondaryDamage: true,
+        isPlayerAttack: false,
+      });
+    }
+    if (battle.relicIds.includes('shell_shard') && relicResult.block) runtime.shellShardUsed = true;
+    if (battle.relicIds.includes('iron_veil') && relicResult.block) runtime.ironVeilUsed = true;
+    if (relicResult.preventDeath && fatal) {
+      target.hp = 1;
+      target.alive = true;
+    }
     // 保持现有战斗语义：反击只按本次被格挡吸收的部分计算。
     const reflected = Math.floor(blockAbsorb * (relicResult.reflectRatio ?? 0));
     if (reflected > 0 && source.alive) {
-      dealDamageToUnit(battle, battle.playerUnitId, sourceId, reflected, events);
+      dealDamageToUnit(battle, battle.playerUnitId, sourceId, reflected, events, {
+        isSecondaryDamage: true,
+        isPlayerAttack: false,
+      });
+    }
+  }
+
+  if (isPlayerToEnemy && !isSecondaryDamage) {
+    const relicResult = resolveRelicHooks(battle.relicIds, {
+      battle,
+      trigger: 'damageDealt',
+      events,
+      amount: hpLoss + blockAbsorb,
+      actualAmount: hpLoss + blockAbsorb,
+      damagePhase: 'after',
+      sourceUnitId: sourceId,
+      targetUnitId,
+      hpLoss,
+      blockAbsorbed: blockAbsorb,
+      targetAlive: target.alive,
+      wasFatal: fatal,
+      isPlayerAttack,
+      isMomentumAttack: damageContext.isMomentumAttack,
+      isSecondaryDamage,
+      consumedStacks: damageContext.consumedStacks,
+      attackCountAfterPlay: battle.playerAttacksPlayedThisTurn,
+    });
+    applyRelicResourceResult(battle, relicResult, events);
+    if (relicResult.extraDamage && target.alive) {
+      dealDamageToUnit(battle, sourceId, targetUnitId, relicResult.extraDamage, events, {
+        isSecondaryDamage: true,
+        isPlayerAttack: false,
+      });
+    }
+    if (relicResult.secondaryDamage) {
+      const other = battle.enemyUnitIds.find((id) => id !== targetUnitId && battle.units[id]?.alive);
+      if (other) {
+        dealDamageToUnit(battle, sourceId, other, relicResult.secondaryDamage, events, {
+          isSecondaryDamage: true,
+          isPlayerAttack: false,
+        });
+      }
+    }
+    if (relicResult.damageAllEnemies) {
+      for (const enemyId of battle.enemyUnitIds) {
+        if (!battle.units[enemyId]?.alive) continue;
+        dealDamageToUnit(battle, sourceId, enemyId, relicResult.damageAllEnemies, events, {
+          isSecondaryDamage: true,
+          isPlayerAttack: false,
+        });
+      }
     }
   }
   if (!target.alive && target.side === 'enemy') {

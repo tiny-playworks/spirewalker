@@ -1,5 +1,8 @@
 import type { GameCommand } from '../../commands/types';
 import { CARD_DEFINITIONS } from '../../definitions/cards';
+import { canUpgradeCardId, upgradeMasterDeckAt } from '../../definitions/cards/upgradeRules';
+import { STATUS_MOMENTUM } from '../../definitions/statuses';
+import { getStatusStacks } from '../../combat/statusCombat';
 import type { GameEvent } from '../../events/types';
 import type { RunState } from '../../model/run';
 import { generateBattleRewards } from './rewardGenerator';
@@ -11,11 +14,50 @@ import {
 } from './rewardResolver';
 import { skipCardGoldAmount } from '../../engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '../../engine/rewardEncounter';
-import { applyAct1BossPostVictoryFullHealIfEligible, hashMapNodeId } from '../common/runGuards';
+import { applyAct1BossPostVictoryFullHealIfEligible, hashMapNodeId, syncRunPlayerFromBattle } from '../common/runGuards';
+import {
+  applyRelicResourceResult,
+  resolveRelicHooks,
+} from '../relic/relicHooks';
+import { mulberry32 } from '../../utils/rng';
 
 export function leaveBattleToRewardFlow(run: RunState, events: GameEvent[]): void {
   const battle = run.battle;
   if (!battle || battle.phase !== 'victory') return;
+  const battleEndRelics = resolveRelicHooks(run.meta.relics, {
+    run,
+    battle,
+    trigger: 'battleEnd',
+    remainingMomentum: getStatusStacks(battle.units[battle.playerUnitId]!, STATUS_MOMENTUM),
+    events,
+  });
+  applyRelicResourceResult(battle, battleEndRelics, events);
+  if (battleEndRelics.maxHpLoss) {
+    const player = battle.units[battle.playerUnitId];
+    if (player) {
+      player.maxHp = Math.max(1, player.maxHp - battleEndRelics.maxHpLoss);
+      player.hp = Math.min(player.hp, player.maxHp);
+    }
+  }
+  const rewardRng = mulberry32((run.seed ^ run.meta.gold ^ battle.turn * 0x51ed) >>> 0);
+  const randomGold = battleEndRelics.goldMin !== undefined && battleEndRelics.goldMax !== undefined
+    ? battleEndRelics.goldMin + Math.floor(rewardRng() * (battleEndRelics.goldMax - battleEndRelics.goldMin + 1))
+    : 0;
+  run.meta.gold += (battleEndRelics.goldBonus ?? 0) + randomGold;
+  if (battleEndRelics.nextBattleMomentum) {
+    run.meta.pendingBattleMomentum = (run.meta.pendingBattleMomentum ?? 0) + battleEndRelics.nextBattleMomentum;
+  }
+  if (battleEndRelics.upgradeRandomHand) {
+    const handDefinitions = battle.player.hand
+      .map((cardId) => battle.player.cards[cardId]?.definitionId)
+      .filter((id): id is string => Boolean(id) && canUpgradeCardId(id));
+    if (handDefinitions.length > 0) {
+      const targetDefinition = handDefinitions[Math.floor(rewardRng() * handDefinitions.length)]!;
+      const targetIndex = run.masterDeck.findIndex((id) => id === targetDefinition && canUpgradeCardId(id));
+      if (targetIndex >= 0) upgradeMasterDeckAt(run, targetIndex);
+    }
+  }
+  syncRunPlayerFromBattle(run);
   /** Act1 Boss 仅在此处满血，早于奖励 UI 与 `run.battle` 清空，失败路径不会进入本函数 */
   applyAct1BossPostVictoryFullHealIfEligible(run);
 

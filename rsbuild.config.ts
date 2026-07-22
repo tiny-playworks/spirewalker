@@ -30,6 +30,19 @@ export default defineConfig({
   html: {
     title: '肉鸽卡牌 · MVP 战斗',
     favicon: './public/favicon.svg',
+    meta: {
+      viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      'theme-color': '#0a0a0b',
+      'mobile-web-app-capable': 'yes',
+      'apple-mobile-web-app-capable': 'yes',
+      'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    },
+    tags: [
+      {
+        tag: 'link',
+        attrs: { rel: 'manifest', href: './manifest.webmanifest' },
+      },
+    ],
   },
   source: {
     entry: {

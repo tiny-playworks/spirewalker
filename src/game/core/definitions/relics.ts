@@ -1,5 +1,6 @@
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from './characters';
 import { mulberry32 } from '../utils/rng';
+import { GENERATED_RELICS } from './generated_relics';
 
 export interface RelicDefinition {
   id: string;
@@ -108,6 +109,8 @@ export const RELIC_DEFINITIONS: Record<string, RelicDefinition> = {
   },
 };
 
+Object.assign(RELIC_DEFINITIONS, GENERATED_RELICS);
+
 export const MOMENTUM_BURST_RELIC_IDS = ['burst_emblem', 'quick_fuse', 'flare_banner'] as const;
 export const MOMENTUM_FLOW_RELIC_IDS = ['guard_knot', 'still_core'] as const;
 export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'still_core'] as const;
@@ -204,8 +207,13 @@ export const COMMON_RELIC_POOL = [
   'draw_power_sigil',
 ] as const;
 
-/** Boss 战后随机其一（已拥有的不再出现） */
-export const BOSS_RELIC_POOL = [...COMMON_RELIC_POOL] as const;
+/** 生成遗物池：用于 Boss fallback，避免生成资产只存在于定义文件而没有获取路径。 */
+export const GENERATED_RELIC_POOL = Object.keys(GENERATED_RELICS) as readonly string[];
+
+/** Boss 战后随机其一（角色池优先，角色池拿空后从全量遗物池 fallback）。 */
+export const BOSS_RELIC_POOL = [
+  ...new Set([...COMMON_RELIC_POOL, ...GENERATED_RELIC_POOL]),
+] as readonly string[];
 
 export function rollBossRelicReward(
   seed: number,
@@ -215,11 +223,9 @@ export function rollBossRelicReward(
 ): string | null {
   const characterPool = getCharacterDefinition(characterId).rewardRelicPool;
   const available = characterPool.filter((id) => !ownedRelicIds.includes(id));
-  if (available.length === 0) return null;
+  const fallback = BOSS_RELIC_POOL.filter((id) => !ownedRelicIds.includes(id));
+  const pool = available.length > 0 ? available : fallback;
+  if (pool.length === 0) return null;
   const rng = mulberry32((seed ^ salt ^ 0xb055) >>> 0);
-  return available[Math.floor(rng() * available.length)]!;
+  return pool[Math.floor(rng() * pool.length)]!;
 }
-
-// ─── Generated relics ──────────────────────────────────────────
-import { GENERATED_RELICS } from './generated_relics';
-Object.assign(RELIC_DEFINITIONS, GENERATED_RELICS);

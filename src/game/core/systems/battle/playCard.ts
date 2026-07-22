@@ -14,7 +14,13 @@ import type {
 } from '../../model/card';
 import type { RunState } from '../../model/run';
 import { applyEnemyReactionToPlayerCard, dealDamageToUnit } from '../enemy/runtimeHooks';
-import { resolveRelicHooks } from '../relic/relicHooks';
+import {
+  addRelicAwareStatusStacks,
+  applyRelicResourceResult,
+  ensureRelicRuntime,
+  gainMomentumWithRelics,
+  resolveRelicHooks,
+} from '../relic/relicHooks';
 
 function pickRandomLivingEnemyId(battle: BattleState, random: () => number): string | undefined {
   const living = battle.enemyUnitIds.filter((id) => battle.units[id]?.alive);
@@ -34,12 +40,18 @@ function notifyCardExhausted(
     events,
   });
   battle.blazeCoreAttackBonus += relicResult.damageBonus ?? 0;
-  if (relicIds.includes('resonance_plating')) {
-    const player = battle.units[battle.playerUnitId];
-    if (player) {
-      player.block += 1;
-      events?.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: 1 });
-    }
+  applyRelicResourceResult(battle, relicResult, events);
+  const player = battle.units[battle.playerUnitId];
+  if (player && relicResult.block) {
+    player.block += relicResult.block;
+    events?.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: relicResult.block });
+    battle.playerGainedBlockThisTurn = true;
+    battle.playerTurnBlockGained += relicResult.block;
+  }
+  if (relicResult.nextCardCostReduction) {
+    const runtime = ensureRelicRuntime(battle);
+    runtime.cardCostReductionThisTurn = (runtime.cardCostReductionThisTurn as number | undefined ?? 0)
+      + relicResult.nextCardCostReduction;
   }
 }
 
@@ -56,6 +68,7 @@ function drawAdditionalCards(
   n: number,
   events: GameEvent[],
   random: () => number,
+  relicIds: string[] = battle.relicIds,
 ): void {
   for (let i = 0; i < n; i++) {
     if (battle.player.drawPile.length === 0) {
@@ -74,6 +87,38 @@ function drawAdditionalCards(
     if (!id) break;
     battle.player.hand.push(id);
     events.push({ type: 'CARD_DRAWN', unitId: battle.playerUnitId, cardInstanceId: id });
+    const runtime = ensureRelicRuntime(battle);
+    const relicResult = resolveRelicHooks(relicIds, {
+      battle,
+      trigger: 'cardDrawn',
+      cardId: battle.player.cards[id]?.definitionId,
+      events,
+    });
+    applyRelicResourceResult(battle, { ...relicResult, momentum: undefined }, events);
+    if (relicResult.momentum) {
+      const gainResult = gainMomentumWithRelics(battle, relicIds, relicResult.momentum, events);
+      applyRelicResourceResult(battle, { ...gainResult, momentum: undefined }, events);
+      applyRelicBlockResult(battle, gainResult.block, relicIds, events);
+      if (gainResult.draw) drawAdditionalCards(battle, gainResult.draw, events, random, relicIds);
+    }
+    if (relicResult.block) {
+      const player = battle.units[battle.playerUnitId];
+      if (player) {
+        player.block += relicResult.block;
+        battle.playerGainedBlockThisTurn = true;
+        battle.playerTurnBlockGained += relicResult.block;
+        events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: relicResult.block });
+      }
+    }
+    if (relicIds.includes('draw_power_sigil')) {
+      runtime.drawPowerSigilTriggersThisTurn = (runtime.drawPowerSigilTriggersThisTurn as number | undefined ?? 0) + 1;
+    }
+    if (relicIds.includes('surge_tide')) {
+      runtime.surgeTideDrawsThisTurn = (runtime.surgeTideDrawsThisTurn as number | undefined ?? 0) + 1;
+    }
+    if (relicResult.draw) {
+      drawAdditionalCards(battle, relicResult.draw, events, random, relicIds);
+    }
   }
 }
 
@@ -136,6 +181,151 @@ function grantEnergy(
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
 }
 
+function applyRelicBlockResult(
+  battle: BattleState,
+  amount: number | undefined,
+  relicIds: string[],
+  events: GameEvent[],
+): void {
+  if (!amount || amount <= 0) return;
+  applyBlockGain(battle, battle.playerUnitId, amount, relicIds, events);
+}
+
+function applyRelicCombatResult(
+  battle: BattleState,
+  result: ReturnType<typeof resolveRelicHooks>,
+  relicIds: string[],
+  events: GameEvent[],
+  random: () => number,
+  includeDraw = true,
+): void {
+  applyRelicResourceResult(battle, { ...result, momentum: undefined }, events);
+  if (result.momentum) {
+    const gainResult = gainMomentumWithRelics(battle, relicIds, result.momentum, events);
+    applyRelicResourceResult(battle, { ...gainResult, momentum: undefined }, events);
+    applyRelicBlockResult(battle, gainResult.block, relicIds, events);
+    if (gainResult.draw) drawAdditionalCards(battle, gainResult.draw, events, random, relicIds);
+    if (relicIds.includes('guard_momentum_link')) {
+      const runtime = ensureRelicRuntime(battle);
+      runtime.guardMomentumLinkCountThisTurn = runtimeNumber(battle, 'guardMomentumLinkCountThisTurn') + 1;
+    }
+  }
+  applyRelicBlockResult(battle, result.block, relicIds, events);
+  if (includeDraw && result.draw) drawAdditionalCards(battle, result.draw, events, random, relicIds);
+  if (result.nextAttackBonus) {
+    battle.twinCoreNextAttackBonus += result.nextAttackBonus;
+  }
+  if (result.skillBlockBonus) {
+    const runtime = ensureRelicRuntime(battle);
+    runtime.skillBlockBonus = (runtime.skillBlockBonus as number | undefined ?? 0) + result.skillBlockBonus;
+  }
+  if (result.turnAttackBonus) {
+    const runtime = ensureRelicRuntime(battle);
+    runtime.turnAttackBonus = (runtime.turnAttackBonus as number | undefined ?? 0) + result.turnAttackBonus;
+  }
+  if (result.battleAttackBonus) {
+    const runtime = ensureRelicRuntime(battle);
+    runtime.battleAttackBonus = (runtime.battleAttackBonus as number | undefined ?? 0) + result.battleAttackBonus;
+  }
+  if (result.nextCardCostReduction && relicIds.includes('memory_shard')) {
+    const runtime = ensureRelicRuntime(battle);
+    runtime.memoryShardTriggersThisTurn = runtimeNumber(battle, 'memoryShardTriggersThisTurn') + 1;
+  }
+}
+
+function consumeMomentumForCardEffect(
+  battle: BattleState,
+  sourceUnitId: string,
+  requestedConsume: number,
+  relicIds: string[],
+  events: GameEvent[],
+  random: () => number,
+  options: { momentumKind?: 'damage' | 'draw'; isMomentumAttack?: boolean; includeDraw?: boolean } = {},
+): {
+  previousMomentum: number;
+  consumedStacks: number;
+  remainingMomentum: number;
+  consumedAll: boolean;
+  firstConsumeThisTurn: boolean;
+  relicResult: ReturnType<typeof resolveRelicHooks>;
+} {
+  const source = battle.units[sourceUnitId];
+  if (!source) {
+    return {
+      previousMomentum: 0,
+      consumedStacks: 0,
+      remainingMomentum: 0,
+      consumedAll: false,
+      firstConsumeThisTurn: false,
+      relicResult: {},
+    };
+  }
+
+  const previousMomentum = getStatusStacks(source, STATUS_MOMENTUM);
+  const firstConsumeThisTurn = previousMomentum > 0 && !battle.playerConsumedMomentumThisTurn;
+  const costResult = resolveRelicHooks(relicIds, {
+    battle,
+    trigger: 'momentumCost',
+    events,
+    amount: requestedConsume,
+    momentumKind: options.momentumKind,
+    isMomentumAttack: options.isMomentumAttack,
+    firstConsumeThisTurn,
+  });
+  const adjustedConsume = Math.max(
+    0,
+    Math.floor(
+      (requestedConsume - (costResult.momentumCostReduction ?? 0))
+      * (costResult.momentumCostMultiplier ?? 1),
+    ),
+  );
+  const consumedStacks = Math.min(previousMomentum, adjustedConsume);
+  const consumedAll = previousMomentum > 0 && consumedStacks >= previousMomentum;
+  const runtime = ensureRelicRuntime(battle);
+
+  if (consumedStacks > 0) {
+    if (relicIds.includes('cascade_gem') && runtime.cascadeGemArmed) {
+      runtime.cascadeGemArmed = false;
+    }
+    decayStatus(source, STATUS_MOMENTUM, consumedStacks);
+    battle.playerConsumedMomentumThisTurn = true;
+    battle.playerMomentumConsumedAmountThisTurn += consumedStacks;
+    runtime.momentumConsumeCountThisTurn = runtimeNumber(battle, 'momentumConsumeCountThisTurn') + 1;
+    runtime.momentumConsumedThisTurn = runtimeNumber(battle, 'momentumConsumedThisTurn') + consumedStacks;
+    runtime.momentumConsumedTotal = runtimeNumber(battle, 'momentumConsumedTotal') + consumedStacks;
+    if (relicIds.includes('cascade_gem')) runtime.cascadeGemArmed = true;
+    events.push({
+      type: 'MOMENTUM_CONSUMED',
+      unitId: sourceUnitId,
+      value: consumedStacks,
+      remaining: getStatusStacks(source, STATUS_MOMENTUM),
+    });
+  }
+
+  const remainingMomentum = getStatusStacks(source, STATUS_MOMENTUM);
+  const relicResult = resolveRelicHooks(relicIds, {
+    battle,
+    trigger: 'momentumConsumed',
+    events,
+    consumedStacks,
+    remainingMomentum,
+    previousMomentum,
+    consumedAll,
+    momentumKind: options.momentumKind,
+    isMomentumAttack: options.isMomentumAttack,
+    firstConsumeThisTurn,
+  });
+  applyRelicCombatResult(battle, relicResult, relicIds, events, random, options.includeDraw ?? true);
+  return {
+    previousMomentum,
+    consumedStacks,
+    remainingMomentum,
+    consumedAll,
+    firstConsumeThisTurn,
+    relicResult,
+  };
+}
+
 function applyMomentumBurstDamage(
   battle: BattleState,
   sourceUnitId: string,
@@ -154,53 +344,18 @@ function applyMomentumBurstDamage(
   const currentStacks = getStatusStacks(source, STATUS_MOMENTUM);
   const requestedConsume =
     params.consumeMode === 'all' ? currentStacks : Math.max(0, params.consumeValue ?? 0);
-  const consumedStacks = Math.min(currentStacks, requestedConsume);
-  const firstConsumeThisTurn = consumedStacks > 0 && !battle.playerConsumedMomentumThisTurn;
-  const relicResult = resolveRelicHooks(relicIds, {
+  const consumption = consumeMomentumForCardEffect(
     battle,
-    trigger: 'momentumConsumed',
+    sourceUnitId,
+    requestedConsume,
+    relicIds,
     events,
-    consumedStacks,
-    momentumKind: 'damage',
-    firstConsumeThisTurn,
-  });
-
-  if (consumedStacks > 0) {
-    decayStatus(source, STATUS_MOMENTUM, consumedStacks);
-    events.push({
-      type: 'MOMENTUM_CONSUMED',
-      unitId: sourceUnitId,
-      value: consumedStacks,
-      remaining: getStatusStacks(source, STATUS_MOMENTUM),
-    });
-    battle.playerConsumedMomentumThisTurn = true;
-    battle.playerMomentumConsumedAmountThisTurn += consumedStacks;
-    // Relic: momentum_siphon — gain block equal to consumed stacks
-    if (relicIds.includes('momentum_siphon')) {
-      source.block += consumedStacks;
-      events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: consumedStacks });
-    }
-    // Relic: bulwark_heart — gain 2 block on momentum consume
-    if (relicIds.includes('bulwark_heart')) {
-      source.block += 2;
-      events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: 2 });
-    }
-    // Relic: flow_resonance — if hand has attack card when consuming momentum, draw 1 (max 2/turn)
-    if (relicIds.includes('flow_resonance') && battle.player.hand.length > 0) {
-      const handHasAttack = battle.player.hand.some(id => {
-        const inst = battle.player.cards[id];
-        const d = inst ? CARD_DEFINITIONS[inst.definitionId] : undefined;
-        return d?.type === 'attack';
-      });
-      if (handHasAttack) {
-        drawAdditionalCards(battle, 1, events, random);
-      }
-    }
-    // Relic: tide_walker — momentum consume grants +1 block per stack consumed
-    if (relicIds.includes('tide_walker')) {
-      source.block += consumedStacks;
-      events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: consumedStacks });
-    }
+    random,
+    { momentumKind: 'damage', isMomentumAttack: true },
+  );
+  const { consumedStacks, relicResult } = consumption;
+  if (relicResult.vulnerableStacks && target.alive) {
+    addStatusStacks(target, 'vulnerable', relicResult.vulnerableStacks);
   }
 
   const primedBonus = consumedStacks > 0 ? consumePrimedBreakBonus(battle, sourceUnitId, 'damage') : 0;
@@ -214,16 +369,23 @@ function applyMomentumBurstDamage(
       battle.twinCoreNextAttackBonus = 0;
     }
   }
-  dealDamageToUnit(battle, sourceUnitId, targetUnitId, damage, events);
-
-  if ((relicResult.draw ?? 0) > 0) {
-    drawAdditionalCards(battle, relicResult.draw ?? 0, events, random);
+  dealDamageToUnit(battle, sourceUnitId, targetUnitId, damage, events, {
+    isPlayerAttack: effectCtx?.cardType === 'attack',
+    isMomentumAttack: true,
+    consumedStacks,
+  });
+  if (relicResult.damageAllEnemies) {
+    for (const enemyId of battle.enemyUnitIds) {
+      const enemy = battle.units[enemyId];
+      if (enemy?.alive) dealDamageToUnit(battle, sourceUnitId, enemyId, relicResult.damageAllEnemies, events, {
+        isPlayerAttack: false,
+        isMomentumAttack: true,
+        isSecondaryDamage: true,
+      });
+    }
   }
   if (consumedStacks > 0 && typeof params.gainEnergyIfConsumed === 'number') {
     grantEnergy(battle, params.gainEnergyIfConsumed, events);
-  }
-  if ((relicResult.energy ?? 0) > 0) {
-    grantEnergy(battle, relicResult.energy ?? 0, events);
   }
 }
 
@@ -241,63 +403,24 @@ function applyMomentumBurstDraw(
   const currentStacks = getStatusStacks(source, STATUS_MOMENTUM);
   const requestedConsume =
     params.consumeMode === 'all' ? currentStacks : Math.max(0, params.consumeValue ?? 0);
-  const consumedStacks = Math.min(currentStacks, requestedConsume);
-  const firstConsumeThisTurn = consumedStacks > 0 && !battle.playerConsumedMomentumThisTurn;
-  const relicResult = resolveRelicHooks(relicIds, {
+  const consumption = consumeMomentumForCardEffect(
     battle,
-    trigger: 'momentumConsumed',
+    sourceUnitId,
+    requestedConsume,
+    relicIds,
     events,
-    consumedStacks,
-    momentumKind: 'draw',
-    firstConsumeThisTurn,
-  });
-
-  if (consumedStacks > 0) {
-    decayStatus(source, STATUS_MOMENTUM, consumedStacks);
-    events.push({
-      type: 'MOMENTUM_CONSUMED',
-      unitId: sourceUnitId,
-      value: consumedStacks,
-      remaining: getStatusStacks(source, STATUS_MOMENTUM),
-    });
-    battle.playerConsumedMomentumThisTurn = true;
-    battle.playerMomentumConsumedAmountThisTurn += consumedStacks;
-    // Relic: momentum_siphon — gain block equal to consumed stacks
-    if (relicIds.includes('momentum_siphon')) {
-      source.block += consumedStacks;
-      events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: consumedStacks });
-    }
-    // Relic: bulwark_heart — gain 2 block on momentum consume
-    if (relicIds.includes('bulwark_heart')) {
-      source.block += 2;
-      events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: 2 });
-    }
-    // Relic: flow_resonance — if hand has attack card when consuming momentum, draw 1 (max 2/turn)
-    if (relicIds.includes('flow_resonance') && battle.player.hand.length > 0) {
-      const handHasAttack = battle.player.hand.some(id => {
-        const inst = battle.player.cards[id];
-        const d = inst ? CARD_DEFINITIONS[inst.definitionId] : undefined;
-        return d?.type === 'attack';
-      });
-      if (handHasAttack) {
-        drawAdditionalCards(battle, 1, events, random);
-      }
-    }
-    // Relic: tide_walker — momentum consume grants +1 block per stack consumed
-    if (relicIds.includes('tide_walker')) {
-      source.block += consumedStacks;
-      events.push({ type: 'BLOCK_GAINED', unitId: sourceUnitId, value: consumedStacks });
-    }
-  }
+    random,
+    { momentumKind: 'draw', includeDraw: false },
+  );
+  const { consumedStacks, relicResult } = consumption;
+  // 抽牌型爆发的 Hook 抽牌已在公共结算中执行，牌面本身只再结算基础抽牌。
+  // 这里避免把同一份 relicResult.draw 重复计入。
 
   const primedBonus = consumedStacks > 0 ? consumePrimedBreakBonus(battle, sourceUnitId, 'draw') : 0;
   const relicBonus = relicResult.draw ?? 0;
   const drawCount = params.baseDraw + consumedStacks * params.drawPerStack + primedBonus + relicBonus;
   drawAdditionalCards(battle, drawCount, events, random);
 
-  if ((relicResult.energy ?? 0) > 0) {
-    grantEnergy(battle, relicResult.energy ?? 0, events);
-  }
 }
 
 function applyMomentumGuardByStacks(
@@ -328,15 +451,22 @@ function applyBlockGain(
 
   let amount = baseAmount;
   if (targetUnitId === battle.playerUnitId) {
+    const runtime = ensureRelicRuntime(battle);
     const relicResult = resolveRelicHooks(relicIds, {
       battle,
       trigger: 'blockGained',
       events,
       amount: baseAmount,
       cardType,
+      currentBlock: target.block,
       firstBlockThisTurn: !battle.twinCoreFirstBlockUsed,
     });
-    amount += relicResult.block ?? 0;
+    const cardBlockBonus = runtime.currentCardBlockBonus as number | undefined ?? 0;
+    const skillBlockBonus = cardType === 'skill' ? runtimeNumber(battle, 'skillBlockBonus') : 0;
+    amount = (amount + (relicResult.block ?? 0) + cardBlockBonus + skillBlockBonus)
+      * (relicResult.blockMultiplier ?? 1);
+    delete runtime.currentCardBlockBonus;
+    applyRelicResourceResult(battle, relicResult, events);
     if (relicResult.nextAttackBonus && !battle.twinCoreFirstBlockUsed) {
       battle.twinCoreFirstBlockUsed = true;
       battle.twinCoreNextAttackBonus += relicResult.nextAttackBonus;
@@ -348,6 +478,21 @@ function applyBlockGain(
   if (targetUnitId === battle.playerUnitId) {
     battle.playerGainedBlockThisTurn = true;
     battle.playerTurnBlockGained += amount;
+    if (targetUnitId === battle.playerUnitId && relicIds.includes('sanctuary_bell')) {
+      const runtime = ensureRelicRuntime(battle);
+      const triggers = runtime.sanctuaryBellTriggersThisTurn as number | undefined ?? 0;
+      if (battle.playerTurnBlockGained >= 15 && triggers < 2) {
+        const sanctuaryResult = resolveRelicHooks(['sanctuary_bell'], {
+          battle,
+          trigger: 'blockGained',
+          amount: 0,
+          currentBlock: target.block,
+          events,
+        });
+        applyRelicResourceResult(battle, sanctuaryResult, events);
+        runtime.sanctuaryBellTriggersThisTurn = triggers + 1;
+      }
+    }
   }
   return amount;
 }
@@ -363,6 +508,7 @@ function applyEffects(
   effectCtx?: CardEffectContext,
 ): void {
   const playerUnit = battle.units[battle.playerUnitId];
+  const damageContext = { isPlayerAttack: effectCtx?.cardType === 'attack' };
   for (const e of effects) {
     if (e.type === 'damage') {
       let dmg = e.value;
@@ -382,7 +528,11 @@ function applyEffects(
       if (e.target === 'all_enemies') {
         for (const enemyUnitId of battle.enemyUnitIds) {
           const target = battle.units[enemyUnitId];
-          if (target?.alive) dealDamageToUnit(battle, sourceUnitId, enemyUnitId, dmg, events);
+          if (target?.alive) {
+            dealDamageToUnit(battle, sourceUnitId, enemyUnitId, dmg, events, {
+              isPlayerAttack: effectCtx?.cardType === 'attack',
+            });
+          }
         }
       } else {
         const targetId =
@@ -394,7 +544,9 @@ function applyEffects(
         if (!targetId) continue;
         const target = battle.units[targetId];
         if (!target) continue;
-        dealDamageToUnit(battle, sourceUnitId, targetId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetId, dmg, events, {
+          isPlayerAttack: effectCtx?.cardType === 'attack',
+        });
       }
     } else if (e.type === 'block') {
       const targetId = e.target === 'self' ? sourceUnitId : targetUnitId;
@@ -402,14 +554,6 @@ function applyEffects(
       const target = battle.units[targetId];
       if (!target) continue;
       let amount = e.value;
-      // Relic: stone_bulwark — if current block == 0, gain +3 extra
-      if (targetId === battle.playerUnitId && relicIds.includes('stone_bulwark') && target.block === 0) {
-        amount += 3;
-      }
-      // Relic: bulwark_sigil — +1 extra block on block card
-      if (targetId === battle.playerUnitId && relicIds.includes('bulwark_sigil') && effectCtx?.cardType === 'skill') {
-        amount += 1;
-      }
       if (
         targetId === battle.playerUnitId
         && battle.twinCoreNextSkillBonus > 0
@@ -420,26 +564,12 @@ function applyEffects(
         battle.twinCoreNextSkillBonus = 0;
       }
       applyBlockGain(battle, targetId, amount, relicIds, events, effectCtx?.cardType);
-      if (targetId === battle.playerUnitId) {
-        // Relic: guard_momentum_link — gain 1 momentum on block card (max 2/turn)
-        if (relicIds.includes('guard_momentum_link') && effectCtx?.cardType === 'skill' && battle.playerCardsPlayedThisTurn < 2) {
-          addStatusStacks(target, STATUS_MOMENTUM, 1);
-        }
-        // Relic: sanctuary_bell — after accumulating 15 block gained this turn, heal 1 (max 2/turn)
-        if (relicIds.includes('sanctuary_bell') && battle.playerTurnBlockGained >= 15) {
-          const healTarget = battle.units[battle.playerUnitId];
-          if (healTarget?.alive) {
-            healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + 1);
-            battle.playerTurnBlockGained = 0;
-          }
-        }
-      }
     } else if (e.type === 'apply_status') {
       if (e.target === 'all_enemies') {
         for (const enemyUnitId of battle.enemyUnitIds) {
           const target = battle.units[enemyUnitId];
           if (!target?.alive) continue;
-          addStatusStacks(target, e.statusId, e.stacks);
+          addRelicAwareStatusStacks(battle, enemyUnitId, e.statusId, e.stacks, events, relicIds);
           events.push({ type: 'STATUS_APPLIED', unitId: enemyUnitId, statusId: e.statusId, value: getStatusStacks(target, e.statusId) });
         }
       } else {
@@ -447,23 +577,11 @@ function applyEffects(
         if (!targetId) continue;
         const target = battle.units[targetId];
         if (!target) continue;
-        addStatusStacks(target, e.statusId, e.stacks);
+        addRelicAwareStatusStacks(battle, targetId, e.statusId, e.stacks, events, relicIds);
         events.push({ type: 'STATUS_APPLIED', unitId: targetId, statusId: e.statusId, value: getStatusStacks(target, e.statusId) });
       }
     } else if (e.type === 'draw') {
       drawAdditionalCards(battle, e.value, events, random);
-      // Relic: draw_power_sigil — on draw, gain block = min(strength, 5) per card drawn
-      if (relicIds.includes('draw_power_sigil')) {
-        const p = battle.units[battle.playerUnitId];
-        if (p?.alive) {
-          const str = getStatusStacks(p, 'strength');
-          const blockGain = Math.min(str, 5) * e.value;
-          if (blockGain > 0) {
-            p.block += blockGain;
-            events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: blockGain });
-          }
-        }
-      }
     } else if (e.type === 'gain_energy') {
       grantEnergy(battle, e.value, events);
     } else if (e.type === 'discard') {
@@ -472,14 +590,15 @@ function applyEffects(
         if (hand.length === 0) break;
         const index = Math.floor(random() * hand.length);
         const [picked] = hand.splice(index, 1);
-        if (picked) battle.player.discardPile.push(picked);
-        // Relic: void_charm — when discarding a card, gain 1 block
-        if (relicIds.includes('void_charm')) {
-          const p = battle.units[battle.playerUnitId];
-          if (p?.alive) {
-            p.block += 1;
-            events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: 1 });
-          }
+        if (picked) {
+          battle.player.discardPile.push(picked);
+          const discardResult = resolveRelicHooks(relicIds, {
+            battle,
+            trigger: 'cardDiscarded',
+            cardId: battle.player.cards[picked]?.definitionId,
+            events,
+          });
+          applyRelicCombatResult(battle, discardResult, relicIds, events, random);
         }
       }
     } else if (e.type === 'heal') {
@@ -518,7 +637,7 @@ function applyEffects(
           events.push({ type: 'CARD_EXHAUSTED', unitId: sourceUnitId, cardInstanceId: cid });
           notifyCardExhausted(battle, relicIds, events);
           const eid = pickRandomLivingEnemyId(battle, random);
-          if (eid) dealDamageToUnit(battle, sourceUnitId, eid, 8, events);
+          if (eid) dealDamageToUnit(battle, sourceUnitId, eid, 8, events, damageContext);
         }
       } else if (e.scriptId === 'blood_rush_strike') {
         if (!targetUnitId) continue;
@@ -531,7 +650,7 @@ function applyEffects(
             battle.twinCoreNextAttackBonus = 0;
           }
         }
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
       } else if (e.scriptId === 'fortify_convert_flag') {
         battle.pendingFortifyConvert = true;
       } else if (e.scriptId === 'flow_shift') {
@@ -542,7 +661,7 @@ function applyEffects(
           }
         } else {
           const eid = pickRandomLivingEnemyId(battle, random);
-          if (eid) dealDamageToUnit(battle, sourceUnitId, eid, 12, events);
+          if (eid) dealDamageToUnit(battle, sourceUnitId, eid, 12, events, damageContext);
         }
       } else if (e.scriptId === 'balance_edge') {
         if (!targetUnitId) continue;
@@ -556,20 +675,20 @@ function applyEffects(
             battle.twinCoreNextAttackBonus = 0;
           }
         }
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
       } else if (e.scriptId === 'momentum_conditional_draw') {
         const params = readMomentumConditionalDrawParams(e.params);
         if (!params) continue;
         if (!battle.playerConsumedMomentumThisTurn) {
           drawAdditionalCards(battle, params.drawIfNoMomentumConsume, events, random);
           if ((params.momentumIfNoMomentumConsume ?? 0) > 0) {
-            addStatusStacks(battle.units[battle.playerUnitId]!, STATUS_MOMENTUM, params.momentumIfNoMomentumConsume!);
-            events.push({
-              type: 'STATUS_APPLIED',
-              unitId: battle.playerUnitId,
-              statusId: STATUS_MOMENTUM,
-              value: getStatusStacks(battle.units[battle.playerUnitId]!, STATUS_MOMENTUM),
-            });
+            applyRelicCombatResult(
+              battle,
+              { momentum: params.momentumIfNoMomentumConsume },
+              relicIds,
+              events,
+              random,
+            );
           }
         }
       } else if (e.scriptId === 'conditional_damage') {
@@ -601,7 +720,7 @@ function applyEffects(
             battle.twinCoreNextAttackBonus = 0;
           }
         }
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
       } else if (e.scriptId === 'momentum_to_energy') {
         const params = e.params as { consumeValue: number; energyGain: number } | undefined;
         if (!params) continue;
@@ -609,10 +728,14 @@ function applyEffects(
         if (!source) continue;
         const currentStacks = getStatusStacks(source, 'momentum');
         const consumedStacks = Math.min(currentStacks, params.consumeValue);
-        if (consumedStacks > 0) {
-          decayStatus(source, 'momentum', consumedStacks);
-          battle.playerConsumedMomentumThisTurn = true;
-        }
+        consumeMomentumForCardEffect(
+          battle,
+          sourceUnitId,
+          consumedStacks,
+          relicIds,
+          events,
+          random,
+        );
         grantEnergy(battle, params.energyGain, events);
       } else if (e.scriptId === 'block_to_damage') {
         const params = e.params as { multiplier: number } | undefined;
@@ -622,7 +745,7 @@ function applyEffects(
         if (!source) continue;
         const dmg = Math.floor(source.block * params.multiplier);
         if (dmg <= 0) continue;
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
       } else if (e.scriptId === 'momentum_burst_block') {
         const params = e.params as { consumeValue: number; baseBlock: number } | undefined;
         if (!params) continue;
@@ -630,10 +753,14 @@ function applyEffects(
         if (!source) continue;
         const currentStacks = getStatusStacks(source, 'momentum');
         const consumedStacks = Math.min(currentStacks, params.consumeValue);
-        if (consumedStacks > 0) {
-          decayStatus(source, 'momentum', consumedStacks);
-          battle.playerConsumedMomentumThisTurn = true;
-        }
+        consumeMomentumForCardEffect(
+          battle,
+          sourceUnitId,
+          consumedStacks,
+          relicIds,
+          events,
+          random,
+        );
         const blockGain = params.baseBlock;
         applyBlockGain(battle, sourceUnitId, blockGain, relicIds, events, effectCtx?.cardType);
       } else if (e.scriptId === 'metallicize_to_block') {
@@ -652,7 +779,7 @@ function applyEffects(
             battle.twinCoreNextAttackBonus = 0;
           }
         }
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
         if (metallicizeStacks > 0) {
           applyBlockGain(battle, sourceUnitId, metallicizeStacks, relicIds, events, effectCtx?.cardType);
         }
@@ -685,7 +812,7 @@ function applyEffects(
             battle.twinCoreNextAttackBonus = 0;
           }
         }
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
       } else if (e.scriptId === 'primed_break_burst_damage') {
         const params = e.params as { baseDamage: number; damagePerStack: number } | undefined;
         if (!params) continue;
@@ -705,7 +832,7 @@ function applyEffects(
             battle.twinCoreNextAttackBonus = 0;
           }
         }
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
       } else if (e.scriptId === 'multi_hit_with_block') {
         const params = e.params as { hits: number; damagePerHit: number; blockPerHit: number } | undefined;
         if (!params) continue;
@@ -721,7 +848,7 @@ function applyEffects(
                 battle.twinCoreNextAttackBonus = 0;
               }
             }
-            dealDamageToUnit(battle, sourceUnitId, eid, dmg, events);
+            dealDamageToUnit(battle, sourceUnitId, eid, dmg, events, damageContext);
           }
           const source = battle.units[sourceUnitId];
           if (source) {
@@ -746,7 +873,7 @@ function applyEffects(
             battle.twinCoreNextAttackBonus = 0;
           }
         }
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
       } else if (e.scriptId === 'consume_block_for_damage') {
         const params = e.params as { baseDamage: number; blockCost: number; bonusDamage: number } | undefined;
         if (!params) continue;
@@ -766,7 +893,7 @@ function applyEffects(
             battle.twinCoreNextAttackBonus = 0;
           }
         }
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events);
+        dealDamageToUnit(battle, sourceUnitId, targetUnitId, dmg, events, damageContext);
       } else if (e.scriptId === 'conditional_block') {
         const params = e.params as { baseBlock: number; bonusBlock: number; condition: string } | undefined;
         if (!params) continue;
@@ -799,6 +926,26 @@ function shouldSkipMomentumAutoConsume(effects: EffectDefinition[]): boolean {
   );
 }
 
+function cardHasBlock(effects: EffectDefinition[]): boolean {
+  return effects.some((effect) => {
+    if (effect.type === 'block') return true;
+    if (effect.type === 'repeat') return cardHasBlock(effect.effects);
+    return effect.type === 'custom' && [
+      'momentum_guard_by_stacks',
+      'momentum_burst_block',
+      'momentum_conditional_block',
+      'conditional_block',
+      'multi_hit_with_block',
+      'metallicize_to_block',
+    ].includes(effect.scriptId);
+  });
+}
+
+function runtimeNumber(battle: BattleState, key: string): number {
+  const value = ensureRelicRuntime(battle)[key];
+  return typeof value === 'number' ? value : 0;
+}
+
 export function playCardFlow(
   run: RunState,
   command: Extract<GameCommand, { type: 'PLAY_CARD' }>,
@@ -821,8 +968,6 @@ export function playCardFlow(
   const def = CARD_DEFINITIONS[card.definitionId];
   if (!def) return;
   if (def.type === 'curse' || def.type === 'status') return;
-  const effectiveCost = card.costForTurn + battle.cursePrideCostPressure + battle.curseConfusionCostDelta;
-  if (battle.player.energy < Math.max(0, effectiveCost)) return;
   if (def.target === 'single_enemy') {
     if (!targetUnitId) {
       battle.pendingAction = { type: 'play_card', cardInstanceId, sourceUnitId };
@@ -842,19 +987,48 @@ export function playCardFlow(
   const hadAttackBefore = battle.playerPlayedAttackThisTurn;
   const isAttack = def.type === 'attack';
   const isFirstAttackThisTurn = isAttack && battle.playerAttacksPlayedThisTurn === 0;
+  const isSkillOrPower = def.type === 'skill' || def.type === 'power';
+  const runtime = ensureRelicRuntime(battle);
+  const cardTypeSequence = [
+    ...(Array.isArray(runtime.cardTypeSequence) ? runtime.cardTypeSequence : []),
+    def.type,
+  ] as Array<'attack' | 'skill' | 'power'>;
+  const attackCountAfterPlay = battle.playerAttacksPlayedThisTurn + (isAttack ? 1 : 0);
+  const skillCountAfterPlay = runtimeNumber(battle, 'skillCountThisTurn') + (isSkillOrPower ? 1 : 0);
+  const powerCountAfterPlay = runtimeNumber(battle, 'powerCountThisTurn') + (def.type === 'power' ? 1 : 0);
   const cardRelicResult = resolveRelicHooks(run.meta.relics, {
     run,
     battle,
     trigger: 'cardPlayed',
     cardId: card.definitionId,
     cardType: def.type,
+    cardHasBlock: cardHasBlock(def.effects),
+    cardWillExhaust: def.exhaustOnPlay,
+    cardWasDiscarded: !def.exhaustOnPlay,
+    firstCardThisBattle: runtimeNumber(battle, 'cardCountThisBattle') === 0,
+    cardCountAfterPlay: runtimeNumber(battle, 'cardCountThisBattle') + 1,
+    attackCountAfterPlay,
+    skillCountAfterPlay,
+    powerCountAfterPlay,
+    cardTypeSequence,
     firstAttackThisTurn: isFirstAttackThisTurn,
-    playedAttackThisTurn: hadAttackBefore,
-    playedSkillThisTurn: hadSkillBefore,
+    playedAttackThisTurn: hadAttackBefore || isAttack,
+    playedSkillThisTurn: hadSkillBefore || isSkillOrPower,
     harmonyTriggeredThisTurn: battle.harmonyEmblemTriggeredThisTurn,
     events,
   });
   const useFractureExhaust = Boolean(cardRelicResult.forceExhaustAttack);
+  const pendingCardCostReduction = runtimeNumber(battle, 'nextCardCostReduction');
+  const currentTurnCostReduction = runtimeNumber(battle, 'cardCostReductionThisTurn');
+  const rawCost = card.costForTurn + battle.cursePrideCostPressure + battle.curseConfusionCostDelta;
+  const effectiveCost = cardRelicResult.forceZeroCost
+    ? 0
+    : Math.max(0, rawCost - pendingCardCostReduction - currentTurnCostReduction - (cardRelicResult.costReduction ?? 0));
+  if (battle.player.energy < effectiveCost) return;
+  delete runtime.nextCardCostReduction;
+  if (cardRelicResult.costReduction) runtime.dualityCrestUsedThisTurn = true;
+  runtime.currentCardDamageBonus = cardRelicResult.cardDamageBonus ?? 0;
+  runtime.currentCardBlockBonus = cardRelicResult.cardBlockBonus ?? 0;
 
   battle.player.energy -= Math.max(0, effectiveCost);
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
@@ -874,27 +1048,20 @@ export function playCardFlow(
   if (isAttack) {
     battle.playerAttacksPlayedThisTurn += 1;
     battle.playerPlayedAttackThisTurn = true;
-    // Relic: chain_bolt — after 3+ attacks in a turn, next attack +8 damage
-    if (run.meta.relics.includes('chain_bolt') && battle.playerAttacksPlayedThisTurn >= 3) {
-      battle.chainBoltActive = true;
-    }
-    if (run.meta.relics.includes('chain_bolt') && battle.chainBoltActive && battle.playerAttacksPlayedThisTurn > 3 && targetUnitId) {
-      const target = battle.units[targetUnitId];
-      if (target?.alive) {
-        dealDamageToUnit(battle, sourceUnitId, targetUnitId, 8, events);
-      }
-      battle.chainBoltActive = false;
-    }
   }
-  if (def.type === 'skill' || def.type === 'power') {
+  if (isSkillOrPower) {
     battle.playerPlayedSkillThisTurn = true;
-    // Relic: memory_shard — after playing skill, next card costs -1 (min 0)
-    if (run.meta.relics.includes('memory_shard') && def.type === 'skill') {
-      battle.memoryShardActive = true;
-    }
   }
 
   battle.playerCardsPlayedThisTurn += 1;
+  runtime.cardCountThisBattle = runtimeNumber(battle, 'cardCountThisBattle') + 1;
+  runtime.skillCountThisTurn = skillCountAfterPlay;
+  runtime.powerCountThisTurn = powerCountAfterPlay;
+  runtime.cardTypeSequence = cardTypeSequence;
+  if (cardRelicResult.nextCardCostReduction) {
+    runtime.nextCardCostReduction = runtimeNumber(battle, 'nextCardCostReduction')
+      + cardRelicResult.nextCardCostReduction;
+  }
   events.push({ type: 'CARD_PLAYED', unitId: sourceUnitId, cardInstanceId, targetUnitId });
   const effectRng = mulberry32((run.seed ^ battle.turn * 0xc001d ^ cardInstanceId.length * 0x9e37) >>> 0);
   applyEffects(
@@ -911,44 +1078,15 @@ export function playCardFlow(
   if (cardRelicResult.harmonyTriggered) {
     battle.harmonyEmblemTriggeredThisTurn = true;
   }
-  if ((cardRelicResult.draw ?? 0) > 0) {
-    drawAdditionalCards(battle, cardRelicResult.draw ?? 0, events, () => effectRng());
-  }
-  if ((cardRelicResult.energy ?? 0) > 0) {
-    grantEnergy(battle, cardRelicResult.energy ?? 0, events);
-  }
-  // Relic: cycle_engine — after playing both attack and skill in a turn, draw 1 (max 2/turn)
+  applyRelicCombatResult(battle, cardRelicResult, run.meta.relics, events, () => effectRng());
   if (
     run.meta.relics.includes('cycle_engine')
-    && battle.cycleEngineDrawsThisTurn < 2
-    && battle.playerPlayedAttackThisTurn
-    && battle.playerPlayedSkillThisTurn
+    && runtimeNumber(battle, 'cycleEngineDrawsThisTurn') < 2
+    && cardRelicResult.draw
     && ((def.type === 'attack' && hadSkillBefore)
-      || ((def.type === 'skill' || def.type === 'power') && hadAttackBefore))
+      || (isSkillOrPower && hadAttackBefore))
   ) {
-    battle.cycleEngineDrawsThisTurn += 1;
-    drawAdditionalCards(battle, 1, events, () => effectRng());
-  }
-  // Relic: alternating_crest — after attack-skill-attack sequence, draw 1
-  if (
-    run.meta.relics.includes('alternating_crest')
-    && def.type === 'attack'
-    && hadSkillBefore
-    && battle.playerAttacksPlayedThisTurn >= 2
-  ) {
-    drawAdditionalCards(battle, 1, events, () => effectRng());
-  }
-  // Relic: meditation_stone — after playing skill, gain 1 block
-  if (run.meta.relics.includes('meditation_stone') && def.type === 'skill') {
-    const p = battle.units[battle.playerUnitId];
-    if (p?.alive) {
-      p.block += 1;
-      events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: 1 });
-    }
-  }
-  // Relic: echo_charm — when playing a power, draw 1 card (max 2/turn)
-  if (run.meta.relics.includes('echo_charm') && def.type === 'power') {
-    drawAdditionalCards(battle, 1, events, () => effectRng());
+    runtime.cycleEngineDrawsThisTurn = runtimeNumber(battle, 'cycleEngineDrawsThisTurn') + 1;
   }
 
   runOnAfterPlayCard(battle, {
@@ -966,6 +1104,8 @@ export function playCardFlow(
       events,
     );
   }
+  delete runtime.currentCardDamageBonus;
+  delete runtime.currentCardBlockBonus;
   if (events.some((event) => event.type === 'BATTLE_WON')) battle.phase = 'victory';
   if (events.some((event) => event.type === 'BATTLE_LOST')) battle.phase = 'defeat';
   battle.pendingAction = null;

@@ -102,6 +102,11 @@ export interface MonsterBattleState {
   aiTrace?: string;
 }
 
+/** 遗物在一场战斗内的轻量运行态；保存在 BattleState 里以支持存档/撤销。 */
+export interface RelicRuntimeState {
+  [key: string]: number | boolean | string[] | undefined;
+}
+
 export interface BattleEncounterMeta {
   id: string;
   poolId: string;
@@ -119,6 +124,8 @@ export interface BattleState {
   playerConsumedMomentumThisTurn: boolean;
   /** 本场战斗持有的遗物 id（与 `RunState.meta.relics` 同步，便于 `dealDamageToUnit` 等纯 battle 钩子读取）。 */
   relicIds: string[];
+  /** 遗物 Hook 的计数器和一次性标记。旧测试夹具可省略，由运行时按需初始化。 */
+  relicRuntime?: RelicRuntimeState;
   /** 流派旗帜牌 / 遗物用：本玩家回合是否打出过攻击 / 技能（含 Power）。 */
   playerPlayedAttackThisTurn: boolean;
   playerPlayedSkillThisTurn: boolean;

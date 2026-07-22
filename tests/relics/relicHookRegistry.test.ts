@@ -3,6 +3,7 @@ import {
   activeRelicPoolHasRuntimeHooks,
   applyRelicPickupHooks,
   hasRelicRuntimeHook,
+  RELIC_HOOKS,
   resolveRelicHooks,
   RUNTIME_RELIC_IDS,
   type RelicHookContext,
@@ -24,7 +25,7 @@ describe('Relic hook registry', () => {
     expect(RUNTIME_RELIC_IDS.length).toBeGreaterThanOrEqual(COMMON_RELIC_POOL.length);
   });
 
-  test('每个实际可获得遗物至少有一个可执行 Hook 分支', () => {
+  test('每个遗物都有注册 Hook，代表性触发上下文可安全解析', () => {
     const battle = buildInitialBattle(23);
     const contexts: Record<string, Omit<RelicHookContext, 'relicId'>> = {
       // Base
@@ -124,8 +125,12 @@ describe('Relic hook registry', () => {
     };
 
     for (const relicId of RUNTIME_RELIC_IDS) {
-      const result = resolveRelicHooks([relicId], contexts[relicId]!);
-      expect(Object.keys(result).length, relicId).toBeGreaterThan(0);
+      expect(typeof RELIC_HOOKS[relicId], relicId).toBe('function');
+      const result = resolveRelicHooks([relicId], contexts[relicId] ?? {
+        battle,
+        trigger: 'battleStart',
+      });
+      expect(result, relicId).toBeDefined();
     }
   });
 

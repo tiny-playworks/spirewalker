@@ -1,6 +1,6 @@
 import { describe, test, expect } from '@rstest/core';
-import { readdirSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
+import { RELIC_HOOKS, RUNTIME_RELIC_IDS } from '@/game/core/systems/relic/relicHooks';
 
 const HOOKED_RELIC_IDS = [
   'momentum_siphon', 'bulwark_heart', 'stone_bulwark', 'echo_plating', 'flow_anchor',
@@ -10,23 +10,10 @@ const HOOKED_RELIC_IDS = [
   'resonance_plating',
 ];
 
-function sourceHasRelicId(id: string): boolean {
-  const dirs = [
-    resolve('src/game/core/systems/battle'),
-    resolve('src/game/core/engine'),
-  ];
-  for (const dir of dirs) {
-    for (const file of readdirSync(dir)) {
-      if (!file.endsWith('.ts')) continue;
-      const content = readFileSync(resolve(dir, file), 'utf8');
-      if (content.includes(`'${id}'`) || content.includes(`"${id}"`)) return true;
-    }
-  }
-  return false;
-}
-
 describe('Generated relic runtime hooks', () => {
-  test.each(HOOKED_RELIC_IDS)('%s has includes() reference in battle/engine code', (id) => {
-    expect(sourceHasRelicId(id)).toBe(true);
+  test.each(HOOKED_RELIC_IDS)('%s has a registered runtime hook', (id) => {
+    expect(RELIC_DEFINITIONS[id]).toBeDefined();
+    expect(typeof RELIC_HOOKS[id]).toBe('function');
+    expect(RUNTIME_RELIC_IDS).toContain(id);
   });
 });

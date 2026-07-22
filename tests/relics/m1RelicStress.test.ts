@@ -26,11 +26,11 @@ describe('Milestone 1 Relic & Pool Integration Stress Harness', () => {
     expect(runtimeSet.size).toBe(RUNTIME_RELIC_IDS.length);
 
     expect(COMMON_RELIC_POOL.length).toBe(90);
-    expect(RUNTIME_RELIC_IDS.length).toBe(COMMON_RELIC_POOL.length);
+    expect(RUNTIME_RELIC_IDS.length).toBe(Object.keys(RELIC_DEFINITIONS).length);
   });
 
   test('Definition coverage: every relic has non-empty id, name, and description', () => {
-    for (const relicId of COMMON_RELIC_POOL) {
+    for (const relicId of RUNTIME_RELIC_IDS) {
       const def = RELIC_DEFINITIONS[relicId];
       expect(def).toBeDefined();
       expect(def.id).toBe(relicId);

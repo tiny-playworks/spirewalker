@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Spirewalker",
+  "short_name": "Spirewalker",
+  "description": "一款围绕连势构筑的 Web Roguelike 卡牌游戏。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0a0a0b",
+  "background_color": "#0a0a0b",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

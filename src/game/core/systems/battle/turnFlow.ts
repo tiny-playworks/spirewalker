@@ -1,4 +1,6 @@
 import type { GameEvent } from '../../events/types';
+import { getStatusStacks } from '../../combat/statusCombat';
+import { STATUS_MOMENTUM } from '../../definitions/statuses';
 import type { BattleState } from '../../model/battle';
 import type { RunState } from '../../model/run';
 import { runOnTurnEnd, runOnTurnStart } from '../status/statusHooks';
@@ -6,12 +8,20 @@ import { refreshEnemyIntent } from '../enemy/enemyAi';
 import { executeMonsterIntent } from '../enemy/intentExecutor';
 import { applyStartOfPlayerTurnPressure, dealDamageToUnit, tickEnemyCountdown } from '../enemy/runtimeHooks';
 import { syncRunPlayerFromBattle } from '../common/runGuards';
+import {
+  applyRelicResourceResult,
+  ensureRelicRuntime,
+  gainMomentumWithRelics,
+  resolveRelicHooks,
+  type RelicHookResult,
+} from '../relic/relicHooks';
 import { mulberry32 } from '../../utils/rng';
 import { shuffleInPlace } from '../../utils/shuffle';
 
 function drawUpTo(
   battle: BattleState,
   count: number,
+  relicIds: string[],
   events: GameEvent[],
   random: () => number,
 ): void {
@@ -33,12 +43,68 @@ function drawUpTo(
     if (!id) break;
     battle.player.hand.push(id);
     events.push({ type: 'CARD_DRAWN', unitId: battle.playerUnitId, cardInstanceId: id });
+    const runtime = ensureRelicRuntime(battle);
+    const relicResult = resolveRelicHooks(relicIds, {
+      battle,
+      trigger: 'cardDrawn',
+      cardId: battle.player.cards[id]?.definitionId,
+      events,
+    });
+    applyRelicResourceResult(battle, relicResult, events);
+    if (relicResult.block) {
+      battle.units[battle.playerUnitId]!.block += relicResult.block;
+      events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: relicResult.block });
+      battle.playerGainedBlockThisTurn = true;
+      battle.playerTurnBlockGained += relicResult.block;
+    }
+    if (relicIds.includes('draw_power_sigil')) {
+      runtime.drawPowerSigilTriggersThisTurn = (runtime.drawPowerSigilTriggersThisTurn as number | undefined ?? 0) + 1;
+    }
+    if (relicIds.includes('surge_tide')) {
+      runtime.surgeTideDrawsThisTurn = (runtime.surgeTideDrawsThisTurn as number | undefined ?? 0) + 1;
+    }
+    if (relicResult.draw) {
+      drawUpTo(battle, battle.player.hand.length + relicResult.draw, relicIds, events, random);
+    }
     need -= 1;
   }
   if (battle.player.pendingHandLocks > 0) {
     const candidates = battle.player.hand.filter((cardId) => !battle.player.lockedCardInstanceIds.includes(cardId));
     battle.player.lockedCardInstanceIds.push(...candidates.slice(0, battle.player.pendingHandLocks));
     battle.player.pendingHandLocks = 0;
+  }
+}
+
+function applyRelicTurnResult(
+  battle: BattleState,
+  result: RelicHookResult,
+  relicIds: string[],
+  events: GameEvent[],
+  random: () => number,
+): void {
+  applyRelicResourceResult(battle, { ...result, momentum: undefined }, events);
+  const player = battle.units[battle.playerUnitId];
+  if (!player) return;
+  if (result.momentum) {
+    const gained = gainMomentumWithRelics(battle, relicIds, result.momentum, events);
+    applyRelicResourceResult(battle, { ...gained, momentum: undefined }, events);
+    if (gained.block) {
+      player.block += gained.block;
+      events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: gained.block });
+      battle.playerGainedBlockThisTurn = true;
+      battle.playerTurnBlockGained += gained.block;
+    }
+    if (gained.draw) drawUpTo(battle, battle.player.hand.length + gained.draw, relicIds, events, random);
+  }
+  if (result.block) {
+    player.block += result.block;
+    events.push({ type: 'BLOCK_GAINED', unitId: battle.playerUnitId, value: result.block });
+    battle.playerGainedBlockThisTurn = true;
+    battle.playerTurnBlockGained += result.block;
+  }
+  if (result.maxHpLoss) {
+    player.maxHp = Math.max(1, player.maxHp - result.maxHpLoss);
+    player.hp = Math.min(player.hp, player.maxHp);
   }
 }
 
@@ -103,12 +169,23 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   const fortifyRng = mulberry32((run.seed ^ battle.turn * 0xf00d5a1) >>> 0);
   resolveFortifyEndOfTurn(battle, events, () => fortifyRng());
 
-  // Relic: fortify_root — if block >= 5, retain half block (rounded down)
-  {
-    const p = battle.units[battle.playerUnitId];
-    if (p && run.meta.relics.includes('fortify_root') && p.block >= 5) {
-      p.block = Math.floor(p.block * 0.5);
-    }
+  const turnEndPlayer = battle.units[battle.playerUnitId];
+  const turnEndRelics = resolveRelicHooks(run.meta.relics, {
+    run,
+    battle,
+    trigger: 'turnEnd',
+    remainingMomentum: turnEndPlayer ? getStatusStacks(turnEndPlayer, STATUS_MOMENTUM) : 0,
+    events,
+  });
+  applyRelicTurnResult(battle, turnEndRelics, run.meta.relics, events, fortifyRng);
+  const turnEndRuntime = ensureRelicRuntime(battle);
+  if (turnEndPlayer && (turnEndRelics.retainBlock || turnEndRelics.retainBlockRatio)) {
+    const ratio = turnEndRelics.retainBlockRatio ?? 1;
+    turnEndRuntime.retainedBlock = Math.floor(turnEndPlayer.block * ratio);
+  }
+  if (turnEndRelics.nextTurnDraw) turnEndRuntime.nextTurnDraw = turnEndRelics.nextTurnDraw;
+  if (turnEndRelics.nextTurnPrimedBreak) {
+    turnEndRuntime.nextTurnPrimedBreak = turnEndRelics.nextTurnPrimedBreak;
   }
 
   events.push({ type: 'TURN_ENDED', unitId: battle.playerUnitId });
@@ -150,15 +227,52 @@ export function endTurnFlow(run: RunState, events: GameEvent[]): void {
   battle.playerTurnBlockGained = 0;
   battle.cycleEngineDrawsThisTurn = 0;
   battle.chainBoltActive = false;
+  const relicRuntime = ensureRelicRuntime(battle);
+  relicRuntime.momentumConsumeCountThisTurn = 0;
+  relicRuntime.momentumConsumedThisTurn = 0;
+  relicRuntime.drawPowerSigilTriggersThisTurn = 0;
+  relicRuntime.surgeTideDrawsThisTurn = 0;
+  relicRuntime.guardMomentumLinkCountThisTurn = 0;
+  relicRuntime.memoryShardTriggersThisTurn = 0;
+  relicRuntime.flowResonanceTriggersThisTurn = 0;
+  relicRuntime.playerWasAttackedThisTurn = false;
+  relicRuntime.ironVeilUsed = false;
+  relicRuntime.shellShardUsed = false;
+  relicRuntime.dualityCrestUsedThisTurn = false;
+  relicRuntime.skillBlockBonus = 0;
+  relicRuntime.turnAttackBonus = 0;
+  relicRuntime.cardCostReductionThisTurn = 0;
   battle.turn += 1;
   runOnTurnStart(battle);
   events.push({ type: 'TURN_STARTED', turn: battle.turn, unitId: battle.playerUnitId });
-  player.block = 0;
+  player.block = typeof relicRuntime.retainedBlock === 'number' ? relicRuntime.retainedBlock : 0;
+  delete relicRuntime.retainedBlock;
   battle.player.energy = battle.player.maxEnergy;
   events.push({ type: 'ENERGY_CHANGED', unitId: battle.playerUnitId, value: battle.player.energy });
-  const drawPenalty = applyStartOfPlayerTurnPressure(battle);
   const rng = mulberry32(run.seed ^ battle.turn * 0x1bf58);
-  drawUpTo(battle, Math.max(0, 5 - drawPenalty), events, () => rng());
+  const turnStartRelics = resolveRelicHooks(run.meta.relics, {
+    run,
+    battle,
+    trigger: 'turnStart',
+    events,
+  });
+  applyRelicTurnResult(battle, turnStartRelics, run.meta.relics, events, rng);
+  const nextTurnPrimedBreak = typeof relicRuntime.nextTurnPrimedBreak === 'number'
+    ? relicRuntime.nextTurnPrimedBreak
+    : 0;
+  if (nextTurnPrimedBreak > 0) {
+    applyRelicResourceResult(battle, { primedBreak: nextTurnPrimedBreak });
+    delete relicRuntime.nextTurnPrimedBreak;
+  }
+  const drawPenalty = applyStartOfPlayerTurnPressure(battle);
+  drawUpTo(
+    battle,
+    Math.max(0, 5 - drawPenalty) + (turnStartRelics.draw ?? 0) + (relicRuntime.nextTurnDraw as number | undefined ?? 0),
+    run.meta.relics,
+    events,
+    () => rng(),
+  );
+  delete relicRuntime.nextTurnDraw;
   battle.phase = 'player_action';
 }
 

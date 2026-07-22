@@ -4,7 +4,7 @@ import { evaluateChoiceRequirements } from '../../events/eventConditionParser';
 import { EVENT_DEFINITIONS, type EventOutcome } from '../../definitions/events';
 import { CARD_DEFINITIONS } from '../../definitions/cards';
 import { RELIC_DEFINITIONS } from '../../definitions/relics';
-import { applyRelicPickupHooks } from '../relic/relicHooks';
+import { applyRelicPickupHooks, resolveRelicHooks } from '../relic/relicHooks';
 
 /**
  * 通用 EventOutcome → RunState 执行器。
@@ -23,7 +23,18 @@ function applyOutcome(run: RunState, outcome: EventOutcome): boolean {
       run.player.currentHp = Math.min(run.player.maxHp, run.player.currentHp + (outcome.value ?? 0));
       return true;
     case 'lose_hp':
-      run.player.currentHp = Math.max(1, run.player.currentHp - (outcome.value ?? 0));
+      {
+        const amount = Math.max(0, outcome.value ?? 0);
+        run.player.currentHp = Math.max(1, run.player.currentHp - amount);
+        const relicResult = resolveRelicHooks(run.meta.relics, {
+          run,
+          trigger: 'lifeSpent',
+          amount,
+        });
+        if (relicResult.momentum) {
+          run.meta.pendingBattleMomentum = (run.meta.pendingBattleMomentum ?? 0) + relicResult.momentum;
+        }
+      }
       return true;
     case 'lose_max_hp':
       run.player.maxHp = Math.max(1, run.player.maxHp - (outcome.value ?? 0));
@@ -68,8 +79,18 @@ export function resolveGenericEvent(
 
   if (!evaluateChoiceRequirements(choice, run)) return false;
 
+  const snapshot = structuredClone({
+    player: run.player,
+    masterDeck: run.masterDeck,
+    meta: run.meta,
+  });
   for (const outcome of choice.outcomes) {
-    if (!applyOutcome(run, outcome)) return false;
+    if (!applyOutcome(run, outcome)) {
+      run.player = snapshot.player;
+      run.masterDeck = snapshot.masterDeck;
+      run.meta = snapshot.meta;
+      return false;
+    }
   }
 
   run.screen = { type: 'map' };

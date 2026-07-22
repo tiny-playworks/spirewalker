@@ -1,7 +1,7 @@
 import { addStatusStacks, getStatusStacks } from '../combat/statusCombat';
 import { CARD_DEFINITIONS, STRIKE } from '../definitions/cards';
 import { DEFAULT_CHARACTER_ID, getCharacterDefinition } from '../definitions/characters';
-import { STATUS_METALLICIZE, STATUS_MOMENTUM, STATUS_STEADY_GUARD, STATUS_STRENGTH } from '../definitions/statuses';
+import { STATUS_MOMENTUM } from '../definitions/statuses';
 import type { BattleEncounterMeta, BattleState } from '../model/battle';
 import type { CardInstance } from '../model/card';
 import { assertMonsterSlotsResolved, type BattleEnemySlot } from '../model/monster';
@@ -11,7 +11,12 @@ import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
 import { buildInitialMonsterRuntime, getMonsterDefinition } from '../definitions/monsters';
 import { setInitialEnemyIntent } from '../systems/enemy/enemyAi';
 import { applyCurseBattleStart } from '../systems/status/statusHooks';
-import { resolveRelicHooks } from '../systems/relic/relicHooks';
+import {
+  applyRelicResourceResult,
+  ensureRelicRuntime,
+  gainMomentumWithRelics,
+  resolveRelicHooks,
+} from '../systems/relic/relicHooks';
 import { createInstanceId, resetIdCounter } from '../utils/id';
 import { mulberry32 } from '../utils/rng';
 import { shuffleInPlace } from '../utils/shuffle';
@@ -163,15 +168,6 @@ export function buildInitialBattle(
   if (character?.passive.type === 'battle_start_status') {
     addStatusStacks(units[PLAYER_UNIT_ID], character.passive.statusId, character.passive.stacks);
   }
-  // Relic: echo_plating — battle start gain 2 metallicize
-  if (relicIds.includes('echo_plating')) {
-    addStatusStacks(units[PLAYER_UNIT_ID], STATUS_METALLICIZE, 2);
-  }
-  // Relic: flow_anchor — if momentum >= 3, gain 3 block
-  if (relicIds.includes('flow_anchor') && getStatusStacks(units[PLAYER_UNIT_ID], STATUS_MOMENTUM) >= 3) {
-    units[PLAYER_UNIT_ID].block += 3;
-  }
-
   const battle: BattleState = {
     id: battleKey,
     encounter,
@@ -179,6 +175,7 @@ export function buildInitialBattle(
     playerCardsPlayedThisTurn: 0,
     playerConsumedMomentumThisTurn: false,
     relicIds: [...relicIds],
+    relicRuntime: {},
     playerPlayedAttackThisTurn: false,
     playerPlayedSkillThisTurn: false,
     playerExhaustedCardThisTurn: false,
@@ -233,22 +230,69 @@ export function buildInitialBattle(
     trigger: 'battleStart',
   });
   const battleStartPlayer = battle.units[PLAYER_UNIT_ID]!;
-  if (battleStartRelics.strength) {
-    addStatusStacks(battleStartPlayer, STATUS_STRENGTH, battleStartRelics.strength);
-  }
-  if (battleStartRelics.momentum) {
-    addStatusStacks(battleStartPlayer, STATUS_MOMENTUM, battleStartRelics.momentum);
-  }
-  if (battleStartRelics.metallicize) {
-    addStatusStacks(battleStartPlayer, STATUS_METALLICIZE, battleStartRelics.metallicize);
-  }
-  if (battleStartRelics.steadyGuard) {
-    addStatusStacks(battleStartPlayer, STATUS_STEADY_GUARD, battleStartRelics.steadyGuard);
+  let battleStartDamage = battleStartRelics.damageAllEnemies ?? 0;
+  const initialMomentum = battleStartRelics.momentum ?? 0;
+  applyRelicResourceResult(battle, { ...battleStartRelics, momentum: undefined });
+  if (initialMomentum > 0) {
+    const gained = gainMomentumWithRelics(battle, relicIds, initialMomentum);
+    applyRelicResourceResult(battle, { ...gained, momentum: undefined });
+    if (gained.block) battleStartPlayer.block += gained.block;
   }
   if (battleStartRelics.block) battleStartPlayer.block += battleStartRelics.block;
   for (let index = 0; index < (battleStartRelics.openingHandDraw ?? 0); index += 1) {
     const cardId = battle.player.drawPile.shift();
     if (cardId) battle.player.hand.push(cardId);
+  }
+  for (const cardId of battle.player.hand) {
+    const drawn = resolveRelicHooks(relicIds, {
+      battle,
+      trigger: 'cardDrawn',
+      cardId: battle.player.cards[cardId]?.definitionId,
+    });
+    applyRelicResourceResult(battle, drawn);
+    if (drawn.block) {
+      battleStartPlayer.block += drawn.block;
+      battle.playerGainedBlockThisTurn = true;
+      battle.playerTurnBlockGained += drawn.block;
+    }
+    const drawRuntime = ensureRelicRuntime(battle);
+    if (relicIds.includes('draw_power_sigil')) {
+      drawRuntime.drawPowerSigilTriggersThisTurn = (typeof drawRuntime.drawPowerSigilTriggersThisTurn === 'number'
+        ? drawRuntime.drawPowerSigilTriggersThisTurn
+        : 0) + 1;
+    }
+    if (relicIds.includes('surge_tide')) {
+      drawRuntime.surgeTideDrawsThisTurn = (typeof drawRuntime.surgeTideDrawsThisTurn === 'number'
+        ? drawRuntime.surgeTideDrawsThisTurn
+        : 0) + 1;
+    }
+  }
+
+  // 纪元碎片：从其它已拥有遗物中确定性地抽取一个，再执行其战斗开始效果。
+  if (relicIds.includes('epoch_shard')) {
+    const candidates = relicIds.filter((relicId) => relicId !== 'epoch_shard');
+    if (candidates.length > 0) {
+      const selected = candidates[Math.floor(random() * candidates.length)]!;
+      const echoed = resolveRelicHooks([selected], { battle, trigger: 'battleStart' });
+      applyRelicResourceResult(battle, echoed);
+      if (echoed.block) battleStartPlayer.block += echoed.block;
+      if (echoed.damageAllEnemies) {
+        battleStartDamage += echoed.damageAllEnemies;
+      }
+    }
+  }
+
+  const runtime = ensureRelicRuntime(battle);
+  runtime.battleStartMomentum = getStatusStacks(battleStartPlayer, STATUS_MOMENTUM);
+
+  // 战斗开始的全体伤害由战斗初始化阶段直接结算，避免遗漏 war_cry / 纪元碎片复制效果。
+  if (battleStartDamage > 0) {
+    for (const enemyUnitId of enemyUnitIds) {
+      const enemy = battle.units[enemyUnitId];
+      if (!enemy?.alive) continue;
+      enemy.hp = Math.max(0, enemy.hp - battleStartDamage);
+      enemy.alive = enemy.hp > 0;
+    }
   }
 
   for (const enemyUnitId of enemyUnitIds) {
