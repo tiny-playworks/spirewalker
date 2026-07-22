@@ -1,3 +1,4 @@
+import { COMMON_RELIC_POOL } from '../definitions/relics';
 import {
   MOMENTUM_PAYOFF_CARD_IDS,
   MOMENTUM_SETUP_CARD_IDS,
@@ -11,20 +12,7 @@ import { mulberry32 } from '../utils/rng';
 export const SHOP_MIN_MASTER_DECK_SIZE = 5;
 
 /** 商店可刷出的遗物（未持有才会上架） */
-const SHOP_RELIC_POOL = [
-  'guard_knot',
-  'still_core',
-  'burst_emblem',
-  'quick_fuse',
-  'ward_banner',
-  'flare_banner',
-  'blaze_core',
-  'fractured_blade',
-  'iron_heart',
-  'counter_sigil',
-  'twin_core',
-  'harmony_emblem',
-] as const;
+const SHOP_RELIC_POOL = COMMON_RELIC_POOL;
 
 const SHOP_POTION_POOL = ['stillwater_tonic', 'flash_powder'] as const;
 
@@ -37,7 +25,7 @@ export function generateShop(
   seed: number,
   act: MapAct,
   actFloor: number,
-  ownedRelicIds: string[],
+  ownedRelicIds: string[] = [],
 ): ShopState {
   const f = Math.max(1, actFloor + act * 4);
   const jitter = (seed ^ f * 0x9e37) & 7;

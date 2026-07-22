@@ -112,22 +112,100 @@ export const MOMENTUM_BURST_RELIC_IDS = ['burst_emblem', 'quick_fuse', 'flare_ba
 export const MOMENTUM_FLOW_RELIC_IDS = ['guard_knot', 'still_core'] as const;
 export const MOMENTUM_STABILITY_RELIC_IDS = ['guard_knot', 'still_core'] as const;
 export const COMMON_RELIC_POOL = [
+  'vajra',
+  'anchor',
+  'wind_chime',
+  'tactical_gloves',
+  'burst_emblem',
+  'insight_lens',
   'guard_knot',
   'still_core',
-  'burst_emblem',
+  'soft_guard',
   'quick_fuse',
-  'ward_banner',
-  'flare_banner',
+  'sighted_edge',
   'blaze_core',
   'fractured_blade',
   'iron_heart',
   'counter_sigil',
   'twin_core',
   'harmony_emblem',
+  'ward_banner',
+  'flare_banner',
+  'momentum_siphon',
+  'flow_anchor',
+  'surge_drain',
+  'unbroken_flow',
+  'tide_walker',
+  'stone_bulwark',
+  'echo_plating',
+  'bulwark_sigil',
+  'fortify_root',
+  'shell_shard',
+  'ward_of_rust',
+  'volatile_core',
+  'rupture_fang',
+  'momentum_burst_core',
+  'ignition_surge',
+  'frenzy_essence',
+  'ruins_lantern',
+  'ancient_tablet',
+  'healing_stone',
+  'soul_vessel',
+  'echo_charm',
+  'vitality_draught',
+  'memory_shard',
+  'void_charm',
+  'balanced_stance',
+  'guard_momentum_link',
+  'burst_defense_sync',
+  'flow_regulator',
+  'surge_bloom',
+  'flow_resonance',
+  'momentum_anchor',
+  'momentum_well',
+  'surge_siphon',
+  'fortification_rune',
+  'iron_veil',
+  'living_wall',
+  'resonance_plating',
+  'stalwart_core',
+  'thorn_ward',
+  'iron_shroud',
+  'bulwark_heart',
+  'blood_fang',
+  'momentum_fury',
+  'war_cry',
+  'explorer_charm',
+  'mystic_lens',
+  'vitality_stone',
+  'soul_echo',
+  'quickdraw_glove',
+  'meditation_stone',
+  'rhythm_lock',
+  'cycle_engine',
+  'void_crown',
+  'entropy_seal',
+  'momentum_seed',
+  'cascade_gem',
+  'momentum_siphon_b3',
+  'tide_reshaper',
+  'echo_crest',
+  'bulwark_plating',
+  'sanctuary_bell',
+  'rending_slash',
+  'war_drums',
+  'relentless_tide',
+  'rune_pouch',
+  'verdant_vial',
+  'tome_of_depths',
+  'quickstep_boots',
+  'alternating_crest',
+  'chain_bolt',
+  'draw_power_sigil',
 ] as const;
 
 /** Boss 战后随机其一（已拥有的不再出现） */
-const BOSS_RELIC_POOL = [...COMMON_RELIC_POOL] as const;
+export const BOSS_RELIC_POOL = [...COMMON_RELIC_POOL] as const;
 
 export function rollBossRelicReward(
   seed: number,
@@ -136,11 +214,7 @@ export function rollBossRelicReward(
   characterId = DEFAULT_CHARACTER_ID,
 ): string | null {
   const characterPool = getCharacterDefinition(characterId).rewardRelicPool;
-  const preferred = characterPool.filter((id) => !ownedRelicIds.includes(id));
-  const available =
-    preferred.length > 0
-      ? preferred
-      : BOSS_RELIC_POOL.filter((id) => !ownedRelicIds.includes(id));
+  const available = characterPool.filter((id) => !ownedRelicIds.includes(id));
   if (available.length === 0) return null;
   const rng = mulberry32((seed ^ salt ^ 0xb055) >>> 0);
   return available[Math.floor(rng() * available.length)]!;

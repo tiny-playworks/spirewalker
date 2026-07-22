@@ -1923,7 +1923,7 @@ export const GENERATED_EVENTS_2: Record<string, EventDefinition> = {
   },
 
   the_shrine_of_illusions: {
-    id: 'shrine_of_illusions',
+    id: 'the_shrine_of_illusions',
     name: '幻象神龛',
     description: '一座神龛周围弥漫着彩色的雾气，你看到无数的幻象在雾中浮现——金银财宝、美丽的风景、逝去的亲人。你知道这些都不是真的，但它们是如此诱人。',
     chapter: 3,

@@ -42,7 +42,7 @@ export const GENERATED_RELICS_2: Record<string, RelicDefinition> = {
     description: '受到敌人攻击时，连势衰减暂停一回合。',
   },
   momentum_well: {
-    id: 'momentum_well_b2',
+    id: 'momentum_well',
     name: '连势深泉',
     description: '每当你打出能力牌时，获得 1 层连势。',
   },

@@ -1,6 +1,7 @@
 import type { MapAct, MapNode, MapNodeType, MapRouteBias } from '../model/map';
 import { EVENTS_BY_CHAPTER } from '../definitions/events';
 import { mulberry32 } from '../utils/rng';
+import { shuffleInPlace } from '../utils/shuffle';
 
 export const WANDERING_MERCHANT_EVENT_ID = 'wandering_merchant';
 export const STILLNESS_SHRINE_EVENT_ID = 'stillness_shrine';
@@ -44,12 +45,11 @@ const BIAS_ANCHOR_ROW: Record<MapRouteBias, number> = {
   safe: 5,
 };
 
-function buildChapterPool(chapter: 1 | 2 | 3, count: number, legacy: string[]): string[] {
+function buildChapterPool(chapter: 1 | 2 | 3, legacy: string[]): string[] {
   const events = EVENTS_BY_CHAPTER[chapter] ?? [];
   const seen = new Set(legacy);
   const picked: string[] = [];
   for (const e of events) {
-    if (picked.length >= count) break;
     if (!seen.has(e.id)) {
       picked.push(e.id);
       seen.add(e.id);
@@ -58,10 +58,16 @@ function buildChapterPool(chapter: 1 | 2 | 3, count: number, legacy: string[]): 
   return [...legacy, ...picked];
 }
 
+const LEGACY_EVENT_IDS: Record<MapAct, string[]> = {
+  1: [WANDERING_MERCHANT_EVENT_ID, STILLNESS_SHRINE_EVENT_ID],
+  2: [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, STILLNESS_SHRINE_EVENT_ID],
+  3: [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, WANDERING_MERCHANT_EVENT_ID],
+};
+
 export const EVENT_POOLS: Record<MapAct, string[]> = {
-  1: buildChapterPool(1, 8, [WANDERING_MERCHANT_EVENT_ID, STILLNESS_SHRINE_EVENT_ID]),
-  2: buildChapterPool(2, 8, [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, STILLNESS_SHRINE_EVENT_ID]),
-  3: buildChapterPool(3, 8, [BURST_ALTAR_EVENT_ID, PURGING_POOL_EVENT_ID, WANDERING_MERCHANT_EVENT_ID]),
+  1: buildChapterPool(1, LEGACY_EVENT_IDS[1]),
+  2: buildChapterPool(2, LEGACY_EVENT_IDS[2]),
+  3: buildChapterPool(3, LEGACY_EVENT_IDS[3]),
 };
 
 type Phase = 'early' | 'mid' | 'late';
@@ -443,14 +449,43 @@ function assignTreasureNode(allNodes: MapNode[], totalDepth: number): void {
   if (candidate) candidate.type = 'treasure';
 }
 
-function assignEventScripts(act: MapAct, nodes: MapNode[]): void {
-  const eventPool = EVENT_POOLS[act];
+/**
+ * 用确定性 RNG 对章节池抽样：legacy 前置保证（仍满足 camp / 固定 seed 测试），
+ * 其余章节事件 shuffle 后无重复填充；池用尽再循环。
+ * 若首个 legacy 未出现在 depth>1 节点，则注入一次，保证 Act2/3 引擎测试可命中。
+ */
+function assignEventScripts(act: MapAct, nodes: MapNode[], rnd: () => number): void {
+  const legacy = LEGACY_EVENT_IDS[act];
+  const legacySet = new Set(legacy);
+  const chapter = EVENT_POOLS[act].filter((id) => !legacySet.has(id));
+  const shuffledChapter = [...chapter];
+  shuffleInPlace(shuffledChapter, rnd);
+
+  const deck = [...legacy, ...shuffledChapter];
   const eventNodes = nodes
     .filter((node) => node.type === 'event')
-    .sort((a, b) => a.depth - b.depth);
+    .sort((a, b) => a.depth - b.depth || a.y - b.y);
+
   eventNodes.forEach((node, index) => {
-    node.eventScriptId = eventPool[index % eventPool.length]!;
+    node.eventScriptId = deck[index % deck.length]!;
   });
+
+  // camp 会被覆盖为 legacy[0]；保证 depth>1 仍可能抽到同一个 legacy（引擎测试需要）。
+  // 注入时优先覆盖章节事件，避免抹掉其它 legacy（如 Act1 的 stillness_shrine）。
+  const depthGt1 = eventNodes.filter((node) => node.depth > 1);
+  const primaryLegacy = legacy[0];
+  if (
+    primaryLegacy &&
+    depthGt1.length > 0 &&
+    !depthGt1.some((node) => node.eventScriptId === primaryLegacy)
+  ) {
+    const nonLegacyTargets = depthGt1.filter(
+      (node) => !node.eventScriptId || !legacySet.has(node.eventScriptId),
+    );
+    const targets = nonLegacyTargets.length > 0 ? nonLegacyTargets : depthGt1;
+    const pick = targets[Math.floor(rnd() * targets.length)]!;
+    pick.eventScriptId = primaryLegacy;
+  }
 }
 
 function nodesForGeneratedPath(
@@ -763,7 +798,7 @@ export function generateActMap(act: MapAct, seed: number): Record<string, MapNod
   // 宝箱放到路线 pattern 之后，否则 applyAct1RouteGuarantees 会把 treasure 覆盖成 battle/event/shop/rest。
   assignTreasureNode(mutableNodes, totalDepth);
 
-  assignEventScripts(act, Object.values(nodes));
+  assignEventScripts(act, Object.values(nodes), rnd);
   camp.eventScriptId = EVENT_POOLS[act][0]!;
   finalizeEncounterMeta(act, nodes);
 

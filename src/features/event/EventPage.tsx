@@ -20,6 +20,7 @@ import {
   STILLNESS_SHRINE_EVENT_ID,
   WANDERING_MERCHANT_EVENT_ID,
 } from '@/game/core/engine/generateBranchingFloor';
+import { evaluateChoiceRequirements } from '@/game/core/events/eventConditionParser';
 import type { RunState } from '@/game/core/model/run';
 import { useGameStore } from '@/game/store/gameStore';
 import { RunSceneHeader, RunSceneShell } from '@/features/run-scene/RunSceneShell';
@@ -71,11 +72,6 @@ function genericOptionIcon(choice: { outcomes: Array<{ type: string }> }): Compo
 
 function genericOptionDescription(choice: { outcomes: Array<{ description: string }> }): string {
   return choice.outcomes.map((outcome) => outcome.description).join('；');
-}
-
-function hasEnoughGold(run: RunState, requirements?: string): boolean {
-  const match = requirements?.match(/gold\s*>=\s*(\d+)/);
-  return !match || run.meta.gold >= Number(match[1]);
 }
 
 function hasValidAndAvailableOutcomes(
@@ -194,7 +190,7 @@ function buildEventView(run: RunState): EventView | null {
           icon: genericOptionIcon(choice),
           title: choice.text,
           desc: genericOptionDescription(choice),
-          disabled: !hasEnoughGold(run, choice.requirements)
+          disabled: !evaluateChoiceRequirements(choice, run)
             || !hasValidAndAvailableOutcomes(run, choice.outcomes),
         })),
       };

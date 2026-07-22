@@ -1,5 +1,6 @@
 import type { RunState } from '../../model/run';
 import type { GameEvent } from '../../events/types';
+import { evaluateChoiceRequirements } from '../../events/eventConditionParser';
 import { EVENT_DEFINITIONS, type EventOutcome } from '../../definitions/events';
 import { CARD_DEFINITIONS } from '../../definitions/cards';
 import { RELIC_DEFINITIONS } from '../../definitions/relics';
@@ -65,11 +66,7 @@ export function resolveGenericEvent(
   const choice = def.choices.find(c => c.id === optionId);
   if (!choice) return false;
 
-  // 检查 requirements
-  if (choice.requirements) {
-    const match = choice.requirements.match(/gold\s*>=\s*(\d+)/);
-    if (match && run.meta.gold < Number(match[1])) return false;
-  }
+  if (!evaluateChoiceRequirements(choice, run)) return false;
 
   for (const outcome of choice.outcomes) {
     if (!applyOutcome(run, outcome)) return false;
