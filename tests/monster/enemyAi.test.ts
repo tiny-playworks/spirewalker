@@ -179,20 +179,21 @@ describe('monster/enemyAi', () => {
     const twinHunter = MONSTER_DEFINITIONS.act1_twin_hunter.ai.rotation;
     const debtMonk = MONSTER_DEFINITIONS.act1_debt_monk.ai.rotation;
 
+    expect(MONSTER_DEFINITIONS.act1_twin_hunter.hpRange).toEqual([52, 58]);
     expect(executioner).toEqual([
       { type: 'counter', threshold: 4, damage: 7 },
       { type: 'attack_buff', attack: 12, statusId: 'vulnerable', value: 0 },
       { type: 'heavy_charge', value: 20, charge: 1 },
     ]);
     expect(twinHunter).toEqual([
-      { type: 'counter', threshold: 2, damage: 7 },
+      { type: 'counter', threshold: 2, damage: 6 },
       { type: 'multi_hit', value: 5, hits: 2 },
-      { type: 'punish_multi_play', threshold: 5, block: 12 },
+      { type: 'punish_multi_play', threshold: 5, block: 8 },
     ]);
     expect(debtMonk).toEqual([
       { type: 'lock_hand', count: 1 },
-      { type: 'heavy_charge', value: 22, charge: 1 },
-      { type: 'draw_pressure', value: 2 },
+      { type: 'heavy_charge', value: 20, charge: 1 },
+      { type: 'draw_pressure', value: 1 },
     ]);
   });
 });

@@ -27,6 +27,15 @@ const STRONG_BURST_DECK = [
   'follow_through',
 ];
 
+const STRONG_MIXED_DECK = [
+  'momentum',
+  'tempo_guard',
+  'cash_flow',
+  'release_flow',
+  'flow_shift',
+  'balance_edge',
+];
+
 function countByArchetype(picks: readonly string[]): Record<string, number> {
   const out: Record<string, number> = { guard: 0, burst: 0, mixed: 0, neutral: 0 };
   for (const id of picks) out[getCardArchetype(id)] += 1;
@@ -63,5 +72,17 @@ describe('奖励流派权重倾斜', () => {
       neutralGuardCount += countByArchetype(neutralPicks).guard!;
     }
     expect(burstGuardCount).toBeLessThan(neutralGuardCount * 0.75);
+  });
+
+  test('混合牌组主导 → 奖励池里混合牌出现次数明显增加', () => {
+    let mixedCount = 0;
+    let neutralMixedCount = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      const mixedPicks = generateCardRewardChoices(seed, 3, 'elite', 'walker', 2, 3, STRONG_MIXED_DECK);
+      const neutralPicks = generateCardRewardChoices(seed, 3, 'elite', 'walker', 2, 3, []);
+      mixedCount += countByArchetype(mixedPicks).mixed!;
+      neutralMixedCount += countByArchetype(neutralPicks).mixed!;
+    }
+    expect(mixedCount).toBeGreaterThan(neutralMixedCount * 1.25);
   });
 });

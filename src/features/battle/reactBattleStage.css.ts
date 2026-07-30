@@ -402,6 +402,24 @@ export const intentPopover = style({
   lineHeight: 1.4,
 });
 
+export const activeCounter = style({
+  alignSelf: 'center',
+  padding: '.22rem .5rem',
+  border: '1px solid rgba(255, 180, 171, .48)',
+  borderRadius: sceneVars.radii.sm,
+  color: '#ffb4ab',
+  background: 'rgba(72, 24, 28, .72)',
+  fontSize: '.62rem',
+  fontWeight: 800,
+  letterSpacing: '.02em',
+  '@media': {
+    [mobile]: {
+      padding: '.15rem .36rem',
+      fontSize: '.54rem',
+    },
+  },
+});
+
 export const enemyHitTarget = style({
   position: 'relative',
   display: 'grid',

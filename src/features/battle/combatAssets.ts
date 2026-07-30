@@ -100,6 +100,12 @@ export function intentValueText(intent: MonsterIntent | null | undefined): strin
     case 'max_hp_down':
     case 'heal':
       return `${intent.value}`;
+    case 'counter':
+      return `≥${intent.threshold} / ${intent.damage}`;
+    case 'lock_hand':
+      return `锁${intent.count}`;
+    case 'punish_multi_play':
+      return `≥${intent.threshold}`;
     default:
       return null;
   }

@@ -70,7 +70,7 @@ describe('card archetypes', () => {
     expect(getRelicArchetype('unknown_relic')).toBe('neutral');
   });
 
-  test('getDominantArchetype：守势牌 >= 4 张且领先 2 倍以上才算形成主导', () => {
+  test('getDominantArchetype：任一战斗流派 >= 4 张且领先 2 倍以上才算形成主导', () => {
     expect(getDominantArchetype([])).toBeNull();
     expect(getDominantArchetype(['held_breath', 'held_breath', 'held_breath'])).toBeNull();
     expect(
@@ -90,6 +90,12 @@ describe('card archetypes', () => {
         'burst_strike', 'burst_strike', 'burst_strike', 'burst_strike',
       ]),
     ).toBe('burst');
+    expect(
+      getDominantArchetype([
+        'momentum', 'tempo_guard', 'cash_flow', 'release_flow',
+        'held_breath', 'burst_strike',
+      ]),
+    ).toBe('mixed');
   });
 
   test('summarizeDeckArchetypes 能正确统计牌组分布', () => {

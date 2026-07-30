@@ -478,10 +478,18 @@ function EnemyPanel({
   feedback: FeedbackCue[];
   preview?: BattlePreview;
 }) {
-  const intent = battle.monsters[unit.id]?.intent;
+  const monster = battle.monsters[unit.id];
+  const intent = monster?.intent;
   const intentText = formatMonsterIntentText(intent);
   const category = intentCategory(intent);
   const valueText = intentValueText(intent);
+  const activeCounter = (monster?.runtime.counterThreshold ?? 0) > 0
+    && (monster?.runtime.counterDamage ?? 0) > 0
+    ? {
+        threshold: monster!.runtime.counterThreshold!,
+        damage: monster!.runtime.counterDamage!,
+      }
+    : null;
   const previewText = !preview?.playable
     ? null
     : preview.damage > 0
@@ -514,6 +522,14 @@ function EnemyPanel({
           </summary>
           <span className={styles.intentPopover}>{intentText}</span>
         </details>
+      ) : null}
+      {unit.alive && activeCounter ? (
+        <span
+          className={styles.activeCounter}
+          title={`反击架势生效中：本回合从第 ${activeCounter.threshold} 张牌起，每张牌受到 ${activeCounter.damage} 点伤害。`}
+        >
+          反击生效 · 第 {activeCounter.threshold} 张起 -{activeCounter.damage}
+        </span>
       ) : null}
       <button
         type="button"

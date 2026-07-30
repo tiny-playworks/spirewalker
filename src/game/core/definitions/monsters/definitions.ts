@@ -368,9 +368,9 @@ const ENEMY_SEEDS: EnemySeed[] = [
     chapter: 1,
     tier: "elite",
     role: "carry",
-    hpRange: [56, 62],
+    hpRange: [52, 58],
     archetype: "multi_hit",
-    rotation: [counter(2, 7), multi(5, 2), punishMulti(5, 12)],
+    rotation: [counter(2, 6), multi(5, 2), punishMulti(5, 8)],
     tags: ["double_action", "elite", "frontload"],
   },
   {
@@ -381,7 +381,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
     role: "disruptor",
     hpRange: [60, 66],
     archetype: "trickster",
-    rotation: [lockHand(1), heavy(22, 1), drawPressure(2)],
+    rotation: [lockHand(1), heavy(20, 1), drawPressure(1)],
     tags: ["resource_tax", "elite", "attrition"],
   },
 

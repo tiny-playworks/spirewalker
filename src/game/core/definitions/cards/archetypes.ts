@@ -98,15 +98,21 @@ export function summarizeDeckArchetypes(cardIds: readonly string[]): Record<Card
 }
 
 /**
- * 判断牌组是否已经明显倾向某一派：需要主打派 >= 4 张，且至少是另一派的 2 倍。
- * mixed / neutral 不参与主导判定，返回 null 时上层不做任何权重倾斜。
+ * 判断牌组是否已经明显倾向某一派：需要主打派 >= 4 张，且至少是其他战斗流派的 2 倍。
+ * neutral 不参与主导判定，返回 null 时上层不做任何权重倾斜。
  */
-export function getDominantArchetype(cardIds: readonly string[]): 'guard' | 'burst' | null {
+export function getDominantArchetype(
+  cardIds: readonly string[],
+): Exclude<CardArchetype, 'neutral'> | null {
   const counts = summarizeDeckArchetypes(cardIds);
-  const { guard, burst } = counts;
-  if (guard >= 4 && guard >= burst * 2) return 'guard';
-  if (burst >= 4 && burst >= guard * 2) return 'burst';
-  return null;
+  const focused = (['guard', 'burst', 'mixed'] as const)
+    .map((archetype) => ({ archetype, count: counts[archetype] }))
+    .sort((left, right) => right.count - left.count);
+  const leader = focused[0]!;
+  const runnerUp = focused[1]!;
+  return leader.count >= 4 && leader.count >= runnerUp.count * 2
+    ? leader.archetype
+    : null;
 }
 
 // —————————————————— 遗物流派映射 ——————————————————

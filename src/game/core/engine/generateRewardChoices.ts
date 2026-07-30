@@ -2,6 +2,7 @@ import { REWARD_ARCHETYPE_TILT_ENABLED } from '../config/rewardTuning';
 import {
   getCardArchetype,
   getDominantArchetype,
+  type CardArchetype,
 } from '../definitions/cards/archetypes';
 import { CARD_DEFINITIONS } from '../definitions/cards';
 import { isRewardEligible } from '../definitions/cards/rewardPoolRules';
@@ -48,8 +49,8 @@ function pickOne<T>(pool: readonly T[], random: () => number): T {
 
 /**
  * 流派权重倾斜（对应创始人反馈 #8）：
- * - 牌组已经明显偏向一派时（`getDominantArchetype` 返回非 null），
- *   同派 / 混合派的卡在奖励池里加权 2，对立派降权到 0.5，中性派保持 1。
+ * - 守势 / 爆发主导时，同派和混合派加权 2，对立派降权到 0.5；
+ * - 混合主导时，混合派加权 2，守势 / 爆发降权到 0.75，中性派保持 1。
  * - 未形成主导流派时直接等权抽。
  *
  * 这个倾斜只改变奖励出现概率，不改变任何规则结算；开关见 `rewardTuning.ts`。
@@ -57,17 +58,18 @@ function pickOne<T>(pool: readonly T[], random: () => number): T {
 function pickWeightedCardId(
   pool: readonly string[],
   random: () => number,
-  dominant: 'guard' | 'burst' | null,
+  dominant: Exclude<CardArchetype, 'neutral'> | null,
   tiltEnabled: boolean,
 ): string {
   if (!tiltEnabled || dominant === null || pool.length === 0) {
     return pickOne(pool, random);
   }
-  const opposite: 'guard' | 'burst' = dominant === 'guard' ? 'burst' : 'guard';
   const weights = pool.map((cardId) => {
     const a = getCardArchetype(cardId);
-    if (a === dominant || a === 'mixed') return 2;
-    if (a === opposite) return 0.5;
+    if (a === dominant) return 2;
+    if (dominant === 'mixed') return a === 'neutral' ? 1 : 0.75;
+    if (a === 'mixed') return 2;
+    if (a === (dominant === 'guard' ? 'burst' : 'guard')) return 0.5;
     return 1;
   });
   const total = weights.reduce((sum, w) => sum + w, 0);
@@ -85,7 +87,7 @@ function uniquePush(
   picked: string,
   fallbackPool: readonly string[],
   random: () => number,
-  dominant: 'guard' | 'burst' | null,
+  dominant: Exclude<CardArchetype, 'neutral'> | null,
   tiltEnabled: boolean,
 ): void {
   if (!out.includes(picked)) {

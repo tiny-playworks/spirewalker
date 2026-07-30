@@ -35,7 +35,7 @@ export function formatMonsterIntentText(intent: MonsterIntent | null | undefined
     case 'reactive':
       return `反制 ${intent.damage}`;
     case 'counter':
-      return `反击阈值 ${intent.threshold}`;
+      return `准备反击：之后每回合从第 ${intent.threshold} 张牌起，每张反击 ${intent.damage} 点伤害`;
     case 'pollute_draw':
       return `污染 ${intent.count} 张`;
     case 'lock_hand':
