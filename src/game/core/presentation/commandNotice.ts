@@ -23,7 +23,16 @@ export function buildCommandNotice(command: GameCommand, before: RunState, after
   if (command.type === 'LEAVE_SHOP_TO_MAP' && after.screen.type === 'map') {
     return `交易结束 · 带着 ${after.meta.gold} 金继续攀登`;
   }
-  if (command.type === 'LEAVE_REST_TO_MAP' && after.screen.type === 'map') {
+  if (
+    (command.type === 'LEAVE_REST_TO_MAP' || command.type === 'RESOLVE_REST_OPTION')
+    && after.screen.type === 'map'
+  ) {
+    if (command.type === 'RESOLVE_REST_OPTION' && command.option === 'meditate') {
+      return '静心完成 · 下一战 +2 连势';
+    }
+    if (command.type === 'RESOLVE_REST_OPTION' && command.option === 'upgrade') {
+      return '锻造完成 · 卡牌效果已提升';
+    }
     return hpDelta > 0 ? `休整完成 · 回复 ${hpDelta} 点生命` : '休整完成 · 当前生命已满';
   }
   if (command.type === 'RESOLVE_EVENT_OPTION' && after.screen.type === 'map') {

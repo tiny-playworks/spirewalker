@@ -26,6 +26,7 @@ export function generateShop(
   act: MapAct,
   actFloor: number,
   ownedRelicIds: string[] = [],
+  currentGold = 0,
 ): ShopState {
   const f = Math.max(1, actFloor + act * 4);
   const jitter = (seed ^ f * 0x9e37) & 7;
@@ -42,17 +43,21 @@ export function generateShop(
   const setupOffer = pickOne(MOMENTUM_SETUP_CARD_IDS, random);
   const payoffOffer = pickOne(MOMENTUM_PAYOFF_CARD_IDS, random);
   const recoveryOffer = pickOne(TEMPO_RECOVERY_CARD_IDS, random);
+  const setupListPrice = 38 + f * 2 + jitter;
+  const setupPrice = currentGold > 0
+    ? Math.min(setupListPrice, currentGold)
+    : setupListPrice;
 
   return {
     cards: [
-      { definitionId: 'strike', price: 52 + f * 7 + jitter },
-      { definitionId: setupOffer, price: 58 + f * 7 + jitter },
-      { definitionId: payoffOffer, price: 72 + f * 8 + jitter },
-      { definitionId: recoveryOffer, price: 60 + f * 7 + jitter },
+      { definitionId: setupOffer, price: setupPrice },
+      { definitionId: payoffOffer, price: 58 + f * 3 + jitter },
+      { definitionId: recoveryOffer, price: 48 + f * 2 + jitter },
+      { definitionId: 'strike', price: 38 + f * 2 + jitter },
     ],
     relics,
-    potions: [{ potionId: pickOne(SHOP_POTION_POOL, random), price: 60 + f * 5 + jitter }],
-    removeCardPrice: 96 + f * 9,
-    upgradePrice: 75 + f * 6,
+    potions: [{ potionId: pickOne(SHOP_POTION_POOL, random), price: 42 + f * 2 + jitter }],
+    removeCardPrice: 82 + f * 5,
+    upgradePrice: 68 + f * 4,
   };
 }

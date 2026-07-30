@@ -279,6 +279,29 @@ export const cardGrid = style({
   gap: '0.75rem',
 });
 
+export const filterBar = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '0.45rem',
+  marginBottom: '0.85rem',
+});
+
+export const filterButton = style({
+  minHeight: '2.1rem',
+  padding: '0 0.75rem',
+  borderRadius: '999px',
+  color: sceneVars.color.textMuted,
+  border: '1px solid rgba(208, 188, 255, 0.22)',
+  background: 'rgba(10, 10, 11, 0.42)',
+  cursor: 'pointer',
+});
+
+export const filterButtonActive = style({
+  color: '#171008',
+  borderColor: 'rgba(251, 191, 36, 0.72)',
+  background: 'linear-gradient(135deg, #ffe2a3, #d6a64d)',
+});
+
 export const codexCard = style({
   minHeight: '8.8rem',
   padding: '0.85rem',
@@ -289,6 +312,11 @@ export const codexCard = style({
 export const codexKnown = style({
   borderColor: 'rgba(45, 212, 191, 0.52)',
   boxShadow: '0 0 20px rgba(45, 212, 191, 0.08)',
+});
+
+export const codexUnknown = style({
+  opacity: 0.58,
+  filter: 'saturate(0.3)',
 });
 
 export const archetypeTone = styleVariants({
@@ -337,6 +365,11 @@ export const relicOwned = style({
 
 export const relicKnown = style({
   borderColor: 'rgba(45, 212, 191, 0.42)',
+});
+
+export const relicUnknown = style({
+  opacity: 0.56,
+  filter: 'saturate(0.25)',
 });
 
 export const relicGlyph = style({

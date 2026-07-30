@@ -16,15 +16,15 @@ import {
 
 export const GUARD_STRIKE_1: CardDefinition = {
   id: 'guard_strike_1',
-  name: '守卫打击',
-  description: '造成 5 点伤害，获得 3 点格挡。',
+  name: '抢守',
+  description: '造成 3 点伤害，获得 2 点格挡。',
   type: 'attack',
   rarity: 'common',
-  cost: 1,
+  cost: 0,
   target: 'single_enemy',
   effects: [
-    { type: 'damage', value: 5, target: 'selected' },
-    { type: 'block', value: 3, target: 'self' },
+    { type: 'damage', value: 3, target: 'selected' },
+    { type: 'block', value: 2, target: 'self' },
   ],
   archetype: 'guard',
   tags: ['damage', 'block'],

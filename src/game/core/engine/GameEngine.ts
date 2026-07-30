@@ -17,7 +17,10 @@ import {
   takeRewardUpgradeCardFlow,
 } from '../systems/reward/rewardFlow';
 import { usePotionFlow } from '../systems/potion/potionFlow';
-import { leaveRestToMapFlow } from '../systems/rest/restFlow';
+import {
+  leaveRestToMapFlow,
+  resolveRestOptionFlow,
+} from '../systems/rest/restFlow';
 import {
   buyShopCardFlow,
   buyShopPotionFlow,
@@ -87,6 +90,9 @@ export class GameEngine {
         break;
       case 'LEAVE_SHOP_TO_MAP':
         leaveShopToMapFlow(nextRun);
+        break;
+      case 'RESOLVE_REST_OPTION':
+        resolveRestOptionFlow(nextRun, command);
         break;
       case 'LEAVE_REST_TO_MAP':
         leaveRestToMapFlow(nextRun);

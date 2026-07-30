@@ -10,6 +10,7 @@ import {
   BALANCE_EDGE,
   PRIME_RHYTHM,
   BRACE_RHYTHM,
+  BURST_STRIKE,
   MEASURED_REST,
   CARD_DEFINITIONS,
 } from './cards';
@@ -70,9 +71,9 @@ export const CHARACTER_DEFINITIONS: Record<string, CharacterDefinition> = {
       DEFEND.id,
       DEFEND.id,
       DEFEND.id,
-      DEFEND.id,
       PRIME_RHYTHM.id,
       BRACE_RHYTHM.id,
+      BURST_STRIKE.id,
       MEASURED_REST.id,
     ],
     startingRelics: [],

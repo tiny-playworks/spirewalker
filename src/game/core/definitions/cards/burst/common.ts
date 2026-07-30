@@ -15,13 +15,22 @@ import {
 
 export const BURST_COMMON_ATK_1: CardDefinition = {
   id: 'burst_common_atk_1',
-  name: '破势击',
-  description: '造成 8 点伤害。消耗所有连势，每层造成额外 3 点伤害。',
+  name: '裂势斩',
+  description: '造成 4 点伤害。消耗至多 2 层连势，每层额外造成 4 点伤害。',
   type: 'attack',
   rarity: 'common',
   cost: 1,
   target: 'single_enemy',
-  effects: [{ type: 'custom', scriptId: 'momentum_burst_damage', params: { consumeMode: 'all', baseDamage: 8, damagePerStack: 3 } }],
+  effects: [{
+    type: 'custom',
+    scriptId: 'momentum_burst_damage',
+    params: {
+      consumeMode: 'fixed',
+      consumeValue: 2,
+      baseDamage: 4,
+      damagePerStack: 4,
+    },
+  }],
   archetype: 'burst',
   tags: ['damage', 'momentum'],
 };

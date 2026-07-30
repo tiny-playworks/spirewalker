@@ -68,7 +68,13 @@ export function debugJumpScreen(
   run.reward = undefined;
 
   if (screen === 'shop') {
-    run.shop = generateShop(run.seed, run.meta.act, run.meta.actFloor, run.meta.relics);
+    run.shop = generateShop(
+      run.seed,
+      run.meta.act,
+      run.meta.actFloor,
+      run.meta.relics,
+      run.meta.gold,
+    );
     run.screen = { type: 'shop' };
     return;
   }

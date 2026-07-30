@@ -154,12 +154,12 @@ export const CARD_UPGRADE_RULES: Record<string, CardUpgradeRule> = {
     levels: {
       1: {
         nameSuffix: '+',
-        descriptionPatch: '获得 5 点格挡，并获得 2 层连势。',
+        descriptionPatch: '获得 5 点格挡与 2 层连势，抽 1 张牌。',
         patches: [{ effectIndex: 0, kind: 'block', delta: 2 }],
       },
       2: {
         nameSuffix: '++',
-        descriptionPatch: '获得 5 点格挡，并获得 3 层连势。',
+        descriptionPatch: '获得 5 点格挡与 3 层连势，抽 1 张牌。',
         patches: [
           { effectIndex: 0, kind: 'block', delta: 2 },
           { effectIndex: 1, kind: 'stacks', delta: 1 },

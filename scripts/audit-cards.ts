@@ -1,4 +1,5 @@
 import { ALL_CARD_DEFINITIONS } from '../src/game/core/definitions/cards';
+import { getCharacterDefinition } from '../src/game/core/definitions/characters';
 import type { EffectDefinition } from '../src/game/core/model/card';
 
 function fingerprintEffects(effects: EffectDefinition[]): string {
@@ -72,6 +73,55 @@ for (const c of cards) {
       console.log(`  ${c.id}: desc=${c.description.substring(0, 60)} effects=${JSON.stringify(effectNums)}`);
     }
   }
+}
+
+// 4. Player-facing pool hard gate
+console.log('\n=== Player-facing Pool Gate ===');
+const character = getCharacterDefinition('walker');
+const playerFacingIds = [
+  ...new Set([...character.starterDeck, ...character.rewardCardPool]),
+];
+const missingPlayerFacingIds = playerFacingIds.filter(
+  (id) => !ALL_CARD_DEFINITIONS[id],
+);
+const playerFacingCards = playerFacingIds
+  .map((id) => ALL_CARD_DEFINITIONS[id])
+  .filter((card) => Boolean(card));
+const playerFacingNameMap = new Map<string, string[]>();
+const playerFacingFingerprintMap = new Map<string, string[]>();
+
+for (const card of playerFacingCards) {
+  const sameName = playerFacingNameMap.get(card.name) ?? [];
+  sameName.push(card.id);
+  playerFacingNameMap.set(card.name, sameName);
+
+  const fingerprint = JSON.stringify({
+    type: card.type,
+    cost: card.cost,
+    target: card.target,
+    effects: fingerprintEffects(card.effects),
+  });
+  const sameEffect = playerFacingFingerprintMap.get(fingerprint) ?? [];
+  sameEffect.push(card.id);
+  playerFacingFingerprintMap.set(fingerprint, sameEffect);
+}
+
+const duplicatePlayerFacingNames = [...playerFacingNameMap.entries()]
+  .filter(([, ids]) => ids.length > 1);
+const duplicatePlayerFacingEffects = [...playerFacingFingerprintMap.values()]
+  .filter((ids) => ids.length > 1);
+
+console.log(`  cards=${playerFacingCards.length}`);
+console.log(`  missing=${JSON.stringify(missingPlayerFacingIds)}`);
+console.log(`  duplicateNames=${JSON.stringify(duplicatePlayerFacingNames)}`);
+console.log(`  duplicateEffects=${JSON.stringify(duplicatePlayerFacingEffects)}`);
+
+if (
+  missingPlayerFacingIds.length > 0
+  || duplicatePlayerFacingNames.length > 0
+  || duplicatePlayerFacingEffects.length > 0
+) {
+  process.exitCode = 1;
 }
 
 console.log('\nTotal cards:', cards.length);

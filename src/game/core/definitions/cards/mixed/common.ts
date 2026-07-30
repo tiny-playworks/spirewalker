@@ -15,17 +15,18 @@ import {
 export const MIXED_COMMON_ATK_1: CardDefinition = {
   id: 'mixed_common_atk_1',
   name: '攻防切换',
-  description: '造成 6 点伤害，获得 3 点格挡。',
+  description: '造成 5 点伤害，获得 2 点格挡，抽 1 张牌。',
   type: 'attack',
   rarity: 'common',
   cost: 1,
   target: 'single_enemy',
   effects: [
-    { type: 'damage', value: 6, target: 'selected' },
-    { type: 'block', value: 3, target: 'self' },
+    { type: 'damage', value: 5, target: 'selected' },
+    { type: 'block', value: 2, target: 'self' },
+    { type: 'draw', value: 1 },
   ],
   archetype: 'mixed',
-  tags: ['damage', 'block'],
+  tags: ['damage', 'block', 'draw'],
 };
 
 export const MIXED_COMMON_ATK_2: CardDefinition = {

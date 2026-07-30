@@ -106,7 +106,13 @@ export function chooseMapNodeFlow(
     return;
   }
   if (node.type === 'shop') {
-    run.shop = generateShop(run.seed, run.meta.act, run.meta.actFloor, run.meta.relics);
+    run.shop = generateShop(
+      run.seed,
+      run.meta.act,
+      run.meta.actFloor,
+      run.meta.relics,
+      run.meta.gold,
+    );
     run.screen = { type: 'shop' };
     events.push({ type: 'ENTERED_SHOP_FROM_MAP', nodeId });
     return;

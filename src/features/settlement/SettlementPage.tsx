@@ -48,7 +48,7 @@ export function SettlementPage({
         <p className={styles.eyebrow}>{outcome === 'victory' ? '远征记录封存' : '行者的回声留在塔中'}</p>
         <h1 className={styles.title}>{outcome === 'victory' ? '尖塔暂时沉寂' : '本次攀登止步于此'}</h1>
         <p className={styles.subtitle}>
-          抵达第 {run.meta.act} 章 · 第 {run.meta.actFloor} 层　种子 {run.seed}
+          抵达第 {run.meta.act} 章 · 第 {run.meta.actFloor} 层 · 种子 {run.seed}
         </p>
       </section>
 

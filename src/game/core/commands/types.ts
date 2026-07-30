@@ -14,6 +14,12 @@ export type GameCommand =
   /** 战斗胜利后进入奖励三选一（naobao 战后流程） */
   | { type: 'LEAVE_BATTLE_TO_REWARD' }
   | { type: 'LEAVE_SHOP_TO_MAP' }
+  | {
+      type: 'RESOLVE_REST_OPTION';
+      option: 'heal' | 'meditate' | 'upgrade';
+      masterDeckIndex?: number;
+    }
+  /** 模拟器兼容入口：受伤时治疗，满血时静心。 */
   | { type: 'LEAVE_REST_TO_MAP' }
   /** 事件节点选项（naobao 事件屏） */
   | { type: 'RESOLVE_EVENT_OPTION'; optionId: string }

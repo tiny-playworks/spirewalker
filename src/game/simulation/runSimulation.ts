@@ -2,12 +2,12 @@ import type { GameCommand } from "@/game/core/commands/types";
 import { CARD_DEFINITIONS } from "@/game/core/definitions/cards";
 import { getCharacterDefinition } from "@/game/core/definitions/characters";
 import { GameEngine } from "@/game/core/engine/GameEngine";
-import { WANDERING_MERCHANT_EVENT_ID } from "@/game/core/engine/generateBranchingFloor";
 import { skipCardGoldAmount } from "@/game/core/engine/postBattleExtras";
 import { rewardEncounterTierFromRun } from "@/game/core/engine/rewardEncounter";
 import { createMapRun } from "@/game/core/engine/createMapRun";
 import { isLegalMapStep } from "@/game/core/model/mapGraph";
 import type { RunState } from "@/game/core/model/run";
+import { availableEventOptionIds } from "./availableEventOptions";
 import type {
   SimulationBattleContext,
   SimulationEventContext,
@@ -113,33 +113,6 @@ function availableMapNodes(run: RunState) {
     .map((nodeId) => run.map.nodes[nodeId])
     .filter((node): node is NonNullable<typeof node> => Boolean(node))
     .filter((node) => isLegalMapStep(run.map.nodes, currentNodeId, node.id));
-}
-
-function availableEventOptionIds(run: RunState): string[] {
-  if (run.screen.type !== "event") return [];
-
-  switch (run.screen.eventId) {
-    case WANDERING_MERCHANT_EVENT_ID:
-      return run.meta.relics.includes("vajra")
-        ? ["gold", "heal"]
-        : ["gold", "heal", "relic"];
-    case "stillness_shrine":
-      return run.meta.relics.includes("guard_knot")
-        ? ["guard_card", "leave"]
-        : ["guard_relic", "guard_card", "leave"];
-    case "burst_altar":
-      return run.meta.relics.includes("burst_emblem")
-        ? ["burst_card", "leave"]
-        : ["burst_relic", "burst_card", "leave"];
-    case "purging_pool":
-      return [
-        ...(run.masterDeck.includes("strike") ? ["remove_strike"] : []),
-        ...(run.masterDeck.includes("defend") ? ["remove_defend"] : []),
-        "leave",
-      ];
-    default:
-      return ["leave"];
-  }
 }
 
 function buildBattleContext(run: RunState): SimulationBattleContext {

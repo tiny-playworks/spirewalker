@@ -92,19 +92,27 @@ function buildEventView(run: RunState): EventView | null {
   switch (eventId) {
     case WANDERING_MERCHANT_EVENT_ID: {
       const hasVajra = run.meta.relics.includes('vajra');
+      const isFullHealth = run.player.currentHp >= run.player.maxHp;
       return {
         title: '游荡商人',
         story:
-          '一名披着尘土的游荡商人在岔路口拦下你，行囊里塞满了来路不明的好处。挑一样带走，再继续你的攀登。',
+          '一名披着尘土的游荡商人在岔路口拦下你，行囊里塞满了来路不明的好处。神像需要鲜血，其余馈赠只能选一份。',
         options: [
           { optionId: 'gold', tone: 'gold', icon: Coins, title: '收下金币', desc: '获得 25 金币。' },
-          { optionId: 'heal', tone: 'heal', icon: HeartPulse, title: '喝口热汤', desc: '回复 12 点生命。' },
+          {
+            optionId: 'heal',
+            tone: 'heal',
+            icon: HeartPulse,
+            title: '喝口热汤',
+            desc: isFullHealth ? '当前生命已满。' : '回复 12 点生命。',
+            disabled: isFullHealth,
+          },
           {
             optionId: 'relic',
-            tone: 'gain',
+            tone: 'sacrifice',
             icon: Gem,
             title: '瓦哈纳神像',
-            desc: hasVajra ? '你已拥有此遗物。' : '每场战斗开始时 +1 力量。',
+            desc: hasVajra ? '你已拥有此遗物。' : '失去 8 点生命；每场战斗开始时 +1 力量。',
             disabled: hasVajra,
           },
         ],

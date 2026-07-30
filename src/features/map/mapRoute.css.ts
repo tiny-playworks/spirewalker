@@ -353,6 +353,12 @@ globalStyle(`${nodeRootSelectable}:hover ${nodeCircleInteractive}`, {
   filter: 'drop-shadow(0 0 10px rgba(244, 213, 141, 0.24))',
 });
 
+globalStyle(`${nodeRootSelectable}:focus-visible ${nodeCircleInteractive}`, {
+  stroke: sceneVars.color.fortune,
+  strokeWidth: 3,
+  filter: 'drop-shadow(0 0 15px rgba(244, 213, 141, 0.72))',
+});
+
 globalStyle(`${nodeRootSelectable}:hover ${nodeIconBase}`, {
   color: '#f0ebe3',
 });

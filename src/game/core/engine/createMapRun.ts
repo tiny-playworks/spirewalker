@@ -8,6 +8,8 @@ import { buildAct2EntryValidationMap } from './buildAct2EntryValidationMap';
 import { ACT_FLOOR_COUNTS, generateActMap, globalFloorFor } from './generateBranchingFloor';
 import { createStarterMasterDeck } from './starterDeck';
 
+export const INITIAL_RUN_GOLD = 50;
+
 export function buildActNodes(act: MapAct, seed = 0): Record<string, MapNode> {
   return generateActMap(act, seed >>> 0);
 }
@@ -41,7 +43,7 @@ export function createMapRun(seed: number): RunState {
       act: 1,
       actFloor: 1,
       floor: globalFloorFor(1, 1),
-      gold: 0,
+      gold: INITIAL_RUN_GOLD,
       characterId: character.id,
       relics: [...character.startingRelics],
       potions: [...character.startingPotions],

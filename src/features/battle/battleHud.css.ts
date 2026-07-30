@@ -191,6 +191,17 @@ export const momentumGlyph = style({
   textShadow: '0 0 10px rgba(45,212,191,.55)',
 });
 
+export const momentumHint = style({
+  color: sceneVars.color.textMuted,
+  fontSize: '.66rem',
+  fontWeight: 700,
+  '@media': {
+    [mobileLandscape]: {
+      display: 'none',
+    },
+  },
+});
+
 export const blockText = style({
   marginLeft: '0.12rem',
   color: '#3cddc7',

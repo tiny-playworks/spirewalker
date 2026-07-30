@@ -1,11 +1,20 @@
 import { BookOpen, Medal, ScrollText, Sparkles, Trophy } from 'lucide-react';
+import { useState } from 'react';
 import { ALL_CARD_DEFINITIONS } from '@/game/core/definitions/cards';
-import { getCardArchetype } from '@/game/core/definitions/cards/archetypes';
+import {
+  ARCHETYPE_DISPLAY,
+  getCardArchetype,
+  type CardArchetype,
+} from '@/game/core/definitions/cards/archetypes';
+import { parseCardId } from '@/game/core/definitions/cards/upgradeRules';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
-import { EVENT_DEFINITIONS } from '@/game/core/definitions/events';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import type { ProfileState } from '@/game/core/model/profile';
 import type { RunState } from '@/game/core/model/run';
+import {
+  getPlayerCodexCardIds,
+  getPlayerCodexRelicIds,
+} from './archiveContent';
 import * as styles from './archivePage.css';
 
 export type ArchiveView = 'fate' | 'codex' | 'relics' | 'collection' | 'achievements';
@@ -26,6 +35,17 @@ const NAV_ITEMS: Array<{ view: ArchiveView; label: string; icon: typeof Sparkles
   { view: 'relics', label: '遗物', icon: ScrollText },
   { view: 'collection', label: '收藏', icon: Medal },
   { view: 'achievements', label: '成就', icon: Trophy },
+];
+
+const CODEX_FILTERS: Array<{
+  id: 'all' | CardArchetype;
+  label: string;
+}> = [
+  { id: 'all', label: '全部' },
+  { id: 'guard', label: ARCHETYPE_DISPLAY.guard.name },
+  { id: 'burst', label: ARCHETYPE_DISPLAY.burst.name },
+  { id: 'mixed', label: ARCHETYPE_DISPLAY.mixed.name },
+  { id: 'neutral', label: ARCHETYPE_DISPLAY.neutral.name },
 ];
 
 function cx(...classNames: Array<string | false | null | undefined>) {
@@ -111,7 +131,11 @@ function FateView({ run, onStartRun }: { run: RunState | null; onStartRun: () =>
           {character.buildBranches.map((branch) => (
             <article key={branch.id} className={styles.smallCard}>
               <span>{branch.name}</span>
-              <strong>{branch.coreCardIds.join(' / ')}</strong>
+              <strong>
+                {branch.coreCardIds
+                  .map((cardId) => ALL_CARD_DEFINITIONS[cardId]?.name ?? cardId)
+                  .join(' / ')}
+              </strong>
               <small>核心遗物：{RELIC_DEFINITIONS[branch.coreRelicId]?.name ?? branch.coreRelicId}</small>
             </article>
           ))}
@@ -122,48 +146,70 @@ function FateView({ run, onStartRun }: { run: RunState | null; onStartRun: () =>
 }
 
 function CodexView({ profile }: { profile: ProfileState }) {
-  const cards = Object.values(ALL_CARD_DEFINITIONS);
-  const events = Object.values(EVENT_DEFINITIONS);
-  const knownCards = new Set(profile.unlockedCards);
+  const [filter, setFilter] = useState<'all' | CardArchetype>('all');
+  const starterCardIds = getCharacterDefinition('walker').starterDeck.map(
+    (cardId) => parseCardId(cardId).baseId,
+  );
+  const cardIds = getPlayerCodexCardIds(profile);
+  const cards = cardIds
+    .map((cardId) => ALL_CARD_DEFINITIONS[cardId])
+    .filter((card) => Boolean(card));
+  const knownCards = new Set(
+    [
+      ...starterCardIds,
+      ...profile.unlockedCards.map((cardId) => parseCardId(cardId).baseId),
+    ],
+  );
+  const visibleCards = filter === 'all'
+    ? cards
+    : cards.filter((card) => getCardArchetype(card.id) === filter);
+  const knownCount = cards.filter((card) => knownCards.has(card.id)).length;
+
   return (
     <div className={styles.panel}>
-      <p className={styles.kicker}>Restored Archive Logic</p>
+      <p className={styles.kicker}>Walker Card Archive</p>
       <h2 className={styles.sectionTitle}>卡牌图鉴</h2>
       <div className={styles.metricRow}>
         <Metric label="卡牌" value={cards.length} />
         <Metric label="攻击" value={cards.filter((card) => card.type === 'attack').length} />
         <Metric label="技能" value={cards.filter((card) => card.type === 'skill').length} />
         <Metric label="能力" value={cards.filter((card) => card.type === 'power').length} />
-        <Metric label="已发现" value={knownCards.size} />
+        <Metric label="已发现" value={knownCount} />
       </div>
-      <div className={styles.cardGrid}>
-        {cards.map((card) => (
-          <article
-            key={card.id}
-            className={cx(styles.codexCard, styles.archetypeTone[getCardArchetype(card.id)], knownCards.has(card.id) && styles.codexKnown)}
-            data-known={knownCards.has(card.id) ? 'true' : 'false'}
+      <div className={styles.filterBar} aria-label="按流派筛选卡牌">
+        {CODEX_FILTERS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={cx(styles.filterButton, filter === item.id && styles.filterButtonActive)}
+            aria-pressed={filter === item.id}
+            onClick={() => setFilter(item.id)}
           >
-            <div>
-              <strong>{card.name}</strong>
-              <span>{card.rarity} · {card.cost} 费</span>
-            </div>
-            <p>{card.description}</p>
-          </article>
+            {item.label}
+          </button>
         ))}
       </div>
-      <div className={styles.archiveSubsection}>
-        <p className={styles.kicker}>Event Index</p>
-        <h3 className={styles.subsectionTitle}>事件档案 · {events.length}</h3>
-        <div className={styles.eventGrid}>
-          {events.map((event) => (
-            <article key={event.id} className={styles.eventCard}>
-              <strong>{event.name}</strong>
-              <span>Act {event.chapter} · {event.type}</span>
-              <p>{event.description}</p>
-              <small>{event.choices.length} 个选择</small>
+      <div className={styles.cardGrid}>
+        {visibleCards.map((card) => {
+          const known = knownCards.has(card.id);
+          return (
+            <article
+              key={card.id}
+              className={cx(
+                styles.codexCard,
+                styles.archetypeTone[getCardArchetype(card.id)],
+                known ? styles.codexKnown : styles.codexUnknown,
+              )}
+              data-known={known ? 'true' : 'false'}
+            >
+              <div>
+                <strong>{known ? card.name : '尚未发现'}</strong>
+                <span>{known ? `${card.rarity} · ${card.cost} 费` : '未知卡牌'}</span>
+              </div>
+              <p>{known ? card.description : '在攀登中取得此卡后，档案会记录完整效果。'}</p>
             </article>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -172,7 +218,11 @@ function CodexView({ profile }: { profile: ProfileState }) {
 function RelicsView({ run, profile }: { run: RunState | null; profile: ProfileState }) {
   const owned = new Set(run?.meta.relics ?? []);
   const known = new Set(profile.unlockedRelics);
-  const relics = Object.values(RELIC_DEFINITIONS);
+  const relics = getPlayerCodexRelicIds(
+    profile,
+    run,
+    run?.meta.characterId ?? 'walker',
+  ).map((relicId) => RELIC_DEFINITIONS[relicId]!);
   return (
     <div className={styles.panel}>
       <p className={styles.kicker}>Void Collection</p>
@@ -183,13 +233,23 @@ function RelicsView({ run, profile }: { run: RunState | null; profile: ProfileSt
         <Metric label="本局持有" value={owned.size} />
       </div>
       <div className={styles.relicGrid}>
-        {relics.map((relic) => (
-          <article key={relic.id} className={cx(styles.relicCard, known.has(relic.id) && styles.relicKnown, owned.has(relic.id) && styles.relicOwned)}>
-            <span className={styles.relicGlyph}>{owned.has(relic.id) ? '✦' : known.has(relic.id) ? '◆' : '◇'}</span>
-            <strong>{relic.name}</strong>
-            <p>{relic.description}</p>
-          </article>
-        ))}
+        {relics.map((relic) => {
+          const discovered = known.has(relic.id) || owned.has(relic.id);
+          return (
+            <article
+              key={relic.id}
+              className={cx(
+                styles.relicCard,
+                discovered ? styles.relicKnown : styles.relicUnknown,
+                owned.has(relic.id) && styles.relicOwned,
+              )}
+            >
+              <span className={styles.relicGlyph}>{owned.has(relic.id) ? '✦' : discovered ? '◆' : '◇'}</span>
+              <strong>{discovered ? relic.name : '未识别遗物'}</strong>
+              <p>{discovered ? relic.description : '在攀登中获得后解锁详情。'}</p>
+            </article>
+          );
+        })}
       </div>
     </div>
   );

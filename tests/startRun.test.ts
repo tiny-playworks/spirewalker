@@ -7,9 +7,10 @@ describe('startRun', () => {
     const deck = createStarterMasterDeck();
     expect(deck).toHaveLength(10);
     expect(deck.filter((id) => id === 'strike')).toHaveLength(3);
-    expect(deck.filter((id) => id === 'defend')).toHaveLength(4);
+    expect(deck.filter((id) => id === 'defend')).toHaveLength(3);
     expect(deck.filter((id) => id === 'prime_rhythm')).toHaveLength(1);
     expect(deck).toContain('brace_rhythm');
+    expect(deck).toContain('burst_strike');
     expect(deck).toContain('measured_rest');
   });
 
@@ -21,14 +22,20 @@ describe('startRun', () => {
     expect(run.meta.characterId).toBe('walker');
     expect(run.meta.potions).toEqual(['healing_dew']);
     expect(run.meta.relics).toEqual([]);
+    expect(run.meta.gold).toBe(50);
   });
 
-  test('starter 中只保留 3 张前期节奏牌，不再写死前两回合必接触', () => {
+  test('starter 用 4 张节奏牌覆盖起势、防守、兑现与恢复', () => {
     const deck = createStarterMasterDeck();
     const coreCount = deck.filter(
-      (id) => id === 'prime_rhythm' || id === 'brace_rhythm' || id === 'measured_rest',
+      (id) => (
+        id === 'prime_rhythm'
+        || id === 'brace_rhythm'
+        || id === 'burst_strike'
+        || id === 'measured_rest'
+      ),
     ).length;
-    expect(coreCount).toBe(3);
+    expect(coreCount).toBe(4);
   });
 
   test('第一步候选节点只提供 battle', () => {

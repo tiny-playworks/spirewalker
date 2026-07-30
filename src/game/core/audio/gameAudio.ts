@@ -126,6 +126,7 @@ function commandFallbackCue(command: GameCommand): GameSoundCue | null {
     case 'BUY_SHOP_REMOVE_CARD':
     case 'BUY_SHOP_UPGRADE_CARD':
     case 'RESOLVE_EVENT_OPTION':
+    case 'RESOLVE_REST_OPTION':
     case 'LEAVE_REST_TO_MAP':
       return 'reward';
     default:

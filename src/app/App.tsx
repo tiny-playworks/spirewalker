@@ -1,12 +1,10 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { AppCursor } from '@/app/AppCursor';
 import { MobileLandscapeGate } from '@/app/MobileLandscapeGate';
 import type { ArchiveView } from '@/features/archive/ArchivePage';
 import { MainMenuPage } from '@/features/main-menu/MainMenuPage';
-import { NodeResultOverlay, type NodeResultSource } from '@/features/run-scene/NodeResultOverlay';
 import { createMapRun } from '@/game/core/engine/createMapRun';
 import { useGameStore } from '@/game/store/gameStore';
-import type { ScreenState } from '@/game/core/model/run';
 import * as noticeStyles from './actionNotice.css';
 import './routeStyles';
 
@@ -29,27 +27,10 @@ export function App() {
   const resetProfile = useGameStore((s) => s.resetProfile);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [archiveView, setArchiveView] = useState<ArchiveView | null>(null);
-  const [nodeResult, setNodeResult] = useState<{ source: NodeResultSource; message: string } | null>(null);
-  const previousScreen = useRef<ScreenState['type'] | null>(run?.screen.type ?? null);
 
   useEffect(() => {
     if (!run) setOverviewOpen(false);
   }, [run]);
-
-  useEffect(() => {
-    const nextScreen = run?.screen.type ?? null;
-    const from = previousScreen.current;
-    if (
-      nextScreen === 'map'
-      && from
-      && (from === 'reward' || from === 'shop' || from === 'event' || from === 'rest')
-      && useGameStore.getState().actionNotice
-    ) {
-      setNodeResult({ source: from, message: useGameStore.getState().actionNotice ?? '节点结果已记录。' });
-    }
-    if (!run) setNodeResult(null);
-    previousScreen.current = nextScreen;
-  }, [run, run?.screen.type]);
 
   const page = (() => {
     if (archiveView) {
@@ -107,16 +88,6 @@ export function App() {
         ) : null}
         <Suspense fallback={null}><DebugPanel /></Suspense>
         <ActionNotice />
-        {nodeResult ? (
-          <NodeResultOverlay
-            source={nodeResult.source}
-            message={nodeResult.message}
-            onContinue={() => {
-              setNodeResult(null);
-              useGameStore.getState().clearActionNotice();
-            }}
-          />
-        ) : null}
       </MobileLandscapeGate>
       <AppCursor />
     </>

@@ -109,7 +109,7 @@ export const MOMENTUM: CardDefinition = {
 export const TEMPO_GUARD: CardDefinition = {
   id: 'tempo_guard',
   name: '守势',
-  description: '获得 3 点格挡，并获得 2 层连势。',
+  description: '获得 3 点格挡与 2 层连势，抽 1 张牌。',
   type: 'skill',
   rarity: 'common',
   cost: 1,
@@ -117,6 +117,7 @@ export const TEMPO_GUARD: CardDefinition = {
   effects: [
     { type: 'block', value: 3, target: 'self' },
     { type: 'apply_status', statusId: STATUS_MOMENTUM, stacks: 2, target: 'self' },
+    { type: 'draw', value: 1 },
   ],
 };
 

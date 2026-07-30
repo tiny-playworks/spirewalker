@@ -611,11 +611,57 @@ function chooseBurstBattleCommand(ctx: SimulationBattleContext): GameCommand {
 }
 
 function chooseMixedBattleCommand(ctx: SimulationBattleContext): GameCommand {
+  const momentum = playerMomentum(ctx);
+  const danger = dangerLevel(ctx);
   const options = evaluateBattleOptions(ctx, 'mixed');
   const healingPotionSlot = findPotionSlot(ctx, 'healing_dew');
   if (healingPotionSlot >= 0 && playerHp(ctx) <= 14 && dangerLevel(ctx) > 0) {
     return { type: 'USE_POTION', slotIndex: healingPotionSlot };
   }
+
+  const lethal = bestEvaluatedOption(
+    options,
+    (option) => option.option.card.type === 'attack' && option.lethal,
+    (option) => option.score,
+  );
+  if (lethal) return lethal.option.command;
+
+  if (danger > 0) {
+    const safety = bestEvaluatedOption(
+      options,
+      (option) => option.safetyGain > 0,
+      (option) => option.safetyGain * 3 + option.progressDamage + option.setupGain + option.score,
+    );
+    if (safety && safety.safetyGain >= Math.min(5, danger)) {
+      return safety.option.command;
+    }
+  }
+
+  if (momentum <= 1) {
+    const setup = bestEvaluatedOption(
+      options,
+      (option) => setupCards.has(option.option.card.id),
+      (option) => option.setupGain * 2 + option.safetyGain + option.score,
+    );
+    if (setup && setup.score >= 5) return setup.option.command;
+  }
+
+  if (momentum > 0) {
+    const payoff = bestEvaluatedOption(
+      options,
+      (option) => payoffCards.has(option.option.card.id),
+      (option) => option.progressDamage * 2 + option.setupGain + option.score,
+    );
+    if (payoff && payoff.score >= 5) return payoff.option.command;
+  }
+
+  const bridge = bestEvaluatedOption(
+    options,
+    (option) => option.progressDamage > 0 && (option.block > 0 || option.setupGain > 0),
+    (option) => option.progressDamage + option.safetyGain * 2 + option.setupGain + option.score,
+  );
+  if (bridge && bridge.score >= 6) return bridge.option.command;
+
   if (shouldEndTurn(ctx, options, 'mixed')) return { type: 'END_TURN' };
   const anyPlayable = bestEvaluatedOption(options, () => true, (option) => option.score);
   return anyPlayable?.option.command ?? { type: 'END_TURN' };

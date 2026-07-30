@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { MapState } from '@/game/core/model/map';
+import type { MapNodeType, MapState } from '@/game/core/model/map';
 import { getForwardReachableNodeIds } from '@/game/core/model/mapGraph';
 import {
   MAP_ROUTE_SVG,
@@ -17,6 +17,16 @@ function cn(...classNames: Array<string | false | null | undefined>) {
 }
 
 const HOVER_PREVIEW_STEPS = 3;
+
+const MAP_NODE_LABEL: Record<MapNodeType, string> = {
+  battle: '普通战斗',
+  elite: '精英战',
+  boss: '首领战',
+  shop: '商店',
+  rest: '休整',
+  event: '事件',
+  treasure: '宝藏',
+};
 
 function getPreviewReachableNodeIds(
   map: MapState,
@@ -108,9 +118,10 @@ export function MapRoute({
         viewBox={vb}
         style={{ height: `${viewHeight}px` }}
         preserveAspectRatio="xMidYMid meet"
-        role="img"
+        role="group"
+        aria-labelledby="map-route-title"
       >
-        <title>本层岔路与连接</title>
+        <title id="map-route-title">本层岔路与连接</title>
         {edges.map(({ from, to }) => {
           const a = mapNodeCenter(map.nodes[from]!, maxX);
           const b = mapNodeCenter(map.nodes[to]!, maxX);
@@ -162,9 +173,11 @@ export function MapRoute({
               className={cn(styles.nodeRoot, isSelectable && styles.nodeRootSelectable)}
               transform={`translate(${cx},${cy})`}
               aria-current={isCurrent ? 'step' : undefined}
+              aria-label={isSelectable ? `选择${MAP_NODE_LABEL[node.type]}` : undefined}
+              role={isSelectable ? 'button' : undefined}
+              tabIndex={isSelectable ? 0 : undefined}
               data-testid={`map-node-${node.id}`}
               data-cursor-target={isSelectable ? 'true' : undefined}
-              focusable="false"
               onPointerDown={
                 isSelectable
                   ? (event) => {
@@ -173,8 +186,20 @@ export function MapRoute({
                   : undefined
               }
               onClick={isSelectable ? () => onSelectNode(node.id) : undefined}
+              onKeyDown={
+                isSelectable
+                  ? (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onSelectNode(node.id);
+                      }
+                    }
+                  : undefined
+              }
               onPointerEnter={isSelectable ? () => onHoverNode(node.id) : undefined}
               onPointerLeave={isSelectable ? () => onHoverNode(null) : undefined}
+              onFocus={isSelectable ? () => onHoverNode(node.id) : undefined}
+              onBlur={isSelectable ? () => onHoverNode(null) : undefined}
             >
               {isSelectable ? (
                 <circle className={styles.nodeHit} r={nodeRadius + 16} cx={0} cy={0} />

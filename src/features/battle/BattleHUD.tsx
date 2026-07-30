@@ -1,4 +1,4 @@
-import { Coins, Heart, Layers, Shield, Zap } from 'lucide-react';
+import { Coins, Heart, Shield } from 'lucide-react';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectBattle } from '@/game/store/selectors/battleSelectors';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
@@ -10,9 +10,6 @@ function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
 }
 
-const PILE_DRAW_TITLE =
-  '抽牌堆：需抽牌且抽牌堆为空时，会先将弃牌堆洗牌放入抽牌堆（回洗），再抽。';
-
 export function BattleHUD() {
   const run = useGameStore((s) => s.run);
   const battle = selectBattle(run);
@@ -21,8 +18,11 @@ export function BattleHUD() {
 
   const player = battle.units[battle.playerUnitId];
   const momentum = player?.statuses.find((status) => status.id === 'momentum')?.stacks ?? 0;
-  const { drawPile, hand, discardPile, exhaustPile } = battle.player;
   const selectingTarget = battle.inputMode === 'selecting_target' && battle.pendingAction?.type === 'play_card';
+  const nextMomentum = Math.max(0, momentum - 1);
+  const momentumHint = momentum > 0
+    ? `下一张牌结算后获得 ${momentum} 点格挡，连势降至 ${nextMomentum} 层`
+    : '打出起势牌来积累连势';
 
   return (
     <header className={cx(sceneThemeClass, styles.root)} data-testid="battle-hud">
@@ -43,26 +43,13 @@ export function BattleHUD() {
             <strong>{run.meta.gold}</strong>
           </span>
           <span
-            className={cx(styles.chip, styles.chipTone.energy)}
-            title={`能量 ${battle.player.energy}/${battle.player.maxEnergy}`}
-          >
-            <Zap size={ICON_SIZE} aria-hidden />
-            <strong>{battle.player.energy}/{battle.player.maxEnergy}</strong>
-          </span>
-          <span
             className={cx(styles.chip, styles.chipTone.accent)}
-            title={`连势 ${momentum} 层`}
+            title={`连势 ${momentum} 层：${momentumHint}`}
+            aria-label={`连势 ${momentum} 层，${momentumHint}`}
           >
             <span className={styles.momentumGlyph} aria-hidden>◈</span>
             <strong>{momentum}</strong>
-          </span>
-          <span
-            className={cx(styles.chip, styles.chipTone.draw)}
-            data-testid="battle-draw-count"
-            title={`${PILE_DRAW_TITLE}\n抽牌 ${drawPile.length}，手牌 ${hand.length}，弃牌 ${discardPile.length}，消耗 ${exhaustPile.length}`}
-          >
-            <Layers size={ICON_SIZE} aria-hidden />
-            <strong>{drawPile.length}</strong>
+            <span className={styles.momentumHint}>{momentum > 0 ? `下一牌 +${momentum} 盾` : '等待起势'}</span>
           </span>
           {battle.phase === 'victory' ? (
             <span className={cx(styles.chip, styles.chipTone.win)}>胜利</span>

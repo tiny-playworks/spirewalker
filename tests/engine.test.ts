@@ -1279,6 +1279,7 @@ describe('GameEngine 地图', () => {
     const choice = run.reward!.items.find((i) => i.type === 'card_choice');
     if (!choice || choice.type !== 'card_choice') throw new Error('expected card_choice');
     const pick = choice.cards[0]!;
+    const goldBeforeReward = run.meta.gold;
 
     const { nextRun, events } = engine.dispatch(run, {
       type: 'SELECT_REWARD_CARD',
@@ -1287,8 +1288,8 @@ describe('GameEngine 地图', () => {
     run = nextRun;
     expect(run.screen.type).toBe('map');
     expect(run.battle).toBeUndefined();
-    expect(run.meta.gold).toBeGreaterThanOrEqual(0);
-    expect(run.meta.gold).toBeLessThanOrEqual(24);
+    expect(run.meta.gold).toBeGreaterThanOrEqual(goldBeforeReward);
+    expect(run.meta.gold).toBeLessThanOrEqual(goldBeforeReward + 24);
     expect(run.masterDeck.length).toBe(11);
     expect(events.some((e) => e.type === 'RETURNED_TO_MAP_FROM_BATTLE')).toBe(true);
   });
@@ -1343,10 +1344,11 @@ describe('GameEngine 地图', () => {
     const cardChoice = run.reward!.items.find((i) => i.type === 'card_choice');
     if (!cardChoice || cardChoice.type !== 'card_choice') throw new Error('expected card_choice');
     const potionsBefore = run.meta.potions.length;
+    const goldBeforeReward = run.meta.gold;
     run = engine
       .dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: cardChoice.cards[0]! })
       .nextRun;
-    expect(run.meta.gold).toBe(33);
+    expect(run.meta.gold).toBe(goldBeforeReward + 33);
     expect(run.meta.potions.length).toBe(potionsBefore + 1);
   });
 
@@ -1373,10 +1375,11 @@ describe('GameEngine 地图', () => {
     run.player.currentHp = 27;
     const deckSizeBefore = run.masterDeck.length;
     const bossPotionsBefore = run.meta.potions.length;
+    const goldBeforeReward = run.meta.gold;
     run = engine
       .dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: cardChoice.cards[0]! })
       .nextRun;
-    expect(run.meta.gold).toBe(56);
+    expect(run.meta.gold).toBe(goldBeforeReward + 56);
     expect(run.meta.potions.length).toBe(bossPotionsBefore + 1);
     expect(run.meta.relics).toContain(relicId);
     expect(COMMON_RELIC_POOL as readonly string[]).toContain(relicId);
@@ -1473,7 +1476,7 @@ describe('GameEngine 地图', () => {
       .dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: 'strike' })
       .nextRun;
     expect(run.screen.type).toBe('victory');
-    expect(run.meta.gold).toBe(0);
+    expect(run.meta.gold).toBe(50);
   });
 
   test('Boss 遗物池已空时不重复掉落', () => {

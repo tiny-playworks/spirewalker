@@ -27,9 +27,14 @@ function grantRelic(run: RunState, relicId: string): void {
 const EVENT_OPTION_RESOLVERS: Record<string, EventOptionResolver> = {
   [WANDERING_MERCHANT_EVENT_ID]: (run, optionId, events) => {
     if (optionId === 'gold') run.meta.gold += 25;
-    else if (optionId === 'heal') run.player.currentHp = Math.min(run.player.maxHp, run.player.currentHp + 12);
-    else if (optionId === 'relic') grantRelic(run, 'vajra');
-    else return false;
+    else if (optionId === 'heal') {
+      if (run.player.currentHp >= run.player.maxHp) return false;
+      run.player.currentHp = Math.min(run.player.maxHp, run.player.currentHp + 12);
+    } else if (optionId === 'relic') {
+      if (run.meta.relics.includes('vajra')) return false;
+      run.player.currentHp = Math.max(1, run.player.currentHp - 8);
+      grantRelic(run, 'vajra');
+    } else return false;
     run.screen = { type: 'map' };
     events.push({ type: 'EVENT_RESOLVED', eventId: WANDERING_MERCHANT_EVENT_ID, optionId });
     return true;

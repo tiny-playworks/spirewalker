@@ -48,6 +48,7 @@ describe('shop/shopFlow', () => {
     expect(offerIds.some((id) => MOMENTUM_SETUP_CARD_IDS.includes(id as never))).toBe(true);
     expect(offerIds.some((id) => MOMENTUM_PAYOFF_CARD_IDS.includes(id as never))).toBe(true);
     expect(offerIds.some((id) => TEMPO_RECOVERY_CARD_IDS.includes(id as never))).toBe(true);
+    expect(run.shop!.cards.some((offer) => offer.price <= run.meta.gold)).toBe(true);
     expect(['stillwater_tonic', 'flash_powder']).toContain(run.shop!.potions[0]!.potionId);
   });
 });

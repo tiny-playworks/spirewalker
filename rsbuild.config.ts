@@ -28,7 +28,7 @@ export default defineConfig({
     },
   },
   html: {
-    title: '肉鸽卡牌 · MVP 战斗',
+    title: 'Spirewalker · 连势构筑之旅',
     favicon: './public/favicon.svg',
     meta: {
       viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',

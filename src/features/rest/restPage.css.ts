@@ -84,6 +84,8 @@ globalStyle(`${sceneCopy} span`, { color: sceneVars.color.textMuted, fontSize: '
 export const decision = style({
   display: 'flex',
   flexDirection: 'column',
+  maxHeight: '100%',
+  overflowY: 'auto',
   padding: 'clamp(1.25rem,3vw,2rem)',
   borderRadius: sceneVars.radii.lg,
   border: `1px solid ${sceneVars.color.border}`,
@@ -97,7 +99,44 @@ globalStyle(`${kicker} svg`, { width: '.9rem', height: '.9rem' });
 globalStyle(`${decision} h2`, { margin: '.6rem 0 .35rem', color: sceneVars.color.textStrong, fontFamily: 'Georgia,"Songti SC",serif', fontSize: 'clamp(1.6rem,4vw,2.45rem)' });
 export const description = style({ margin: 0, color: sceneVars.color.textMuted, lineHeight: 1.55, fontSize: '.86rem' });
 
-export const healthPreview = style({ margin: '1.3rem 0', padding: '1rem', borderRadius: sceneVars.radii.md, border: '1px solid rgba(45,212,191,.25)', background: 'rgba(45,212,191,.055)', '@media': { [mobile]: { margin: '.7rem 0', padding: '.65rem' } } });
+export const optionGrid = style({
+  display: 'grid',
+  gap: '.65rem',
+  marginTop: '.9rem',
+});
+
+export const optionCard = style({
+  display: 'grid',
+  gap: '.65rem',
+  padding: '.8rem',
+  borderRadius: sceneVars.radii.md,
+  border: '1px solid rgba(208,188,255,.18)',
+  background: 'rgba(8,8,11,.4)',
+  '@media': { [mobile]: { gap: '.45rem', padding: '.6rem' } },
+});
+
+export const optionHeading = style({
+  display: 'grid',
+  gridTemplateColumns: '2.25rem minmax(0,1fr)',
+  alignItems: 'center',
+  gap: '.6rem',
+});
+
+export const optionIcon = style({
+  display: 'grid',
+  placeItems: 'center',
+  width: '2.25rem',
+  height: '2.25rem',
+  borderRadius: '50%',
+  color: '#62fae3',
+  border: '1px solid rgba(45,212,191,.3)',
+  background: 'rgba(45,212,191,.08)',
+});
+globalStyle(`${optionIcon} svg`, { width: '1.05rem', height: '1.05rem' });
+globalStyle(`${optionHeading} h3`, { margin: 0, color: sceneVars.color.textStrong, fontSize: '.95rem' });
+globalStyle(`${optionHeading} p`, { margin: '.12rem 0 0', color: sceneVars.color.textMuted, fontSize: '.75rem' });
+
+export const healthPreview = style({ padding: '.7rem', borderRadius: sceneVars.radii.md, border: '1px solid rgba(45,212,191,.25)', background: 'rgba(45,212,191,.055)', '@media': { [mobile]: { padding: '.55rem' } } });
 export const healthNumbers = style({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.6rem', color: sceneVars.color.textMuted, fontSize: '.78rem' });
 globalStyle(`${healthNumbers} span`, { display: 'inline-flex', alignItems: 'center', gap: '.3rem' });
 globalStyle(`${healthNumbers} svg`, { width: '.9rem', height: '.9rem', color: '#ff9c91' });
@@ -106,6 +145,34 @@ export const healthTrack = style({ position: 'relative', height: '.7rem', margin
 export const healthRestored = style({ position: 'absolute', inset: '0 auto 0 0', borderRadius: 'inherit', background: 'linear-gradient(90deg,rgba(45,212,191,.34),#62fae3)', boxShadow: '0 0 18px rgba(45,212,191,.25)' });
 export const healthCurrent = style({ position: 'absolute', inset: '0 auto 0 0', zIndex: 1, borderRadius: 'inherit', background: 'linear-gradient(90deg,#d4846a,#ffb4ab)' });
 globalStyle(`${healthPreview} small`, { color: sceneVars.color.textSubtle });
+
+export const upgradeSelect = style({
+  width: '100%',
+  minHeight: '2.45rem',
+  padding: '0 .7rem',
+  borderRadius: sceneVars.radii.sm,
+  color: sceneVars.color.text,
+  border: '1px solid rgba(208,188,255,.28)',
+  background: '#15131b',
+  selectors: {
+    '&:disabled': { opacity: .45 },
+  },
+});
+
+export const meditatePreview = style({
+  display: 'flex',
+  alignItems: 'baseline',
+  justifyContent: 'space-between',
+  gap: '.6rem',
+  minHeight: '2.45rem',
+  padding: '.6rem .75rem',
+  borderRadius: sceneVars.radii.sm,
+  color: sceneVars.color.textMuted,
+  border: '1px solid rgba(45,212,191,.22)',
+  background: 'rgba(45,212,191,.055)',
+});
+globalStyle(`${meditatePreview} strong`, { color: '#62fae3', fontSize: '1.05rem' });
+globalStyle(`${meditatePreview} span`, { fontSize: '.72rem' });
 
 export const restButton = style({
   display: 'inline-flex',
@@ -122,7 +189,10 @@ export const restButton = style({
   fontWeight: 900,
   cursor: 'pointer',
   transition: `transform ${sceneVars.motion.fast} ${sceneVars.motion.ease}`,
-  selectors: { '&:hover': { transform: 'translateY(-2px)' } },
+  selectors: {
+    '&:hover:not(:disabled)': { transform: 'translateY(-2px)' },
+    '&:disabled': { opacity: .42, cursor: 'not-allowed', boxShadow: 'none' },
+  },
   '@media': { [mobile]: { minHeight: '2.55rem' } },
 });
 globalStyle(`${restButton} svg`, { width: '1rem', height: '1rem' });
