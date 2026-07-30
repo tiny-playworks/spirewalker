@@ -6,11 +6,13 @@ export function FallbackImg({
   alt,
   className,
   fallback = null,
+  loading = 'eager',
 }: {
   sources: string[];
   alt: string;
   className?: string;
   fallback?: ReactNode;
+  loading?: 'eager' | 'lazy';
 }) {
   const [index, setIndex] = useState(0);
   useEffect(() => {
@@ -23,6 +25,8 @@ export function FallbackImg({
       alt={alt}
       src={sources[index]}
       draggable={false}
+      loading={loading}
+      decoding="async"
       onError={() => setIndex((i) => i + 1)}
     />
   );

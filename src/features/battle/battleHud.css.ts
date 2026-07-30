@@ -48,7 +48,7 @@ export const primaryRow = style({
 export const brand = style({
   flexShrink: 0,
   color: sceneVars.color.fortune,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1rem',
   fontWeight: 900,
   letterSpacing: '0.045em',
@@ -66,7 +66,7 @@ export const encounterTitle = style({
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
   color: sceneVars.color.fortune,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '0.74rem',
   fontWeight: 900,
   letterSpacing: '0.08em',
@@ -193,7 +193,7 @@ export const momentumGlyph = style({
 
 export const momentumHint = style({
   color: sceneVars.color.textMuted,
-  fontSize: '.66rem',
+  fontSize: '.7rem',
   fontWeight: 700,
   '@media': {
     [mobileLandscape]: {
@@ -230,7 +230,7 @@ export const actionButton = style({
   justifyContent: 'center',
   minHeight: battleBarControlMinHeight,
   padding: '0 0.56rem',
-  fontSize: '0.66rem',
+  fontSize: '0.7rem',
   lineHeight: 1,
   fontWeight: 600,
   cursor: 'pointer',

@@ -39,6 +39,40 @@ export const sectionKicker = style({
   color: sceneVars.color.textSubtle,
 });
 
+export const threatChip = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: '1.65rem',
+  padding: '0.22rem 0.55rem',
+  border: `1px solid ${sceneVars.color.borderSoft}`,
+  borderRadius: sceneVars.radii.pill,
+  color: sceneVars.color.textMuted,
+  background: sceneVars.color.overlay,
+  fontSize: '0.72rem',
+  fontWeight: 800,
+  letterSpacing: '0.04em',
+});
+
+export const fracturedSurface = style({
+  position: 'relative',
+  overflow: 'hidden',
+  selectors: {
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      right: '-8%',
+      bottom: '-45%',
+      width: '52%',
+      aspectRatio: '1',
+      pointerEvents: 'none',
+      opacity: 0.12,
+      background:
+        'linear-gradient(128deg, transparent 0 44%, rgba(208,188,255,.7) 45% 46%, transparent 47% 55%, rgba(45,212,191,.5) 56% 57%, transparent 58%)',
+      transform: 'rotate(-12deg)',
+    },
+  },
+});
+
 export const glassPanel = style({
   borderRadius: sceneVars.radii.lg,
   border: `1px solid ${sceneVars.color.border}`,

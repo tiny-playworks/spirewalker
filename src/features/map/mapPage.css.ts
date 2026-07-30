@@ -62,7 +62,7 @@ export const brand = style({
 
 export const brandMark = style({
   margin: 0,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1.18rem',
   fontWeight: 700,
   letterSpacing: '0.22em',
@@ -361,7 +361,7 @@ export const dockButton = style({
   background: 'transparent',
   border: 'none',
   color: sceneVars.color.textSubtle,
-  fontSize: '0.66rem',
+  fontSize: '0.7rem',
   fontWeight: 700,
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
@@ -423,7 +423,7 @@ export const popoverMenu = style([
 
 export const popoverTitle = style({
   margin: 0,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1.1rem',
   color: sceneVars.color.textStrong,
 });
@@ -527,7 +527,7 @@ export const nodeDetail = style({
   gridTemplateColumns: 'auto minmax(0, 1fr) auto',
   alignItems: 'center',
   gap: '0.75rem',
-  width: 'min(38rem, calc(100% - 2rem))',
+  width: 'min(46rem, calc(100% - 2rem))',
   padding: '0.7rem 0.8rem',
   borderRadius: sceneVars.radii.lg,
   border: '1px solid rgba(208, 188, 255, 0.34)',
@@ -554,13 +554,112 @@ export const nodeDetailIcon = style({
 });
 
 export const nodeDetailCopy = style({ minWidth: 0 });
-globalStyle(`${nodeDetailCopy} strong`, { color: sceneVars.color.textStrong, fontSize: '0.95rem' });
+export const nodeDetailTitle = style({
+  display: 'flex',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: '.45rem',
+});
+globalStyle(`${nodeDetailTitle} strong`, {
+  color: sceneVars.color.textStrong,
+  fontFamily: sceneVars.font.display,
+  fontSize: '0.98rem',
+});
 globalStyle(`${nodeDetailCopy} p`, {
   margin: '0.14rem 0 0',
   color: sceneVars.color.textMuted,
   fontSize: '0.76rem',
   lineHeight: 1.35,
   '@media': { [tablet]: { display: 'none' } },
+});
+
+export const pressureBadge = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: '1.45rem',
+  padding: '.15rem .45rem',
+  borderRadius: sceneVars.radii.pill,
+  border: `1px solid ${sceneVars.color.relief}`,
+  color: sceneVars.color.relief,
+  background: sceneVars.color.reliefSoft,
+  fontSize: '.7rem',
+  fontWeight: 900,
+});
+
+export const encounterPreview = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '.48rem',
+  minWidth: 0,
+  marginTop: '.36rem',
+});
+
+export const encounterPortraits = style({
+  display: 'flex',
+  flexShrink: 0,
+});
+
+export const encounterPortrait = style({
+  width: '2.1rem',
+  height: '2.1rem',
+  objectFit: 'cover',
+  border: `1px solid ${sceneVars.color.hazard}`,
+  borderRadius: '50%',
+  background: sceneVars.color.canvasDeep,
+  boxShadow: '0 0 14px rgba(212,132,106,.18)',
+  selectors: {
+    '& + &': { marginLeft: '-.45rem' },
+  },
+  '@media': { [tablet]: { width: '1.75rem', height: '1.75rem' } },
+});
+
+export const encounterIdentity = style({
+  display: 'grid',
+  minWidth: 0,
+  gap: '.04rem',
+});
+globalStyle(`${encounterIdentity} b`, {
+  overflow: 'hidden',
+  color: sceneVars.color.textStrong,
+  fontSize: '.78rem',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+globalStyle(`${encounterIdentity} > span`, {
+  overflow: 'hidden',
+  color: sceneVars.color.textSubtle,
+  fontSize: '.7rem',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+export const threatTags = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '.25rem',
+  marginLeft: 'auto',
+  '@media': { [tablet]: { display: 'none' } },
+});
+globalStyle(`${threatTags} em`, {
+  padding: '.13rem .4rem',
+  border: `1px solid ${sceneVars.color.hazardSoft}`,
+  borderRadius: sceneVars.radii.pill,
+  color: sceneVars.color.hazard,
+  background: sceneVars.color.hazardSoft,
+  fontSize: '.68rem',
+  fontStyle: 'normal',
+  fontWeight: 800,
+});
+
+export const encounterHint = style({
+  display: 'block',
+  marginTop: '.24rem',
+  overflow: 'hidden',
+  color: sceneVars.color.textMuted,
+  fontSize: '.7rem',
+  lineHeight: 1.3,
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 });
 
 export const enterNodeButton = style({

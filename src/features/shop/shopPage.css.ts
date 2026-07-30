@@ -1,7 +1,7 @@
 import { keyframes, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
-const SERIF = '"Libre Caslon Text", Georgia, serif';
+const SERIF = sceneVars.font.display;
 const mobileLandscape = '(max-width: 900px) and (orientation: landscape)';
 
 const portraitPulse = keyframes({
@@ -170,12 +170,12 @@ export const merchantNote = style({
   alignItems: 'center',
   gap: '0.4rem',
   marginTop: '0.3rem',
-  fontSize: '0.66rem',
+  fontSize: '0.7rem',
   fontWeight: 700,
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
   color: '#ffc640',
-  '@media': { [mobileLandscape]: { fontSize: '.5rem', letterSpacing: '.08em' } },
+  '@media': { [mobileLandscape]: { fontSize: '.7rem', letterSpacing: '.06em' } },
 });
 
 export const noteIcon = style({ width: '0.85rem', height: '0.85rem' });
@@ -237,6 +237,57 @@ const tileBase = style({
 
 export const cardTile = tileBase;
 
+export const cardOffer = style({
+  gap: 0,
+  padding: 0,
+  overflow: 'hidden',
+  borderColor: sceneVars.color.borderSoft,
+  background:
+    'linear-gradient(165deg, rgba(32,31,38,.94), rgba(11,11,14,.94))',
+  '@media': { [mobileLandscape]: { minHeight: 0, padding: 0 } },
+});
+
+export const tileArt = style({
+  position: 'relative',
+  width: '100%',
+  height: '6.2rem',
+  overflow: 'hidden',
+  background: sceneVars.color.canvasDeep,
+  '@media': { [mobileLandscape]: { height: '3.8rem' } },
+});
+
+export const tileArtImage = style({
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+});
+
+export const tileArtFallback = style({
+  position: 'absolute',
+  inset: 0,
+  background:
+    'radial-gradient(circle at 50% 35%, rgba(208,188,255,.28), transparent 34%), linear-gradient(145deg, rgba(45,212,191,.12), rgba(139,92,246,.18), rgba(6,6,8,.96))',
+});
+
+export const tileArtShade = style({
+  position: 'absolute',
+  inset: 0,
+  background:
+    'linear-gradient(to top, rgba(18,17,23,1), transparent 62%), radial-gradient(circle at 50% 45%, transparent 30%, rgba(0,0,0,.3) 100%)',
+});
+
+export const tileBody = style({
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  gap: '.38rem',
+  width: '100%',
+  padding: '.65rem .72rem .72rem',
+  '@media': { [mobileLandscape]: { gap: '.22rem', padding: '.42rem .48rem .48rem' } },
+});
+
 export const tileName = style({
   display: 'flex',
   alignItems: 'center',
@@ -245,15 +296,15 @@ export const tileName = style({
   fontSize: '1rem',
   fontWeight: 700,
   color: sceneVars.color.textStrong,
-  '@media': { [mobileLandscape]: { fontSize: '.72rem' } },
+  '@media': { [mobileLandscape]: { fontSize: '.76rem' } },
 });
 
 export const tileType = style({
-  fontSize: '0.62rem',
+  fontSize: '0.7rem',
   fontWeight: 700,
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
-  '@media': { [mobileLandscape]: { fontSize: '.47rem', letterSpacing: '.08em' } },
+  '@media': { [mobileLandscape]: { fontSize: '.7rem', letterSpacing: '.04em' } },
 });
 
 export const tileTypeTone = styleVariants({
@@ -268,7 +319,17 @@ export const tileDesc = style({
   lineHeight: 1.45,
   color: sceneVars.color.textSubtle,
   flex: 1,
-  '@media': { [mobileLandscape]: { fontSize: '.56rem', lineHeight: 1.3 } },
+  '@media': { [mobileLandscape]: { fontSize: '.7rem', lineHeight: 1.35 } },
+});
+
+export const tileSignals = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '.28rem',
+  color: sceneVars.color.textSubtle,
+  fontSize: '.7rem',
+  fontWeight: 700,
+  '@media': { [mobileLandscape]: { fontSize: '.68rem' } },
 });
 
 export const tilePrice = style({
@@ -285,7 +346,7 @@ export const tilePrice = style({
 export const priceReason = style({
   marginLeft: '.15rem',
   color: 'currentColor',
-  fontSize: '.62rem',
+  fontSize: '.7rem',
   fontWeight: 700,
   opacity: .86,
 });
@@ -427,7 +488,7 @@ export const railPanelWealth = style({
 
 export const railLabel = style({
   margin: '0 0 0.4rem',
-  fontSize: '0.66rem',
+  fontSize: '0.7rem',
   fontWeight: 700,
   letterSpacing: '0.18em',
   textTransform: 'uppercase',

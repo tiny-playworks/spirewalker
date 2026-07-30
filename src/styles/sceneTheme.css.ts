@@ -1,9 +1,14 @@
 import { createTheme } from '@vanilla-extract/css';
 
 export const [sceneThemeClass, sceneVars] = createTheme({
+  font: {
+    ui: '"PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, -apple-system, "Segoe UI", sans-serif',
+    display: '"Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif',
+  },
   color: {
     canvas: '#09090b',
     canvasRaised: '#121118',
+    canvasDeep: '#060608',
     sceneGlow: 'rgba(139, 92, 246, 0.16)',
     text: '#e5e2e3',
     textStrong: '#f4e8d4',
@@ -12,14 +17,22 @@ export const [sceneThemeClass, sceneVars] = createTheme({
     textFaint: '#5f586b',
     panel: 'rgba(32, 31, 32, 0.78)',
     panelAlt: 'rgba(26, 24, 20, 0.82)',
+    panelSolid: '#17161c',
+    overlay: 'rgba(6, 6, 8, 0.9)',
     border: 'rgba(208, 188, 255, 0.34)',
     borderSoft: 'rgba(149, 142, 160, 0.22)',
+    borderActive: 'rgba(208, 188, 255, 0.68)',
     accent: '#8b5cf6',
     accentGlow: '#d0bcff',
     hazard: 'rgba(212, 132, 106, 0.92)',
     fortune: 'rgba(251, 191, 36, 0.95)',
     mystery: 'rgba(139, 92, 246, 0.92)',
     relief: 'rgba(45, 212, 191, 0.92)',
+    reliefSoft: 'rgba(45, 212, 191, 0.16)',
+    fortuneSoft: 'rgba(251, 191, 36, 0.14)',
+    hazardSoft: 'rgba(212, 132, 106, 0.16)',
+    mysterySoft: 'rgba(139, 92, 246, 0.16)',
+    focus: '#fbbf24',
     edgeDim: '#494454',
   },
   space: {
@@ -43,6 +56,7 @@ export const [sceneThemeClass, sceneVars] = createTheme({
   motion: {
     fast: '120ms',
     normal: '200ms',
+    scene: '240ms',
     slow: '420ms',
     ease: 'cubic-bezier(.2,.75,.25,1)',
     easeInOut: 'cubic-bezier(.45,0,.2,1)',

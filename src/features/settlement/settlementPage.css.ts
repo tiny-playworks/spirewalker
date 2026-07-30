@@ -30,7 +30,7 @@ export const emblem = style({
 globalStyle(`${emblem} svg`, { width: '2rem', height: '2rem', '@media': { [mobileLandscape]: { width: '1.2rem', height: '1.2rem' } } });
 export const emblemVictory = style({ color: '#ffe2a3', borderColor: 'rgba(251,191,36,.5)', background: 'rgba(251,191,36,.12)' });
 export const eyebrow = style({ margin: 0, color: sceneVars.color.accentGlow, fontSize: '.72rem', fontWeight: 900, letterSpacing: '.2em' });
-export const title = style({ margin: '.55rem 0', color: sceneVars.color.textStrong, fontFamily: '"Libre Caslon Text", Georgia, serif', fontSize: 'clamp(2rem, 5vw, 4rem)', '@media': { [mobileLandscape]: { margin: '.1rem 0', fontSize: '1.45rem' } } });
+export const title = style({ margin: '.55rem 0', color: sceneVars.color.textStrong, fontFamily: sceneVars.font.display, fontSize: 'clamp(2rem, 5vw, 4rem)', '@media': { [mobileLandscape]: { margin: '.1rem 0', fontSize: '1.45rem' } } });
 export const subtitle = style({ margin: 0, color: sceneVars.color.textMuted, '@media': { [mobileLandscape]: { fontSize: '.68rem' } } });
 export const statsGrid = style({
   display: 'grid', gridTemplateColumns: 'repeat(6, minmax(5rem, 1fr))', gap: '.55rem', width: 'min(58rem, 100%)',

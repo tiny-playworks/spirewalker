@@ -78,7 +78,7 @@ globalStyle(`${fireSigil} svg`, { width: '2.7rem', height: '2.7rem' });
 
 export const sceneCopy = style({ position: 'absolute', left: '1.4rem', right: '1.4rem', bottom: '1.3rem' });
 globalStyle(`${sceneCopy} p`, { margin: 0, color: sceneVars.color.relief, fontSize: '.68rem', fontWeight: 900, letterSpacing: '.16em' });
-globalStyle(`${sceneCopy} h1`, { margin: '.35rem 0', color: sceneVars.color.textStrong, fontFamily: 'Georgia,"Songti SC",serif', fontSize: 'clamp(1.65rem,4vw,2.7rem)' });
+globalStyle(`${sceneCopy} h1`, { margin: '.35rem 0', color: sceneVars.color.textStrong, fontFamily: sceneVars.font.display, fontSize: 'clamp(1.65rem,4vw,2.7rem)' });
 globalStyle(`${sceneCopy} span`, { color: sceneVars.color.textMuted, fontSize: '.82rem', lineHeight: 1.55 });
 
 export const decision = style({
@@ -96,7 +96,7 @@ export const decision = style({
 
 export const kicker = style({ display: 'flex', alignItems: 'center', gap: '.35rem', margin: 0, color: sceneVars.color.relief, fontSize: '.68rem', fontWeight: 900, letterSpacing: '.14em' });
 globalStyle(`${kicker} svg`, { width: '.9rem', height: '.9rem' });
-globalStyle(`${decision} h2`, { margin: '.6rem 0 .35rem', color: sceneVars.color.textStrong, fontFamily: 'Georgia,"Songti SC",serif', fontSize: 'clamp(1.6rem,4vw,2.45rem)' });
+globalStyle(`${decision} h2`, { margin: '.6rem 0 .35rem', color: sceneVars.color.textStrong, fontFamily: sceneVars.font.display, fontSize: 'clamp(1.6rem,4vw,2.45rem)' });
 export const description = style({ margin: 0, color: sceneVars.color.textMuted, lineHeight: 1.55, fontSize: '.86rem' });
 
 export const optionGrid = style({

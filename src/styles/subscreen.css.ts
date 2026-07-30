@@ -30,7 +30,7 @@ export const screenStack = style({
 
 export const title = style({
   margin: '0 0 0.5rem',
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1.65rem',
   color: sceneVars.color.textStrong,
 });

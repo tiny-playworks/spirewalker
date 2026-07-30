@@ -58,7 +58,7 @@ export const toggle = style({
       padding: '.38rem .52rem',
       borderRight: '1px solid rgba(95, 81, 62, 0.5)',
       borderRadius: '10px',
-      fontSize: '.66rem',
+      fontSize: '.7rem',
       transform: 'none',
       opacity: .86,
     },

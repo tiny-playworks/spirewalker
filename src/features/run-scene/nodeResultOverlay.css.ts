@@ -86,7 +86,7 @@ globalStyle(`${kicker} svg`, { width: '.85rem', height: '.85rem' });
 globalStyle(`${panel} h2`, {
   margin: '.55rem 0 .3rem',
   color: sceneVars.color.textStrong,
-  fontFamily: 'Georgia, "Songti SC", serif',
+  fontFamily: sceneVars.font.display,
   fontSize: 'clamp(1.35rem, 4vw, 2rem)',
   '@media': { '(max-width: 900px) and (orientation: landscape)': { margin: '.1rem 0', fontSize: '1.2rem' } },
 });
@@ -115,4 +115,3 @@ export const continueButton = style({
   '@media': { '(max-width: 900px) and (orientation: landscape)': { gridColumn: 3, gridRow: '1 / span 3', minHeight: '2.5rem' } },
 });
 globalStyle(`${continueButton} svg`, { width: '1rem', height: '1rem' });
-

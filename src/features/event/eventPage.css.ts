@@ -1,7 +1,7 @@
 import { keyframes, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
-const SERIF = '"Libre Caslon Text", Georgia, serif';
+const SERIF = sceneVars.font.display;
 const mobileLandscape = '(max-width: 900px) and (orientation: landscape)';
 
 const titleGlow = keyframes({
@@ -132,7 +132,7 @@ export const badge = style({
   gap: '0.4rem',
   alignSelf: 'flex-start',
   padding: '0.25rem 0.7rem',
-  fontSize: '0.66rem',
+  fontSize: '0.7rem',
   fontWeight: 700,
   letterSpacing: '0.24em',
   textTransform: 'uppercase',
@@ -140,7 +140,7 @@ export const badge = style({
   color: sceneVars.color.accentGlow,
   background: 'rgba(160, 120, 255, 0.16)',
   border: '1px solid rgba(160, 120, 255, 0.35)',
-  '@media': { [mobileLandscape]: { padding: '.16rem .45rem', fontSize: '.5rem', letterSpacing: '.14em' } },
+  '@media': { [mobileLandscape]: { padding: '.16rem .45rem', fontSize: '.7rem', letterSpacing: '.08em' } },
 });
 
 export const badgeIcon = style({ width: '0.85rem', height: '0.85rem' });
@@ -218,7 +218,7 @@ export const story = style({
   fontSize: '0.92rem',
   lineHeight: 1.65,
   color: sceneVars.color.textMuted,
-  '@media': { [mobileLandscape]: { padding: '.55rem .65rem', fontSize: '.66rem', lineHeight: 1.42 } },
+  '@media': { [mobileLandscape]: { padding: '.55rem .65rem', fontSize: '.7rem', lineHeight: 1.42 } },
 });
 
 export const optionList = style({

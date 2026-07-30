@@ -14,14 +14,14 @@ export const page = style({
   overflow: 'hidden',
   color: sceneVars.color.text,
   background:
-    'radial-gradient(circle at 20% 0%, rgba(139, 92, 246, 0.22), transparent 28rem), radial-gradient(circle at 88% 70%, rgba(45, 212, 191, 0.13), transparent 24rem), #0a0a0b',
+    'radial-gradient(circle at 20% 0%, rgba(139, 92, 246, 0.2), transparent 28rem), radial-gradient(circle at 88% 70%, rgba(45, 212, 191, 0.12), transparent 24rem), linear-gradient(145deg, #070709, #121018 55%, #071311)',
   selectors: {
     '&::after': {
       content: '""',
       pointerEvents: 'none',
       position: 'absolute',
       inset: 0,
-      opacity: 0.08,
+      opacity: 0.045,
       backgroundImage:
         'linear-gradient(rgba(208, 188, 255, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(208, 188, 255, 0.5) 1px, transparent 1px)',
       backgroundSize: '44px 44px',
@@ -48,7 +48,8 @@ export const sidebar = style({
   padding: '1rem',
   borderRadius: sceneVars.radii.lg,
   border: `1px solid ${sceneVars.color.border}`,
-  background: 'linear-gradient(180deg, rgba(32, 31, 32, 0.8), rgba(10, 10, 11, 0.66))',
+  background:
+    'radial-gradient(circle at 20% 0%, rgba(251,191,36,.1), transparent 14rem), linear-gradient(180deg, rgba(28,26,30,.94), rgba(8,8,10,.9))',
   boxShadow: sceneVars.shadow.panel,
   backdropFilter: 'blur(18px)',
 });
@@ -65,7 +66,7 @@ export const kicker = style({
 export const title = style({
   margin: '0.35rem 0 0',
   color: sceneVars.color.textStrong,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '2rem',
   lineHeight: 1.05,
 });
@@ -151,7 +152,8 @@ export const panel = style({
   padding: 'clamp(1rem, 2vw, 1.5rem)',
   borderRadius: sceneVars.radii.lg,
   border: `1px solid ${sceneVars.color.border}`,
-  background: 'linear-gradient(145deg, rgba(32, 31, 32, 0.76), rgba(10, 10, 11, 0.6))',
+  background:
+    'linear-gradient(145deg, rgba(30,28,34,.88), rgba(9,9,11,.74)), radial-gradient(circle at 80% 0%, rgba(45,212,191,.08), transparent 28rem)',
   boxShadow: sceneVars.shadow.panelHeavy,
   backdropFilter: 'blur(18px)',
 });
@@ -159,7 +161,7 @@ export const panel = style({
 export const sectionTitle = style({
   margin: '0.35rem 0 1rem',
   color: sceneVars.color.textStrong,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: 'clamp(1.8rem, 4vw, 3.2rem)',
   lineHeight: 1,
 });
@@ -213,7 +215,7 @@ export const fateCard = style({
 globalStyle(`${fateCard} h3`, {
   margin: '0.75rem 0 0.5rem',
   color: sceneVars.color.textStrong,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1.35rem',
 });
 
@@ -275,7 +277,7 @@ globalStyle(`${smallCard} small`, {
 
 export const cardGrid = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(13rem, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(18rem, 1fr))',
   gap: '0.75rem',
 });
 
@@ -303,10 +305,14 @@ export const filterButtonActive = style({
 });
 
 export const codexCard = style({
-  minHeight: '8.8rem',
-  padding: '0.85rem',
+  display: 'grid',
+  gridTemplateColumns: '7rem minmax(0, 1fr)',
+  minHeight: '9.2rem',
+  padding: 0,
+  overflow: 'hidden',
   borderRadius: sceneVars.radii.md,
   border: '1px solid rgba(208, 188, 255, 0.22)',
+  background: 'linear-gradient(145deg, rgba(27,25,32,.94), rgba(8,8,10,.9))',
 });
 
 export const codexKnown = style({
@@ -320,27 +326,77 @@ export const codexUnknown = style({
 });
 
 export const archetypeTone = styleVariants({
-  guard: { background: 'linear-gradient(180deg, rgba(106, 157, 212, 0.26), rgba(10, 10, 11, 0.58))' },
-  burst: { background: 'linear-gradient(180deg, rgba(212, 132, 106, 0.26), rgba(10, 10, 11, 0.58))' },
-  mixed: { background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.26), rgba(10, 10, 11, 0.58))' },
-  neutral: { background: 'linear-gradient(180deg, rgba(149, 142, 160, 0.16), rgba(10, 10, 11, 0.58))' },
+  guard: { borderColor: 'rgba(106,157,212,.4)' },
+  burst: { borderColor: 'rgba(212,132,106,.4)' },
+  mixed: { borderColor: 'rgba(139,92,246,.46)' },
+  neutral: { borderColor: 'rgba(149,142,160,.28)' },
 });
 
-globalStyle(`${codexCard} div`, {
+export const codexArt = style({
+  position: 'relative',
+  minHeight: '100%',
+  overflow: 'hidden',
+  background: sceneVars.color.canvasDeep,
+});
+
+export const codexArtImage = style({
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+});
+
+export const codexArtFallback = style({
+  position: 'absolute',
+  inset: 0,
+  background:
+    'radial-gradient(circle at 50% 34%, rgba(208,188,255,.3), transparent 34%), linear-gradient(145deg, rgba(45,212,191,.12), rgba(139,92,246,.2), rgba(6,6,8,.98))',
+});
+
+export const codexArtUnknown = style({
+  position: 'absolute',
+  inset: 0,
+  display: 'grid',
+  placeItems: 'center',
+  color: sceneVars.color.textFaint,
+  fontFamily: sceneVars.font.display,
+  fontSize: '2rem',
+  background:
+    'radial-gradient(circle, rgba(149,142,160,.14), transparent 42%), linear-gradient(145deg, #16151a, #09090b)',
+});
+
+export const codexArtShade = style({
+  position: 'absolute',
+  inset: 0,
+  background: 'linear-gradient(90deg, transparent 52%, rgba(17,16,21,.86) 100%)',
+});
+
+export const codexBody = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '.65rem',
+  padding: '.85rem',
+});
+
+export const codexHeader = style({
   display: 'flex',
   justifyContent: 'space-between',
   gap: '0.5rem',
-  marginBottom: '0.65rem',
 });
 
-globalStyle(`${codexCard} strong`, {
+globalStyle(`${codexHeader} strong`, {
   color: sceneVars.color.textStrong,
+  fontFamily: sceneVars.font.display,
+  fontSize: '1rem',
 });
 
-globalStyle(`${codexCard} span, ${codexCard} p`, {
+globalStyle(`${codexHeader} > span, ${codexBody} p`, {
   color: sceneVars.color.textMuted,
   lineHeight: 1.45,
 });
+globalStyle(`${codexHeader} > span`, { fontSize: '.7rem', whiteSpace: 'nowrap' });
+globalStyle(`${codexBody} p`, { margin: 0, fontSize: '.78rem' });
 
 export const relicGrid = style({
   display: 'grid',
@@ -398,7 +454,7 @@ export const archiveSubsection = style({
 export const subsectionTitle = style({
   margin: '0.35rem 0 0.8rem',
   color: sceneVars.color.textStrong,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1.45rem',
 });
 

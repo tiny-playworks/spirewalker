@@ -86,7 +86,7 @@ export const levelTitle = style({
 });
 
 globalStyle(`${levelTitle} strong`, {
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1.08rem',
   fontWeight: 900,
   letterSpacing: '0.08em',
@@ -100,7 +100,7 @@ globalStyle(`${levelTitle} span`, {
   color: sceneVars.color.textSubtle,
   fontSize: '0.78rem',
   fontWeight: 700,
-  '@media': { [tablet]: { fontSize: '.58rem' } },
+  '@media': { [tablet]: { fontSize: '.7rem' } },
 });
 
 export const main = style({

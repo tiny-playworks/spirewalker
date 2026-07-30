@@ -1,7 +1,7 @@
 import { globalStyle, keyframes, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
-const SERIF = '"Libre Caslon Text", Georgia, serif';
+const SERIF = sceneVars.font.display;
 const mobileLandscape = '(max-width: 900px) and (orientation: landscape)';
 
 const pulseGlow = keyframes({
@@ -382,11 +382,11 @@ export const cardName = style({
 
 export const cardMeta = style({
   margin: 0,
-  fontSize: '0.66rem',
+  fontSize: '0.7rem',
   fontWeight: 700,
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
-  '@media': { [mobileLandscape]: { fontSize: '.48rem', letterSpacing: '.08em' } },
+  '@media': { [mobileLandscape]: { fontSize: '.7rem', letterSpacing: '.04em' } },
 });
 
 export const cardMetaTone = styleVariants({
@@ -400,7 +400,7 @@ export const cardDesc = style({
   fontSize: '0.82rem',
   lineHeight: 1.5,
   color: sceneVars.color.textMuted,
-  '@media': { [mobileLandscape]: { fontSize: '.58rem', lineHeight: 1.3 } },
+  '@media': { [mobileLandscape]: { fontSize: '.7rem', lineHeight: 1.3 } },
 });
 
 export const cardAccent = style({
@@ -455,7 +455,7 @@ export const pillGoldText = style({
 });
 
 export const pillRelicKey = style({
-  fontSize: '0.62rem',
+  fontSize: '0.7rem',
   fontWeight: 700,
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
@@ -516,7 +516,7 @@ export const skipButton = style({
       boxShadow: '0 0 32px rgba(255, 198, 64, 0.55)',
     },
   },
-  '@media': { [mobileLandscape]: { minHeight: '2.25rem', padding: '.4rem .8rem', fontSize: '.62rem' } },
+  '@media': { [mobileLandscape]: { minHeight: '2.25rem', padding: '.4rem .8rem', fontSize: '.7rem' } },
 });
 
 export const ghostButton = style({
@@ -532,7 +532,7 @@ export const ghostButton = style({
   selectors: {
     '&:hover': { borderColor: sceneVars.color.accentGlow, color: sceneVars.color.textStrong },
   },
-  '@media': { [mobileLandscape]: { minHeight: '2.25rem', padding: '.38rem .72rem', fontSize: '.62rem' } },
+  '@media': { [mobileLandscape]: { minHeight: '2.25rem', padding: '.38rem .72rem', fontSize: '.7rem' } },
 });
 
 export const upgradePanel = style({

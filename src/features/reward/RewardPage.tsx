@@ -10,8 +10,7 @@ import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
 import type { CardRarity, CardType } from '@/game/core/model/card';
 import { useGameStore } from '@/game/store/gameStore';
-import { FallbackImg } from '@/features/cards/FallbackImg';
-import { getCardArtSources } from '@/features/battle/combatAssets';
+import { CardArtwork } from '@/features/cards/CardArtwork';
 import { RunSceneHeader, RunSceneShell } from '@/features/run-scene/RunSceneShell';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { CardUpgradeList } from '../cards/CardUpgradeList';
@@ -120,10 +119,10 @@ export function RewardPage() {
                   }
                 >
                   <span className={styles.cardArt}>
-                    <FallbackImg
+                    <CardArtwork
                       className={styles.cardArtImg}
                       alt=""
-                      sources={getCardArtSources(defId)}
+                      cardId={defId}
                       fallback={<span className={cx(styles.cardArtImg, styles.cardArtFallback[archetype])} />}
                     />
                     <span className={styles.cardArtFade} aria-hidden />

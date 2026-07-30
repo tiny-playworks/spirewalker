@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { buildCardTooltipText } from '@/game/core/battleUiText';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
+import { getCardArchetype } from '@/game/core/definitions/cards/archetypes';
 import { MAX_POTIONS, POTION_DEFINITIONS } from '@/game/core/definitions/potions';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { SHOP_MIN_MASTER_DECK_SIZE } from '@/game/core/engine/generateShop';
@@ -19,6 +20,8 @@ import type { CardType } from '@/game/core/model/card';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectShopRunState } from '@/game/store/selectors/shopSelectors';
 import { RunSceneHeader, RunSceneShell } from '@/features/run-scene/RunSceneShell';
+import { CardArtwork } from '@/features/cards/CardArtwork';
+import { baseCardId } from '@/features/battle/combatAssets';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { CardUpgradeList } from '../cards/CardUpgradeList';
 import * as styles from './shopPage.css';
@@ -95,29 +98,50 @@ export function ShopPage() {
             {shop.cards.map((o) => {
               const def = CARD_DEFINITIONS[o.definitionId];
               const canBuy = meta.gold >= o.price;
+              const ownedCount = masterDeck.filter(
+                (cardId) => baseCardId(cardId) === baseCardId(o.definitionId),
+              ).length;
+              const archetype = getCardArchetype(o.definitionId);
+              const sameArchetypeCount = masterDeck.filter(
+                (cardId) => getCardArchetype(cardId) === archetype,
+              ).length;
               return (
                 <button
                   key={o.definitionId}
                   type="button"
-                  className={styles.cardTile}
+                  className={cx(styles.cardTile, styles.cardOffer)}
                   title={def ? buildCardTooltipText(def) : o.definitionId}
                   disabled={!canBuy}
                   onClick={() => dispatchCommand({ type: 'BUY_SHOP_CARD', definitionId: o.definitionId })}
                 >
-                  <span className={styles.tileName}>
-                    <ArchetypeDot cardId={o.definitionId} />
-                    {def?.name ?? o.definitionId}
+                  <span className={styles.tileArt} aria-hidden>
+                    <CardArtwork
+                      cardId={o.definitionId}
+                      className={styles.tileArtImage}
+                      fallback={<span className={styles.tileArtFallback} />}
+                    />
+                    <span className={styles.tileArtShade} />
                   </span>
-                  {def ? (
-                    <span className={cx(styles.tileType, styles.tileTypeTone[typeTone(def.type)])}>
-                      {typeLabel(def.type)} · {def.cost} 费
+                  <span className={styles.tileBody}>
+                    <span className={styles.tileName}>
+                      <ArchetypeDot cardId={o.definitionId} />
+                      {def?.name ?? o.definitionId}
                     </span>
-                  ) : null}
-                  <span className={styles.tileDesc}>{def?.description ?? ''}</span>
-                  <span className={cx(styles.tilePrice, !canBuy && styles.tilePriceTooHigh)}>
-                    <Coins className={styles.priceIcon} aria-hidden />
-                    {o.price}
-                    {!canBuy ? <small className={styles.priceReason}>还差 {o.price - meta.gold} 金</small> : null}
+                    {def ? (
+                      <span className={cx(styles.tileType, styles.tileTypeTone[typeTone(def.type)])}>
+                        {typeLabel(def.type)} · {def.cost} 费
+                      </span>
+                    ) : null}
+                    <span className={styles.tileDesc}>{def?.description ?? ''}</span>
+                    <span className={styles.tileSignals}>
+                      <small>同名 {ownedCount}</small>
+                      <small>同流派 {sameArchetypeCount}</small>
+                    </span>
+                    <span className={cx(styles.tilePrice, !canBuy && styles.tilePriceTooHigh)}>
+                      <Coins className={styles.priceIcon} aria-hidden />
+                      {o.price}
+                      {!canBuy ? <small className={styles.priceReason}>还差 {o.price - meta.gold} 金</small> : null}
+                    </span>
                   </span>
                 </button>
               );

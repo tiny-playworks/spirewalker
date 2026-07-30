@@ -456,7 +456,7 @@ export const title = style({
 
 export const titleMain = style({
   display: 'inline-block',
-  fontFamily: "'Baskerville Old Face', 'Palatino Linotype', Georgia, serif",
+  fontFamily: sceneVars.font.display,
   fontSize: 'clamp(2.4rem, 8vw, 4rem)',
   fontWeight: 700,
   letterSpacing: '0.18em',
@@ -763,7 +763,7 @@ export const introPanel = style({
   boxShadow: '0 28px 90px rgba(0,0,0,.68)',
 });
 export const introKicker = style({ margin: 0, color: '#f4cd7a', fontSize: '.68rem', fontWeight: 900, letterSpacing: '.2em' });
-export const introTitle = style({ margin: '.5rem 0', color: sceneVars.color.textStrong, fontFamily: '"Libre Caslon Text", Georgia, serif', fontSize: 'clamp(1.55rem, 4vw, 2.5rem)' });
+export const introTitle = style({ margin: '.5rem 0', color: sceneVars.color.textStrong, fontFamily: sceneVars.font.display, fontSize: 'clamp(1.55rem, 4vw, 2.5rem)' });
 export const introLead = style({ margin: '0 0 1rem', color: sceneVars.color.textMuted, lineHeight: 1.65 });
 export const introRules = style({ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '.55rem', '@media': { '(max-width: 620px)': { gridTemplateColumns: '1fr' } } });
 globalStyle(`${introRules} article`, { display: 'grid', gap: '.35rem', padding: '.75rem', borderRadius: '12px', border: '1px solid rgba(208,188,255,.15)', background: 'rgba(255,255,255,.035)' });

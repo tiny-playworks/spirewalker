@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FallbackImg } from "@/features/cards/FallbackImg";
+import { CardArtwork } from "@/features/cards/CardArtwork";
 import {
   buildCardKeywordHints,
   cardTargetLabel,
@@ -16,7 +17,6 @@ import { previewCardPlay, type BattlePreview } from "@/game/core/presentation/ba
 import { buildFeedbackTimeline, feedbackDurationMs, type FeedbackCue } from "@/game/core/presentation/feedbackTimeline";
 import { useGameStore } from "@/game/store/gameStore";
 import {
-  getCardArtSources,
   getIntentIconSources,
   getStatusIconSources,
   intentCategory,
@@ -315,10 +315,11 @@ export function ReactBattleStage({ className }: { className?: string }) {
                   className={cx(styles.cardArt, styles.cardArtTone[focus.tone])}
                   aria-hidden
                 >
-                  <FallbackImg
+                  <CardArtwork
                     className={styles.cardArtImg}
                     alt=""
-                    sources={getCardArtSources(def.id)}
+                    cardId={def.id}
+                    loading="eager"
                     fallback={
                       <span
                         className={cx(

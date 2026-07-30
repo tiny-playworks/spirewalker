@@ -31,7 +31,7 @@ export const root = style({
     [mobile]: {
       minHeight: 0,
       padding: 0,
-      gridTemplateRows: 'minmax(0, 1fr) 9.85rem',
+      gridTemplateRows: 'minmax(0, 1fr) 8.35rem',
     },
   },
 });
@@ -215,7 +215,7 @@ export const unitHeader = style({
 
 globalStyle(`${unitHeader} strong`, {
   color: sceneVars.color.textStrong,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1rem',
 });
 
@@ -242,7 +242,7 @@ globalStyle(`${hpTrack} > strong`, {
   display: 'grid',
   placeItems: 'center',
   color: '#fff7f2',
-  fontSize: '0.64rem',
+  fontSize: '0.7rem',
 });
 
 export const blockBadge = style({
@@ -300,7 +300,7 @@ export const statusStacks = style({
   borderRadius: '999px',
   color: '#0a0a0b',
   background: 'linear-gradient(135deg, #e9ddff, #d0bcff)',
-  fontSize: '0.62rem',
+  fontSize: '0.68rem',
   fontWeight: 900,
   boxShadow: '0 0 8px rgba(208, 188, 255, 0.4)',
 });
@@ -377,7 +377,7 @@ globalStyle(`${intentDetails} summary::-webkit-details-marker`, { display: 'none
 
 export const intentCopy = style({ display: 'grid', gap: '.02rem', minWidth: '2rem' });
 globalStyle(`${intentCopy} small`, {
-  fontSize: '.55rem',
+  fontSize: '.7rem',
   fontWeight: 900,
   letterSpacing: '.08em',
   opacity: .72,
@@ -409,13 +409,13 @@ export const activeCounter = style({
   borderRadius: sceneVars.radii.sm,
   color: '#ffb4ab',
   background: 'rgba(72, 24, 28, .72)',
-  fontSize: '.62rem',
+  fontSize: '.7rem',
   fontWeight: 800,
   letterSpacing: '.02em',
   '@media': {
     [mobile]: {
       padding: '.15rem .36rem',
-      fontSize: '.54rem',
+      fontSize: '.7rem',
     },
   },
 });
@@ -450,7 +450,7 @@ export const targetPreview = style({
   boxShadow: '0 0 28px rgba(251,191,36,.2)',
   fontSize: '.7rem',
   fontWeight: 900,
-  '@media': { [mobile]: { bottom: '-1.65rem', fontSize: '.58rem', padding: '.2rem .38rem' } },
+  '@media': { [mobile]: { bottom: '-1.65rem', fontSize: '.7rem', padding: '.2rem .38rem' } },
 });
 
 export const bottomDock = style({
@@ -547,7 +547,7 @@ globalStyle(`${energyCore} span`, {
   '@media': {
     [mobile]: {
       marginTop: '-0.8rem',
-      fontSize: '0.45rem',
+      fontSize: '0.68rem',
     },
   },
 });
@@ -583,7 +583,7 @@ export const pileMuted = style({
 
 globalStyle(`${pile} small`, {
   color: sceneVars.color.textSubtle,
-  fontSize: '0.54rem',
+  fontSize: '0.68rem',
   fontWeight: 900,
   letterSpacing: '0.12em',
 });
@@ -716,10 +716,10 @@ export const card = style({
   },
   '@media': {
     [mobile]: {
-      flexBasis: '6.5rem',
-      height: '9.25rem',
+      flexBasis: '5.5rem',
+      height: '7.65rem',
       minHeight: 0,
-      maxHeight: '9.25rem',
+      maxHeight: '7.65rem',
       padding: '.3rem',
       gap: '.1rem',
       overflow: 'hidden',
@@ -749,7 +749,10 @@ export const cardSelected = style({
   boxShadow: '0 0 0 1px rgba(251, 191, 36, 0.32), 0 0 42px rgba(251, 191, 36, 0.22)',
   '@media': {
     [mobile]: {
-      transform: 'translateY(-0.55rem) scale(1.03) rotate(0deg) !important',
+      flexBasis: '7.35rem',
+      height: '9rem',
+      maxHeight: '9rem',
+      transform: 'translateY(-0.8rem) scale(1.02) rotate(0deg) !important',
     },
   },
 });
@@ -786,17 +789,17 @@ export const cardHead = style({
 
 globalStyle(`${cardHead} strong`, {
   color: sceneVars.color.textStrong,
-  fontFamily: '"Libre Caslon Text", Georgia, serif',
+  fontFamily: sceneVars.font.display,
   fontSize: '1rem',
   lineHeight: 1.15,
-  '@media': { [mobile]: { fontSize: '.7rem', lineHeight: 1.05 } },
+  '@media': { [mobile]: { fontSize: '.76rem', lineHeight: 1.05 } },
 });
 
 globalStyle(`${cardHead} span`, {
   color: sceneVars.color.textSubtle,
-  fontSize: '0.62rem',
+  fontSize: '0.7rem',
   fontWeight: 800,
-  '@media': { [mobile]: { fontSize: '.46rem' } },
+  '@media': { [mobile]: { fontSize: '.68rem' } },
 });
 
 export const cardFocus = style({
@@ -894,7 +897,7 @@ globalStyle(`${cardFocus} strong`, {
 });
 
 globalStyle(`${cardFocus} span`, {
-  fontSize: '0.62rem',
+  fontSize: '0.7rem',
   fontWeight: 800,
 });
 
@@ -914,22 +917,38 @@ export const cardDesc = style({
   background: 'rgba(10, 10, 11, 0.34)',
   '@media': {
     [mobile]: {
-      display: '-webkit-box',
+      display: 'none',
       padding: '.2rem',
       overflow: 'hidden',
-      fontSize: '.52rem',
-      lineHeight: 1.2,
+      fontSize: '.7rem',
+      lineHeight: 1.3,
       WebkitBoxOrient: 'vertical',
-      WebkitLineClamp: 3,
+      WebkitLineClamp: 2,
     },
   },
 });
 
 export const cardFoot = style({
   color: sceneVars.color.textSubtle,
-  fontSize: '0.62rem',
+  fontSize: '0.7rem',
   fontWeight: 800,
-  '@media': { [mobile]: { fontSize: '.46rem' } },
+  '@media': { [mobile]: { display: 'none', fontSize: '.68rem' } },
+});
+
+globalStyle(`${cardSelected} ${cardDesc}`, {
+  '@media': {
+    [mobile]: {
+      display: '-webkit-box',
+    },
+  },
+});
+
+globalStyle(`${cardSelected} ${cardFoot}`, {
+  '@media': {
+    [mobile]: {
+      display: 'block',
+    },
+  },
 });
 
 const cuePop = keyframes({

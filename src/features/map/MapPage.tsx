@@ -11,6 +11,7 @@ import { selectMapRunState } from '@/game/store/selectors/mapSelectors';
 import { RunSceneShell } from '@/features/run-scene/RunSceneShell';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { MapRoute } from './MapRoute';
+import { getMapEncounterPreview } from './mapEncounterPreview';
 import * as styles from './mapPage.css';
 import { MapNodeIcon, type MapNodeVisualKind } from './mapNodeIcons';
 
@@ -141,6 +142,9 @@ export function MapPage() {
   const isBossRestNode = cur?.type === 'rest' && meta.actFloor === actFloorCount(meta.act) - 1;
   const actTitle = ACT_TITLES[meta.act] ?? '未知之地';
   const selectedNode = selectedNodeId ? map.nodes[selectedNodeId] : undefined;
+  const encounterPreview = selectedNode
+    ? getMapEncounterPreview(run, selectedNode, nextIds.includes(selectedNode.id))
+    : { visibility: 'hidden' as const };
 
   const handleSelectNode = (nodeId: string) => {
     if (!nextIds.includes(nodeId)) return;
@@ -237,8 +241,43 @@ export function MapPage() {
               <MapNodeIcon kind={selectedNode.type} className={styles.legendIcon} />
             </span>
             <div className={styles.nodeDetailCopy}>
-              <strong>{nodeTitle(selectedNode)}</strong>
+              <span className={styles.nodeDetailTitle}>
+                <strong>{nodeTitle(selectedNode)}</strong>
+                {encounterPreview.visibility !== 'hidden' ? (
+                  <span className={styles.pressureBadge}>
+                    {encounterPreview.pressureLabel}压力
+                  </span>
+                ) : null}
+              </span>
               <p>{nodeDescription(selectedNode)}</p>
+              {encounterPreview.visibility === 'exact' ? (
+                <span className={styles.encounterPreview}>
+                  <span className={styles.encounterPortraits} aria-hidden>
+                    {encounterPreview.lineup.map((enemy, index) => (
+                      <img
+                        key={`${enemy.monsterId}-${index}`}
+                        className={styles.encounterPortrait}
+                        alt=""
+                        src={enemy.portraitUrl}
+                      />
+                    ))}
+                  </span>
+                  <span className={styles.encounterIdentity}>
+                    <b>{encounterPreview.name}</b>
+                    <span>
+                      {encounterPreview.lineup.map((enemy) => enemy.name).join(' · ')}
+                    </span>
+                  </span>
+                  <span className={styles.threatTags}>
+                    {encounterPreview.tags.map((tag) => (
+                      <em key={tag}>{tag}</em>
+                    ))}
+                  </span>
+                </span>
+              ) : null}
+              {encounterPreview.visibility !== 'hidden' ? (
+                <small className={styles.encounterHint}>{encounterPreview.hint}</small>
+              ) : null}
             </div>
             <button
               type="button"

@@ -9,6 +9,8 @@ import {
 import { parseCardId } from '@/game/core/definitions/cards/upgradeRules';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
+import { CardArtwork } from '@/features/cards/CardArtwork';
+import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import type { ProfileState } from '@/game/core/model/profile';
 import type { RunState } from '@/game/core/model/run';
 import {
@@ -54,7 +56,7 @@ function cx(...classNames: Array<string | false | null | undefined>) {
 
 export function ArchivePage({ view, run, profile, onChangeView, onClose, onStartRun, onResetProfile }: ArchivePageProps) {
   return (
-    <main className={styles.page}>
+    <main className={cx(sceneThemeClass, styles.page)} data-scene-ready="true" data-scene-tone="archive">
       <aside className={styles.sidebar}>
         <div>
           <p className={styles.kicker}>Spirewalker Archive</p>
@@ -202,11 +204,25 @@ function CodexView({ profile }: { profile: ProfileState }) {
               )}
               data-known={known ? 'true' : 'false'}
             >
-              <div>
-                <strong>{known ? card.name : '尚未发现'}</strong>
-                <span>{known ? `${card.rarity} · ${card.cost} 费` : '未知卡牌'}</span>
-              </div>
-              <p>{known ? card.description : '在攀登中取得此卡后，档案会记录完整效果。'}</p>
+              <span className={styles.codexArt} aria-hidden>
+                {known ? (
+                  <CardArtwork
+                    cardId={card.id}
+                    className={styles.codexArtImage}
+                    fallback={<span className={styles.codexArtFallback} />}
+                  />
+                ) : (
+                  <span className={styles.codexArtUnknown}>◇</span>
+                )}
+                <span className={styles.codexArtShade} />
+              </span>
+              <span className={styles.codexBody}>
+                <span className={styles.codexHeader}>
+                  <strong>{known ? card.name : '尚未发现'}</strong>
+                  <span>{known ? `${card.rarity} · ${card.cost} 费` : '未知卡牌'}</span>
+                </span>
+                <p>{known ? card.description : '在攀登中取得此卡后，档案会记录完整效果。'}</p>
+              </span>
             </article>
           );
         })}

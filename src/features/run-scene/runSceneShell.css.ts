@@ -113,7 +113,7 @@ export const identity = style({
 
 export const brand = style({
   color: sceneVars.color.textStrong,
-  fontFamily: 'Georgia, "Songti SC", serif',
+  fontFamily: sceneVars.font.display,
   fontSize: 'clamp(.88rem, 1.6vw, 1.25rem)',
   letterSpacing: '.16em',
   textShadow: '0 0 20px rgba(251,191,36,.24)',
@@ -126,7 +126,7 @@ export const divider = style({ width: '1px', height: '1.35rem', background: scen
 export const sceneCopy = style({ display: 'grid', minWidth: 0, gap: '.08rem' });
 globalStyle(`${sceneCopy} small`, {
   color: sceneVars.color.textSubtle,
-  fontSize: '.62rem',
+  fontSize: '.7rem',
   letterSpacing: '.12em',
   textTransform: 'uppercase',
 });
@@ -153,8 +153,8 @@ export const metaChip = style({
   fontWeight: 800,
   fontVariantNumeric: 'tabular-nums',
   '@media': {
-    [mobileLandscape]: { minHeight: '1.65rem', padding: '.18rem .42rem', fontSize: '.67rem' },
-    '(max-width: 760px)': { minHeight: '1.65rem', padding: '.18rem .42rem', fontSize: '.67rem' },
+    [mobileLandscape]: { minHeight: '1.65rem', padding: '.18rem .42rem', fontSize: '.7rem' },
+    '(max-width: 760px)': { minHeight: '1.65rem', padding: '.18rem .42rem', fontSize: '.7rem' },
     '(max-width: 620px)': { selectors: { '&:first-child': { display: 'none' } } },
   },
 });
