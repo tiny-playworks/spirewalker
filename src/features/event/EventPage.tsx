@@ -12,7 +12,7 @@ import {
   Triangle,
 } from 'lucide-react';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
-import { EVENT_DEFINITIONS } from '@/game/core/definitions/events';
+import { RUNTIME_EVENT_DEFINITIONS } from '@/game/core/definitions/events/runtime';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import {
   BURST_ALTAR_EVENT_ID,
@@ -187,7 +187,7 @@ function buildEventView(run: RunState): EventView | null {
       };
     }
     default: {
-      const definition = eventId ? EVENT_DEFINITIONS[eventId] : undefined;
+      const definition = eventId ? RUNTIME_EVENT_DEFINITIONS[eventId] : undefined;
       if (!definition) return null;
       return {
         title: definition.name,

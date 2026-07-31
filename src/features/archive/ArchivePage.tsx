@@ -13,6 +13,7 @@ import { CardArtwork } from '@/features/cards/CardArtwork';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import type { ProfileState } from '@/game/core/model/profile';
 import type { RunState } from '@/game/core/model/run';
+import type { CardRarity } from '@/game/core/model/card';
 import {
   getPlayerCodexCardIds,
   getPlayerCodexRelicIds,
@@ -53,6 +54,13 @@ const CODEX_FILTERS: Array<{
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
 }
+
+const RARITY_LABEL: Record<CardRarity, string> = {
+  common: '普通',
+  uncommon: '罕见',
+  rare: '稀有',
+  legendary: '传说',
+};
 
 export function ArchivePage({ view, run, profile, onChangeView, onClose, onStartRun, onResetProfile }: ArchivePageProps) {
   return (
@@ -219,7 +227,7 @@ function CodexView({ profile }: { profile: ProfileState }) {
               <span className={styles.codexBody}>
                 <span className={styles.codexHeader}>
                   <strong>{known ? card.name : '尚未发现'}</strong>
-                  <span>{known ? `${card.rarity} · ${card.cost} 费` : '未知卡牌'}</span>
+                  <span>{known ? `${RARITY_LABEL[card.rarity]} · ${card.cost} 费` : '未知卡牌'}</span>
                 </span>
                 <p>{known ? card.description : '在攀登中取得此卡后，档案会记录完整效果。'}</p>
               </span>

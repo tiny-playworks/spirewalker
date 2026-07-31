@@ -97,6 +97,11 @@ export const combatLayer = style({
   },
 });
 
+export const combatLayerTargeting = style({
+  position: 'relative',
+  zIndex: 40,
+});
+
 export const enemyRail = style({
   display: 'flex',
   alignItems: 'center',
@@ -995,7 +1000,7 @@ export const targetGuide = style({
   position: 'absolute',
   right: 0,
   bottom: 'calc(100% + 0.45rem)',
-  zIndex: 30,
+  zIndex: 80,
   display: 'flex',
   alignItems: 'center',
   gap: '0.65rem',

@@ -19,12 +19,15 @@ const RewardPage = lazy(() => import('@/features/reward/RewardPage').then((modul
 const ShopPage = lazy(() => import('@/features/shop/ShopPage').then((module) => ({ default: module.ShopPage })));
 const SettlementPage = lazy(() => import('@/features/settlement/SettlementPage').then((module) => ({ default: module.SettlementPage })));
 const ActTransitionPage = lazy(() => import('@/features/settlement/ActTransitionPage').then((module) => ({ default: module.ActTransitionPage })));
+const NodeResultOverlay = lazy(() => import('@/features/run-scene/NodeResultOverlay').then((module) => ({ default: module.NodeResultOverlay })));
 
 export function App() {
   const run = useGameStore((s) => s.run);
   const profile = useGameStore((s) => s.profile);
   const startRun = useGameStore((s) => s.startRun);
   const resetProfile = useGameStore((s) => s.resetProfile);
+  const nodeResult = useGameStore((s) => s.nodeResult);
+  const continueNodeResult = useGameStore((s) => s.continueNodeResult);
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [archiveView, setArchiveView] = useState<ArchiveView | null>(null);
 
@@ -88,6 +91,15 @@ export function App() {
         ) : null}
         <Suspense fallback={null}><DebugPanel /></Suspense>
         <ActionNotice />
+        {nodeResult ? (
+          <Suspense fallback={null}>
+            <NodeResultOverlay
+              source={nodeResult.source}
+              message={nodeResult.message}
+              onContinue={continueNodeResult}
+            />
+          </Suspense>
+        ) : null}
       </MobileLandscapeGate>
       <AppCursor />
     </>

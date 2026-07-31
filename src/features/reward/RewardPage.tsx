@@ -14,6 +14,7 @@ import { CardArtwork } from '@/features/cards/CardArtwork';
 import { RunSceneHeader, RunSceneShell } from '@/features/run-scene/RunSceneShell';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { CardUpgradeList } from '../cards/CardUpgradeList';
+import { TutorialHint } from '@/features/tutorial/TutorialHint';
 import * as styles from './rewardPage.css';
 
 function cx(...classNames: Array<string | false | null | undefined>) {
@@ -34,6 +35,7 @@ const RARITY_LABEL: Partial<Record<CardRarity, string>> = {
 export function RewardPage() {
   const run = useGameStore((s) => s.run);
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
+  const markTutorialStep = useGameStore((s) => s.markTutorialStep);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   if (!run || run.screen.type !== 'reward' || !run.reward) return null;
@@ -61,6 +63,9 @@ export function RewardPage() {
 
   return (
     <RunSceneShell tone="reward" className={styles.page} testId="reward-page">
+      <TutorialHint step="reward" title="选择一份奖励" placement="bottom-left">
+        选一张牌加入牌组，或放弃卡牌换金币；先看清构筑方向再确认。
+      </TutorialHint>
       <RunSceneHeader title={isTreasure ? '宝藏抉择' : '战后抉择'} eyebrow="奖励结算" />
 
       <div className={styles.header}>
@@ -114,9 +119,10 @@ export function RewardPage() {
                   className={cx(styles.card, styles.cardRarity[def.rarity])}
                   style={{ animationDelay: `${index * 70}ms` }}
                   title={buildCardTooltipText(def)}
-                  onClick={() =>
-                    dispatchCommand({ type: 'SELECT_REWARD_CARD', definitionId: defId })
-                  }
+                  onClick={() => {
+                    markTutorialStep('reward');
+                    dispatchCommand({ type: 'SELECT_REWARD_CARD', definitionId: defId });
+                  }}
                 >
                   <span className={styles.cardArt}>
                     <CardArtwork
@@ -198,7 +204,10 @@ export function RewardPage() {
         <button
           type="button"
           className={styles.skipButton}
-          onClick={() => dispatchCommand({ type: 'TAKE_REWARD_GOLD', amount: skipGoldBase })}
+          onClick={() => {
+            markTutorialStep('reward');
+            dispatchCommand({ type: 'TAKE_REWARD_GOLD', amount: skipGoldBase });
+          }}
         >
           放弃卡牌 · 换 {totalGoldOnSkip} 金
         </button>

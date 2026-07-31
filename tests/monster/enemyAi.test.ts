@@ -186,7 +186,7 @@ describe('monster/enemyAi', () => {
       { type: 'heavy_charge', value: 20, charge: 1 },
     ]);
     expect(twinHunter).toEqual([
-      { type: 'counter', threshold: 2, damage: 6 },
+      { type: 'counter', threshold: 3, damage: 6 },
       { type: 'multi_hit', value: 5, hits: 2 },
       { type: 'punish_multi_play', threshold: 5, block: 8 },
     ]);

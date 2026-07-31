@@ -189,6 +189,40 @@ globalStyle(`${motionSetting} strong`, { color: sceneVars.color.textStrong, font
 globalStyle(`${motionSetting} small`, { color: sceneVars.color.textSubtle, fontSize: '.68rem' });
 globalStyle(`${motionSetting} b`, { fontSize: '.7rem' });
 
+export const tutorialActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '.7rem',
+  marginBottom: '.8rem',
+  padding: '.65rem .7rem',
+  border: '1px solid rgba(95,81,62,.7)',
+  borderRadius: sceneVars.radii.md,
+  background: 'rgba(12,11,10,.5)',
+});
+globalStyle(`${tutorialActions} > div:first-child`, { display: 'grid', gap: '.1rem' });
+globalStyle(`${tutorialActions} strong`, { color: sceneVars.color.textStrong, fontSize: '.78rem' });
+globalStyle(`${tutorialActions} small`, { color: sceneVars.color.textSubtle, fontSize: '.68rem' });
+
+export const tutorialButtons = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '.35rem',
+});
+globalStyle(`${tutorialButtons} button`, {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '.2rem',
+  padding: '.3rem .42rem',
+  border: '1px solid rgba(95,81,62,.75)',
+  borderRadius: sceneVars.radii.sm,
+  color: sceneVars.color.textMuted,
+  background: 'rgba(24,21,18,.7)',
+  fontSize: '.68rem',
+  cursor: 'pointer',
+});
+globalStyle(`${tutorialButtons} svg`, { width: '.8rem', height: '.8rem' });
+
 export const section = style({
   padding: '0.8rem 0',
   borderTop: '1px solid rgba(61, 53, 40, 0.8)',

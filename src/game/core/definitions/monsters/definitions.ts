@@ -370,7 +370,7 @@ const ENEMY_SEEDS: EnemySeed[] = [
     role: "carry",
     hpRange: [52, 58],
     archetype: "multi_hit",
-    rotation: [counter(2, 6), multi(5, 2), punishMulti(5, 8)],
+    rotation: [counter(3, 6), multi(5, 2), punishMulti(5, 8)],
     tags: ["double_action", "elite", "frontload"],
   },
   {

@@ -16,6 +16,7 @@ import type { CombatUnit } from "@/game/core/model/unit";
 import { previewCardPlay, type BattlePreview } from "@/game/core/presentation/battlePreview";
 import { buildFeedbackTimeline, feedbackDurationMs, type FeedbackCue } from "@/game/core/presentation/feedbackTimeline";
 import { useGameStore } from "@/game/store/gameStore";
+import { TutorialHint } from "@/features/tutorial/TutorialHint";
 import {
   getIntentIconSources,
   getStatusIconSources,
@@ -106,6 +107,7 @@ function cardFocus(def: CardDefinition, preview?: BattlePreview): {
 export function ReactBattleStage({ className }: { className?: string }) {
   const run = useGameStore((s) => s.run);
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
+  const markTutorialStep = useGameStore((s) => s.markTutorialStep);
   const fastMode = useGameStore((s) => s.fastMode);
   const battle = run?.battle ?? null;
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -131,6 +133,12 @@ export function ReactBattleStage({ className }: { className?: string }) {
       setSelectedCardId(null);
     }
   }, [battle?.player.hand, selectedCardId]);
+
+  useEffect(() => {
+    if (!battle) return;
+    if (battle.turn >= 2) markTutorialStep('turn');
+    if (battle.turn >= 2 && battle.playerCardsPlayedThisTurn > 0) markTutorialStep('momentum');
+  }, [battle?.playerCardsPlayedThisTurn, battle?.turn, markTutorialStep]);
 
   const pendingCardId =
     battle?.pendingAction?.type === "play_card"
@@ -192,17 +200,28 @@ export function ReactBattleStage({ className }: { className?: string }) {
       setSelectedCardId(card.instanceId);
       return;
     }
+    markTutorialStep('card');
     playCard(card.instanceId);
   };
 
   const handleEnemyTarget = (enemyId: string) => {
     const cardId = activeCardId;
     if (!cardId) return;
+    markTutorialStep('card');
     playCard(cardId, enemyId);
   };
 
   return (
     <div className={cx(className, styles.root)}>
+      <TutorialHint step="card" title="先出一张牌" placement="top-left">
+        点一张可用牌，再点敌人选择目标；卡面上的数字就是当前实际预估。
+      </TutorialHint>
+      <TutorialHint step="turn" title="结束这一回合" placement="bottom-right">
+        伤害和格挡安排好后，按右下角“结束回合”，让敌人执行意图。
+      </TutorialHint>
+      <TutorialHint step="momentum" title="留意连势变化" placement="top-left">
+        每次出牌都会让连势发生变化；积累后用兑现牌把它转成主动伤害。
+      </TutorialHint>
       <div className={styles.backdrop} aria-hidden>
         <div
           className={styles.backdropImage}
@@ -212,7 +231,10 @@ export function ReactBattleStage({ className }: { className?: string }) {
         <div className={styles.grid} />
       </div>
 
-      <section className={styles.combatLayer} aria-label="战斗场">
+      <section
+        className={cx(styles.combatLayer, activeCardId && styles.combatLayerTargeting)}
+        aria-label="战斗场"
+      >
         <UnitPanel unit={player} tone="player" spriteUrl={PLAYER_SPRITE_URL} feedback={feedbackCues.filter((cue) => cue.unitId === player.id)} />
 
         <div className={styles.enemyRail}>
@@ -223,7 +245,10 @@ export function ReactBattleStage({ className }: { className?: string }) {
               unit={enemy}
               targetActive={Boolean(activeCardId)}
               onTarget={() => handleEnemyTarget(enemy.id)}
-              onDropCard={(cardId) => playCard(cardId, enemy.id)}
+              onDropCard={(cardId) => {
+                markTutorialStep('card');
+                playCard(cardId, enemy.id);
+              }}
               spriteUrl={getEnemyVisual(battle.monsters[enemy.id]?.monsterId ?? '').portraitUrl}
               feedback={feedbackCues.filter((cue) => cue.unitId === enemy.id)}
               preview={targetPreviewByEnemyId.get(enemy.id)}
@@ -234,7 +259,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
 
       <section className={styles.bottomDock} aria-label="战斗操作">
         <div className={styles.leftDock}>
-          <Pile label="抽牌" value={battle.player.drawPile.length} />
+          <Pile label="抽牌" value={battle.player.drawPile.length} testId="battle-draw-count" />
           <div
             className={styles.energyCore}
             aria-label={`能量 ${battle.player.energy}/${battle.player.maxEnergy}`}
@@ -583,13 +608,15 @@ function Pile({
   label,
   value,
   muted = false,
+  testId,
 }: {
   label: string;
   value: number;
   muted?: boolean;
+  testId?: string;
 }) {
   return (
-    <span className={cx(styles.pile, muted && styles.pileMuted)}>
+    <span className={cx(styles.pile, muted && styles.pileMuted)} data-testid={testId}>
       <small>{label}</small>
       <strong>{value}</strong>
     </span>

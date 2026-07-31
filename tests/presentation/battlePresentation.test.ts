@@ -23,6 +23,25 @@ describe('战斗展示层', () => {
     expect(run).toEqual(snapshot);
   });
 
+  test('预览覆盖流转与均衡刃的混合流分支', () => {
+    const engine = new GameEngine();
+    const flowRun = engine.dispatch(createMvpRun(23), { type: 'DEBUG_ADD_HAND_CARD', definitionId: 'flow_shift' }).nextRun;
+    const flowCardId = flowRun.battle!.player.hand.at(-1)!;
+    flowRun.battle!.prevTurnPlayerPlayedAttack = true;
+    const flowPreview = previewCardPlay(flowRun, flowCardId);
+    expect(flowPreview.playable).toBe(true);
+    expect(flowPreview.block).toBe(12);
+    expect(flowPreview.damage).toBe(0);
+
+    const balanceRun = engine.dispatch(createMvpRun(24), { type: 'DEBUG_ADD_HAND_CARD', definitionId: 'balance_edge' }).nextRun;
+    const balanceCardId = balanceRun.battle!.player.hand.at(-1)!;
+    balanceRun.battle!.playerGainedBlockThisTurn = true;
+    const targetId = balanceRun.battle!.enemyUnitIds[0];
+    const balancePreview = previewCardPlay(balanceRun, balanceCardId, targetId);
+    expect(balancePreview.playable).toBe(true);
+    expect(balancePreview.damage).toBe(16);
+  });
+
   test('真实出牌会同步本局统计', () => {
     const { engine, run, battle, cardInstanceId } = runWithStrikeInHand();
     const result = engine.dispatch(run, {

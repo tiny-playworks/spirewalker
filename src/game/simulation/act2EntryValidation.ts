@@ -6,6 +6,7 @@ import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { isLegalMapStep } from '@/game/core/model/mapGraph';
 import type { MapNodeType, MapRouteBias } from '@/game/core/model/map';
 import type { RunState } from '@/game/core/model/run';
+import { projectedIncomingDamage } from './battleProjection';
 import type { GameCommand } from '@/game/core/commands/types';
 import { getEncounterById } from '@/game/core/definitions/encounters';
 import type { PressureProfile } from '@/game/core/definitions/encounters';
@@ -570,20 +571,6 @@ function asPlayCardCommand(
   }
 
   return result;
-}
-
-function projectedIncomingDamage(run: RunState): number {
-  const battle = run.battle;
-  if (!battle) return 0;
-
-  return battle.enemyUnitIds.reduce((sum, enemyUnitId) => {
-    const unit = battle.units[enemyUnitId];
-    const intent = battle.monsters[enemyUnitId]?.intent;
-    if (!unit?.alive || !intent) return sum;
-    if (intent.type === 'attack') return sum + intent.value * (intent.hits ?? 1);
-    if (intent.type === 'attack_buff') return sum + intent.attack;
-    return sum;
-  }, 0);
 }
 
 function availableMapNodes(run: RunState) {

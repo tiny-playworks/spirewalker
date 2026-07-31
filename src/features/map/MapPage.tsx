@@ -9,6 +9,7 @@ import { clearSavedRun } from '@/game/core/persistence/saveRun';
 import { useGameStore } from '@/game/store/gameStore';
 import { selectMapRunState } from '@/game/store/selectors/mapSelectors';
 import { RunSceneShell } from '@/features/run-scene/RunSceneShell';
+import { TutorialHint } from '@/features/tutorial/TutorialHint';
 import { ArchetypeDot } from '../cards/ArchetypeDot';
 import { MapRoute } from './MapRoute';
 import { getMapEncounterPreview } from './mapEncounterPreview';
@@ -88,6 +89,7 @@ function cardName(id: string): string {
 export function MapPage() {
   const run = useGameStore((s) => s.run);
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
+  const markTutorialStep = useGameStore((s) => s.markTutorialStep);
   const initRun = useGameStore((s) => s.initRun);
   const returnToMainMenu = useGameStore((s) => s.returnToMainMenu);
   const mapState = selectMapRunState(run);
@@ -148,6 +150,7 @@ export function MapPage() {
 
   const handleSelectNode = (nodeId: string) => {
     if (!nextIds.includes(nodeId)) return;
+    markTutorialStep('map');
     setSelectedNodeId(nodeId);
   };
 
@@ -188,6 +191,9 @@ export function MapPage() {
       </header>
 
       <div className={styles.body}>
+        <TutorialHint step="map" title="先选一条路线" placement="top-left">
+          点亮前方任意节点，先看清它的类型和压力提示，再确认进入。
+        </TutorialHint>
         <aside className={styles.legend} aria-label="地图图例">
           <button
             type="button"

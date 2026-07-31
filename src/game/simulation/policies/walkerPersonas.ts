@@ -8,8 +8,6 @@ import {
   MEASURED_REST,
   BREAK_OPENING,
   FULL_RELEASE,
-  FOLLOW_THROUGH,
-  QUICK_RELEASE,
   PATIENT_CUT,
   HELD_BREATH,
   ANCHORED_BREATH,
@@ -20,10 +18,11 @@ import {
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
 import { FLASH_POWDER, STILLWATER_TONIC } from '@/game/core/definitions/potions';
 import { MOMENTUM_BURST_RELIC_IDS, MOMENTUM_STABILITY_RELIC_IDS } from '@/game/core/definitions/relics';
-import { STATUS_MOMENTUM, STATUS_PRIMED_BREAK } from '@/game/core/definitions/statuses';
+import { STATUS_MOMENTUM } from '@/game/core/definitions/statuses';
 import { getStatusStacks } from '@/game/core/combat/statusCombat';
+import { previewCardPlay, type BattlePreview } from '@/game/core/presentation/battlePreview';
 import type { GameCommand } from '@/game/core/commands/types';
-import type { MomentumBurstDrawParams, MomentumGuardByStacksParams } from '@/game/core/model/card';
+import type { MomentumGuardByStacksParams } from '@/game/core/model/card';
 import type {
   SimulationBattleContext,
   SimulationMapContext,
@@ -73,23 +72,8 @@ function asMomentumGuardParams(params: unknown): MomentumGuardByStacksParams | n
     : null;
 }
 
-function asMomentumBurstDrawParams(params: unknown): MomentumBurstDrawParams | null {
-  if (!params || typeof params !== 'object') return null;
-  const candidate = params as Partial<MomentumBurstDrawParams>;
-  const consumeModeOk = candidate.consumeMode === 'all' || candidate.consumeMode === 'fixed';
-  return consumeModeOk
-    && typeof candidate.baseDraw === 'number'
-    && typeof candidate.drawPerStack === 'number'
-    ? candidate as MomentumBurstDrawParams
-    : null;
-}
-
 function playerMomentum(ctx: SimulationBattleContext): number {
   return getStatusStacks(ctx.battle.units[ctx.battle.playerUnitId], STATUS_MOMENTUM);
-}
-
-function playerPrimedBreak(ctx: SimulationBattleContext): number {
-  return getStatusStacks(ctx.battle.units[ctx.battle.playerUnitId], STATUS_PRIMED_BREAK);
 }
 
 function playerHp(ctx: SimulationBattleContext): number {
@@ -149,107 +133,18 @@ function scoreDefinitionId(definitionId: string): number {
   return block + draw * 2 + energy * 2.5 + momentumGain * 1.5 + routeBonus + typeBonus;
 }
 
-function estimateImmediateDamage(ctx: SimulationBattleContext, option: SimulationPlayableCommand): number {
-  const momentum = playerMomentum(ctx);
-  const primedBreak = playerPrimedBreak(ctx) > 0 ? 4 : 0;
-  const targetUnit = option.command.targetUnitId
-    ? ctx.battle.units[option.command.targetUnitId]
-    : null;
-  const targetHp = targetUnit?.hp ?? 999;
-  const targetBlock = targetUnit?.block ?? 0;
-  const effectiveSingle = (rawDamage: number) => Math.max(0, rawDamage - targetBlock);
-  const effectiveAll = (rawDamage: number) => aliveEnemies(ctx)
-    .reduce((sum, enemy) => sum + Math.max(0, rawDamage - enemy.block), 0);
-  switch (option.card.id) {
-    case QUICK_RELEASE.id:
-      return effectiveSingle(3 + Math.min(momentum, 1) * 5 + (momentum > 0 ? primedBreak : 0));
-    case FOLLOW_THROUGH.id:
-      return effectiveSingle(4 + Math.min(momentum, 2) * 3 + (momentum > 0 ? primedBreak : 0));
-    case FULL_RELEASE.id:
-      return effectiveSingle(6 + momentum * 3 + (momentum > 0 ? primedBreak : 0));
-    case 'burst_strike':
-      return effectiveSingle(4 + momentum * 3 + (momentum > 0 ? primedBreak : 0));
-    case 'snap_strike':
-      return effectiveSingle(5 + Math.min(momentum, 2) * 4 + (momentum > 0 ? primedBreak : 0));
-    case PATIENT_CUT.id:
-      return effectiveSingle(6);
-    case 'strike':
-      return effectiveSingle(6);
-    case 'bash':
-      return effectiveSingle(7);
-    case 'cleave':
-      return effectiveAll(8);
-    default:
-      return targetHp + targetBlock <= 6 && option.card.type === 'attack' ? effectiveSingle(6) : 0;
-  }
-}
-
-function estimateProgressDamage(ctx: SimulationBattleContext, option: SimulationPlayableCommand): number {
-  const momentum = playerMomentum(ctx);
-  const primedBreak = playerPrimedBreak(ctx) > 0 ? 4 : 0;
-  const targetUnit = option.command.targetUnitId
-    ? ctx.battle.units[option.command.targetUnitId]
-    : null;
-  const targetEffectiveHp = targetUnit ? targetUnit.hp + targetUnit.block : 999;
-  const progressSingle = (rawDamage: number) => Math.max(0, Math.min(rawDamage, targetEffectiveHp));
-  const progressAll = (rawDamage: number) => aliveEnemies(ctx)
-    .reduce((sum, enemy) => sum + Math.max(0, Math.min(rawDamage, enemy.hp + enemy.block)), 0);
-
-  switch (option.card.id) {
-    case QUICK_RELEASE.id:
-      return progressSingle(3 + Math.min(momentum, 1) * 5 + (momentum > 0 ? primedBreak : 0));
-    case FOLLOW_THROUGH.id:
-      return progressSingle(4 + Math.min(momentum, 2) * 3 + (momentum > 0 ? primedBreak : 0));
-    case FULL_RELEASE.id:
-      return progressSingle(6 + momentum * 3 + (momentum > 0 ? primedBreak : 0));
-    case 'burst_strike':
-      return progressSingle(4 + momentum * 3 + (momentum > 0 ? primedBreak : 0));
-    case 'snap_strike':
-      return progressSingle(5 + Math.min(momentum, 2) * 4 + (momentum > 0 ? primedBreak : 0));
-    case PATIENT_CUT.id:
-      return progressSingle(6);
-    case 'strike':
-      return progressSingle(6);
-    case 'bash':
-      return progressSingle(7);
-    case 'cleave':
-      return progressAll(8);
-    default:
-      return option.card.type === 'attack' ? progressSingle(6) : 0;
-  }
-}
-
-function estimateSetupValue(ctx: SimulationBattleContext, option: SimulationPlayableCommand): number {
+function estimateSetupValue(ctx: SimulationBattleContext, preview: BattlePreview): number {
   const momentum = playerMomentum(ctx);
   const hasBurstPayoff = ctx.playableCommands.some((item) => burstCards.has(item.card.id));
-  return option.card.effects.reduce((sum, effect) => {
-    if (effect.type === 'draw') return sum + effect.value * 1.6;
-    if (effect.type === 'gain_energy') return sum + effect.value * 2.5;
-    if (effect.type === 'apply_status') {
-      if (effect.statusId === STATUS_MOMENTUM) {
-        return sum + effect.stacks * (momentum <= 1 ? 2.4 : 0.8);
-      }
-      if (effect.statusId === 'steady_guard') {
-        return sum + effect.stacks * (ctx.battle.playerConsumedMomentumThisTurn ? 1.5 : 4.2);
-      }
-      if (effect.statusId === 'metallicize') return sum + effect.stacks * 3;
-      if (effect.statusId === STATUS_PRIMED_BREAK) {
-        return sum + effect.stacks * (hasBurstPayoff ? 4.5 : 1.5);
-      }
-      if (effect.statusId === 'strength' || effect.statusId === 'vulnerable') {
-        return sum + effect.stacks * 2;
-      }
-    }
-    if (effect.type === 'custom' && effect.scriptId === 'momentum_burst_draw') {
-      const params = asMomentumBurstDrawParams(effect.params);
-      if (!params) return sum;
-      const consumed = params.consumeMode === 'all'
-        ? momentum
-        : Math.min(momentum, params.consumeValue ?? 0);
-      return sum + params.baseDraw * 1.5 + consumed * params.drawPerStack * 1.8;
-    }
-    return sum;
-  }, 0);
+  let value = preview.cardsDrawn * 1.6;
+  for (const status of preview.statuses) {
+    if (status.statusId === STATUS_MOMENTUM) value += status.value * (momentum <= 1 ? 2.4 : 0.8);
+    else if (status.statusId === 'steady_guard') value += status.value * (ctx.battle.playerConsumedMomentumThisTurn ? 1.5 : 4.2);
+    else if (status.statusId === 'metallicize') value += status.value * 3;
+    else if (status.statusId === 'primed_break') value += status.value * (hasBurstPayoff ? 4.5 : 1.5);
+    else if (status.statusId === 'strength' || status.statusId === 'vulnerable') value += status.value * 2;
+  }
+  return value;
 }
 
 function evaluateBattleOption(
@@ -258,20 +153,20 @@ function evaluateBattleOption(
   persona: PersonaStyle,
 ): ScoredBattleOption {
   const danger = dangerLevel(ctx);
-  const damage = estimateImmediateDamage(ctx, option);
-  const progressDamage = estimateProgressDamage(ctx, option);
-  const block = estimateImmediateBlock(option.card.id);
+  const preview = previewCardPlay(ctx.run, option.command.cardInstanceId, option.command.targetUnitId);
+  const damage = preview.damage;
+  const progressDamage = preview.effectiveDamage;
+  const block = preview.block;
   const hasFollowupBurstPayoff = ctx.playableCommands.some(
     (item) => burstCards.has(item.card.id) && item.card.id !== option.card.id,
   );
   const targetUnit = option.command.targetUnitId
     ? ctx.battle.units[option.command.targetUnitId]
     : null;
-  const targetHp = targetUnit?.hp ?? 999;
   const targetEffectiveHp = targetUnit ? targetUnit.hp + targetUnit.block : 999;
-  const lethal = Boolean(option.command.targetUnitId) && damage >= targetHp;
+  const lethal = Boolean(option.command.targetUnitId) && progressDamage >= targetEffectiveHp;
   const safetyGain = danger > 0 ? Math.min(danger, block) : 0;
-  const setupGain = estimateSetupValue(ctx, option);
+  const setupGain = estimateSetupValue(ctx, preview);
   const killWindowGain = progressDamage > 0
     ? Math.max(0, Math.min(6, (lowestEnemyEffectiveHp(ctx) - Math.max(0, lowestEnemyEffectiveHp(ctx) - progressDamage)) / 2))
     : 0;

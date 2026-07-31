@@ -189,12 +189,11 @@ export function MainMenuPage({ onOpenArchive }: { onOpenArchive?: (view: Archive
           <section className={styles.introPanel}>
             <p className={styles.introKicker}>唯一可用角色</p>
             <h2 id="walker-intro-title" className={styles.introTitle}>行者 · 以节奏穿过裂隙</h2>
-            <p className={styles.introLead}>你不靠单次蛮力取胜。让每张牌延续防线，再在合适的窗口兑现连势。</p>
+            <p className={styles.introLead}>行者以节奏取胜：积累连势，打牌防守，再在主动窗口兑现。</p>
             <div className={styles.introRules}>
-              <article><strong>1 · 起势</strong><span>每场战斗开局获得 1 层连势；起势牌会继续累积。</span></article>
-              <article><strong>2 · 延续</strong><span>每打出一张牌，就按当前连势获得格挡，随后连势衰减 1 层。</span></article>
-              <article><strong>3 · 兑现</strong><span>破势击会消耗连势换取额外伤害；卡面会显示本次真实预估。</span></article>
-              <article><strong>4 · 操作</strong><span>点卡后点敌人，或拖到目标；按 Esc 或点“取消”可退出选目标。</span></article>
+              <article><strong>1 · 角色定位</strong><span>先稳住局面，再用连势换取主动权。</span></article>
+              <article><strong>2 · 核心循环</strong><span>积累连势 → 打牌防守 → 主动兑现。</span></article>
+              <article><strong>3 · 出牌方式</strong><span>点卡后选目标；卡面会显示本次实际伤害或格挡。</span></article>
             </div>
             <div className={styles.introActions}>
               <button type="button" className={styles.introSecondary} onClick={() => setIntroOpen(false)}>返回</button>

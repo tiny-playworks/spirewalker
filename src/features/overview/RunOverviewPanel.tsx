@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity } from 'lucide-react';
+import { Activity, BookOpen, FastForward, Volume2, VolumeX } from 'lucide-react';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { ARCHETYPE_DISPLAY, summarizeDeckArchetypes } from '@/game/core/definitions/cards/archetypes';
 import { ArchetypeDot } from '@/features/cards/ArchetypeDot';
@@ -9,7 +9,10 @@ import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import { getStatusMeta } from '@/game/core/definitions/statuses';
 import type { CardDefinition, CardType } from '@/game/core/model/card';
 import type { RunState } from '@/game/core/model/run';
+import { useGameStore } from '@/game/store/gameStore';
 import { applyReducedMotion, loadReducedMotion } from '@/game/core/presentation/motionSettings';
+import { loadAudioSettings, setAudioMuted } from '@/game/core/audio/gameAudio';
+import { playUiSound } from '@/game/core/audio/gameAudio';
 import { sceneThemeClass } from '@/styles/sceneTheme.css';
 import * as styles from './runOverview.css';
 
@@ -119,6 +122,12 @@ export function RunOverviewPanel({
 }) {
   const character = getCharacterDefinition(run.meta.characterId);
   const [reducedMotion, setReducedMotion] = useState(loadReducedMotion);
+  const [audioMuted, setAudioMutedState] = useState(() => loadAudioSettings().muted);
+  const fastMode = useGameStore((s) => s.fastMode);
+  const setFastMode = useGameStore((s) => s.setFastMode);
+  const tutorial = useGameStore((s) => s.tutorial);
+  const resetTutorial = useGameStore((s) => s.resetTutorial);
+  const skipTutorial = useGameStore((s) => s.skipTutorial);
   const deck = useMemo(() => deckRows(run.masterDeck), [run.masterDeck]);
   const battleStatuses = run.screen.type === 'battle' && run.battle
     ? run.battle.units[run.battle.playerUnitId]?.statuses ?? []
@@ -167,6 +176,43 @@ export function RunOverviewPanel({
           <span><strong>减少动态效果</strong><small>{reducedMotion ? '已开启 · 动画与震动已压缩' : '已关闭 · 保留完整战斗反馈'}</small></span>
           <b>{reducedMotion ? '开' : '关'}</b>
         </button>
+
+        <button
+          type="button"
+          className={styles.motionSetting}
+          aria-pressed={!audioMuted}
+          onClick={() => {
+            const next = setAudioMuted(!audioMuted);
+            setAudioMutedState(next.muted);
+            if (!next.muted) playUiSound('select');
+          }}
+        >
+          {audioMuted ? <VolumeX aria-hidden /> : <Volume2 aria-hidden />}
+          <span><strong>音效</strong><small>{audioMuted ? '已关闭 · 保留文字反馈' : '已开启 · 轻量提示音'}</small></span>
+          <b>{audioMuted ? '关' : '开'}</b>
+        </button>
+
+        <button
+          type="button"
+          className={styles.motionSetting}
+          aria-pressed={fastMode}
+          onClick={() => setFastMode(!fastMode)}
+        >
+          <FastForward aria-hidden />
+          <span><strong>快速表现</strong><small>{fastMode ? '已开启 · 缩短战斗反馈' : '已关闭 · 保留完整表现'}</small></span>
+          <b>{fastMode ? '开' : '关'}</b>
+        </button>
+
+        <div className={styles.tutorialActions}>
+          <div>
+            <strong>新手引导</strong>
+            <small>{tutorial.skipped ? '已跳过' : tutorial.completed.reward ? '已完成' : '进行中'}</small>
+          </div>
+          <div className={styles.tutorialButtons}>
+            <button type="button" onClick={resetTutorial}><BookOpen aria-hidden />重看</button>
+            {!tutorial.skipped ? <button type="button" onClick={skipTutorial}>跳过</button> : null}
+          </div>
+        </div>
 
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>角色</h3>

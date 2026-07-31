@@ -76,6 +76,7 @@ export function RestPage() {
               <button
                 type="button"
                 className={styles.restButton}
+                aria-label="在营火旁休息：包扎伤口"
                 disabled={!canHeal}
                 onClick={() => dispatchCommand({ type: 'RESOLVE_REST_OPTION', option: 'heal' })}
               >

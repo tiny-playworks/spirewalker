@@ -7,6 +7,7 @@ import { rewardEncounterTierFromRun } from "@/game/core/engine/rewardEncounter";
 import { createMapRun } from "@/game/core/engine/createMapRun";
 import { isLegalMapStep } from "@/game/core/model/mapGraph";
 import type { RunState } from "@/game/core/model/run";
+import { projectedIncomingDamage } from "./battleProjection";
 import { availableEventOptionIds } from "./availableEventOptions";
 import type {
   SimulationBattleContext,
@@ -88,21 +89,6 @@ function asPlayCardCommand(
   }
 
   return result;
-}
-
-function projectedIncomingDamage(run: RunState): number {
-  const battle = run.battle;
-  if (!battle) return 0;
-
-  return battle.enemyUnitIds.reduce((sum, enemyUnitId) => {
-    const unit = battle.units[enemyUnitId];
-    const intent = battle.monsters[enemyUnitId]?.intent;
-    if (!unit?.alive || !intent) return sum;
-    if (intent.type === "attack")
-      return sum + intent.value * (intent.hits ?? 1);
-    if (intent.type === "attack_buff") return sum + intent.attack;
-    return sum;
-  }, 0);
 }
 
 function availableMapNodes(run: RunState) {

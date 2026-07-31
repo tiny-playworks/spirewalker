@@ -1,5 +1,5 @@
 import type { MapAct, MapNode, MapNodeType, MapRouteBias } from '../model/map';
-import { EVENTS_BY_CHAPTER } from '../definitions/events';
+import { RUNTIME_EVENTS_BY_CHAPTER } from '../definitions/events/runtime';
 import { mulberry32 } from '../utils/rng';
 import { shuffleInPlace } from '../utils/shuffle';
 
@@ -46,7 +46,7 @@ const BIAS_ANCHOR_ROW: Record<MapRouteBias, number> = {
 };
 
 function buildChapterPool(chapter: 1 | 2 | 3, legacy: string[]): string[] {
-  const events = EVENTS_BY_CHAPTER[chapter] ?? [];
+  const events = RUNTIME_EVENTS_BY_CHAPTER[chapter] ?? [];
   const seen = new Set(legacy);
   const picked: string[] = [];
   for (const e of events) {

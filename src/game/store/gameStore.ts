@@ -20,6 +20,60 @@ import {
 import type { RunState } from '../core/model/run';
 import { buildCommandNotice } from '../core/presentation/commandNotice';
 import { playGameCommandSounds } from '../core/audio/gameAudio';
+import { loadFastMode, saveFastMode } from '../core/presentation/fastModeSettings';
+import {
+  completeTutorialStep,
+  loadTutorialProgress,
+  resetTutorial,
+  skipTutorial,
+  type TutorialProgress,
+  type TutorialStep,
+} from '../core/presentation/tutorialProgress';
+
+type NodeResultSource = 'reward' | 'shop' | 'event' | 'rest';
+
+interface NodeResultState {
+  source: NodeResultSource;
+  message: string;
+}
+
+function getNodeResult(
+  command: GameCommand,
+  before: RunState,
+  after: RunState,
+): NodeResultState | null {
+  if (before.screen.type === 'map' || after.screen.type !== 'map') return null;
+
+  switch (command.type) {
+    case 'SELECT_REWARD_CARD':
+    case 'TAKE_REWARD_GOLD':
+    case 'TAKE_REWARD_UPGRADE_CARD':
+      return {
+        source: 'reward',
+        message: after.meta.actTransitionFrom
+          ? '章节奖励已结算，准备进入下一章。'
+          : '奖励已结算，带着新的选择继续前进。',
+      };
+    case 'RESOLVE_EVENT_OPTION':
+      return {
+        source: 'event',
+        message: '事件选择已生效，生命、金币或构筑变化已记入本局。',
+      };
+    case 'LEAVE_SHOP_TO_MAP':
+      return {
+        source: 'shop',
+        message: '交易已完成，商品与牌组变化已记入本局。',
+      };
+    case 'RESOLVE_REST_OPTION':
+    case 'LEAVE_REST_TO_MAP':
+      return {
+        source: 'rest',
+        message: '休整已完成，生命与构筑变化已记入本局。',
+      };
+    default:
+      return null;
+  }
+}
 
 interface GameStoreState {
   run: RunState | null;
@@ -29,7 +83,9 @@ interface GameStoreState {
   battleLog: string[];
   /** 缩短战斗表现耗时 */
   fastMode: boolean;
+  tutorial: TutorialProgress;
   actionNotice: string | null;
+  nodeResult: NodeResultState | null;
   engine: GameEngine;
   initRun: (run: RunState) => void;
   startRun: (run: RunState) => void;
@@ -39,7 +95,11 @@ interface GameStoreState {
   dispatchCommand: (command: GameCommand) => void;
   consumeEvents: () => GameEvent[];
   setFastMode: (value: boolean) => void;
+  markTutorialStep: (step: TutorialStep) => void;
+  skipTutorial: () => void;
+  resetTutorial: () => void;
   clearActionNotice: () => void;
+  continueNodeResult: () => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => ({
@@ -47,16 +107,28 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   profile: loadProfileFromLocalStorage(),
   pendingEvents: [],
   battleLog: [],
-  fastMode: false,
+  fastMode: loadFastMode(),
+  tutorial: loadTutorialProgress(),
   actionNotice: null,
+  nodeResult: null,
   engine: new GameEngine(),
 
-  setFastMode: (value) => set({ fastMode: value }),
+  setFastMode: (value) => {
+    saveFastMode(value);
+    set({ fastMode: value });
+  },
+  markTutorialStep: (step) => {
+    const next = completeTutorialStep(get().tutorial, step);
+    if (next !== get().tutorial) set({ tutorial: next });
+  },
+  skipTutorial: () => set({ tutorial: skipTutorial() }),
+  resetTutorial: () => set({ tutorial: resetTutorial() }),
   clearActionNotice: () => set({ actionNotice: null }),
+  continueNodeResult: () => set({ nodeResult: null }),
 
   initRun: (run) => {
     const profile = observeRun(get().profile, run);
-    set({ run, profile, pendingEvents: [], battleLog: [], actionNotice: null });
+    set({ run, profile, pendingEvents: [], battleLog: [], actionNotice: null, nodeResult: null });
     saveProfileToLocalStorage(profile);
     if (run.screen.type === 'game_over') clearSavedRun();
     else saveRunToLocalStorage(run);
@@ -64,7 +136,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
 
   startRun: (run) => {
     const profile = recordRunStarted(get().profile, run);
-    set({ run, profile, pendingEvents: [], battleLog: [], actionNotice: null });
+    set({ run, profile, pendingEvents: [], battleLog: [], actionNotice: null, nodeResult: null });
     saveProfileToLocalStorage(profile);
     saveRunToLocalStorage(run);
   },
@@ -76,7 +148,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   },
 
   returnToMainMenu: () => {
-    set({ run: null, pendingEvents: [], battleLog: [], actionNotice: null });
+    set({ run: null, pendingEvents: [], battleLog: [], actionNotice: null, nodeResult: null });
   },
 
   dispatchCommand: (command) => {
@@ -86,6 +158,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     const result = engine.dispatch(run, command);
     playGameCommandSounds(command, result.events);
     const actionNotice = buildCommandNotice(command, run, result.nextRun);
+    const nodeResult = getNodeResult(command, run, result.nextRun);
     let profile = observeRun(get().profile, result.nextRun);
     if (run.screen.type !== 'victory' && result.nextRun.screen.type === 'victory') {
       profile = recordRunWin(profile, result.nextRun);
@@ -105,6 +178,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
       pendingEvents: [...pendingEvents, ...result.events],
       battleLog: [...get().battleLog, ...lines].slice(-100),
       actionNotice: actionNotice ?? get().actionNotice,
+      nodeResult,
     });
 
     const next = get().run;

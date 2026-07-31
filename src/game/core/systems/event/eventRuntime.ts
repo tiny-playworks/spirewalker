@@ -1,7 +1,8 @@
 import type { RunState } from '../../model/run';
 import type { GameEvent } from '../../events/types';
 import { evaluateChoiceRequirements } from '../../events/eventConditionParser';
-import { EVENT_DEFINITIONS, type EventOutcome } from '../../definitions/events';
+import { RUNTIME_EVENT_DEFINITIONS } from '../../definitions/events/runtime';
+import type { EventOutcome } from '../../definitions/events';
 import { CARD_DEFINITIONS } from '../../definitions/cards';
 import { RELIC_DEFINITIONS } from '../../definitions/relics';
 import { applyRelicPickupHooks, resolveRelicHooks } from '../relic/relicHooks';
@@ -71,7 +72,7 @@ export function resolveGenericEvent(
   optionId: string,
   events: GameEvent[],
 ): boolean {
-  const def = EVENT_DEFINITIONS[eventId];
+  const def = RUNTIME_EVENT_DEFINITIONS[eventId];
   if (!def) return false;
 
   const choice = def.choices.find(c => c.id === optionId);

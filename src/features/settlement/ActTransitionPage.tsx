@@ -9,7 +9,7 @@ export function ActTransitionPage() {
   if (!run || !run.meta.actTransitionFrom) return null;
   return (
     <RunSceneShell tone="settlement" className={styles.page} testId="act-transition">
-      <span className={styles.chapter}>ACT {run.meta.actTransitionFrom} COMPLETE</span>
+      <span className={styles.chapter}>第 {run.meta.actTransitionFrom} 章完成</span>
       <div className={styles.sigil} aria-hidden><Layers3 /></div>
       <h1 className={styles.title}>废墟的回声落在身后</h1>
       <p className={styles.copy}>行者的伤势已恢复。前方的规则更锋利，构筑也将开始真正成形。</p>

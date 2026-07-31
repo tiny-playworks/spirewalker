@@ -1,8 +1,6 @@
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
-import {
-  EVENT_DEFINITIONS,
-  type EventChoice,
-} from '@/game/core/definitions/events';
+import type { EventChoice } from '@/game/core/definitions/events';
+import { RUNTIME_EVENT_DEFINITIONS } from '@/game/core/definitions/events/runtime';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import {
   BURST_ALTAR_EVENT_ID,
@@ -66,7 +64,7 @@ export function availableEventOptionIds(run: RunState): string[] {
         'leave',
       ];
     default: {
-      const definition = EVENT_DEFINITIONS[run.screen.eventId];
+      const definition = RUNTIME_EVENT_DEFINITIONS[run.screen.eventId];
       if (!definition) return [];
       return definition.choices
         .filter((choice) => isGenericChoiceAvailable(run, choice))

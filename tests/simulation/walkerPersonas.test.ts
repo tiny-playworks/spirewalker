@@ -1,6 +1,7 @@
 import { describe, expect, test } from '@rstest/core';
 import { CARD_DEFINITIONS, BRACE_RHYTHM, BREAK_OPENING, STRIKE, SURVEY_FIELD } from '@/game/core/definitions/cards';
 import { walkerBurstPolicy, walkerGuardPolicy, walkerMixedPolicy } from '@/game/simulation/policies/walkerPersonas';
+import { createMvpRun } from '@/game/core/engine/createMvpRun';
 import type { SimulationBattleContext, SimulationPlayableCommand } from '@/game/simulation/types';
 
 function playable(cardId: string, targetUnitId?: string): SimulationPlayableCommand {
@@ -89,16 +90,43 @@ function buildBattleContext(
     stagnantCombatSteps: 0,
   };
 
+  const validRun = createMvpRun(101);
+  const validBattle = validRun.battle!;
+  const battle = {
+    ...validBattle,
+    ...ctx.battle,
+    ...(overrides?.battle ?? {}),
+    units: {
+      ...validBattle.units,
+      ...ctx.battle.units,
+      ...(overrides?.battle?.units ?? {}),
+    },
+    player: {
+      ...validBattle.player,
+      ...ctx.battle.player,
+      ...(overrides?.battle?.player ?? {}),
+      cards: {
+        ...validBattle.player.cards,
+        ...ctx.battle.player.cards,
+        ...(overrides?.battle?.player?.cards ?? {}),
+      },
+    },
+  } as SimulationBattleContext['battle'];
   return {
     ...ctx,
     ...overrides,
-    battle: {
-      ...ctx.battle,
-      ...(overrides?.battle ?? {}),
-    },
+    battle,
     run: {
+      ...validRun,
       ...ctx.run,
       ...(overrides?.run ?? {}),
+      battle,
+      meta: {
+        ...validRun.meta,
+        ...ctx.run.meta,
+        ...(overrides?.run?.meta ?? {}),
+        relics: [],
+      },
     },
   };
 }
