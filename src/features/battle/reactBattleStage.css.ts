@@ -516,6 +516,7 @@ export const bottomDock = style({
   position: 'relative',
   display: 'grid',
   gridTemplateColumns: 'minmax(8rem, 0.3fr) minmax(0, 1fr) minmax(9rem, 0.32fr)',
+  gridTemplateRows: 'minmax(0, 1fr)',
   alignItems: 'end',
   gap: '0.8rem',
   minHeight: 0,

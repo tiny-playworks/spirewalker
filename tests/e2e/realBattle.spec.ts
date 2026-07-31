@@ -6,6 +6,16 @@ test('不使用强制胜利也能完整打完第一场战斗', async ({ page }) 
   await startNewRun(page);
   await chooseFirstReachableNode(page);
   await expect(page.getByTestId('battle-hud')).toBeVisible();
+  await expect.poll(async () => page.evaluate(() => {
+    const button = document.querySelector<HTMLButtonElement>('button[aria-label="结束回合"]');
+    if (!button) return false;
+    const box = button.getBoundingClientRect();
+    return document.documentElement.scrollWidth <= innerWidth
+      && box.left >= 0
+      && box.right <= innerWidth
+      && box.top >= 0
+      && box.bottom <= innerHeight;
+  })).toBe(true);
   await page.getByRole('checkbox', { name: '快速' }).check();
 
   for (let turn = 0; turn < 14; turn += 1) {
