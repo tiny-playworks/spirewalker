@@ -46,7 +46,8 @@ export function RewardPage() {
     (sum, i) => (i.type === 'gold' ? sum + i.amount : sum),
     0,
   );
-  const totalGoldOnPick = 15 + bonusGold;
+  // 选牌不会额外产生固定金币，展示只反映 reward.items 中实际存在的金币。
+  const totalGoldOnPick = bonusGold;
   const encounterTier = rewardEncounterTierFromRun(run);
   const skipGoldBase = skipCardGoldAmount(encounterTier);
   const totalGoldOnSkip = skipGoldBase + bonusGold;

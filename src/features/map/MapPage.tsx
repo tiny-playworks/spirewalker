@@ -40,6 +40,23 @@ function cx(...classNames: Array<string | false | null | undefined>) {
 
 function nodeTitle(n: MapNode): string {
   if (n.x === 0) return `第 ${n.act} 章 · 营地`;
+  if (n.id.startsWith('a2v_')) {
+    const preludeTitles: Record<string, string> = {
+      a2v_battle_a: '咒纹试探',
+      a2v_battle_b: '鼓点修复',
+      a2v_shop: '补给商亭',
+      a2v_rest: '裂隙营火',
+      a2v_battle_c: '倒计时爆裂',
+      a2v_safe_branch: '反刺示范',
+      a2v_risk_elite: '锁牌执达者',
+      a2v_battle_d: '回廊清场',
+      a2v_burst_altar: '裂响祭坛',
+      a2v_treasure: '回廊宝藏',
+      a2v_rest_before_boss: '主教前营火',
+      a2v_boss_silence: '主教 · 静默审判',
+    };
+    if (preludeTitles[n.id]) return preludeTitles[n.id];
+  }
   switch (n.type) {
     case 'battle':
       return '普通战斗';
@@ -61,9 +78,26 @@ function nodeTitle(n: MapNode): string {
 }
 
 function nodeDescription(n: MapNode): string {
+  if (n.id.startsWith('a2v_')) {
+    const preludeDescriptions: Record<string, string> = {
+      a2v_battle_a: '先看清削弱与锁牌，再决定这一回合是否要把手牌打空。',
+      a2v_battle_b: '敌人会逐步强化；优先处理治疗者，别让战斗拖成消耗战。',
+      a2v_shop: '整备牌组与药水，下一段会出现明确的倒计时危险。',
+      a2v_rest: '回复生命或整理节奏，给下一段倒计时战留出容错。',
+      a2v_battle_c: '倒计时结束会兑现高额伤害；先处理爆炸小怪。',
+      a2v_safe_branch: '安全路线：只教反刺，攻击前先看清预计反噬。',
+      a2v_risk_elite: '风险路线：锁定部分手牌，击破后获得更高奖励。',
+      a2v_battle_d: '序章收束战，胜利后会进入首领前的最后一段整备。',
+      a2v_burst_altar: '在首领前选择一次明确的爆发强化，或保留资源继续前进。',
+      a2v_treasure: '无需战斗的补给，Act 2 正式牌池会从这里开始出现。',
+      a2v_rest_before_boss: '首领前最后一次整备，回复生命并确认自己的出牌节奏。',
+      a2v_boss_silence: '主教会在三个阶段改变压力方式；看清意图，再决定何时兑现连势。',
+    };
+    if (preludeDescriptions[n.id]) return preludeDescriptions[n.id];
+  }
   switch (n.type) {
     case 'battle': return '稳定获取卡牌与金币，检验当前构筑的基础循环。';
-    case 'elite': return '更高压力的战斗，胜利后有机会取得关键遗物。';
+    case 'elite': return '更高压力的战斗，胜利后获得一件正式遗物与额外金币。';
     case 'boss': return '本章最终考验。击破后完成 Act 1 并进入下一章。';
     case 'shop': return '使用金币购买卡牌、遗物和药水，也可精简或升级牌组。';
     case 'rest': return '回复生命，为下一段路线调整风险承受能力。';
@@ -157,7 +191,7 @@ export function MapPage() {
   const togglePanel = (key: PanelKey) => setPanel((p) => (p === key ? null : key));
 
   return (
-    <RunSceneShell tone="map" className={styles.page} testId="map-page">
+    <RunSceneShell tone="map" className={cx(styles.page, meta.act === 2 && styles.pageAct2)} testId="map-page">
       <header className={styles.topBar}>
         <div className={styles.brand}>
           <p className={styles.brandMark}>SPIREWALKER</p>

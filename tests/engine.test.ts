@@ -1294,6 +1294,27 @@ describe('GameEngine 地图', () => {
     expect(events.some((e) => e.type === 'RETURNED_TO_MAP_FROM_BATTLE')).toBe(true);
   });
 
+  test('选牌奖励只结算奖励清单中的实际金币', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(7);
+    run = engine
+      .dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: firstBattleFromCamp(run) })
+      .nextRun;
+    run.battle!.phase = 'victory';
+    run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
+    const choice = run.reward?.items.find((i) => i.type === 'card_choice');
+    if (!choice || choice.type !== 'card_choice') throw new Error('expected card_choice');
+    const rewardGold = run.reward!.items.reduce(
+      (sum, item) => sum + (item.type === 'gold' ? item.amount : 0),
+      0,
+    );
+    const goldBefore = run.meta.gold;
+
+    run = engine.dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: choice.cards[0]! }).nextRun;
+
+    expect(run.meta.gold).toBe(goldBefore + rewardGold);
+  });
+
   test('TAKE_REWARD_GOLD 放弃卡牌按普通战档位换金', () => {
     const engine = new GameEngine();
     let run = createMapRun(44);
@@ -1336,6 +1357,7 @@ describe('GameEngine 地图', () => {
     run.battle!.phase = 'victory';
     run = engine.dispatch(run, { type: 'LEAVE_BATTLE_TO_REWARD' }).nextRun;
     expect(run.reward?.items.some((i) => i.type === 'gold' && i.amount === 33)).toBe(true);
+    expect(run.reward?.items.some((i) => i.type === 'relic')).toBe(true);
     expect(
       run.reward?.items.some(
         (i) => i.type === 'potion' && ['stillwater_tonic', 'flash_powder'].includes(i.potionId),
@@ -1344,12 +1366,14 @@ describe('GameEngine 地图', () => {
     const cardChoice = run.reward!.items.find((i) => i.type === 'card_choice');
     if (!cardChoice || cardChoice.type !== 'card_choice') throw new Error('expected card_choice');
     const potionsBefore = run.meta.potions.length;
+    const relicsBefore = run.meta.relics.length;
     const goldBeforeReward = run.meta.gold;
     run = engine
       .dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: cardChoice.cards[0]! })
       .nextRun;
     expect(run.meta.gold).toBe(goldBeforeReward + 33);
     expect(run.meta.potions.length).toBe(potionsBefore + 1);
+    expect(run.meta.relics.length).toBe(relicsBefore + 1);
   });
 
   test('Boss 战后额外金币高于精英并可能掉落遗物', () => {
@@ -1444,8 +1468,8 @@ describe('GameEngine 地图', () => {
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: 'a2v_risk_elite' }).nextRun;
     expect(run.meta.enteredAct2EliteBranch).toBe(true);
 
-    run.map.currentNodeId = 'a2v_battle_d';
-    run.map.nodes.a2v_battle_d!.visited = true;
+    run.map.currentNodeId = 'a2v_boss_silence';
+    run.map.nodes.a2v_boss_silence!.visited = true;
     run.screen = { type: 'reward' };
     run.reward = {
       items: [{ type: 'card_choice', cards: ['strike', 'defend', 'bash'] }],
@@ -1455,6 +1479,27 @@ describe('GameEngine 地图', () => {
     run = engine.dispatch(run, { type: 'SELECT_REWARD_CARD', definitionId: 'strike' }).nextRun;
     expect(run.meta.validationCompleted).toBe(true);
     expect(run.screen.type).toBe('victory');
+  });
+
+  test('Act2 验证段安全分支只进入反刺教学战', () => {
+    const engine = new GameEngine();
+    let run = createMapRun(314);
+    run.meta.act = 2;
+    run.meta.actFloor = 1;
+    run.meta.floor = globalFloorFor(2, 1);
+    run.meta.validationSegment = 'act2_entry';
+    run.meta.enteredAct2EliteBranch = false;
+    run.map = {
+      nodes: buildAct2EntryNodes(314),
+      currentNodeId: 'a2v_battle_c',
+    };
+    run.map.nodes.a2v_battle_c!.visited = true;
+
+    run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: 'a2v_safe_branch' }).nextRun;
+
+    expect(run.screen.type).toBe('battle');
+    expect(run.battle?.encounter.id).toBe('act2_entry_reflect');
+    expect(run.meta.enteredAct2EliteBranch).toBe(false);
   });
 
   test('第三章 Boss 战后选牌进入通关界面', () => {

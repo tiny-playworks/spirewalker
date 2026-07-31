@@ -26,7 +26,7 @@ describe('core/runInit', () => {
     expect(Object.values(floor2).some((node) => node.x === 0)).toBe(true);
   });
 
-  test('Act2 验证段地图只使用白名单 encounter，且 blast 不会出现在前两战', () => {
+  test('Act2 验证段地图按正式序章顺序逐场教学机制', () => {
     const whitelist = new Set(act2EntryEncounterWhitelist());
     for (const seed of [3, 11, 29, 77]) {
       const nodes = buildAct2EntryNodes(seed);
@@ -35,21 +35,11 @@ describe('core/runInit', () => {
         .filter((encounterId): encounterId is string => Boolean(encounterId));
 
       expect(encounterIds.every((encounterId) => whitelist.has(encounterId))).toBe(true);
-      expect(nodes.a2v_battle_a!.encounterId).not.toBe(nodes.a2v_battle_b!.encounterId);
-      expect(nodes.a2v_battle_a!.encounterId).not.toBe('act2_normal_blast');
-      expect(nodes.a2v_battle_b!.encounterId).not.toBe('act2_normal_blast');
-      expect(
-        nodes.a2v_battle_a!.encounterId === 'act2_normal_support'
-          && nodes.a2v_battle_b!.encounterId === 'act2_normal_support',
-      ).toBe(false);
-      expect(
-        nodes.a2v_battle_b!.encounterId === 'act2_normal_support'
-          && nodes.a2v_battle_c!.encounterId === 'act2_normal_support',
-      ).toBe(false);
-      expect(
-        nodes.a2v_battle_c!.encounterId === 'act2_normal_support'
-          && nodes.a2v_battle_d!.encounterId === 'act2_normal_support',
-      ).toBe(false);
+      expect(nodes.a2v_battle_a!.encounterId).toBe('act2_entry_curse');
+      expect(nodes.a2v_battle_b!.encounterId).toBe('act2_entry_support');
+      expect(nodes.a2v_battle_c!.encounterId).toBe('act2_entry_blast');
+      expect(nodes.a2v_battle_d!.encounterId).toBe('act2_entry_finish');
+      expect(nodes.a2v_safe_branch!.encounterId).toBe('act2_entry_reflect');
       expect(nodes.a2v_risk_elite!.encounterId).toBe('act2_elite_lock');
     }
   });

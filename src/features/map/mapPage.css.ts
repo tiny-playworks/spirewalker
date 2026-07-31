@@ -28,6 +28,11 @@ export const page = style({
   },
 });
 
+export const pageAct2 = style({
+  background:
+    'radial-gradient(ellipse 80% 52% at 50% 0%, rgba(139, 92, 246, 0.22) 0%, transparent 58%), radial-gradient(ellipse 52% 46% at 10% 82%, rgba(176, 128, 255, 0.1) 0%, transparent 46%), linear-gradient(175deg, #0b0911 0%, #15111d 44%, #0b0b12 100%)',
+});
+
 globalStyle(`${page} > *`, {
   position: 'relative',
   zIndex: 1,

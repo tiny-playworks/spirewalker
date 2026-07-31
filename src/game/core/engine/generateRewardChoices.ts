@@ -10,6 +10,7 @@ import {
   DEFAULT_CHARACTER_ID,
   getCharacterDefinition,
 } from '../definitions/characters';
+import { ACT2_REWARD_CARD_IDS } from '../definitions/act2Content';
 import { mulberry32 } from '../utils/rng';
 
 export type RewardEncounterTier = 'normal' | 'elite' | 'boss' | 'treasure';
@@ -131,8 +132,11 @@ export function generateCardRewardChoices(
   const rng = mulberry32((seed ^ salt ^ 0x51eed) >>> 0);
   const random = () => rng();
   const alreadyOwnedAnchorSlash = ownedCardIds.includes(ANCHOR_SLASH_ID);
+  const formalPool = act >= 2
+    ? [...getCharacterDefinition(characterId).rewardCardPool, ...ACT2_REWARD_CARD_IDS]
+    : getCharacterDefinition(characterId).rewardCardPool;
   const characterPool = new Set(
-    getCharacterDefinition(characterId).rewardCardPool
+    formalPool
       .filter((cardId) => !(alreadyOwnedAnchorSlash && cardId === ANCHOR_SLASH_ID)),
   );
   const pools = weightedPoolsFor(act, tier);

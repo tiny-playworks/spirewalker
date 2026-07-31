@@ -1,8 +1,10 @@
 import { existsSync, statSync } from 'node:fs';
 import { ACT1_REWARD_CARD_IDS } from '../src/game/core/definitions/act1Content';
+import { ACT2_REWARD_CARD_IDS } from '../src/game/core/definitions/act2Content';
 
 const maxBytes = 130 * 1024;
-const rows = ACT1_REWARD_CARD_IDS.map((id) => {
+const formalCardIds = [...ACT1_REWARD_CARD_IDS, ...ACT2_REWARD_CARD_IDS];
+const rows = formalCardIds.map((id) => {
   const path = `public/assets/cards/art/${id}.webp`;
   return { id, path, exists: existsSync(path), bytes: existsSync(path) ? statSync(path).size : 0 };
 });

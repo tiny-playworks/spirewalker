@@ -66,6 +66,11 @@ export function resolveRewardPick(
   const mapNodeId = run.map.currentNodeId;
   const mapNode = mapNodeId ? run.map.nodes[mapNodeId] : undefined;
   const beatBoss = mapNode?.type === 'boss';
+  const completedAct2Prelude = Boolean(
+    beatBoss
+      && run.meta.act === 2
+      && run.meta.validationSegment === 'act2_entry',
+  );
   const validationSegmentEnded = Boolean(
     run.meta.validationSegment === 'act2_entry'
       && mapNode
@@ -73,6 +78,12 @@ export function resolveRewardPick(
       && mapNode.nextNodeIds.length === 0,
   );
   if (validationSegmentEnded) {
+    run.meta.validationCompleted = true;
+    run.screen = { type: 'victory' };
+    events.push({ type: 'RETURNED_TO_MAP_FROM_BATTLE' });
+    return;
+  }
+  if (completedAct2Prelude) {
     run.meta.validationCompleted = true;
     run.screen = { type: 'victory' };
     events.push({ type: 'RETURNED_TO_MAP_FROM_BATTLE' });

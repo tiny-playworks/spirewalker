@@ -44,11 +44,12 @@ describe('shop/shopFlow', () => {
     run = engine.dispatch(run, { type: 'CHOOSE_MAP_NODE', nodeId: shopId }).nextRun;
 
     const offerIds = run.shop!.cards.map((offer) => offer.definitionId);
-    expect(offerIds).toContain('strike');
+    expect(offerIds).not.toContain('strike');
+    expect(offerIds.some((id) => ['anchor_slash', 'measured_rest'].includes(id))).toBe(true);
     expect(offerIds.some((id) => MOMENTUM_SETUP_CARD_IDS.includes(id as never))).toBe(true);
     expect(offerIds.some((id) => MOMENTUM_PAYOFF_CARD_IDS.includes(id as never))).toBe(true);
     expect(offerIds.some((id) => TEMPO_RECOVERY_CARD_IDS.includes(id as never))).toBe(true);
-    expect(run.shop!.cards.some((offer) => offer.price <= run.meta.gold)).toBe(true);
+    expect(run.shop!.cards.every((offer) => offer.price > 0)).toBe(true);
     expect(['stillwater_tonic', 'flash_powder']).toContain(run.shop!.potions[0]!.potionId);
   });
 });

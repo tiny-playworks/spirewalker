@@ -10,7 +10,7 @@ import {
 import { ALL_CARD_DEFINITIONS } from "@/game/core/definitions/cards";
 import { getCardArchetype } from "@/game/core/definitions/cards/archetypes";
 import { getStatusMeta } from "@/game/core/definitions/statuses";
-import type { BattleState } from "@/game/core/model/battle";
+import type { BattleState, CountdownEffect } from "@/game/core/model/battle";
 import type { CardDefinition, CardInstance } from "@/game/core/model/card";
 import type { CombatUnit } from "@/game/core/model/unit";
 import { previewCardPlay, type BattlePreview } from "@/game/core/presentation/battlePreview";
@@ -30,6 +30,7 @@ import { getEnemyVisual } from "./enemyVisuals";
 type DragPayload = { cardInstanceId: string };
 
 const BATTLE_BACKDROP_URL = "/assets/combat/gilded-ruins.webp";
+const ACT2_BATTLE_BACKDROP_URL = "/assets/combat/fractured-tribunal.webp";
 const PLAYER_SPRITE_URL = "/assets/combat/player.webp";
 
 function cx(...classNames: Array<string | false | null | undefined>) {
@@ -104,12 +105,51 @@ function cardFocus(def: CardDefinition, preview?: BattlePreview): {
   return { value: "技", label: cardTypeLabel(def.type), tone: "utility" };
 }
 
+function countdownEffectText(effect: CountdownEffect): string {
+  switch (effect.type) {
+    case 'attack':
+      return `爆发 ${effect.value} 点伤害`;
+    case 'multi_hit':
+      return `连击 ${effect.value} ×${effect.hits}`;
+    case 'summon':
+      return `召唤 ${effect.count} 个援军`;
+    case 'max_hp_down':
+      return `生命上限 -${effect.value}`;
+    default:
+      return '未知效果';
+  }
+}
+
+type MechanicTone = 'danger' | 'warning' | 'control';
+
+function mechanicBadges(monster: BattleState['monsters'][string] | undefined): Array<{
+  key: string;
+  label: string;
+  detail: string;
+  tone: MechanicTone;
+}> {
+  if (!monster) return [];
+  const runtime = monster.runtime;
+  const badges: Array<{ key: string; label: string; detail: string; tone: MechanicTone }> = [];
+  if ((runtime.thorns ?? 0) > 0) {
+    badges.push({ key: 'thorns', label: `反刺 ${runtime.thorns}`, detail: `攻击牌打出后受到 ${runtime.thorns} 点反刺伤害。`, tone: 'danger' });
+  }
+  if ((runtime.reactiveDamage ?? 0) > 0) {
+    badges.push({ key: 'reactive', label: `反制 ${runtime.reactiveDamage}`, detail: `每打出一张牌，受到 ${runtime.reactiveDamage} 点反制伤害。`, tone: 'warning' });
+  }
+  if (runtime.countdown) {
+    badges.push({ key: 'countdown', label: `倒计时 ${runtime.countdown.remaining}`, detail: `倒计时结束：${countdownEffectText(runtime.countdown.effect)}。`, tone: 'danger' });
+  }
+  return badges;
+}
+
 export function ReactBattleStage({ className }: { className?: string }) {
   const run = useGameStore((s) => s.run);
   const dispatchCommand = useGameStore((s) => s.dispatchCommand);
   const markTutorialStep = useGameStore((s) => s.markTutorialStep);
   const fastMode = useGameStore((s) => s.fastMode);
   const battle = run?.battle ?? null;
+  const backdropUrl = run?.meta.act === 2 ? ACT2_BATTLE_BACKDROP_URL : BATTLE_BACKDROP_URL;
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
 
@@ -145,6 +185,9 @@ export function ReactBattleStage({ className }: { className?: string }) {
       ? battle.pendingAction.cardInstanceId
       : null;
   const activeCardId = pendingCardId ?? selectedCardId;
+  const activeCardDefinition = activeCardId && battle
+    ? ALL_CARD_DEFINITIONS[battle.player.cards[activeCardId]?.definitionId ?? '']
+    : undefined;
   const player = battle ? battle.units[battle.playerUnitId] : null;
   const enemies = useMemo(() => {
     if (!battle) return [];
@@ -222,10 +265,10 @@ export function ReactBattleStage({ className }: { className?: string }) {
       <TutorialHint step="momentum" title="留意连势变化" placement="top-left">
         每次出牌都会让连势发生变化；积累后用兑现牌把它转成主动伤害。
       </TutorialHint>
-      <div className={styles.backdrop} aria-hidden>
+      <div className={cx(styles.backdrop, run?.meta.act === 2 && styles.backdropAct2)} aria-hidden>
         <div
           className={styles.backdropImage}
-          style={{ backgroundImage: `url(${BATTLE_BACKDROP_URL})` }}
+          style={{ backgroundImage: `url(${backdropUrl})` }}
         />
         <div className={styles.spire} />
         <div className={styles.grid} />
@@ -252,6 +295,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
               spriteUrl={getEnemyVisual(battle.monsters[enemy.id]?.monsterId ?? '').portraitUrl}
               feedback={feedbackCues.filter((cue) => cue.unitId === enemy.id)}
               preview={targetPreviewByEnemyId.get(enemy.id)}
+              activeCardIsAttack={activeCardDefinition?.type === 'attack'}
             />
           ))}
         </div>
@@ -277,6 +321,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
             const preview = previewByCardId.get(card.instanceId);
             const focus = cardFocus(def, preview);
             const playable = canPlayCard(card, battle);
+            const locked = battle.player.lockedCardInstanceIds.includes(card.instanceId);
             const selected = activeCardId === card.instanceId;
             const spread =
               battle.player.hand.length <= 1
@@ -292,14 +337,17 @@ export function ReactBattleStage({ className }: { className?: string }) {
                   styles.cardTone[getCardArchetype(def.id)],
                   selected && styles.cardSelected,
                   !playable && styles.cardDisabled,
+                  locked && styles.cardLocked,
                 )}
                 style={{
                   transform: `translateY(${Math.abs(spread) * 4}px) rotate(${spread * 7}deg)`,
                   zIndex: 20 + index,
                 }}
-                title={[def.description, ...buildCardKeywordHints(def)].join(
+                title={[def.description, ...buildCardKeywordHints(def), ...(locked ? ['锁定原因：本回合结束后解锁。'] : [])].join(
                   "\n",
                 )}
+                disabled={locked || !playable}
+                aria-disabled={locked || !playable}
                 onClick={() => handleCardClick(card, def)}
                 onDragStart={(event) => {
                   if (!playable) return;
@@ -359,6 +407,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
                   />
                 </span>
                 <span className={styles.cardDesc}>{def.description}</span>
+                {locked ? <span className={styles.cardLock}>本回合锁定</span> : null}
                 <span className={styles.cardFoot}>
                   {cardTargetLabel(def.target)}
                 </span>
@@ -493,6 +542,7 @@ function EnemyPanel({
   spriteUrl,
   feedback,
   preview,
+  activeCardIsAttack,
 }: {
   battle: BattleState;
   unit: CombatUnit;
@@ -502,6 +552,7 @@ function EnemyPanel({
   spriteUrl: string;
   feedback: FeedbackCue[];
   preview?: BattlePreview;
+  activeCardIsAttack: boolean;
 }) {
   const monster = battle.monsters[unit.id];
   const intent = monster?.intent;
@@ -522,6 +573,10 @@ function EnemyPanel({
       : preview.statuses.length > 0
         ? `${getStatusMeta(preview.statuses[0].statusId).name} +${preview.statuses[0].value}`
         : null;
+  const retaliation = monster?.runtime
+    ? (monster.runtime.reactiveDamage ?? 0) + (activeCardIsAttack ? monster.runtime.thorns ?? 0 : 0)
+    : 0;
+  const mechanics = mechanicBadges(monster);
   return (
     <div
       className={cx(
@@ -556,6 +611,19 @@ function EnemyPanel({
           反击生效 · 第 {activeCounter.threshold} 张起 -{activeCounter.damage}
         </span>
       ) : null}
+      {unit.alive && mechanics.length > 0 ? (
+        <div className={styles.mechanicList} aria-label="敌方机制">
+          {mechanics.map((mechanic) => (
+            <span
+              key={mechanic.key}
+              className={cx(styles.mechanicBadge, styles.mechanicTone[mechanic.tone])}
+              title={mechanic.detail}
+            >
+              {mechanic.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
       <button
         type="button"
         className={styles.enemyHitTarget}
@@ -572,7 +640,12 @@ function EnemyPanel({
         }}
       >
         <UnitPanel unit={unit} tone="enemy" spriteUrl={spriteUrl} feedback={feedback} />
-        {targetActive && previewText ? <span className={styles.targetPreview}>{previewText}</span> : null}
+        {targetActive && (previewText || retaliation > 0) ? (
+          <span className={styles.targetPreview}>
+            {previewText}
+            {retaliation > 0 ? <em>预计反噬 {retaliation}</em> : null}
+          </span>
+        ) : null}
       </button>
     </div>
   );

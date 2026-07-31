@@ -1,5 +1,5 @@
 import { isRewardArchetypeTiltEnabled } from '../../config/rewardTuning';
-import { rollBossRelicReward } from '../../definitions/relics';
+import { rollBossRelicReward, rollEliteRelicReward } from '../../definitions/relics';
 import type { RewardItem } from '../../model/reward';
 import type { RewardEncounterTier } from '../../engine/generateRewardChoices';
 import { generateCardRewardChoices } from '../../engine/generateRewardChoices';
@@ -34,7 +34,11 @@ export function generateBattleRewards(input: {
     if (rng >= 35 && rng < 75) items.push({ type: 'gold', amount: 12 + act * 2 });
     else if (rng >= 75) items.push({ type: 'gold', amount: 20 + act * 4 });
   }
-  if (tier === 'elite') items.push({ type: 'gold', amount: 28 + act * 5 });
+  if (tier === 'elite') {
+    items.push({ type: 'gold', amount: 28 + act * 5 });
+    const relicId = rollEliteRelicReward(seed, salt, ownedRelicIds, characterId);
+    if (relicId) items.push({ type: 'relic', relicId });
+  }
   if (tier === 'boss') {
     items.push({ type: 'gold', amount: 48 + act * 8 });
     const relicId = rollBossRelicReward(seed, salt, ownedRelicIds, characterId);

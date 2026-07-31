@@ -91,10 +91,17 @@ export const ENCOUNTERS: EncounterTemplate[] = [
   { id: 'act2_normal_blast', chapter: 2, tier: 'normal', weight: 5, name: '倒计时爆裂', tags: ['countdown'], pressureProfile: 'execution_check', lineup: lineup(['blast_mite', 'mirror_mage']) },
   { id: 'act2_normal_disrupt', chapter: 2, tier: 'normal', weight: 6, name: '弃牌查封', tags: ['lock', 'pollution'], pressureProfile: 'disruption', lineup: lineup(['discard_eater', 'card_bailiff']) },
 
+  // Act 2 序章纵切片：每场只教一个机制，避免正式长线内容提前进入首局。
+  { id: 'act2_entry_curse', chapter: 2, tier: 'normal', weight: 1, name: '咒纹试探', tags: ['debuff', 'disruption', 'prelude'], pressureProfile: 'disruption', lineup: lineup(['curse_priest', 'card_bailiff'], [26, 28]) },
+  { id: 'act2_entry_support', chapter: 2, tier: 'normal', weight: 1, name: '鼓点修复', tags: ['support', 'scaler', 'prelude'], pressureProfile: 'snowball', lineup: lineup(['war_drummer', 'field_medic'], [26, 26]) },
+  { id: 'act2_entry_blast', chapter: 2, tier: 'normal', weight: 1, name: '倒计时爆裂', tags: ['countdown', 'prelude'], pressureProfile: 'execution_check', lineup: lineup(['act2_entry_blast_mite', 'act2_entry_mirror'], [20, 22]) },
+  { id: 'act2_entry_finish', chapter: 2, tier: 'normal', weight: 1, name: '回廊清场', tags: ['prelude'], pressureProfile: 'frontload', lineup: lineup(['war_drummer'], [22]) },
+  { id: 'act2_entry_reflect', chapter: 2, tier: 'normal', weight: 1, name: '反刺示范', tags: ['reactive', 'prelude'], pressureProfile: 'attrition', lineup: lineup(['reflect_automaton'], [34]) },
+
   { id: 'act2_elite_open', chapter: 2, tier: 'elite', weight: 8, name: '三人组', tags: ['elite', 'summon'], pressureProfile: 'snowball', lineup: lineup(['slime_taxer']) },
   { id: 'act2_elite_counter', chapter: 2, tier: 'elite', weight: 7, name: '姿态审判官', tags: ['elite', 'counter'], pressureProfile: 'execution_check', lineup: lineup(['slime_counter_judge']) },
   { id: 'act2_elite_forge', chapter: 2, tier: 'elite', weight: 6, name: '灼烧铸机', tags: ['elite', 'pollution'], pressureProfile: 'attrition', lineup: lineup(['act2_forge_elite']) },
-  { id: 'act2_elite_lock', chapter: 2, tier: 'elite', weight: 6, name: '锁牌执达者', tags: ['elite', 'lock'], pressureProfile: 'disruption', lineup: lineup(['act2_lock_bailiff']) },
+  { id: 'act2_elite_lock', chapter: 2, tier: 'elite', weight: 6, name: '锁牌执达者', tags: ['elite', 'lock'], pressureProfile: 'disruption', lineup: lineup(['act2_lock_bailiff'], [56]) },
   { id: 'act2_boss_bishop', chapter: 2, tier: 'boss', weight: 8, name: '主教', tags: ['boss', 'control'], pressureProfile: 'disruption', lineup: lineup(['act2_boss_silence']) },
   { id: 'act2_boss_dual', chapter: 2, tier: 'boss', weight: 8, name: '双核怪', tags: ['boss', 'echo'], pressureProfile: 'snowball', lineup: lineup(['act2_dual_core']) },
 

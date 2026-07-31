@@ -42,7 +42,7 @@ async function resolveEvent(page: Page) {
   await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
 }
 
-test('固定种子可以从 Act 1 走到 Act 2', async ({ page }) => {
+test('固定种子可以从 Act 1 走到 Act 2 序章首领并进入结算', async ({ page }) => {
   await page.addInitScript((seed) => {
     Date.now = () => seed;
   }, FIXED_SEED);
@@ -80,4 +80,38 @@ test('固定种子可以从 Act 1 走到 Act 2', async ({ page }) => {
 
   await expect(page.getByTestId('current-act')).toHaveText('第 2 章 · 碎裂回廊');
   await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
+
+  await chooseNode(page, 'a2v_battle_a');
+  await finishBattle(page);
+  await chooseNode(page, 'a2v_battle_b');
+  await finishBattle(page);
+  await chooseNode(page, 'a2v_shop');
+  await expect(page.getByTestId('shop-page')).toBeVisible();
+  await page.getByRole('button', { name: '离开商店' }).click();
+  await confirmNodeResult(page);
+  await chooseNode(page, 'a2v_battle_c');
+  await finishBattle(page);
+  await chooseNode(page, 'a2v_safe_branch');
+  await finishBattle(page);
+  await chooseNode(page, 'a2v_battle_d');
+  await finishBattle(page);
+  await chooseNode(page, 'a2v_burst_altar');
+  await resolveEvent(page);
+  await chooseNode(page, 'a2v_treasure');
+  await skipReward(page);
+  await chooseNode(page, 'a2v_rest_before_boss');
+  await page.getByRole('button', { name: /凝神起势/ }).click();
+  await confirmNodeResult(page);
+  await expect(page.getByRole('navigation', { name: '本层路线概览' })).toBeVisible();
+
+  await chooseNode(page, 'a2v_boss_silence');
+  await expect(page.getByTestId('battle-hud')).toBeVisible();
+  await openDebugPanel(page);
+  await page.getByTestId('debug-force-victory').click();
+  await page.keyboard.press('Backquote');
+  await page.getByTestId('leave-battle-to-reward').click();
+  await expect(page.getByTestId('reward-page')).toBeVisible();
+  await page.getByRole('button', { name: /放弃卡牌/ }).click();
+  await expect(page.getByTestId('victory-settlement')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '主教的静默已被打破' })).toBeVisible();
 });

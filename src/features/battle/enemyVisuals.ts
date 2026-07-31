@@ -24,7 +24,22 @@ export const ACT1_ENEMY_VISUAL_IDS = [
   'act1_boss_gate',
 ] as const;
 
-const ENEMY_VISUALS: Record<(typeof ACT1_ENEMY_VISUAL_IDS)[number], EnemyVisualDefinition> = {
+export const ACT2_ENEMY_VISUAL_IDS = [
+  'reflect_automaton',
+  'thorn_shell',
+  'curse_priest',
+  'card_bailiff',
+  'war_drummer',
+  'field_medic',
+  'blast_mite',
+  'mirror_mage',
+  'act2_lock_bailiff',
+  'act2_entry_blast_mite',
+  'act2_entry_mirror',
+  'act2_boss_silence',
+] as const;
+
+const ENEMY_VISUALS: Record<string, EnemyVisualDefinition> = {
   slime: visual('slime', 'slime'),
   slime_splitter: visual('slime_splitter', 'slime'),
   fang_rat: visual('fang_rat', 'beast'),
@@ -43,10 +58,22 @@ const ENEMY_VISUALS: Record<(typeof ACT1_ENEMY_VISUAL_IDS)[number], EnemyVisualD
   act1_debt_monk: { portraitUrl: '/assets/combat/enemies/debt-monk.webp', family: 'elite' },
   slime_boss: { portraitUrl: '/assets/combat/enemies/hive-mother.webp', family: 'boss' },
   act1_boss_gate: visual('act1_boss_gate', 'boss'),
+  reflect_automaton: visual('reflect_automaton', 'construct'),
+  thorn_shell: visual('thorn_shell', 'construct'),
+  curse_priest: visual('curse_priest', 'humanoid'),
+  card_bailiff: visual('card_bailiff', 'humanoid'),
+  war_drummer: visual('war_drummer', 'humanoid'),
+  field_medic: visual('field_medic', 'humanoid'),
+  blast_mite: visual('blast_mite', 'construct'),
+  mirror_mage: visual('mirror_mage', 'humanoid'),
+  act2_lock_bailiff: visual('act2_lock_bailiff', 'elite'),
+  act2_entry_blast_mite: visual('act2_entry_blast_mite', 'construct'),
+  act2_entry_mirror: visual('act2_entry_mirror', 'construct'),
+  act2_boss_silence: visual('act2_boss_silence', 'boss'),
 };
 
 function visual(
-  id: (typeof ACT1_ENEMY_VISUAL_IDS)[number],
+  id: string,
   family: EnemyVisualDefinition['family'],
 ): EnemyVisualDefinition {
   return { portraitUrl: `/assets/combat/enemies/${id}.webp`, family };

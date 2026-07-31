@@ -210,6 +210,28 @@ export const COMMON_RELIC_POOL = [
 /** 生成遗物池：用于 Boss fallback，避免生成资产只存在于定义文件而没有获取路径。 */
 export const GENERATED_RELIC_POOL = Object.keys(GENERATED_RELICS) as readonly string[];
 
+/** 玩家运行时正式遗物池：角色分支 12 件 + 6 件通用遗物。 */
+export const FORMAL_RELIC_POOL = [
+  'guard_knot',
+  'still_core',
+  'burst_emblem',
+  'quick_fuse',
+  'ward_banner',
+  'flare_banner',
+  'blaze_core',
+  'fractured_blade',
+  'iron_heart',
+  'counter_sigil',
+  'twin_core',
+  'harmony_emblem',
+  'vajra',
+  'anchor',
+  'wind_chime',
+  'tactical_gloves',
+  'insight_lens',
+  'soft_guard',
+] as const;
+
 /** Boss 战后随机其一（角色池优先，角色池拿空后从全量遗物池 fallback）。 */
 export const BOSS_RELIC_POOL = [
   ...new Set([...COMMON_RELIC_POOL, ...GENERATED_RELIC_POOL]),
@@ -223,9 +245,19 @@ export function rollBossRelicReward(
 ): string | null {
   const characterPool = getCharacterDefinition(characterId).rewardRelicPool;
   const available = characterPool.filter((id) => !ownedRelicIds.includes(id));
-  const fallback = BOSS_RELIC_POOL.filter((id) => !ownedRelicIds.includes(id));
+  const fallback = FORMAL_RELIC_POOL.filter((id) => !ownedRelicIds.includes(id));
   const pool = available.length > 0 ? available : fallback;
   if (pool.length === 0) return null;
   const rng = mulberry32((seed ^ salt ^ 0xb055) >>> 0);
   return pool[Math.floor(rng() * pool.length)]!;
+}
+
+/** 精英战沿用角色正式遗物池，避免生成遗物直接进入首局运行链路。 */
+export function rollEliteRelicReward(
+  seed: number,
+  salt: number,
+  ownedRelicIds: string[],
+  characterId = DEFAULT_CHARACTER_ID,
+): string | null {
+  return rollBossRelicReward(seed, salt ^ 0xe11e, ownedRelicIds, characterId);
 }

@@ -2,14 +2,15 @@ import type { MapNode, MapNodeType } from '../model/map';
 import { mulberry32 } from '../utils/rng';
 
 const ACT2_ENTRY_NORMAL_IDS = [
-  'act2_normal_reflect',
-  'act2_normal_curse',
-  'act2_normal_support',
-  'act2_normal_blast',
+  'act2_entry_curse',
+  'act2_entry_support',
+  'act2_entry_blast',
+  'act2_entry_finish',
 ] as const;
 
 export const ACT2_ENTRY_ELITE_ID = 'act2_elite_lock';
-export const ACT2_ENTRY_SAFE_BRANCH_ID = 'act2_normal_reflect';
+export const ACT2_ENTRY_SAFE_BRANCH_ID = 'act2_entry_reflect';
+export const ACT2_ENTRY_BOSS_ID = 'act2_boss_bishop';
 
 type Act2EntryNormalEncounterId = typeof ACT2_ENTRY_NORMAL_IDS[number];
 
@@ -33,6 +34,20 @@ function encounterMetaForType(
       encounterId,
     };
   }
+  if (type === 'boss') {
+    return {
+      encounterTier: 'boss',
+      encounterPoolId: encounterId ? null : 'act_2_boss',
+      encounterId,
+    };
+  }
+  if (type === 'treasure') {
+    return {
+      encounterTier: 'treasure',
+      encounterPoolId: 'act_2_treasure',
+      encounterId: null,
+    };
+  }
   return { encounterTier: 'none', encounterPoolId: null, encounterId: null };
 }
 
@@ -43,6 +58,7 @@ function createNode(
   type: MapNodeType,
   nextNodeIds: string[],
   encounterId: string | null = null,
+  eventScriptId: string | null = null,
 ): MapNode {
   return {
     id,
@@ -56,52 +72,27 @@ function createNode(
     visited: false,
     routeBias: 'balance',
     ...encounterMetaForType(type, encounterId),
+    ...(eventScriptId ? { eventScriptId } : {}),
   };
 }
 
-function isScaleSupportEncounter(encounterId: Act2EntryNormalEncounterId): boolean {
-  return encounterId === 'act2_normal_support';
-}
-
-function isCountdownEncounter(encounterId: Act2EntryNormalEncounterId): boolean {
-  return encounterId === 'act2_normal_blast';
-}
-
-function isLegalSequence(sequence: readonly Act2EntryNormalEncounterId[]): boolean {
-  const [slotA, slotB, slotC, slotD] = sequence;
-  if (!slotA || !slotB || !slotC || !slotD) return false;
-  if (slotA === slotB) return false;
-  if (slotA === 'act2_normal_blast' || slotB === 'act2_normal_blast') return false;
-  if (isCountdownEncounter(slotA)) return false;
-  if (isScaleSupportEncounter(slotA) && isScaleSupportEncounter(slotB)) return false;
-  if (isScaleSupportEncounter(slotB) && isScaleSupportEncounter(slotC)) return false;
-  if (isScaleSupportEncounter(slotC) && isScaleSupportEncounter(slotD)) return false;
-  return true;
-}
-
-function permute<T>(items: readonly T[]): T[][] {
-  if (items.length <= 1) return [items.slice() as T[]];
-  const out: T[][] = [];
-  for (let index = 0; index < items.length; index += 1) {
-    const current = items[index]!;
-    const rest = items.filter((_, itemIndex) => itemIndex !== index);
-    for (const tail of permute(rest)) out.push([current, ...tail]);
-  }
-  return out;
-}
-
-function buildLegalSequences(): Act2EntryNormalEncounterId[][] {
-  return permute(ACT2_ENTRY_NORMAL_IDS).filter((sequence) => isLegalSequence(sequence));
-}
-
-const ACT2_ENTRY_LEGAL_SEQUENCES = buildLegalSequences();
+// 序章先教一个机制，再进入下一机制；避免反刺、倒计时和锁牌在同一场过早叠加。
+// 保留 seed 参数用于地图稳定性，但路线结构本身固定，便于调试和玩家形成预期。
+const ACT2_ENTRY_LEGAL_SEQUENCES = [
+  ['act2_entry_curse', 'act2_entry_support', 'act2_entry_blast', 'act2_entry_finish'],
+] satisfies Act2EntryNormalEncounterId[][];
 
 if (ACT2_ENTRY_LEGAL_SEQUENCES.length === 0) {
   throw new Error('act2 entry validation map has no legal normal encounter layouts');
 }
 
 export function act2EntryEncounterWhitelist(): readonly string[] {
-  return [...ACT2_ENTRY_NORMAL_IDS, ACT2_ENTRY_ELITE_ID];
+  return [
+    ...ACT2_ENTRY_NORMAL_IDS,
+    ACT2_ENTRY_SAFE_BRANCH_ID,
+    ACT2_ENTRY_ELITE_ID,
+    ACT2_ENTRY_BOSS_ID,
+  ];
 }
 
 export function buildAct2EntryValidationMap(seed: number): Record<string, MapNode> {
@@ -118,7 +109,11 @@ export function buildAct2EntryValidationMap(seed: number): Record<string, MapNod
     a2v_battle_c: createNode('a2v_battle_c', 5, 3, 'battle', ['a2v_safe_branch', 'a2v_risk_elite'], slotC),
     a2v_safe_branch: createNode('a2v_safe_branch', 6, 2, 'battle', ['a2v_battle_d'], ACT2_ENTRY_SAFE_BRANCH_ID),
     a2v_risk_elite: createNode('a2v_risk_elite', 6, 4, 'elite', ['a2v_battle_d'], ACT2_ENTRY_ELITE_ID),
-    a2v_battle_d: createNode('a2v_battle_d', 7, 3, 'battle', [], slotD),
+    a2v_battle_d: createNode('a2v_battle_d', 7, 3, 'battle', ['a2v_burst_altar'], slotD),
+    a2v_burst_altar: createNode('a2v_burst_altar', 8, 3, 'event', ['a2v_treasure'], null, 'burst_altar'),
+    a2v_treasure: createNode('a2v_treasure', 9, 3, 'treasure', ['a2v_rest_before_boss']),
+    a2v_rest_before_boss: createNode('a2v_rest_before_boss', 10, 3, 'rest', ['a2v_boss_silence']),
+    a2v_boss_silence: createNode('a2v_boss_silence', 11, 3, 'boss', [], 'act2_boss_bishop'),
   };
 
   nodes.a2v_start!.visited = true;

@@ -19,6 +19,7 @@
     "dev": "rsbuild dev",
     "build": "rsbuild build",
     "preview": "wrangler dev",
+    "e2e:serve": "pnpm build && node scripts/serve-dist.mjs",
     "test": "rstest run",
     "test:watch": "rstest --watch",
     "test:e2e": "pnpm test:e2e:smoke",

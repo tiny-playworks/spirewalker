@@ -2,12 +2,14 @@ import { style } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
 export const root = style({
-  position: 'fixed',
+  position: 'absolute',
   zIndex: 62,
   display: 'grid',
   gap: '.24rem',
-  width: 'min(18rem, calc(100vw - 1.4rem))',
-  padding: '.78rem .86rem .7rem',
+  width: 'min(14.5rem, calc(100% - 1.4rem))',
+  maxHeight: 'min(11rem, calc(100% - 1.4rem))',
+  overflow: 'auto',
+  padding: '.62rem .72rem .58rem',
   border: '1px solid rgba(233, 185, 107, .42)',
   borderRadius: '12px',
   color: '#eee6d8',
@@ -21,14 +23,14 @@ export const root = style({
       fontSize: '.82rem',
     },
     '(max-width: 560px) and (orientation: portrait)': {
-      width: 'min(16rem, calc(100vw - 1.2rem))',
+      width: 'min(15rem, calc(100% - 1.2rem))',
     },
     '(prefers-reduced-motion: reduce)': { transition: 'none' },
   },
 });
 
 export const placement = {
-  'top-left': style({ top: '5.5rem', left: '.7rem' }),
+  'top-left': style({ top: '.8rem', left: '.7rem' }),
   'bottom-left': style({ bottom: '5.6rem', left: '.7rem' }),
   'bottom-right': style({ right: '.7rem', bottom: '5.6rem' }),
 } as const;

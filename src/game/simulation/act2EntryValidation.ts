@@ -726,6 +726,7 @@ function simulateSingleRun(
 
   let screenTransitions = 0;
   let activeBattleId: string | null = null;
+  let activeBattleEncounterId: string | null = null;
   let activeBattleTurn = 0;
   let activeBattleStartHp = 0;
   let battleCommands = 0;
@@ -817,6 +818,7 @@ function simulateSingleRun(
         if (activeBattleId !== battle.id) {
           screenTransitions += 1;
           activeBattleId = battle.id;
+          activeBattleEncounterId = battle.encounter.id;
           activeBattleTurn = battle.turn;
           activeBattleStartHp = run.player.currentHp;
           activeBattleActFloor = run.meta.actFloor;
@@ -936,6 +938,7 @@ function simulateSingleRun(
             });
           }
           activeBattleId = null;
+          activeBattleEncounterId = null;
           lastAct1CombatSnapshot = null;
           run = dispatchWithGuard(engine, run, { type: 'LEAVE_BATTLE_TO_REWARD' });
           pushTerminationTransition(terminationTransitions, `battle_victory->${run.screen.type}`);
@@ -1028,9 +1031,9 @@ function simulateSingleRun(
       case 'game_over': {
         screenTransitions += 1;
         pushTerminationTransition(terminationTransitions, 'game_over');
-        if (activeBattleId && run.meta.validationSegment === 'act2_entry' && run.battle) {
+        if (activeBattleId && run.meta.validationSegment === 'act2_entry') {
           act2Battles.push({
-            encounterId: run.battle.encounter.id,
+            encounterId: run.battle?.encounter.id ?? activeBattleEncounterId ?? 'unknown',
             won: false,
             hpLoss: Math.max(0, activeBattleStartHp - run.player.currentHp),
             turns: activeBattleTurn,

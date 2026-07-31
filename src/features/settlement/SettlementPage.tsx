@@ -38,6 +38,10 @@ export function SettlementPage({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
   const finalDeck = summarizeDeck(run.masterDeck);
+  const act2PreludeClear = outcome === 'victory'
+    && run.meta.act === 2
+    && run.meta.validationCompleted
+    && run.meta.validationSegment === 'act2_entry';
 
   return (
     <RunSceneShell tone="settlement" className={styles.page} testId={`${outcome}-settlement`}>
@@ -45,10 +49,14 @@ export function SettlementPage({
         <span className={cx(styles.emblem, outcome === 'victory' && styles.emblemVictory)} aria-hidden>
           {outcome === 'victory' ? <Trophy /> : <Footprints />}
         </span>
-        <p className={styles.eyebrow}>{outcome === 'victory' ? '远征记录封存' : '行者的回声留在塔中'}</p>
-        <h1 className={styles.title}>{outcome === 'victory' ? '尖塔暂时沉寂' : '本次攀登止步于此'}</h1>
+        <p className={styles.eyebrow}>
+          {act2PreludeClear ? '碎裂回廊 · 序章封存' : outcome === 'victory' ? '远征记录封存' : '行者的回声留在塔中'}
+        </p>
+        <h1 className={styles.title}>
+          {act2PreludeClear ? '主教的静默已被打破' : outcome === 'victory' ? '尖塔暂时沉寂' : '本次攀登止步于此'}
+        </h1>
         <p className={styles.subtitle}>
-          抵达第 {run.meta.act} 章 · 第 {run.meta.actFloor} 层 · 种子 {run.seed}
+          {act2PreludeClear ? 'Act 2 序章完成 · 下一阶段将开启完整路线' : `抵达第 ${run.meta.act} 章 · 第 ${run.meta.actFloor} 层 · 种子 ${run.seed}`}
         </p>
       </section>
 

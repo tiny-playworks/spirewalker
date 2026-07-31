@@ -20,7 +20,7 @@ export const root = style({
   position: 'relative',
   isolation: 'isolate',
   display: 'grid',
-  gridTemplateRows: 'minmax(0, 1fr) minmax(13.8rem, 33%)',
+  gridTemplateRows: 'minmax(0, 1fr) minmax(13.8rem, 31%)',
   gap: 0,
   minHeight: 0,
   height: '100%',
@@ -42,6 +42,11 @@ export const backdrop = style({
   zIndex: -2,
   background:
     'radial-gradient(circle at 52% 20%, rgba(139, 92, 246, 0.22), transparent 22rem), radial-gradient(circle at 76% 58%, rgba(45, 212, 191, 0.13), transparent 18rem), linear-gradient(180deg, #0a0a0b 0%, #131314 52%, #0e0e0f 100%)',
+});
+
+export const backdropAct2 = style({
+  background:
+    'radial-gradient(circle at 50% 16%, rgba(139, 92, 246, 0.3), transparent 23rem), radial-gradient(circle at 78% 62%, rgba(216, 194, 255, 0.11), transparent 20rem), linear-gradient(180deg, #0b0911 0%, #16111e 52%, #0d0b13 100%)',
 });
 
 export const backdropImage = style({
@@ -85,7 +90,7 @@ export const combatLayer = style({
   justifyItems: 'center',
   gap: 'clamp(2rem, 11vw, 10rem)',
   minHeight: 0,
-  padding: 'clamp(.75rem, 3vh, 1.5rem) clamp(1rem, 5vw, 5rem) 2.8rem',
+  padding: 'clamp(.75rem, 3vh, 1.5rem) clamp(1rem, 5vw, 5rem) 2rem',
   '@media': {
     [mobile]: {
       gridTemplateColumns: 'minmax(0, 0.82fr) minmax(0, 1.18fr)',
@@ -425,6 +430,47 @@ export const activeCounter = style({
   },
 });
 
+export const mechanicList = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'center',
+  gap: '.28rem',
+  maxWidth: '15rem',
+  '@media': {
+    [mobile]: { maxWidth: '8.6rem', gap: '.16rem' },
+  },
+});
+
+export const mechanicBadge = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: '1.35rem',
+  padding: '.16rem .42rem',
+  borderRadius: sceneVars.radii.pill,
+  fontSize: '.66rem',
+  fontWeight: 900,
+  letterSpacing: '.02em',
+  whiteSpace: 'nowrap',
+});
+
+export const mechanicTone = styleVariants({
+  danger: {
+    color: '#ffe2df',
+    border: '1px solid rgba(255, 132, 120, .58)',
+    background: 'rgba(92, 26, 32, .78)',
+  },
+  warning: {
+    color: '#fff0c7',
+    border: '1px solid rgba(251, 191, 36, .55)',
+    background: 'rgba(76, 50, 12, .76)',
+  },
+  control: {
+    color: '#e7ddff',
+    border: '1px solid rgba(181, 147, 255, .55)',
+    background: 'rgba(48, 28, 86, .76)',
+  },
+});
+
 export const enemyHitTarget = style({
   position: 'relative',
   display: 'grid',
@@ -456,6 +502,14 @@ export const targetPreview = style({
   fontSize: '.7rem',
   fontWeight: 900,
   '@media': { [mobile]: { bottom: '-1.65rem', fontSize: '.7rem', padding: '.2rem .38rem' } },
+});
+
+globalStyle(`${targetPreview} em`, {
+  display: 'block',
+  marginTop: '.12rem',
+  color: '#ffb4ab',
+  fontStyle: 'normal',
+  fontSize: '.64rem',
 });
 
 export const bottomDock = style({
@@ -674,7 +728,7 @@ export const hand = style({
   overflow: 'visible',
   padding: '0 0.2rem 0.65rem',
   perspective: '1000px',
-  transform: 'translateY(-3.15rem)',
+  transform: 'translateY(-2.2rem)',
   '@media': {
     [mobile]: {
       justifyContent: 'flex-start',
@@ -766,6 +820,25 @@ export const cardSelected = style({
 export const cardDisabled = style({
   opacity: 0.5,
   cursor: 'not-allowed',
+});
+
+export const cardLocked = style({
+  borderColor: 'rgba(255, 132, 120, .72)',
+  boxShadow: '0 0 0 1px rgba(255, 132, 120, .18), 0 14px 32px rgba(0, 0, 0, .42)',
+});
+
+export const cardLock = style({
+  position: 'absolute',
+  left: '.45rem',
+  top: '.45rem',
+  padding: '.16rem .34rem',
+  borderRadius: sceneVars.radii.pill,
+  color: '#ffe2df',
+  background: 'rgba(92, 26, 32, .9)',
+  border: '1px solid rgba(255, 132, 120, .58)',
+  fontSize: '.6rem',
+  fontWeight: 900,
+  zIndex: 2,
 });
 
 export const cardCost = style({

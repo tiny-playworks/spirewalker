@@ -9,6 +9,7 @@ import { MIXED_CARDS } from './mixed/index';
 import { NEUTRAL_CARDS } from './neutral/index';
 import { CURSE_CARDS } from './curse/index';
 import { STATUS_CARDS } from './status/index';
+import { ACT2_FORMAL_CARDS } from './act2Formal';
 
 // upgradeRules 为旧模块保留了 starter 表的兼容写入；聚合表只从基础卡开始，
 // 再由同一份规则在下方生成升级卡，避免升级定义被重复加入。
@@ -25,6 +26,7 @@ export const ALL_CARD_DEFINITIONS: Record<string, CardDefinition> = {
   ...NEUTRAL_CARDS,
   ...CURSE_CARDS,
   ...STATUS_CARDS,
+  ...ACT2_FORMAL_CARDS,
 };
 
 // 升级规则必须在所有消费方拿到注册表前完成，避免 starter 表与 UI 快照分裂。
