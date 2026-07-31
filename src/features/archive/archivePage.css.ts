@@ -2,6 +2,7 @@ import { globalStyle, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
 const mobile = '(max-width: 820px)';
+const mobileLandscape = '(max-width: 900px) and (orientation: landscape)';
 
 export const page = style({
   position: 'relative',
@@ -32,6 +33,12 @@ export const page = style({
       gridTemplateColumns: '1fr',
       gridTemplateRows: 'auto minmax(0, 1fr)',
     },
+    [mobileLandscape]: {
+      gridTemplateColumns: '1fr',
+      gridTemplateRows: 'auto minmax(0, 1fr)',
+      gap: '.5rem',
+      padding: '.5rem',
+    },
   },
 });
 
@@ -52,6 +59,23 @@ export const sidebar = style({
     'radial-gradient(circle at 20% 0%, rgba(251,191,36,.1), transparent 14rem), linear-gradient(180deg, rgba(28,26,30,.94), rgba(8,8,10,.9))',
   boxShadow: sceneVars.shadow.panel,
   backdropFilter: 'blur(18px)',
+  '@media': {
+    [mobileLandscape]: {
+      display: 'grid',
+      gridTemplateColumns: 'auto minmax(0, 1fr) auto auto',
+      alignItems: 'center',
+      gap: '.5rem',
+      padding: '.45rem .55rem',
+    },
+  },
+});
+
+globalStyle(`${sidebar} > div`, {
+  '@media': {
+    [mobileLandscape]: {
+      minWidth: 0,
+    },
+  },
 });
 
 export const kicker = style({
@@ -61,6 +85,9 @@ export const kicker = style({
   fontWeight: 900,
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
+  '@media': {
+    [mobileLandscape]: { display: 'none' },
+  },
 });
 
 export const title = style({
@@ -69,6 +96,9 @@ export const title = style({
   fontFamily: sceneVars.font.display,
   fontSize: '2rem',
   lineHeight: 1.05,
+  '@media': {
+    [mobileLandscape]: { fontSize: '1rem', whiteSpace: 'nowrap' },
+  },
 });
 
 export const nav = style({
@@ -77,6 +107,10 @@ export const nav = style({
   '@media': {
     [mobile]: {
       gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+    },
+    [mobileLandscape]: {
+      gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+      gap: '.3rem',
     },
   },
 });
@@ -104,6 +138,13 @@ export const navButton = style({
       padding: '0 0.35rem',
       fontSize: '0.78rem',
     },
+    [mobileLandscape]: {
+      justifyContent: 'center',
+      gap: '.2rem',
+      minHeight: '2.15rem',
+      padding: '0 .2rem',
+      fontSize: '.72rem',
+    },
   },
 });
 
@@ -124,6 +165,13 @@ export const closeButton = style({
   background: 'linear-gradient(135deg, #c08457, #fbbf24)',
   boxShadow: sceneVars.shadow.button,
   cursor: 'pointer',
+  '@media': {
+    [mobileLandscape]: {
+      minHeight: '2.15rem',
+      padding: '0 .65rem',
+      whiteSpace: 'nowrap',
+    },
+  },
 });
 
 export const resetButton = style({
@@ -137,6 +185,14 @@ export const resetButton = style({
     '&:hover': {
       color: '#fecaca',
       borderColor: 'rgba(239, 68, 68, 0.64)',
+    },
+  },
+  '@media': {
+    [mobileLandscape]: {
+      minHeight: '2.15rem',
+      padding: '0 .55rem',
+      fontSize: '.7rem',
+      whiteSpace: 'nowrap',
     },
   },
 });
@@ -156,6 +212,11 @@ export const panel = style({
     'linear-gradient(145deg, rgba(30,28,34,.88), rgba(9,9,11,.74)), radial-gradient(circle at 80% 0%, rgba(45,212,191,.08), transparent 28rem)',
   boxShadow: sceneVars.shadow.panelHeavy,
   backdropFilter: 'blur(18px)',
+  '@media': {
+    [mobileLandscape]: {
+      padding: '.8rem',
+    },
+  },
 });
 
 export const sectionTitle = style({
@@ -164,6 +225,9 @@ export const sectionTitle = style({
   fontFamily: sceneVars.font.display,
   fontSize: 'clamp(1.8rem, 4vw, 3.2rem)',
   lineHeight: 1,
+  '@media': {
+    [mobileLandscape]: { fontSize: '1.8rem', marginBottom: '.75rem' },
+  },
 });
 
 export const metricRow = style({
@@ -279,6 +343,12 @@ export const cardGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(18rem, 1fr))',
   gap: '0.75rem',
+  '@media': {
+    [mobileLandscape]: {
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      gap: '.5rem',
+    },
+  },
 });
 
 export const filterBar = style({
@@ -313,6 +383,12 @@ export const codexCard = style({
   borderRadius: sceneVars.radii.md,
   border: '1px solid rgba(208, 188, 255, 0.22)',
   background: 'linear-gradient(145deg, rgba(27,25,32,.94), rgba(8,8,10,.9))',
+  '@media': {
+    [mobileLandscape]: {
+      gridTemplateColumns: '4.4rem minmax(0, 1fr)',
+      minHeight: '6.5rem',
+    },
+  },
 });
 
 export const codexKnown = style({
@@ -377,6 +453,12 @@ export const codexBody = style({
   flexDirection: 'column',
   gap: '.65rem',
   padding: '.85rem',
+  '@media': {
+    [mobileLandscape]: {
+      gap: '.35rem',
+      padding: '.55rem',
+    },
+  },
 });
 
 export const codexHeader = style({

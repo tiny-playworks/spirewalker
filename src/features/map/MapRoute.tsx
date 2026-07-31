@@ -135,6 +135,7 @@ export function MapRoute({
             hoveredNodeId !== null &&
             hoveredReachable.has(from) &&
             hoveredReachable.has(to);
+          const isChoiceEdge = from === currentNodeId && selectableNodeIds.has(to);
 
           return (
             <line
@@ -148,6 +149,7 @@ export function MapRoute({
                 styles.routeEdgeEmphasis[emphasis ? 'active' : 'dim'],
                 emphasis ? styles.routeEdgeTone[routePresentation.tone] : null,
                 emphasis ? styles.routeEdgeGlow[routePresentation.glow] : null,
+                isChoiceEdge && styles.routeEdgeChoice,
                 isPreviewed && styles.routeEdgePreview,
               )}
             />

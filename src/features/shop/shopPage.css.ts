@@ -1,4 +1,4 @@
-import { keyframes, style, styleVariants } from '@vanilla-extract/css';
+import { globalStyle, keyframes, style, styleVariants } from '@vanilla-extract/css';
 import { sceneVars } from '@/styles/sceneTheme.css';
 
 const SERIF = sceneVars.font.display;
@@ -93,6 +93,9 @@ export const body = style({
   minHeight: 0,
   '@media': {
     [mobileLandscape]: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      gridTemplateRows: 'auto minmax(0, 1fr) auto',
       flexWrap: 'nowrap',
       gap: '.55rem',
       padding: '.45rem max(.6rem, env(safe-area-inset-right, 0px)) max(.45rem, env(safe-area-inset-bottom, 0px)) max(.6rem, env(safe-area-inset-left, 0px))',
@@ -118,9 +121,13 @@ export const merchant = style({
   boxShadow: 'inset 0 0 70px rgba(0, 0, 0, 0.7)',
   '@media': {
     [mobileLandscape]: {
-      flexBasis: '8.5rem',
-      minHeight: 0,
-      padding: '.65rem',
+      gridRow: 1,
+      flexBasis: 'auto',
+      minHeight: '2.55rem',
+      padding: '.38rem .65rem',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
   },
 });
@@ -136,16 +143,17 @@ export const merchantRune = style({
   textShadow: '0 0 28px rgba(160, 120, 255, 0.7)',
   animation: `${portraitPulse} 3.8s ease-in-out infinite`,
   pointerEvents: 'none',
-  '@media': { [mobileLandscape]: { top: '20%', fontSize: '2.5rem' } },
+  '@media': { [mobileLandscape]: { top: '50%', left: '1.1rem', fontSize: '1.55rem' } },
 });
 
 export const merchantFade = style({
   position: 'absolute',
   inset: 0,
   background: 'linear-gradient(to top, #0b0b0e 2%, transparent 58%), radial-gradient(circle at 50% 45%, transparent 38%, rgba(0,0,0,.42) 100%)',
+  '@media': { [mobileLandscape]: { background: 'linear-gradient(90deg, rgba(6,6,9,.8), transparent 70%)' } },
 });
 
-export const merchantInfo = style({ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' });
+export const merchantInfo = style({ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', '@media': { [mobileLandscape]: { marginLeft: '1.6rem', flexDirection: 'row', alignItems: 'center', gap: '.45rem' } } });
 
 export const merchantName = style({
   margin: 0,
@@ -175,7 +183,7 @@ export const merchantNote = style({
   letterSpacing: '0.14em',
   textTransform: 'uppercase',
   color: '#ffc640',
-  '@media': { [mobileLandscape]: { fontSize: '.7rem', letterSpacing: '.06em' } },
+  '@media': { [mobileLandscape]: { fontSize: '.62rem', letterSpacing: '.04em' } },
 });
 
 export const noteIcon = style({ width: '0.85rem', height: '0.85rem' });
@@ -187,7 +195,8 @@ export const goods = style({
   flexDirection: 'column',
   gap: '1.1rem',
   minWidth: 0,
-  '@media': { [mobileLandscape]: { gap: '.48rem', overflowY: 'auto', overscrollBehavior: 'contain' } },
+  minHeight: 0,
+  '@media': { [mobileLandscape]: { gridRow: 2, gap: '.48rem', overflowY: 'auto', overscrollBehavior: 'contain' } },
 });
 
 export const sectionHead = style({
@@ -208,7 +217,7 @@ export const cardGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(9.5rem, 1fr))',
   gap: '0.7rem',
-  '@media': { [mobileLandscape]: { gridTemplateColumns: 'repeat(2, minmax(7.2rem, 1fr))', gap: '.4rem' } },
+  '@media': { [mobileLandscape]: { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '.45rem' } },
 });
 
 const tileBase = style({
@@ -244,7 +253,7 @@ export const cardOffer = style({
   borderColor: sceneVars.color.borderSoft,
   background:
     'linear-gradient(165deg, rgba(32,31,38,.94), rgba(11,11,14,.94))',
-  '@media': { [mobileLandscape]: { minHeight: 0, padding: 0 } },
+  '@media': { [mobileLandscape]: { minHeight: '10rem', padding: 0 } },
 });
 
 export const tileArt = style({
@@ -253,7 +262,7 @@ export const tileArt = style({
   height: '6.2rem',
   overflow: 'hidden',
   background: sceneVars.color.canvasDeep,
-  '@media': { [mobileLandscape]: { height: '3.8rem' } },
+  '@media': { [mobileLandscape]: { height: '4.1rem' } },
 });
 
 export const tileArtImage = style({
@@ -319,7 +328,7 @@ export const tileDesc = style({
   lineHeight: 1.45,
   color: sceneVars.color.textSubtle,
   flex: 1,
-  '@media': { [mobileLandscape]: { fontSize: '.7rem', lineHeight: 1.35 } },
+  '@media': { [mobileLandscape]: { display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, fontSize: '.7rem', lineHeight: 1.35 } },
 });
 
 export const tileSignals = style({
@@ -359,7 +368,7 @@ export const relicGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(11rem, 1fr))',
   gap: '0.7rem',
-  '@media': { [mobileLandscape]: { gridTemplateColumns: 'repeat(2, minmax(7.2rem, 1fr))', gap: '.4rem' } },
+  '@media': { [mobileLandscape]: { gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '.4rem' } },
 });
 
 /* ---- rituals ---- */
@@ -463,11 +472,16 @@ export const rail = style({
   gap: '0.85rem',
   '@media': {
     [mobileLandscape]: {
+      gridRow: 3,
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr)) auto',
       flexBasis: '9.25rem',
       alignSelf: 'stretch',
       gap: '.4rem',
-      overflowY: 'auto',
-      overscrollBehavior: 'contain',
+      height: '3.3rem',
+      minHeight: 0,
+      gridTemplateRows: 'minmax(0, 1fr)',
+      overflow: 'visible',
     },
   },
 });
@@ -478,7 +492,14 @@ export const railPanel = style({
   border: '1px solid rgba(73, 68, 84, 0.45)',
   background: 'rgba(20, 20, 22, 0.6)',
   backdropFilter: 'blur(10px)',
-  '@media': { [mobileLandscape]: { padding: '.48rem .55rem' } },
+  '@media': {
+    [mobileLandscape]: {
+      minWidth: 0,
+      minHeight: 0,
+      padding: '.38rem .5rem',
+      overflow: 'hidden',
+    },
+  },
 });
 
 export const railPanelWealth = style({
@@ -493,6 +514,7 @@ export const railLabel = style({
   letterSpacing: '0.18em',
   textTransform: 'uppercase',
   color: sceneVars.color.textSubtle,
+  '@media': { [mobileLandscape]: { marginBottom: '.2rem', fontSize: '.58rem', letterSpacing: '.08em' } },
 });
 
 export const wealthValue = style({
@@ -502,7 +524,7 @@ export const wealthValue = style({
   fontSize: '1.9rem',
   fontWeight: 800,
   color: '#ffc640',
-  '@media': { [mobileLandscape]: { fontSize: '1.15rem' } },
+  '@media': { [mobileLandscape]: { fontSize: '1rem' } },
 });
 
 export const wealthIcon = style({ width: '1.5rem', height: '1.5rem' });
@@ -513,6 +535,13 @@ export const railRow = style({
   justifyContent: 'space-between',
   fontSize: '0.78rem',
   color: sceneVars.color.textMuted,
+  '@media': { [mobileLandscape]: { fontSize: '.68rem' } },
+});
+
+globalStyle(`${railPanel} > ${railRow}`, {
+  '@media': {
+    [mobileLandscape]: { marginTop: '0 !important' },
+  },
 });
 
 export const hpBar = style({
@@ -521,6 +550,7 @@ export const hpBar = style({
   borderRadius: '999px',
   overflow: 'hidden',
   background: 'rgba(73, 68, 84, 0.5)',
+  '@media': { [mobileLandscape]: { display: 'none' } },
 });
 
 export const hpFill = style({
@@ -529,7 +559,7 @@ export const hpFill = style({
   background: 'linear-gradient(90deg, #ff8a7a, #ffb4ab)',
 });
 
-export const relicChips = style({ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' });
+export const relicChips = style({ display: 'flex', flexWrap: 'nowrap', gap: '0.3rem', overflow: 'hidden' });
 
 export const relicChip = style({
   display: 'grid',
@@ -542,6 +572,7 @@ export const relicChip = style({
   color: sceneVars.color.accentGlow,
   background: 'rgba(160, 120, 255, 0.14)',
   border: '1px solid rgba(160, 120, 255, 0.3)',
+  '@media': { [mobileLandscape]: { flex: '0 0 1.55rem', width: '1.55rem', height: '1.55rem' } },
 });
 
 export const railEmpty = style({ fontSize: '0.76rem', color: sceneVars.color.textFaint });
@@ -564,7 +595,7 @@ export const leaveButton = style({
   selectors: {
     '&:hover': { borderColor: sceneVars.color.accentGlow, background: 'rgba(40, 38, 44, 0.8)' },
   },
-  '@media': { [mobileLandscape]: { minHeight: '2.25rem', padding: '.4rem .55rem', fontSize: '.68rem' } },
+  '@media': { [mobileLandscape]: { minHeight: '3.3rem', padding: '.4rem .55rem', fontSize: '.68rem' } },
 });
 
 export const leaveIcon = style({ width: '1rem', height: '1rem' });

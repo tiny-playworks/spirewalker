@@ -342,21 +342,20 @@ export function ReactBattleStage({ className }: { className?: string }) {
           })}
         </section>
 
-        {activeCardId ? (
-          <div className={styles.targetGuide} role="status">
-            <span>选择目标</span>
-            {activePreview?.damage ? <strong>预计造成 {activePreview.damage} 点伤害</strong> : null}
-            <button
-              type="button"
-              onClick={() => {
-                dispatchCommand({ type: "CANCEL_TARGET_SELECTION" });
-                setSelectedCardId(null);
-              }}
-            >取消 Esc</button>
-          </div>
-        ) : null}
-
         <div className={styles.rightDock}>
+          {activeCardId ? (
+            <div className={styles.targetGuide} role="status">
+              <span>选择目标</span>
+              {activePreview?.damage ? <strong>预计造成 {activePreview.damage} 点伤害</strong> : null}
+              <button
+                type="button"
+                onClick={() => {
+                  dispatchCommand({ type: "CANCEL_TARGET_SELECTION" });
+                  setSelectedCardId(null);
+                }}
+              >取消 Esc</button>
+            </div>
+          ) : null}
           <Pile label="弃牌" value={battle.player.discardPile.length} muted />
           <Pile label="消耗" value={battle.player.exhaustPile.length} muted />
           {battle.phase === "victory" ? (

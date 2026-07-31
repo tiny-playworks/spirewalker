@@ -99,6 +99,13 @@ export const routeEdgePreview = style({
   filter: 'drop-shadow(0 0 8px rgba(244, 213, 141, 0.16))',
 });
 
+export const routeEdgeChoice = style({
+  stroke: 'rgba(244, 213, 141, 0.86)',
+  strokeWidth: 2.55,
+  opacity: 0.98,
+  filter: 'drop-shadow(0 0 7px rgba(244, 213, 141, 0.13))',
+});
+
 export const routeEdgeEmphasis = styleVariants({
   active: {
     stroke: 'rgba(140, 124, 98, 0.85)',

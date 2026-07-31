@@ -491,6 +491,7 @@ export const leftDock = style({
 });
 
 export const rightDock = style({
+  position: 'relative',
   display: 'flex',
   alignItems: 'end',
   justifyContent: 'flex-end',
@@ -992,22 +993,30 @@ export const feedbackCueTone = styleVariants({
 
 export const targetGuide = style({
   position: 'absolute',
-  left: '50%',
-  bottom: 'calc(100% + 0.35rem)',
+  right: 0,
+  bottom: 'calc(100% + 0.45rem)',
   zIndex: 30,
-  transform: 'translateX(-50%)',
   display: 'flex',
   alignItems: 'center',
   gap: '0.65rem',
   padding: '0.48rem 0.7rem',
-  whiteSpace: 'nowrap',
+  maxWidth: 'min(22rem, calc(100vw - 2rem))',
+  whiteSpace: 'normal',
   borderRadius: sceneVars.radii.pill,
   color: sceneVars.color.textStrong,
   border: '1px solid rgba(251, 191, 36, 0.45)',
   background: 'rgba(10, 10, 11, 0.9)',
   boxShadow: '0 12px 34px rgba(0, 0, 0, 0.45)',
   '@media': {
-    [mobile]: { bottom: 'calc(100% + 0.1rem)', fontSize: '0.72rem', gap: '0.35rem' },
+    [mobile]: {
+      bottom: 'calc(100% + 6.2rem)',
+      minWidth: '12rem',
+      maxWidth: 'min(15rem, calc(100vw - 1rem))',
+      whiteSpace: 'nowrap',
+      fontSize: '0.72rem',
+      gap: '0.35rem',
+      padding: '.35rem .45rem',
+    },
   },
 });
 
