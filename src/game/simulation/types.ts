@@ -18,17 +18,25 @@ export type SimulationSummary = {
   pollutedDeckRate: number;
 };
 
+export type Act2ValidationRouteId = 'safe' | 'build' | 'risk';
+
+export type Act2ValidationRouteMode = 'natural' | Act2ValidationRouteId;
+
 export type Act2EntryEncounterMetric = {
+  routeId: Act2ValidationRouteId;
   encounterId: string;
   attempts: number;
   survives: number;
   surviveRate: number;
   avgHpLoss: number;
   avgTurns: number;
+  avgCardsPlayed: number;
+  avgCardsPerTurn: number;
 };
 
 export type Act2EntryPolicySummary = {
   policyId: string;
+  routeMode: Act2ValidationRouteMode;
   totalRuns: number;
   act1BossReachCount: number;
   act1BossReachRate: number;
@@ -42,6 +50,7 @@ export type Act2EntryPolicySummary = {
   act2FrontWinRate: number;
   act2AvgHpLoss: number;
   act2AvgTurns: number;
+  act2AvgCardsPerTurn: number;
   act2EliteBranchEnterCount: number;
   act2EliteBranchEnterRate: number;
   act2EliteBranchSamples: number;

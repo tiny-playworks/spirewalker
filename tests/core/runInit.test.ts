@@ -58,4 +58,17 @@ describe('core/runInit', () => {
     expect(new Set(routes.map((nodes) => nodes.a2v_battle_d!.nextNodeIds.join(','))).size).toBe(3);
     expect(ACT2_FORMAL_ROUTE_TEMPLATES).toHaveLength(3);
   });
+
+  test('Act2 验证地图可显式指定正式路线而不改变默认 seed 路线', () => {
+    const safe = buildAct2EntryNodes(313, 'safe');
+    const build = buildAct2EntryNodes(313, 'build');
+    const risk = buildAct2EntryNodes(313, 'risk');
+
+    expect(safe.a2v_rest!.type).toBe('rest');
+    expect(build.a2v_shop!.type).toBe('shop');
+    expect(risk.a2v_risk_elite!.type).toBe('elite');
+    expect(buildAct2EntryNodes(313).a2v_battle_a!.encounterId).toBe(
+      act2FormalRouteForSeed(313).normalEncounterIds[0],
+    );
+  });
 });

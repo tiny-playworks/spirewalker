@@ -1,7 +1,8 @@
 import { GameEngine } from '@/game/core/engine/GameEngine';
 import { CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { rewardEncounterTierFromRun } from '@/game/core/engine/rewardEncounter';
-import { createMapRun } from '@/game/core/engine/createMapRun';
+import { buildAct2EntryNodes, createMapRun } from '@/game/core/engine/createMapRun';
+import { act2FormalRouteForSeed } from '@/game/core/engine/buildAct2EntryValidationMap';
 import { skipCardGoldAmount } from '@/game/core/engine/postBattleExtras';
 import { isLegalMapStep } from '@/game/core/model/mapGraph';
 import type { MapNodeType, MapRouteBias } from '@/game/core/model/map';
@@ -26,6 +27,8 @@ import type {
   Act1TerminationSnapshot,
   Act2EntryEncounterMetric,
   Act2EntryPolicySummary,
+  Act2ValidationRouteId,
+  Act2ValidationRouteMode,
   SimulationBattleContext,
   SimulationEventContext,
   SimulationMapContext,
@@ -236,10 +239,12 @@ function resolveEncounterPressure(
 }
 
 type Act2BattleRecord = {
+  routeId: Act2ValidationRouteId;
   encounterId: string;
   won: boolean;
   hpLoss: number;
   turns: number;
+  cardsPlayed: number;
 };
 
 type SingleRunResult = {
@@ -264,11 +269,12 @@ type SingleRunResult = {
   };
 };
 
-type ValidationInput = {
+export type ValidationInput = {
   seed: number;
   runsPerPolicy: number;
   policies?: readonly SimulationPolicy[];
   characterId?: 'walker';
+  routeMode?: Act2ValidationRouteMode;
   bypassAct1Boss?: boolean;
   bypassAct1Midgame?: boolean;
   bypassAct1Elite?: boolean;
@@ -682,28 +688,45 @@ function combatProgressFingerprint(run: RunState): string {
   ].join('|');
 }
 
-function chooseMapNodeWithValidationRule(policy: SimulationPolicy, run: RunState): string {
+function chooseMapNodeWithValidationRule(
+  policy: SimulationPolicy,
+  run: RunState,
+  routeMode: Act2ValidationRouteMode,
+): string {
   const ctx = buildMapContext(run);
-  if (run.meta.validationSegment === 'act2_entry') {
-    const eliteNode = ctx.nextNodes.find((node) => node.type === 'elite');
-    if (eliteNode) return eliteNode.id;
+  if (run.meta.validationSegment === 'act2_entry' && routeMode !== 'natural') {
+    const preferredIds = routeMode === 'safe'
+      ? ['a2v_rest', 'a2v_safe_branch']
+      : routeMode === 'build'
+        ? ['a2v_shop', 'a2v_safe_branch']
+        : ['a2v_risk_elite'];
+    const preferred = ctx.nextNodes.find((node) => preferredIds.includes(node.id));
+    if (preferred) return preferred.id;
   }
   const chosen = policy.chooseMapNode(ctx);
   return ctx.nextNodes.some((node) => node.id === chosen) ? chosen : ctx.nextNodes[0]!.id;
 }
 
-function summarizeEncounter(records: Act2BattleRecord[], encounterId: string): Act2EntryEncounterMetric {
-  const fights = records.filter((record) => record.encounterId === encounterId);
+function summarizeEncounter(
+  records: Act2BattleRecord[],
+  routeId: Act2ValidationRouteId,
+  encounterId: string,
+): Act2EntryEncounterMetric {
+  const fights = records.filter((record) => record.routeId === routeId && record.encounterId === encounterId);
   const survives = fights.filter((record) => record.won).length;
   const totalHpLoss = fights.reduce((sum, record) => sum + record.hpLoss, 0);
   const totalTurns = fights.reduce((sum, record) => sum + record.turns, 0);
+  const totalCardsPlayed = fights.reduce((sum, record) => sum + record.cardsPlayed, 0);
   return {
+    routeId,
     encounterId,
     attempts: fights.length,
     survives,
     surviveRate: fights.length > 0 ? survives / fights.length : 0,
     avgHpLoss: fights.length > 0 ? totalHpLoss / fights.length : 0,
     avgTurns: fights.length > 0 ? totalTurns / fights.length : 0,
+    avgCardsPlayed: fights.length > 0 ? totalCardsPlayed / fights.length : 0,
+    avgCardsPerTurn: totalTurns > 0 ? totalCardsPlayed / totalTurns : 0,
   };
 }
 
@@ -711,6 +734,7 @@ function simulateSingleRun(
   seed: number,
   policy: SimulationPolicy,
   characterId: 'walker',
+  routeMode: Act2ValidationRouteMode,
   bypassAct1Boss: boolean,
   bypassAct1Midgame: boolean,
   bypassAct1Elite: boolean,
@@ -723,12 +747,19 @@ function simulateSingleRun(
   }
   const mapNormalFightShape = summarizeMapNormalFightShape(run);
   const routeShapeByBias = summarizeAct1RouteShape(run);
+  const act2MapSeed = (seed ^ (2 * 0xaced)) >>> 0;
+  const act2RouteId: Act2ValidationRouteId = routeMode === 'natural'
+    ? act2FormalRouteForSeed(act2MapSeed).id
+    : routeMode;
 
   let screenTransitions = 0;
+  let act2RouteApplied = false;
   let activeBattleId: string | null = null;
   let activeBattleEncounterId: string | null = null;
+  let activeBattleRouteId: Act2ValidationRouteId | null = null;
   let activeBattleTurn = 0;
   let activeBattleStartHp = 0;
+  let activeBattleCardsPlayed = 0;
   let battleCommands = 0;
   let act1BossReached = false;
   let act1BossDefeatedByBoss = false;
@@ -786,6 +817,15 @@ function simulateSingleRun(
     switch (run.screen.type) {
       case 'map': {
         screenTransitions += 1;
+        if (run.meta.validationSegment === 'act2_entry' && !act2RouteApplied) {
+          if (routeMode !== 'natural') {
+            const nodes = buildAct2EntryNodes(act2MapSeed, routeMode);
+            const startId = Object.values(nodes).find((node) => node.depth === 1)?.id
+              ?? Object.keys(nodes)[0]!;
+            run.map = { nodes, currentNodeId: startId };
+          }
+          act2RouteApplied = true;
+        }
         const ctx = buildMapContext(run);
         if (ctx.nextNodes.length === 0) {
           enteredEliteBranch = enteredEliteBranch || Boolean(run.meta.enteredAct2EliteBranch);
@@ -800,7 +840,7 @@ function simulateSingleRun(
         }
         run = dispatchWithGuard(engine, run, {
           type: 'CHOOSE_MAP_NODE',
-          nodeId: chooseMapNodeWithValidationRule(policy, run),
+          nodeId: chooseMapNodeWithValidationRule(policy, run, routeMode),
         });
         const landedNodeId = run.map.currentNodeId;
         const landedNode = landedNodeId ? run.map.nodes[landedNodeId] : null;
@@ -819,8 +859,10 @@ function simulateSingleRun(
           screenTransitions += 1;
           activeBattleId = battle.id;
           activeBattleEncounterId = battle.encounter.id;
+          activeBattleRouteId = run.meta.validationSegment === 'act2_entry' ? act2RouteId : null;
           activeBattleTurn = battle.turn;
           activeBattleStartHp = run.player.currentHp;
+          activeBattleCardsPlayed = 0;
           activeBattleActFloor = run.meta.actFloor;
           battleCommands = 0;
           lastBattleFingerprint = battleFingerprint(run);
@@ -931,14 +973,17 @@ function simulateSingleRun(
           }
           if (run.meta.validationSegment === 'act2_entry') {
             act2Battles.push({
+              routeId: activeBattleRouteId ?? act2RouteId,
               encounterId: battle.encounter.id,
               won: true,
               hpLoss: Math.max(0, activeBattleStartHp - run.player.currentHp),
               turns: battle.turn,
+              cardsPlayed: activeBattleCardsPlayed,
             });
           }
           activeBattleId = null;
           activeBattleEncounterId = null;
+          activeBattleRouteId = null;
           lastAct1CombatSnapshot = null;
           run = dispatchWithGuard(engine, run, { type: 'LEAVE_BATTLE_TO_REWARD' });
           pushTerminationTransition(terminationTransitions, `battle_victory->${run.screen.type}`);
@@ -959,7 +1004,9 @@ function simulateSingleRun(
             buildBattleContext(run, stagnantBattleStateSteps, stagnantCombatSteps),
           );
           battleCommands += 1;
-          run = dispatchWithGuard(engine, run, command);
+          const dispatchResult = engine.dispatch(run, command);
+          activeBattleCardsPlayed += dispatchResult.events.filter((event) => event.type === 'CARD_PLAYED').length;
+          run = dispatchResult.nextRun;
           const nextFingerprint = battleFingerprint(run);
           const nextCombatFingerprint = combatProgressFingerprint(run);
           stagnantBattleStateSteps = nextFingerprint === lastBattleFingerprint ? stagnantBattleStateSteps + 1 : 0;
@@ -1033,10 +1080,12 @@ function simulateSingleRun(
         pushTerminationTransition(terminationTransitions, 'game_over');
         if (activeBattleId && run.meta.validationSegment === 'act2_entry') {
           act2Battles.push({
+            routeId: activeBattleRouteId ?? act2RouteId,
             encounterId: run.battle?.encounter.id ?? activeBattleEncounterId ?? 'unknown',
             won: false,
             hpLoss: Math.max(0, activeBattleStartHp - run.player.currentHp),
             turns: activeBattleTurn,
+            cardsPlayed: activeBattleCardsPlayed,
           });
         }
         if (activeBattleId && run.meta.act === 1 && run.battle?.encounter.tier === 'boss') {
@@ -1487,6 +1536,7 @@ export function runAct2EntryValidation(input: ValidationInput): Act2EntryPolicyS
     runsPerPolicy,
     policies = walkerBasePolicies,
     characterId = 'walker',
+    routeMode = 'natural',
     bypassAct1Boss = false,
     bypassAct1Midgame = false,
     bypassAct1Elite = false,
@@ -1502,6 +1552,7 @@ export function runAct2EntryValidation(input: ValidationInput): Act2EntryPolicyS
         (seed + policyIndex * 10000 + runIndex) >>> 0,
         policy,
         characterId,
+        routeMode,
         bypassAct1Boss,
         bypassAct1Midgame,
         bypassAct1Elite,
@@ -1531,10 +1582,20 @@ export function runAct2EntryValidation(input: ValidationInput): Act2EntryPolicyS
       return detail.act2Battles.slice(0, 5).every((record) => record.won);
     }).length;
     const eliteBranchDetails = act2Details.filter((detail) => detail.enteredEliteBranch);
-    const uniqueEncounterIds = [...new Set(allAct2Records.map((record) => record.encounterId))].sort();
+    const uniqueEncounterPairs = [...new Map(
+      allAct2Records.map((record) => [
+        `${record.routeId}\u0000${record.encounterId}`,
+        { routeId: record.routeId, encounterId: record.encounterId },
+      ]),
+    ).values()].sort((left, right) =>
+      left.routeId.localeCompare(right.routeId) || left.encounterId.localeCompare(right.encounterId),
+    );
+    const totalAct2Turns = allAct2Records.reduce((sum, record) => sum + record.turns, 0);
+    const totalAct2CardsPlayed = allAct2Records.reduce((sum, record) => sum + record.cardsPlayed, 0);
 
     return {
       policyId: policy.id,
+      routeMode,
       totalRuns: runsPerPolicy,
       act1BossReachCount,
       act1BossReachRate: act1BossReachCount / runsPerPolicy,
@@ -1554,13 +1615,16 @@ export function runAct2EntryValidation(input: ValidationInput): Act2EntryPolicyS
       act2AvgTurns: allAct2Records.length > 0
         ? allAct2Records.reduce((sum, record) => sum + record.turns, 0) / allAct2Records.length
         : 0,
+      act2AvgCardsPerTurn: totalAct2Turns > 0 ? totalAct2CardsPlayed / totalAct2Turns : 0,
       act2EliteBranchEnterCount: eliteBranchDetails.length,
       act2EliteBranchEnterRate: act2Details.length > 0 ? eliteBranchDetails.length / act2Details.length : 0,
       act2EliteBranchSamples: eliteBranchDetails.length,
       act2EliteBranchSurviveRate: eliteBranchDetails.length > 0
         ? eliteBranchDetails.filter((detail) => detail.validationCompleted).length / eliteBranchDetails.length
         : 0,
-      encounterBreakdown: uniqueEncounterIds.map((encounterId) => summarizeEncounter(allAct2Records, encounterId)),
+      encounterBreakdown: uniqueEncounterPairs.map(({ routeId, encounterId }) =>
+        summarizeEncounter(allAct2Records, routeId, encounterId),
+      ),
       act1PreBossLossReport: includeAct1PreBossLossReport ? buildAct1PreBossLossReport(details) : undefined,
     };
   });

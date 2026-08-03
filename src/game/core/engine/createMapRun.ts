@@ -4,7 +4,7 @@ import { createEmptyEncounterHistory, type RunState } from '../model/run';
 import { createEmptyRunStats } from '../model/runStats';
 import { RUN_SAVE_VERSION } from '../persistence/saveVersion';
 import { resetIdCounter } from '../utils/id';
-import { buildAct2EntryValidationMap } from './buildAct2EntryValidationMap';
+import { buildAct2EntryValidationMap, type Act2FormalRouteId } from './buildAct2EntryValidationMap';
 import { ACT_FLOOR_COUNTS, generateActMap, globalFloorFor } from './generateBranchingFloor';
 import { createStarterMasterDeck } from './starterDeck';
 
@@ -18,8 +18,11 @@ export function buildFloor2Nodes(seed = 0): Record<string, MapNode> {
   return buildActNodes(2, seed);
 }
 
-export function buildAct2EntryNodes(seed = 0): Record<string, MapNode> {
-  return buildAct2EntryValidationMap(seed);
+export function buildAct2EntryNodes(
+  seed = 0,
+  routeId?: Act2FormalRouteId,
+): Record<string, MapNode> {
+  return buildAct2EntryValidationMap(seed, routeId);
 }
 
 export function createMapRun(seed: number): RunState {

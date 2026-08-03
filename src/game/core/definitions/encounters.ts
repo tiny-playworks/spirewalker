@@ -103,7 +103,7 @@ export const ENCOUNTERS: EncounterTemplate[] = [
   { id: 'act2_elite_counter', chapter: 2, tier: 'elite', weight: 7, name: '姿态审判官', tags: ['elite', 'counter'], pressureProfile: 'execution_check', lineup: lineup(['slime_counter_judge']) },
   { id: 'act2_elite_forge', chapter: 2, tier: 'elite', weight: 6, name: '灼烧铸机', tags: ['elite', 'pollution'], pressureProfile: 'attrition', lineup: lineup(['act2_forge_elite']) },
   { id: 'act2_elite_lock', chapter: 2, tier: 'elite', weight: 6, name: '锁牌执达者', tags: ['elite', 'lock'], pressureProfile: 'disruption', lineup: lineup(['act2_lock_bailiff'], [56]) },
-  { id: 'act2_boss_bishop', chapter: 2, tier: 'boss', weight: 8, name: '主教', tags: ['boss', 'control'], pressureProfile: 'disruption', lineup: lineup(['act2_boss_silence'], [112]) },
+  { id: 'act2_boss_bishop', chapter: 2, tier: 'boss', weight: 8, name: '主教', tags: ['boss', 'control'], pressureProfile: 'disruption', lineup: lineup(['act2_boss_silence'], [100]) },
   { id: 'act2_boss_dual', chapter: 2, tier: 'boss', weight: 8, name: '双核怪', tags: ['boss', 'echo'], pressureProfile: 'snowball', lineup: lineup(['act2_dual_core'], [108]) },
 
   { id: 'act3_normal_telegraph', chapter: 3, tier: 'normal', weight: 7, name: '预告处刑', tags: ['countdown'], pressureProfile: 'execution_check', lineup: lineup(['telegraph_drone', 'hidden_assassin']) },

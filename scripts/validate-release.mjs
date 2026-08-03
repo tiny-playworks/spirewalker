@@ -12,9 +12,9 @@ const steps = [
   { label: '正式卡图审计', command: 'pnpm', args: ['audit:card-art'], timeoutMs: 60_000 },
   { label: '正式遗物审计', command: 'pnpm', args: ['audit:relics'], timeoutMs: 60_000 },
   {
-    label: 'Act 2 四种子模拟',
+    label: 'Act 2 自然选路四种子模拟',
     command: 'pnpm',
-    args: ['simulate:act2-entry', '--seeds', '1001,2002,3003,4004', '--runs', '50', '--progress-every', '0'],
+    args: ['simulate:act2-entry', '--seeds', '1001,2002,3003,4004', '--runs', '50', '--progress-every', '0', '--route-mode', 'natural'],
     timeoutMs: 240_000,
   },
 ];

@@ -176,8 +176,14 @@ export function act2EntryEncounterWhitelist(): readonly string[] {
   ];
 }
 
-export function buildAct2EntryValidationMap(seed: number): Record<string, MapNode> {
-  const route = act2FormalRouteForSeed(seed);
+export function buildAct2EntryValidationMap(
+  seed: number,
+  routeId?: Act2FormalRouteId,
+): Record<string, MapNode> {
+  const route = routeId
+    ? ACT2_FORMAL_ROUTE_TEMPLATES.find((candidate) => candidate.id === routeId)
+      ?? act2FormalRouteForSeed(seed)
+    : act2FormalRouteForSeed(seed);
   const [slotA, slotB, slotC, slotD] = route.normalEncounterIds;
   const branchAtDepth4 = route.branchAtDepth4 === 'both'
     ? ['a2v_shop', 'a2v_rest']

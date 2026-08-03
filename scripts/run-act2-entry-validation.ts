@@ -2,7 +2,12 @@ import {
   mergeAct1PreBossLossReports,
   runAct2EntryValidation,
 } from '../src/game/simulation/act2EntryValidation';
-import type { Act1FloorSegmentId, Act1PreBossLossPolicyReport, Act1TerminationPolicyBreakdown } from '../src/game/simulation/types';
+import type {
+  Act1FloorSegmentId,
+  Act1PreBossLossPolicyReport,
+  Act1TerminationPolicyBreakdown,
+  Act2ValidationRouteMode,
+} from '../src/game/simulation/types';
 import { walkerBasePolicies } from '../src/game/simulation/policies/walkerPersonas';
 
 type CliOptions = {
@@ -16,6 +21,7 @@ type CliOptions = {
   bypassAct1ToBoss: boolean;
   reportAct1PreBossLoss: boolean;
   minSamplesPerPolicy: number;
+  routeMode: Act2ValidationRouteMode | 'all';
 };
 
 const PERSONA_CN: Record<string, string> = {
@@ -36,6 +42,7 @@ function parseArgs(argv: string[]): CliOptions {
     bypassAct1ToBoss: false,
     reportAct1PreBossLoss: false,
     minSamplesPerPolicy: 30,
+    routeMode: 'natural',
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -89,6 +96,14 @@ function parseArgs(argv: string[]): CliOptions {
       index += 1;
       continue;
     }
+    if (arg === '--route-mode' && next) {
+      if (next !== 'natural' && next !== 'safe' && next !== 'build' && next !== 'risk' && next !== 'all') {
+        throw new Error('invalid --route-mode');
+      }
+      options.routeMode = next;
+      index += 1;
+      continue;
+    }
   }
 
   if (!Number.isFinite(options.seed)) throw new Error('invalid --seed');
@@ -136,11 +151,13 @@ function personaName(policyId: string): string {
 }
 
 type AggregatedEncounterMetric = {
+  routeId: 'safe' | 'build' | 'risk';
   encounterId: string;
   attempts: number;
   survives: number;
   totalHpLoss: number;
   totalTurns: number;
+  totalCardsPlayed: number;
 };
 
 type AggregatedPolicySummary = {
@@ -155,6 +172,7 @@ type AggregatedPolicySummary = {
   act2BattleCount: number;
   act2BattleHpLossTotal: number;
   act2BattleTurnsTotal: number;
+  act2BattleCardsPlayedTotal: number;
   act2EliteBranchEnterCount: number;
   act2EliteBranchSamples: number;
   act2EliteBranchSurviveCount: number;
@@ -180,6 +198,7 @@ function aggregateSummaries(
         act2BattleCount: 0,
         act2BattleHpLossTotal: 0,
         act2BattleTurnsTotal: 0,
+        act2BattleCardsPlayedTotal: 0,
         act2EliteBranchEnterCount: 0,
         act2EliteBranchSamples: 0,
         act2EliteBranchSurviveCount: 0,
@@ -198,24 +217,30 @@ function aggregateSummaries(
       current.act2EliteBranchSurviveCount += Math.round(summary.act2EliteBranchSurviveRate * summary.act2EliteBranchSamples);
 
       for (const encounter of summary.encounterBreakdown) {
-        const existing = current.encounterBreakdown.find((item) => item.encounterId === encounter.encounterId);
+        const existing = current.encounterBreakdown.find((item) =>
+          item.routeId === encounter.routeId && item.encounterId === encounter.encounterId,
+        );
         if (existing) {
           existing.attempts += encounter.attempts;
           existing.survives += encounter.survives;
           existing.totalHpLoss += encounter.avgHpLoss * encounter.attempts;
           existing.totalTurns += encounter.avgTurns * encounter.attempts;
+          existing.totalCardsPlayed += encounter.avgCardsPlayed * encounter.attempts;
         } else {
           current.encounterBreakdown.push({
+            routeId: encounter.routeId,
             encounterId: encounter.encounterId,
             attempts: encounter.attempts,
             survives: encounter.survives,
             totalHpLoss: encounter.avgHpLoss * encounter.attempts,
             totalTurns: encounter.avgTurns * encounter.attempts,
+            totalCardsPlayed: encounter.avgCardsPlayed * encounter.attempts,
           });
         }
         current.act2BattleCount += encounter.attempts;
         current.act2BattleHpLossTotal += encounter.avgHpLoss * encounter.attempts;
         current.act2BattleTurnsTotal += encounter.avgTurns * encounter.attempts;
+        current.act2BattleCardsPlayedTotal += encounter.avgCardsPlayed * encounter.attempts;
       }
 
       byPolicy.set(summary.policyId, current);
@@ -237,6 +262,8 @@ function printGlobalSummary(
   const eliteEnterCount = summaries.reduce((sum, item) => sum + item.act2EliteBranchEnterCount, 0);
   const eliteSamples = summaries.reduce((sum, item) => sum + item.act2EliteBranchSamples, 0);
   const eliteBranchWins = summaries.reduce((sum, item) => sum + item.act2EliteBranchSurviveCount, 0);
+  const totalBattleTurns = summaries.reduce((sum, item) => sum + item.act2BattleTurnsTotal, 0);
+  const totalCardsPlayed = summaries.reduce((sum, item) => sum + item.act2BattleCardsPlayedTotal, 0);
 
   console.log('全局');
   console.log(`- Act1 boss reach rate: ${formatPercent(totalRuns > 0 ? bossReachCount / totalRuns : 0)} (${bossReachCount}/${totalRuns})`);
@@ -246,6 +273,7 @@ function printGlobalSummary(
   console.log(`- Act2 floor 1-5 survive sample count: ${floor15Wins}`);
   console.log(`- Act2 elite branch enter rate: ${formatPercent(totalAct2Samples > 0 ? eliteEnterCount / totalAct2Samples : 0)} (${eliteEnterCount}/${totalAct2Samples})`);
   console.log(`- Act2 elite branch survive rate: ${formatPercent(eliteSamples > 0 ? eliteBranchWins / eliteSamples : 0)} (${eliteBranchWins}/${eliteSamples})`);
+  console.log(`- Act2 平均每回合出牌数: ${totalBattleTurns > 0 ? (totalCardsPlayed / totalBattleTurns).toFixed(2) : '0.00'}`);
   if (totalAct2Samples < 10) {
     console.log('- 样本判定: Act2 样本不足（< 10），当前只建议看入口漏斗，不建议解读 Act2 压力数据。');
   } else {
@@ -264,6 +292,9 @@ function printPolicySummary(summary: AggregatedPolicySummary, printEncounterBrea
   const eliteSurviveRate = summary.act2EliteBranchSamples > 0 ? summary.act2EliteBranchSurviveCount / summary.act2EliteBranchSamples : 0;
   const avgHpLoss = summary.act2BattleCount > 0 ? summary.act2BattleHpLossTotal / summary.act2BattleCount : 0;
   const avgTurns = summary.act2BattleCount > 0 ? summary.act2BattleTurnsTotal / summary.act2BattleCount : 0;
+  const avgCardsPerTurn = summary.act2BattleTurnsTotal > 0
+    ? summary.act2BattleCardsPlayedTotal / summary.act2BattleTurnsTotal
+    : 0;
 
   console.log(`${personaName(summary.policyId)} (${summary.policyId})`);
   console.log(`- Act1 boss reach rate: ${formatPercent(bossReachRate)} (${summary.act1BossReachCount}/${summary.totalRuns})`);
@@ -274,16 +305,20 @@ function printPolicySummary(summary: AggregatedPolicySummary, printEncounterBrea
   console.log(`- Act2 前段完成率: ${formatPercent(completedRate)} (${summary.act2CompletedCount}/${summary.act2EntrySamples})`);
   console.log(`- Act2 平均掉血: ${avgHpLoss.toFixed(2)}`);
   console.log(`- Act2 平均战斗回合数: ${avgTurns.toFixed(2)}`);
+  console.log(`- Act2 平均每回合出牌数: ${avgCardsPerTurn.toFixed(2)}`);
   console.log(`- Act2 elite branch enter rate: ${formatPercent(eliteEnterRate)} (${summary.act2EliteBranchEnterCount}/${summary.act2EntrySamples})`);
   console.log(`- Act2 elite branch survive rate: ${formatPercent(eliteSurviveRate)} (${summary.act2EliteBranchSurviveCount}/${summary.act2EliteBranchSamples})`);
   if (printEncounterBreakdown) {
     console.log('- encounter breakdown:');
-    for (const item of summary.encounterBreakdown.sort((left, right) => left.encounterId.localeCompare(right.encounterId))) {
+    for (const item of summary.encounterBreakdown.sort((left, right) =>
+      left.routeId.localeCompare(right.routeId) || left.encounterId.localeCompare(right.encounterId),
+    )) {
       const surviveRate = item.attempts > 0 ? item.survives / item.attempts : 0;
       const avgHpLoss = item.attempts > 0 ? item.totalHpLoss / item.attempts : 0;
       const avgTurns = item.attempts > 0 ? item.totalTurns / item.attempts : 0;
+      const avgCardsPerTurn = item.totalTurns > 0 ? item.totalCardsPlayed / item.totalTurns : 0;
       console.log(
-        `  - ${item.encounterId}: attempts=${item.attempts}, survive rate=${formatPercent(surviveRate)}, avgHpLoss=${avgHpLoss.toFixed(2)}, avgTurns=${avgTurns.toFixed(2)}`,
+        `  - [${item.routeId}] ${item.encounterId}: attempts=${item.attempts}, survive rate=${formatPercent(surviveRate)}, avgHpLoss=${avgHpLoss.toFixed(2)}, avgTurns=${avgTurns.toFixed(2)}, avgCardsPerTurn=${avgCardsPerTurn.toFixed(2)}`,
       );
     }
   } else {
@@ -518,10 +553,15 @@ function printAct1PreBossLossBlock(title: string, report: Act1PreBossLossPolicyR
 
 function printSummary(): void {
   const options = parseArgs(process.argv.slice(2));
-  const requestedSeeds = options.seeds;
-  const maxSeedBatches = requestedSeeds?.length ?? 64;
-  const seedList: number[] = [];
-  const batches: Array<ReturnType<typeof runAct2EntryValidation>> = [];
+  const routeModes: Act2ValidationRouteMode[] = options.routeMode === 'all'
+    ? ['natural', 'safe', 'build', 'risk']
+    : [options.routeMode];
+
+  for (const routeMode of routeModes) {
+    const requestedSeeds = options.seeds;
+    const maxSeedBatches = requestedSeeds?.length ?? 64;
+    const seedList: number[] = [];
+    const batches: Array<ReturnType<typeof runAct2EntryValidation>> = [];
 
   for (let seedIndex = 0; seedIndex < maxSeedBatches; seedIndex += 1) {
     const seed = requestedSeeds?.[seedIndex] ?? ((options.seed + seedIndex * 7919) >>> 0);
@@ -531,6 +571,7 @@ function printSummary(): void {
       seed,
       runsPerPolicy: options.runsPerPolicy,
       policies: walkerBasePolicies,
+      routeMode,
       bypassAct1Boss: options.bypassAct1Boss,
       bypassAct1Midgame: options.bypassAct1Midgame,
       bypassAct1Elite: options.bypassAct1Elite,
@@ -554,6 +595,7 @@ function printSummary(): void {
 
   console.log(
     `Act2 entry validation | seeds=${seedList.join(',')} | runsPerPolicy=${options.runsPerPolicy}`
+    + ` | routeMode=${routeMode}`
     + ` | bypassAct1Boss=${options.bypassAct1Boss}`
     + ` | bypassAct1Midgame=${options.bypassAct1Midgame}`
     + ` | bypassAct1Elite=${options.bypassAct1Elite}`
@@ -568,7 +610,7 @@ function printSummary(): void {
     printPolicySummary(summary, printEncounterBreakdown);
   }
 
-  if (options.reportAct1PreBossLoss) {
+  if (options.reportAct1PreBossLoss && routeMode === routeModes[0]) {
     console.log('=== Act1 Boss 前普通战损耗分解（跨 seed 汇总） ===\n');
     const perPolicyReports = new Map<string, Act1PreBossLossPolicyReport[]>();
     for (const batch of batches) {
@@ -629,7 +671,8 @@ function printSummary(): void {
     }
   }
 
-  if (!validateSampleSize(summaries, options.minSamplesPerPolicy)) process.exitCode = 1;
+    if (!validateSampleSize(summaries, options.minSamplesPerPolicy)) process.exitCode = 1;
+  }
 }
 
 printSummary();
