@@ -125,6 +125,46 @@ describe('GameEngine MVP', () => {
     expect(run.battle!.player.hand.includes(strikeId)).toBe(true);
   });
 
+  test('无效或已死亡目标不会消耗能量、连势或卡牌', () => {
+    const engine = new GameEngine();
+    let run = createMvpRun(1011);
+    addStatusStacks(run.battle!.units[PLAYER_UNIT_ID], STATUS_MOMENTUM, 3);
+    const strikeId = run.battle!.player.hand.find(
+      (id) => run.battle!.player.cards[id].definitionId === 'strike',
+    )!;
+    run = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: strikeId,
+      sourceUnitId: PLAYER_UNIT_ID,
+    }).nextRun;
+    const beforeInvalid = structuredClone(run);
+    const invalid = engine.dispatch(run, {
+      type: 'PLAY_CARD',
+      cardInstanceId: strikeId,
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: 'missing_enemy',
+    });
+    expect(invalid.events).toEqual([]);
+    expect(invalid.nextRun.battle!.player).toEqual(beforeInvalid.battle!.player);
+    expect(invalid.nextRun.battle!.units[PLAYER_UNIT_ID]).toEqual(beforeInvalid.battle!.units[PLAYER_UNIT_ID]);
+
+    const deadRun = createMvpRun(1012);
+    const deadStrikeId = deadRun.battle!.player.hand.find(
+      (id) => deadRun.battle!.player.cards[id].definitionId === 'strike',
+    )!;
+    deadRun.battle!.units[ENEMY_UNIT_ID].alive = false;
+    deadRun.battle!.units[ENEMY_UNIT_ID].hp = 0;
+    const beforeDead = structuredClone(deadRun);
+    const deadTarget = engine.dispatch(deadRun, {
+      type: 'PLAY_CARD',
+      cardInstanceId: deadStrikeId,
+      sourceUnitId: PLAYER_UNIT_ID,
+      targetUnitId: ENEMY_UNIT_ID,
+    });
+    expect(deadTarget.events).toEqual([]);
+    expect(deadTarget.nextRun.battle!.player).toEqual(beforeDead.battle!.player);
+  });
+
   test('RESOLVE_ANIMATION_DONE 会清空事件缓存并恢复 idle', () => {
     const engine = new GameEngine();
     let run = createMvpRun(11);

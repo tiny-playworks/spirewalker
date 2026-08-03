@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FallbackImg } from "@/features/cards/FallbackImg";
 import { CardArtwork } from "@/features/cards/CardArtwork";
 import {
@@ -28,6 +28,11 @@ import * as styles from "./reactBattleStage.css";
 import { getEnemyVisual } from "./enemyVisuals";
 
 type DragPayload = { cardInstanceId: string };
+
+type TargetConnector = {
+  id: string;
+  path: string;
+};
 
 const BATTLE_BACKDROP_URL = "/assets/combat/gilded-ruins.webp";
 const ACT2_BATTLE_BACKDROP_URL = "/assets/combat/fractured-tribunal.webp";
@@ -152,6 +157,11 @@ export function ReactBattleStage({ className }: { className?: string }) {
   const backdropUrl = run?.meta.act === 2 ? ACT2_BATTLE_BACKDROP_URL : BATTLE_BACKDROP_URL;
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const enemyRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [targetConnectors, setTargetConnectors] = useState<TargetConnector[]>([]);
+  const [targetConnectorViewport, setTargetConnectorViewport] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     if (!battle || battle.inputMode !== "animation_lock") return;
@@ -213,20 +223,52 @@ export function ReactBattleStage({ className }: { className?: string }) {
     return previews;
   }, [activeCardId, enemies, run]);
 
-  useEffect(() => {
-    if (!activeCardId) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      dispatchCommand({ type: "CANCEL_TARGET_SELECTION" });
-      setSelectedCardId(null);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeCardId, dispatchCommand]);
+  const updateTargetConnectors = useCallback(() => {
+    const root = rootRef.current;
+    const card = activeCardId ? cardRefs.current[activeCardId] : null;
+    if (!root || !card || !activeCardId) {
+      setTargetConnectors([]);
+      return;
+    }
+    const rootRect = root.getBoundingClientRect();
+    const sourceRect = card.getBoundingClientRect();
+    const sourceX = sourceRect.left + sourceRect.width / 2 - rootRect.left;
+    const sourceY = sourceRect.top - rootRect.top;
+    const connectors = enemies
+      .filter((enemy) => enemy.alive)
+      .map((enemy) => {
+        const target = enemyRefs.current[enemy.id];
+        if (!target) return null;
+        const targetRect = target.getBoundingClientRect();
+        const targetX = targetRect.left + targetRect.width / 2 - rootRect.left;
+        const targetY = targetRect.bottom - rootRect.top;
+        const controlX = (sourceX + targetX) / 2;
+        const controlY = Math.min(sourceY, targetY) - 34;
+        return {
+          id: enemy.id,
+          path: `M ${sourceX} ${sourceY} Q ${controlX} ${controlY} ${targetX} ${targetY}`,
+        };
+      })
+      .filter((connector): connector is TargetConnector => Boolean(connector));
+    setTargetConnectorViewport({ width: root.clientWidth, height: root.clientHeight });
+    setTargetConnectors(connectors);
+  }, [activeCardId, enemies]);
 
-  if (!battle || !player) return <div className={className} />;
+  useLayoutEffect(() => {
+    updateTargetConnectors();
+    if (!activeCardId) return;
+    const frame = window.requestAnimationFrame(updateTargetConnectors);
+    window.addEventListener('resize', updateTargetConnectors);
+    window.addEventListener('scroll', updateTargetConnectors, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updateTargetConnectors);
+      window.removeEventListener('scroll', updateTargetConnectors, true);
+    };
+  }, [activeCardId, updateTargetConnectors]);
 
   const playCard = (cardInstanceId: string, targetUnitId?: string) => {
+    if (!battle) return;
     dispatchCommand({
       type: "PLAY_CARD",
       cardInstanceId,
@@ -237,6 +279,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
   };
 
   const handleCardClick = (card: CardInstance, def: CardDefinition) => {
+    if (!battle) return;
     if (!canPlayCard(card, battle)) return;
     if (def.target === "single_enemy") {
       playCard(card.instanceId);
@@ -254,8 +297,45 @@ export function ReactBattleStage({ className }: { className?: string }) {
     playCard(cardId, enemyId);
   };
 
+  useEffect(() => {
+    if (!battle) return;
+    const currentBattle = battle;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      if (event.key === 'Escape') {
+        if (!activeCardId) return;
+        dispatchCommand({ type: 'CANCEL_TARGET_SELECTION' });
+        setSelectedCardId(null);
+        return;
+      }
+
+      if (event.code === 'Space') {
+        if (activeCardId || currentBattle.phase !== 'player_action' || currentBattle.inputMode !== 'idle') return;
+        event.preventDefault();
+        dispatchCommand({ type: 'END_TURN' });
+        return;
+      }
+
+      if (!/^[1-6]$/.test(event.key)) return;
+      if (activeCardId || currentBattle.phase !== 'player_action' || currentBattle.inputMode !== 'idle') return;
+      const cardId = currentBattle.player.hand[Number(event.key) - 1];
+      const card = cardId ? currentBattle.player.cards[cardId] : undefined;
+      const definition = card ? ALL_CARD_DEFINITIONS[card.definitionId] : undefined;
+      if (!card || !definition || !canPlayCard(card, currentBattle)) return;
+      event.preventDefault();
+      handleCardClick(card, definition);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeCardId, battle, dispatchCommand, handleCardClick]);
+
+  if (!battle || !player) return <div className={className} />;
+
   return (
-    <div className={cx(className, styles.root)}>
+    <div ref={rootRef} className={cx(className, styles.root)}>
       <TutorialHint step="card" title="先出一张牌" placement="top-left">
         点一张可用牌，再点敌人选择目标；卡面上的数字就是当前实际预估。
       </TutorialHint>
@@ -274,11 +354,34 @@ export function ReactBattleStage({ className }: { className?: string }) {
         <div className={styles.grid} />
       </div>
 
+      {targetConnectors.length > 0 ? (
+        <svg
+          className={styles.targetConnectorLayer}
+          viewBox={`0 0 ${targetConnectorViewport.width} ${targetConnectorViewport.height}`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <marker id="spirewalker-target-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#fbbf24" />
+            </marker>
+          </defs>
+          {targetConnectors.map((connector) => (
+            <path
+              key={connector.id}
+              className={styles.targetConnectorPath}
+              d={connector.path}
+              markerEnd="url(#spirewalker-target-arrow)"
+            />
+          ))}
+        </svg>
+      ) : null}
+
       <section
         className={cx(styles.combatLayer, activeCardId && styles.combatLayerTargeting)}
         aria-label="战斗场"
       >
-        <UnitPanel unit={player} tone="player" spriteUrl={PLAYER_SPRITE_URL} feedback={feedbackCues.filter((cue) => cue.unitId === player.id)} />
+        <UnitPanel unit={player} tone="player" spriteUrl={PLAYER_SPRITE_URL} feedback={feedbackCues.filter((cue) => cue.unitId === player.id)} fastMode={fastMode} />
 
         <div className={styles.enemyRail}>
           {enemies.map((enemy) => (
@@ -286,6 +389,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
               key={enemy.id}
               battle={battle}
               unit={enemy}
+              targetRef={(node) => { enemyRefs.current[enemy.id] = node; }}
               targetActive={Boolean(activeCardId)}
               onTarget={() => handleEnemyTarget(enemy.id)}
               onDropCard={(cardId) => {
@@ -296,6 +400,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
               feedback={feedbackCues.filter((cue) => cue.unitId === enemy.id)}
               preview={targetPreviewByEnemyId.get(enemy.id)}
               activeCardIsAttack={activeCardDefinition?.type === 'attack'}
+              fastMode={fastMode}
             />
           ))}
         </div>
@@ -348,6 +453,8 @@ export function ReactBattleStage({ className }: { className?: string }) {
                 )}
                 disabled={locked || !playable}
                 aria-disabled={locked || !playable}
+                aria-keyshortcuts={String(index + 1)}
+                ref={(node) => { cardRefs.current[card.instanceId] = node; }}
                 onClick={() => handleCardClick(card, def)}
                 onDragStart={(event) => {
                   if (!playable) return;
@@ -419,7 +526,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
         <div className={styles.rightDock}>
           {activeCardId ? (
             <div className={styles.targetGuide} role="status">
-              <span>选择目标</span>
+              <span>↗ 选择目标</span>
               {activePreview?.damage ? <strong>预计造成 {activePreview.damage} 点伤害</strong> : null}
               <button
                 type="button"
@@ -429,6 +536,9 @@ export function ReactBattleStage({ className }: { className?: string }) {
                 }}
               >取消 Esc</button>
             </div>
+          ) : null}
+          {!activeCardId && battle.phase === 'player_action' ? (
+            <span className={styles.shortcutHint}>1–6 选牌 · Space 结束回合</span>
           ) : null}
           <Pile label="弃牌" value={battle.player.discardPile.length} muted />
           <Pile label="消耗" value={battle.player.exhaustPile.length} muted />
@@ -446,6 +556,7 @@ export function ReactBattleStage({ className }: { className?: string }) {
               type="button"
               className={styles.endTurnButton}
               aria-label="结束回合"
+              aria-keyshortcuts="Space"
               disabled={
                 battle.phase !== "player_action" ||
                 battle.inputMode === "animation_lock"
@@ -476,11 +587,13 @@ function UnitPanel({
   tone,
   spriteUrl,
   feedback = [],
+  fastMode = false,
 }: {
   unit: CombatUnit;
   tone: "player" | "enemy";
   spriteUrl: string;
   feedback?: FeedbackCue[];
+  fastMode?: boolean;
 }) {
   const hpRatio =
     unit.maxHp > 0 ? Math.max(0, Math.min(1, unit.hp / unit.maxHp)) : 0;
@@ -505,7 +618,7 @@ function UnitPanel({
           {feedback.map((cue) => (
             <span
               key={cue.id}
-              className={cx(styles.feedbackCue, styles.feedbackCueTone[cue.tone])}
+              className={cx(styles.feedbackCue, styles.feedbackCueTone[cue.tone], fastMode && styles.feedbackCueFast)}
               style={{ animationDelay: `${cue.delayMs}ms` }}
             >{cue.text}</span>
           ))}
@@ -526,7 +639,11 @@ function UnitPanel({
         </div>
         <StatusList unit={unit} />
         {unit.block > 0 ? (
-          <span className={styles.blockBadge}>格挡 {unit.block}</span>
+          <span
+            className={styles.blockBadge}
+            title="当前格挡可能包含牌面基础值、连势、遗物或状态的额外效果。"
+            aria-label={`格挡 ${unit.block}，可能包含牌面、连势、遗物或状态额外效果`}
+          >格挡 {unit.block}</span>
         ) : null}
       </div>
     </article>
@@ -536,6 +653,7 @@ function UnitPanel({
 function EnemyPanel({
   battle,
   unit,
+  targetRef,
   targetActive,
   onTarget,
   onDropCard,
@@ -543,9 +661,11 @@ function EnemyPanel({
   feedback,
   preview,
   activeCardIsAttack,
+  fastMode,
 }: {
   battle: BattleState;
   unit: CombatUnit;
+  targetRef: (node: HTMLDivElement | null) => void;
   targetActive: boolean;
   onTarget: () => void;
   onDropCard: (cardInstanceId: string) => void;
@@ -553,6 +673,7 @@ function EnemyPanel({
   feedback: FeedbackCue[];
   preview?: BattlePreview;
   activeCardIsAttack: boolean;
+  fastMode: boolean;
 }) {
   const monster = battle.monsters[unit.id];
   const intent = monster?.intent;
@@ -579,6 +700,7 @@ function EnemyPanel({
   const mechanics = mechanicBadges(monster);
   return (
     <div
+      ref={targetRef}
       className={cx(
         styles.enemyTarget,
         targetActive && unit.alive && styles.enemyTargetActive,
@@ -629,6 +751,7 @@ function EnemyPanel({
         className={styles.enemyHitTarget}
         disabled={!targetActive || !unit.alive}
         data-testid={`battle-enemy-${unit.id}`}
+        aria-label={targetActive ? `选择${unit.name}为目标` : `${unit.name}，先选择指向性卡牌`}
         onClick={onTarget}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
@@ -639,7 +762,7 @@ function EnemyPanel({
           onDropCard(payload.cardInstanceId);
         }}
       >
-        <UnitPanel unit={unit} tone="enemy" spriteUrl={spriteUrl} feedback={feedback} />
+        <UnitPanel unit={unit} tone="enemy" spriteUrl={spriteUrl} feedback={feedback} fastMode={fastMode} />
         {targetActive && (previewText || retaliation > 0) ? (
           <span className={styles.targetPreview}>
             {previewText}

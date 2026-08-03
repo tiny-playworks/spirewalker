@@ -1062,6 +1062,13 @@ export const feedbackCue = style({
   },
 });
 
+export const feedbackCueFast = style({
+  animationDuration: '240ms',
+  '@media': {
+    '(prefers-reduced-motion: reduce)': { animationDuration: '1ms' },
+  },
+});
+
 export const feedbackCueTone = styleVariants({
   damage: { color: '#fff4ef', background: 'rgba(185, 70, 52, 0.78)', border: '1px solid #ffb4ab' },
   block: { color: '#eafffb', background: 'rgba(20, 117, 112, 0.78)', border: '1px solid #3cddc7' },
@@ -1096,6 +1103,38 @@ export const targetGuide = style({
       gap: '0.35rem',
       padding: '.35rem .45rem',
     },
+  },
+});
+
+export const targetConnectorLayer = style({
+  position: 'absolute',
+  inset: 0,
+  zIndex: 60,
+  width: '100%',
+  height: '100%',
+  overflow: 'visible',
+  pointerEvents: 'none',
+});
+
+export const targetConnectorPath = style({
+  fill: 'none',
+  stroke: '#fbbf24',
+  strokeWidth: 2.5,
+  strokeDasharray: '7 6',
+  strokeLinecap: 'round',
+  opacity: 0.82,
+  filter: 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.5))',
+});
+
+export const shortcutHint = style({
+  display: 'block',
+  marginTop: '.35rem',
+  color: sceneVars.color.textSubtle,
+  fontSize: '.62rem',
+  letterSpacing: '.02em',
+  textAlign: 'right',
+  '@media': {
+    [mobile]: { display: 'none' },
   },
 });
 

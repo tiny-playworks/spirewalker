@@ -38,6 +38,8 @@ export function buildFeedbackTimeline(events: readonly GameEvent[]): FeedbackCue
 }
 
 export function feedbackDurationMs(events: readonly GameEvent[], fastMode: boolean): number {
-  if (fastMode) return 100;
-  return Math.min(720, 260 + buildFeedbackTimeline(events).length * 70);
+  const cueCount = buildFeedbackTimeline(events).length;
+  // 快速表现仍要给数字留出完整的出现和淡出时间；只缩短停留，不提前卸载。
+  if (fastMode) return Math.min(520, 240 + Math.max(0, cueCount - 1) * 55);
+  return Math.min(720, 260 + cueCount * 70);
 }

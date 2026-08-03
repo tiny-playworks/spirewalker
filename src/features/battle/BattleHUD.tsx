@@ -37,6 +37,7 @@ export function BattleHUD() {
           <span className={cx(styles.chip, styles.chipTone.block)}>
             <Shield size={ICON_SIZE} aria-hidden />
             <strong>{player?.block ?? 0}</strong>
+            <span className={styles.muted} title="格挡可能包含牌面基础值、连势、遗物或状态的额外效果">格挡</span>
           </span>
           <span className={cx(styles.chip, styles.chipTone.gold)}>
             <Coins size={ICON_SIZE} aria-hidden />

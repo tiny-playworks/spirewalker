@@ -64,5 +64,6 @@ describe('战斗展示层', () => {
     ]);
     expect(cues.map((cue) => cue.tone)).toEqual(['damage', 'block', 'status', 'defeat']);
     expect(feedbackDurationMs([], false)).toBeGreaterThan(feedbackDurationMs([], true));
+    expect(feedbackDurationMs([{ type: 'DAMAGE_DEALT', sourceUnitId: 'p', targetUnitId: 'e', value: 9 }], true)).toBeGreaterThanOrEqual(240);
   });
 });
