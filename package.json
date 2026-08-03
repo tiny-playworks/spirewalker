@@ -38,6 +38,7 @@
     "audit:cards": "tsx scripts/audit-cards.ts",
     "audit:card-art": "tsx scripts/audit-card-art.ts",
     "audit:relics": "tsx scripts/audit-relics.ts",
+    "validate:release": "node scripts/validate-release.mjs",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

@@ -4,7 +4,7 @@ import type { EventDefinition } from './index';
  * 首局运行时事件目录。
  *
  * 完整生成事件仍保留在 index.ts 供内容审计与图鉴使用，但不再进入首屏运行链路。
- * 这里的事件必须满足：选项少而清楚、结果可预期、能服务当前 Act 1 纵切片。
+ * 这里的事件必须满足：选项少而清楚、结果可预期、能服务当前章节纵切片。
  */
 export const RUNTIME_EVENT_DEFINITIONS: Record<string, EventDefinition> = {
   wandering_merchant: {
@@ -53,6 +53,62 @@ export const RUNTIME_EVENT_DEFINITIONS: Record<string, EventDefinition> = {
       { id: 'remove_strike', text: '删 1 张打击', outcomes: [{ type: 'nothing', description: '从牌组移除 1 张打击。' }] },
       { id: 'remove_defend', text: '删 1 张防御', outcomes: [{ type: 'nothing', description: '从牌组移除 1 张防御。' }] },
       { id: 'leave', text: '离开', outcomes: [{ type: 'nothing', description: '保持牌组不变，返回地图。' }] },
+    ],
+  },
+  a2_mirror_archive: {
+    id: 'a2_mirror_archive',
+    name: '镜库残页',
+    description: '碎裂回廊的档案仍在记录每一次出牌，残页上浮出一条可以带走的战斗节奏。',
+    chapter: 2,
+    type: 'memory',
+    choices: [
+      {
+        id: 'copy_rhythm',
+        text: '抄下回身节奏',
+        outcomes: [
+          { type: 'gain_card', cardId: 'a2_mixed_guarded_draw', description: '牌组加入「回身整备」。' },
+          { type: 'lose_hp', value: 4, description: '读取残页失去 4 点生命。' },
+        ],
+      },
+      {
+        id: 'rest_memory',
+        text: '在镜前调息',
+        outcomes: [
+          { type: 'gain_hp', value: 6, description: '回复 6 点生命。' },
+          { type: 'gain_momentum', value: 1, description: '下一场战斗获得 1 层连势。' },
+        ],
+      },
+      { id: 'leave', text: '合上档案', outcomes: [{ type: 'nothing', description: '不改变生命、金币或牌组。' }] },
+    ],
+  },
+  a2_oath_of_silence: {
+    id: 'a2_oath_of_silence',
+    name: '静默誓约',
+    description: '锁牌执达者留下的黑色封蜡要求你在首领前做出一次取舍。',
+    chapter: 2,
+    type: 'curse_trade',
+    choices: [
+      {
+        id: 'break_seal',
+        text: '击碎封蜡',
+        outcomes: [
+          { type: 'gain_gold', value: 45, description: '获得 45 金币。' },
+          { type: 'lose_hp', value: 10, description: '封蜡反噬，失去 10 点生命。' },
+        ],
+      },
+      {
+        id: 'bind_burst',
+        text: '把力量封入刀锋',
+        outcomes: [
+          { type: 'gain_card', cardId: 'a2_burst_overdrive', description: '牌组加入「过载裂击」。' },
+          { type: 'lose_max_hp', value: 4, description: '最大生命减少 4 点。' },
+        ],
+      },
+      {
+        id: 'hold_silence',
+        text: '保持静默',
+        outcomes: [{ type: 'gain_momentum', value: 2, description: '下一场战斗获得 2 层连势。' }],
+      },
     ],
   },
   rusted_chest: {
@@ -195,7 +251,8 @@ export const RUNTIME_EVENTS_BY_CHAPTER: Record<number, EventDefinition[]> = {
   2: [
     RUNTIME_EVENT_DEFINITIONS.burst_altar!,
     RUNTIME_EVENT_DEFINITIONS.purging_pool!,
-    RUNTIME_EVENT_DEFINITIONS.stillness_shrine!,
+    RUNTIME_EVENT_DEFINITIONS.a2_mirror_archive!,
+    RUNTIME_EVENT_DEFINITIONS.a2_oath_of_silence!,
   ],
   3: [
     RUNTIME_EVENT_DEFINITIONS.burst_altar!,

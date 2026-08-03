@@ -22,6 +22,15 @@ const TAG_LABELS: Record<string, string> = {
   double_action: '双重行动',
   lock: '锁牌干扰',
   summoner: '持续召唤',
+  multi_hit: '多段攻击',
+  reactive: '反击反噬',
+  support: '强化支援',
+  scaler: '逐回合成长',
+  countdown: '倒计时',
+  debuff: '削弱状态',
+  pollution: '牌组污染',
+  counter: '姿态反制',
+  summon: '召唤增援',
 };
 
 export interface MapEncounterLineupPreview {
@@ -37,6 +46,7 @@ export type MapEncounterPreview =
       pressureProfile: PressureProfile;
       pressureLabel: string;
       hint: string;
+      tags: string[];
     }
   | {
       visibility: 'exact';
@@ -74,6 +84,10 @@ export function getMapEncounterPreview(
 
   if (!encounter) return { visibility: 'hidden' };
   const pressure = PRESSURE_COPY[encounter.pressureProfile];
+  const tags = encounter.tags
+    .filter((tag) => tag !== 'elite' && tag !== 'boss' && tag !== 'prelude')
+    .map((tag) => TAG_LABELS[tag] ?? tag)
+    .slice(0, 2);
 
   if (node.type === 'battle') {
     return {
@@ -81,6 +95,7 @@ export function getMapEncounterPreview(
       pressureProfile: encounter.pressureProfile,
       pressureLabel: pressure.label,
       hint: pressure.hint,
+      tags,
     };
   }
 
@@ -91,10 +106,7 @@ export function getMapEncounterPreview(
     pressureProfile: encounter.pressureProfile,
     pressureLabel: pressure.label,
     hint: pressure.hint,
-    tags: encounter.tags
-      .filter((tag) => tag !== 'elite' && tag !== 'boss')
-      .map((tag) => TAG_LABELS[tag] ?? tag)
-      .slice(0, 2),
+    tags,
     lineup: encounter.lineup.map(({ enemyId }) => ({
       monsterId: enemyId,
       name: getMonsterDefinition(enemyId)?.name ?? enemyId,

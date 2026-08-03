@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Coins, Gem, Heart, Layers, Menu } from 'lucide-react';
 import { actFloorCount, createMapRun } from '@/game/core/engine/createMapRun';
+import { ACT2_FORMAL_ROUTE_TEMPLATES } from '@/game/core/engine/buildAct2EntryValidationMap';
 import { WANDERING_MERCHANT_EVENT_ID } from '@/game/core/engine/generateBranchingFloor';
+import { getEncounterById } from '@/game/core/definitions/encounters';
 import { ALL_CARD_DEFINITIONS } from '@/game/core/definitions/cards';
 import { RELIC_DEFINITIONS } from '@/game/core/definitions/relics';
 import type { MapNode } from '@/game/core/model/map';
@@ -41,6 +43,10 @@ function cx(...classNames: Array<string | false | null | undefined>) {
 function nodeTitle(n: MapNode): string {
   if (n.x === 0) return `第 ${n.act} 章 · 营地`;
   if (n.id.startsWith('a2v_')) {
+    if (n.encounterId) {
+      const encounterName = getEncounterById(n.encounterId)?.name;
+      if (encounterName) return encounterName;
+    }
     const preludeTitles: Record<string, string> = {
       a2v_battle_a: '咒纹试探',
       a2v_battle_b: '鼓点修复',
@@ -51,6 +57,8 @@ function nodeTitle(n: MapNode): string {
       a2v_risk_elite: '锁牌执达者',
       a2v_battle_d: '回廊清场',
       a2v_burst_altar: '裂响祭坛',
+      a2v_archive_event: '镜库残页',
+      a2v_oath_event: '静默誓约',
       a2v_treasure: '回廊宝藏',
       a2v_rest_before_boss: '主教前营火',
       a2v_boss_silence: '主教 · 静默审判',
@@ -79,6 +87,25 @@ function nodeTitle(n: MapNode): string {
 
 function nodeDescription(n: MapNode): string {
   if (n.id.startsWith('a2v_')) {
+    if (n.encounterId) {
+      const encounter = getEncounterById(n.encounterId);
+      if (encounter) {
+        const tagLabels: Record<string, string> = {
+          reactive: '反击反噬',
+          support: '强化支援',
+          scaler: '逐回合成长',
+          debuff: '削弱状态',
+          countdown: '倒计时',
+          multi_hit: '多段攻击',
+          lock: '锁牌干扰',
+        };
+        const tags = encounter.tags
+          .filter((tag) => !['elite', 'boss', 'prelude'].includes(tag))
+          .map((tag) => tagLabels[tag] ?? tag)
+          .slice(0, 2);
+        return `机制提示：${tags.join(' · ') || '观察敌人意图，再决定是否兑现连势'}。`;
+      }
+    }
     const preludeDescriptions: Record<string, string> = {
       a2v_battle_a: '先看清削弱与锁牌，再决定这一回合是否要把手牌打空。',
       a2v_battle_b: '敌人会逐步强化；优先处理治疗者，别让战斗拖成消耗战。',
@@ -89,6 +116,8 @@ function nodeDescription(n: MapNode): string {
       a2v_risk_elite: '风险路线：锁定部分手牌，击破后获得更高奖励。',
       a2v_battle_d: '序章收束战，胜利后会进入首领前的最后一段整备。',
       a2v_burst_altar: '在首领前选择一次明确的爆发强化，或保留资源继续前进。',
+      a2v_archive_event: '把回廊残页转成一张混合构筑牌，或回复生命并带着连势继续前进。',
+      a2v_oath_event: '以生命上限或当前生命为代价，换取金币、爆发牌或首领前连势。',
       a2v_treasure: '无需战斗的补给，Act 2 正式牌池会从这里开始出现。',
       a2v_rest_before_boss: '首领前最后一次整备，回复生命并确认自己的出牌节奏。',
       a2v_boss_silence: '主教会在三个阶段改变压力方式；看清意图，再决定何时兑现连势。',
@@ -177,6 +206,14 @@ export function MapPage() {
   const curId = map.currentNodeId;
   const isBossRestNode = cur?.type === 'rest' && meta.actFloor === actFloorCount(meta.act) - 1;
   const actTitle = ACT_TITLES[meta.act] ?? '未知之地';
+  const act2Route = meta.act === 2
+    ? ACT2_FORMAL_ROUTE_TEMPLATES.find((route) => {
+        const branch = map.nodes.a2v_battle_b?.nextNodeIds ?? [];
+        if (route.id === 'build') return branch.includes('a2v_shop') && branch.includes('a2v_rest');
+        if (route.id === 'risk') return branch.length === 1 && branch[0] === 'a2v_shop';
+        return branch.length === 1 && branch[0] === 'a2v_rest';
+      })
+    : null;
   const selectedNode = selectedNodeId ? map.nodes[selectedNodeId] : undefined;
   const encounterPreview = selectedNode
     ? getMapEncounterPreview(run, selectedNode, nextIds.includes(selectedNode.id))
@@ -201,6 +238,9 @@ export function MapPage() {
               第 {meta.act} 章 · {actTitle}
             </span>
             <span className={styles.floorLabel}>第 {meta.actFloor} 层</span>
+            {act2Route ? (
+              <span className={styles.routeBadge} title={act2Route.summary}>{act2Route.name}</span>
+            ) : null}
           </div>
         </div>
         <div className={styles.topRight}>
@@ -308,11 +348,11 @@ export function MapPage() {
                       {encounterPreview.lineup.map((enemy) => enemy.name).join(' · ')}
                     </span>
                   </span>
-                  <span className={styles.threatTags}>
-                    {encounterPreview.tags.map((tag) => (
-                      <em key={tag}>{tag}</em>
-                    ))}
-                  </span>
+                </span>
+              ) : null}
+              {encounterPreview.visibility !== 'hidden' && encounterPreview.tags.length > 0 ? (
+                <span className={styles.threatTags} aria-label="机制提示">
+                  {encounterPreview.tags.map((tag) => <em key={tag}>{tag}</em>)}
                 </span>
               ) : null}
               {encounterPreview.visibility !== 'hidden' ? (

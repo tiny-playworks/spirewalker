@@ -107,6 +107,22 @@ export const floorLabel = style({
   whiteSpace: 'nowrap',
 });
 
+export const routeBadge = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: '1.4rem',
+  padding: '0.1rem 0.48rem',
+  borderRadius: sceneVars.radii.pill,
+  border: '1px solid rgba(143, 228, 214, 0.35)',
+  background: 'rgba(73, 160, 150, 0.12)',
+  color: '#9be9da',
+  fontSize: '0.7rem',
+  fontWeight: 800,
+  letterSpacing: '0.04em',
+  whiteSpace: 'nowrap',
+  '@media': { [tablet]: { fontSize: '0.64rem', padding: '0.08rem 0.35rem' } },
+});
+
 export const topRight = style({
   display: 'flex',
   alignItems: 'center',

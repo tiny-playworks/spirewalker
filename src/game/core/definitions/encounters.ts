@@ -84,12 +84,13 @@ export const ENCOUNTERS: EncounterTemplate[] = [
   { id: 'act1_boss_hive', chapter: 1, tier: 'boss', weight: 8, name: '巢母', tags: ['boss', 'summoner'], pressureProfile: 'snowball', lineup: lineup(['slime_boss']) },
   { id: 'act1_boss_gate', chapter: 1, tier: 'boss', weight: 8, name: '巨兵', tags: ['boss', 'heavy'], pressureProfile: 'execution_check', lineup: lineup(['act1_boss_gate']) },
 
-  { id: 'act2_normal_combo', chapter: 2, tier: 'normal', weight: 7, name: '连击围剿', tags: ['multi_hit'], pressureProfile: 'frontload', lineup: lineup(['combo_assassin', 'mark_hound']) },
-  { id: 'act2_normal_reflect', chapter: 2, tier: 'normal', weight: 6, name: '反刺列阵', tags: ['reactive'], pressureProfile: 'attrition', lineup: lineup(['reflect_automaton', 'thorn_shell']) },
-  { id: 'act2_normal_curse', chapter: 2, tier: 'normal', weight: 6, name: '咒纹审讯', tags: ['debuff', 'disruption'], pressureProfile: 'disruption', lineup: lineup(['curse_priest', 'card_bailiff']) },
-  { id: 'act2_normal_support', chapter: 2, tier: 'normal', weight: 6, name: '鼓点修复', tags: ['support', 'scaler'], pressureProfile: 'snowball', lineup: lineup(['war_drummer', 'field_medic']) },
-  { id: 'act2_normal_blast', chapter: 2, tier: 'normal', weight: 5, name: '倒计时爆裂', tags: ['countdown'], pressureProfile: 'execution_check', lineup: lineup(['blast_mite', 'mirror_mage']) },
-  { id: 'act2_normal_disrupt', chapter: 2, tier: 'normal', weight: 6, name: '弃牌查封', tags: ['lock', 'pollution'], pressureProfile: 'disruption', lineup: lineup(['discard_eater', 'card_bailiff']) },
+  // 正式短路线用低于完整 Act 2 的生命模板，确保首局先学机制，再在后续长线提高压力。
+  { id: 'act2_normal_combo', chapter: 2, tier: 'normal', weight: 7, name: '连击围剿', tags: ['multi_hit'], pressureProfile: 'frontload', lineup: lineup(['combo_assassin', 'mark_hound'], [26, 26]) },
+  { id: 'act2_normal_reflect', chapter: 2, tier: 'normal', weight: 6, name: '反刺列阵', tags: ['reactive'], pressureProfile: 'attrition', lineup: lineup(['reflect_automaton', 'thorn_shell'], [26, 26]) },
+  { id: 'act2_normal_curse', chapter: 2, tier: 'normal', weight: 6, name: '咒纹审讯', tags: ['debuff', 'disruption'], pressureProfile: 'disruption', lineup: lineup(['curse_priest', 'card_bailiff'], [26, 28]) },
+  { id: 'act2_normal_support', chapter: 2, tier: 'normal', weight: 6, name: '鼓点修复', tags: ['support', 'scaler'], pressureProfile: 'snowball', lineup: lineup(['war_drummer', 'field_medic'], [26, 26]) },
+  { id: 'act2_normal_blast', chapter: 2, tier: 'normal', weight: 5, name: '倒计时爆裂', tags: ['countdown'], pressureProfile: 'execution_check', lineup: lineup(['act2_entry_blast_mite', 'act2_entry_mirror'], [20, 22]) },
+  { id: 'act2_normal_disrupt', chapter: 2, tier: 'normal', weight: 6, name: '弃牌查封', tags: ['lock', 'pollution'], pressureProfile: 'disruption', lineup: lineup(['discard_eater', 'card_bailiff'], [28, 28]) },
 
   // Act 2 序章纵切片：每场只教一个机制，避免正式长线内容提前进入首局。
   { id: 'act2_entry_curse', chapter: 2, tier: 'normal', weight: 1, name: '咒纹试探', tags: ['debuff', 'disruption', 'prelude'], pressureProfile: 'disruption', lineup: lineup(['curse_priest', 'card_bailiff'], [26, 28]) },
@@ -102,8 +103,8 @@ export const ENCOUNTERS: EncounterTemplate[] = [
   { id: 'act2_elite_counter', chapter: 2, tier: 'elite', weight: 7, name: '姿态审判官', tags: ['elite', 'counter'], pressureProfile: 'execution_check', lineup: lineup(['slime_counter_judge']) },
   { id: 'act2_elite_forge', chapter: 2, tier: 'elite', weight: 6, name: '灼烧铸机', tags: ['elite', 'pollution'], pressureProfile: 'attrition', lineup: lineup(['act2_forge_elite']) },
   { id: 'act2_elite_lock', chapter: 2, tier: 'elite', weight: 6, name: '锁牌执达者', tags: ['elite', 'lock'], pressureProfile: 'disruption', lineup: lineup(['act2_lock_bailiff'], [56]) },
-  { id: 'act2_boss_bishop', chapter: 2, tier: 'boss', weight: 8, name: '主教', tags: ['boss', 'control'], pressureProfile: 'disruption', lineup: lineup(['act2_boss_silence']) },
-  { id: 'act2_boss_dual', chapter: 2, tier: 'boss', weight: 8, name: '双核怪', tags: ['boss', 'echo'], pressureProfile: 'snowball', lineup: lineup(['act2_dual_core']) },
+  { id: 'act2_boss_bishop', chapter: 2, tier: 'boss', weight: 8, name: '主教', tags: ['boss', 'control'], pressureProfile: 'disruption', lineup: lineup(['act2_boss_silence'], [112]) },
+  { id: 'act2_boss_dual', chapter: 2, tier: 'boss', weight: 8, name: '双核怪', tags: ['boss', 'echo'], pressureProfile: 'snowball', lineup: lineup(['act2_dual_core'], [108]) },
 
   { id: 'act3_normal_telegraph', chapter: 3, tier: 'normal', weight: 7, name: '预告处刑', tags: ['countdown'], pressureProfile: 'execution_check', lineup: lineup(['telegraph_drone', 'hidden_assassin']) },
   { id: 'act3_normal_gate', chapter: 3, tier: 'normal', weight: 6, name: '护盾阈值', tags: ['shield_gate'], pressureProfile: 'attrition', lineup: lineup(['shield_nullifier', 'rear_repairer']) },

@@ -13,10 +13,10 @@ describe('Event map pools', () => {
     }
   });
 
-  test('Act2 运行池只保留首局纵切片所需的 legacy 事件', () => {
+  test('Act2 运行池收敛为 4 个正式事件', () => {
     expect(EVENTS_BY_CHAPTER[2].length).toBeGreaterThanOrEqual(3);
     expect(EVENT_POOLS[2]).toEqual(RUNTIME_EVENTS_BY_CHAPTER[2].map(event => event.id));
-    expect(EVENT_POOLS[2]).toHaveLength(3);
+    expect(EVENT_POOLS[2]).toHaveLength(4);
     for (const id of EVENT_POOLS[2]) {
       expect(RUNTIME_EVENT_DEFINITIONS[id]).toBeDefined();
     }

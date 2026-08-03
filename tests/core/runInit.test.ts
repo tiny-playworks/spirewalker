@@ -1,6 +1,10 @@
 import { describe, expect, test } from '@rstest/core';
 import { getCharacterDefinition } from '@/game/core/definitions/characters';
-import { act2EntryEncounterWhitelist } from '@/game/core/engine/buildAct2EntryValidationMap';
+import {
+  ACT2_FORMAL_ROUTE_TEMPLATES,
+  act2EntryEncounterWhitelist,
+  act2FormalRouteForSeed,
+} from '@/game/core/engine/buildAct2EntryValidationMap';
 import { buildAct2EntryNodes, buildFloor2Nodes, createMapRun } from '@/game/core/engine/createMapRun';
 import { createStarterMasterDeck } from '@/game/core/engine/starterDeck';
 
@@ -26,7 +30,7 @@ describe('core/runInit', () => {
     expect(Object.values(floor2).some((node) => node.x === 0)).toBe(true);
   });
 
-  test('Act2 验证段地图按正式序章顺序逐场教学机制', () => {
+  test('Act2 验证段地图按 seed 选择三种正式短路线', () => {
     const whitelist = new Set(act2EntryEncounterWhitelist());
     for (const seed of [3, 11, 29, 77]) {
       const nodes = buildAct2EntryNodes(seed);
@@ -35,12 +39,23 @@ describe('core/runInit', () => {
         .filter((encounterId): encounterId is string => Boolean(encounterId));
 
       expect(encounterIds.every((encounterId) => whitelist.has(encounterId))).toBe(true);
-      expect(nodes.a2v_battle_a!.encounterId).toBe('act2_entry_curse');
-      expect(nodes.a2v_battle_b!.encounterId).toBe('act2_entry_support');
-      expect(nodes.a2v_battle_c!.encounterId).toBe('act2_entry_blast');
-      expect(nodes.a2v_battle_d!.encounterId).toBe('act2_entry_finish');
+      const route = act2FormalRouteForSeed(seed);
+      expect([
+        nodes.a2v_battle_a!.encounterId,
+        nodes.a2v_battle_b!.encounterId,
+        nodes.a2v_battle_c!.encounterId,
+        nodes.a2v_battle_d!.encounterId,
+      ]).toEqual(route.normalEncounterIds);
       expect(nodes.a2v_safe_branch!.encounterId).toBe('act2_entry_reflect');
-      expect(nodes.a2v_risk_elite!.encounterId).toBe('act2_elite_lock');
+      expect(nodes.a2v_risk_elite!.encounterId).toBe(route.eliteEncounterId);
+      expect(nodes.a2v_boss_silence!.encounterId).toBe(route.bossEncounterId);
     }
+  });
+
+  test('三种路线至少在供给和章节事件上可区分', () => {
+    const routes = [3, 11, 29].map((seed) => buildAct2EntryNodes(seed));
+    expect(new Set(routes.map((nodes) => nodes.a2v_battle_b!.nextNodeIds.join(','))).size).toBe(3);
+    expect(new Set(routes.map((nodes) => nodes.a2v_battle_d!.nextNodeIds.join(','))).size).toBe(3);
+    expect(ACT2_FORMAL_ROUTE_TEMPLATES).toHaveLength(3);
   });
 });
