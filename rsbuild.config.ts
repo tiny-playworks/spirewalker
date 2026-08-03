@@ -28,14 +28,11 @@ export default defineConfig({
     },
   },
   html: {
-    title: 'Spirewalker · 连势构筑之旅',
+    title: '辉芯工坊 · 双枪构筑试炼',
     favicon: './public/favicon.svg',
     meta: {
-      viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
-      'theme-color': '#0a0a0b',
-      'mobile-web-app-capable': 'yes',
-      'apple-mobile-web-app-capable': 'yes',
-      'apple-mobile-web-app-status-bar-style': 'black-translucent',
+      viewport: 'width=device-width, initial-scale=1',
+      'theme-color': '#145e65',
     },
     tags: [
       {

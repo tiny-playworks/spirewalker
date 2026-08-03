@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "style": {
+    "name": "高质Q版赛璐璐魔法工坊",
+    "palette": ["#f8edcf", "#29c9c1", "#145f66", "#f4bd54", "#ff684f", "#c74ed8"],
+    "characterProportion": "2.5-3 heads",
+    "outline": "clean colored outline",
+    "shading": "three-step cel shading"
+  },
+  "assets": [
+    {
+      "id": "workshop-key-art",
+      "type": "key-art",
+      "path": "art/workshop-key-art.webp",
+      "width": 1672,
+      "height": 941,
+      "source": "OpenAI built-in image generation",
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "明亮魔法工坊竞技场中的Q版魔导工匠、三类敌人与失控熔炉守卫，奶油白、青绿、琥珀金主色，高质赛璐璐、彩色轮廓、无文字无水印",
+      "generatedAt": "2026-08-03",
+      "modifications": ["converted to build-ready WebP", "used as the v2.0 color and material anchor"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "artificer-directions",
+      "type": "direction-sprites",
+      "path": "characters/artificer/directions/{01..08}.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "anchor": "bottom-center",
+      "source": "OpenAI built-in image generation plus local chroma-key removal and shared-scale normalization",
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "同一魔导工匠的8方向移动朝向，统一比例、服装、轮廓与光照，纯洋红色键控背景，无武器、无文字、无阴影",
+      "generatedAt": "2026-08-03",
+      "modifications": ["magenta chroma key removed", "split into 8 frames", "normalized to 192x192 shared scale"],
+      "commercialReview": "required-before-release"
+    }
+  ]
+}

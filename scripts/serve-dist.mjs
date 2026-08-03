@@ -14,8 +14,6 @@ const contentTypes = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
   '.png': 'image/png',
-  '.wav': 'audio/wav',
-  '.mp3': 'audio/mpeg',
 };
 
 function safePath(urlPath) {

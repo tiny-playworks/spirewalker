@@ -1,14 +1,13 @@
 {
   "id": "./",
-  "name": "Spirewalker",
-  "short_name": "Spirewalker",
-  "description": "一款围绕连势构筑的 Web Roguelike 卡牌游戏。",
+  "name": "辉芯工坊",
+  "short_name": "辉芯工坊",
+  "description": "桌面端双武器构筑 Roguelite 射击游戏。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
-  "theme_color": "#0a0a0b",
-  "background_color": "#0a0a0b",
+  "theme_color": "#145e65",
+  "background_color": "#145e65",
   "icons": [
     {
       "src": "./favicon.svg",

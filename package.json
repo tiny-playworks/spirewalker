@@ -1,5 +1,5 @@
 {
-  "name": "spirewalker",
+  "name": "forge-workshop",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",
   "engines": {
@@ -22,27 +22,17 @@
     "e2e:serve": "pnpm build && node scripts/serve-dist.mjs",
     "test": "rstest run",
     "test:watch": "rstest --watch",
-    "test:e2e": "pnpm test:e2e:smoke",
-    "test:e2e:smoke": "playwright test tests/e2e/mainMenu.spec.ts tests/e2e/mapToBattle.spec.ts tests/e2e/pwaSmoke.spec.ts --project=chromium",
-    "test:e2e:full": "playwright test --grep-invert @visual",
-    "test:visual": "playwright test tests/e2e/visualCapture.spec.ts --project=chromium",
+    "test:e2e": "playwright test --project=desktop-chromium",
+    "test:visual": "playwright test tests/e2e/visualCapture.spec.ts --project=desktop-1080p --project=desktop-1440p",
     "test:e2e:ui": "playwright test --ui",
     "lint": "rslint",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "simulate:act1": "tsx scripts/run-act1-validation.ts",
-    "simulate:act1-boss": "tsx scripts/run-act1-boss-attribution.ts",
-    "simulate:act1-boss:validate": "tsx scripts/validate-act1-boss-change.ts",
-    "simulate:act2-entry": "tsx scripts/run-act2-entry-validation.ts",
-    "check:bundle-size": "tsx scripts/check-bundle-size.ts",
-    "audit:cards": "tsx scripts/audit-cards.ts",
-    "audit:card-art": "tsx scripts/audit-card-art.ts",
-    "audit:relics": "tsx scripts/audit-relics.ts",
-    "validate:release": "node scripts/validate-release.mjs",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
     "lucide-react": "^1.25.0",
+    "phaser": "4.2.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zustand": "^5.0.14"

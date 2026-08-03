@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 45_000,
   fullyParallel: true,
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   use: {
     baseURL: 'http://127.0.0.1:3000',
@@ -18,29 +19,29 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
-      testIgnore: [/responsiveSmoke\.spec\.ts/, /mobilePortrait\.spec\.ts/],
+      name: 'desktop-chromium',
+      testIgnore: /visualCapture\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 720 },
       },
     },
     {
-      name: 'mobile-landscape',
-      testMatch: /responsiveSmoke\.spec\.ts/,
+      name: 'desktop-1080p',
+      testMatch: /visualCapture\.spec\.ts/,
       use: {
-        ...devices['Pixel 5'],
-        viewport: { width: 844, height: 390 },
-        screen: { width: 844, height: 390 },
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        screen: { width: 1920, height: 1080 },
       },
     },
     {
-      name: 'mobile-portrait',
-      testMatch: /mobilePortrait\.spec\.ts/,
+      name: 'desktop-1440p',
+      testMatch: /visualCapture\.spec\.ts/,
       use: {
-        ...devices['Pixel 5'],
-        viewport: { width: 390, height: 844 },
-        screen: { width: 390, height: 844 },
+        ...devices['Desktop Chrome'],
+        viewport: { width: 2560, height: 1440 },
+        screen: { width: 2560, height: 1440 },
       },
     },
   ],
