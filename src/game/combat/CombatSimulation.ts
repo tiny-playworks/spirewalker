@@ -1,4 +1,5 @@
-import { CORES, ITEM_BY_ID, MUZZLES, RARITY_MULTIPLIER } from '../content';
+import { CORES, ITEM_BY_ID, MUZZLES } from '../content';
+import { deriveWeaponStats } from '../derivedStats';
 import type { CombatInput } from '../input';
 import { createRandom, hashSeed, type RandomSource } from '../random';
 import type {
@@ -159,7 +160,7 @@ export class CombatSimulation {
       hp: config.hp,
       maxHp: config.maxHp,
       shield: config.shield,
-      activeWeapon: 0,
+      activeWeapon: config.activeWeapon,
       weapons: [this.createWeaponRuntime(config.weapons[0]), this.createWeaponRuntime(config.weapons[1])],
       dashCooldownMs: 0,
       dodgeRemainingMs: 0,
@@ -412,10 +413,11 @@ export class CombatSimulation {
     const weapon = this.weaponDefinition(slot);
     const muzzle = this.muzzleDefinition(slot);
     const core = this.coreDefinition(slot);
+    const derived = deriveWeaponStats(slot, this.config.combatModifiers);
     const overclockRate = player.overclocked
       ? this.overclockValue(1.3 + this.config.characterTalents.overclockFireRateBonus)
       : 1;
-    const fireRate = weapon.fireRate * this.config.combatModifiers.fireRateMultiplier * overclockRate;
+    const fireRate = derived.fireRate * overclockRate;
     runtime.fireCooldownMs = 1_000 / Math.max(0.1, fireRate);
     runtime.ammo -= 1;
 
@@ -439,19 +441,12 @@ export class CombatSimulation {
     core: CoreDefinition | null,
     angle: number,
   ): void {
-    const speedPenalty = muzzle?.id === 'muzzle-heavy' ? 0.78 : 1;
-    const speed = weapon.projectileSpeed * this.config.combatModifiers.projectileSpeedMultiplier * speedPenalty;
-    const rarityPower = RARITY_MULTIPLIER[slot.weapon.rarity]
-      * (slot.muzzle ? 1 + (RARITY_MULTIPLIER[slot.muzzle.rarity] - 1) * 0.35 : 1)
-      * (slot.core ? 1 + (RARITY_MULTIPLIER[slot.core.rarity] - 1) * 0.35 : 1);
+    const derived = deriveWeaponStats(slot, this.config.combatModifiers);
+    const speed = derived.projectileSpeed;
     const switchBonus = this.player.switchDamageRemainingMs > 0
       ? 1 + this.config.characterTalents.overclockSwitchDamageBonus
       : 1;
-    const damage = weapon.damage
-      * (muzzle?.damageMultiplier ?? 1)
-      * this.config.combatModifiers.damageMultiplier
-      * rarityPower
-      * switchBonus;
+    const damage = derived.damage * switchBonus;
     const projectileTag = toCombatTag(weapon.tag === 'neutral' ? core?.tag ?? 'arc' : weapon.tag);
     const legendaryRelic = this.config.relics.some((item) => {
       if (item.rarity !== 'legendary') return false;
@@ -465,7 +460,7 @@ export class CombatSimulation {
       rotation: angle, radius: weapon.projectileRadius * (muzzle?.id === 'muzzle-heavy' ? 1.45 : 1),
       tag: projectileTag,
       damage, remainingMs: 1_600, pierce: muzzle?.pierce ?? 0, bounces: muzzle?.bounces ?? 0,
-      explosionRadius: Math.max(muzzle?.explosionRadius ?? 0, core?.explosionRadius ?? 0),
+      explosionRadius: derived.explosionRadius,
       core, legendary, hitIds: new Set(),
     });
   }
@@ -874,6 +869,7 @@ export class CombatSimulation {
       damageTaken: this.damageTaken,
       combatScore: score,
       lethalGuardAvailable: this.config.lethalGuardAvailable,
+      activeWeapon: this.player.activeWeapon,
     };
   }
 

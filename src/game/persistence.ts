@@ -31,7 +31,8 @@ export const localStorageSaveAdapter: SaveAdapter = {
   },
   loadRun() {
     const value = readJson<RunStateV2>(RUN_KEY);
-    return value?.version === 2 ? value : null;
+    // G1 的房间、宝箱与地面掉落状态无法由旧的卡片流程安全恢复。
+    return value?.version === 3 ? { ...value, activeWeapon: value.activeWeapon ?? 0 } : null;
   },
   saveRun(run) {
     try {

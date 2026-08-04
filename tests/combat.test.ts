@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@rstest/core';
 import { CombatSimulation } from '@/game/combat/CombatSimulation';
+import { deriveStats } from '@/game/derivedStats';
 import { EMPTY_COMBAT_INPUT, type CombatInput } from '@/game/input';
 import { createDefaultProfile } from '@/game/progression';
 import { createEncounterConfig, createRun } from '@/game/run';
@@ -90,5 +91,17 @@ describe('V2 基础战斗节奏', () => {
     const simulation = new CombatSimulation(createEncounterConfig(run, profile, { debugFast: true }));
     simulation.step(16, input({ shooting: true, aimX: 640, aimY: 0 }));
     expect(simulation.projectiles.find((projectile) => projectile.owner === 'player')?.legendary).toBe(true);
+  });
+
+  test('属性界面与战斗弹丸共用同一份最终伤害派生值', () => {
+    const profile = createDefaultProfile();
+    const run = createRun(profile, 14);
+    run.weapons[0].muzzle = { uid: 'muzzle', kind: 'muzzle', definitionId: 'muzzle-fan', rarity: 'rare' };
+    const displayed = deriveStats(profile, run).weapons[0];
+    const simulation = new CombatSimulation(createEncounterConfig(run, profile, { debugFast: true }));
+    simulation.step(16, input({ shooting: true, aimX: 640, aimY: 0 }));
+    const projectile = simulation.projectiles.find((entry) => entry.owner === 'player');
+    expect(projectile?.damage).toBeCloseTo(displayed.damage, 6);
+    expect(simulation.projectiles.filter((entry) => entry.owner === 'player')).toHaveLength(displayed.projectileCount);
   });
 });

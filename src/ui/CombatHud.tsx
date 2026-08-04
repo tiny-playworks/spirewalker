@@ -11,6 +11,7 @@ export function CombatHud({ hud, boss }: { hud: CombatHudSnapshot | null; boss: 
       className="combat-hud"
       aria-live="polite"
       data-projectiles={hud.projectilesActive}
+      data-elapsed-ms={Math.round(hud.elapsedMs)}
       style={{ '--hud-scale': hudScale } as CSSProperties}
     >
       <div className="hud-survival">
@@ -53,7 +54,7 @@ export function CombatHud({ hud, boss }: { hud: CombatHudSnapshot | null; boss: 
         <span>{formatTime(hud.elapsedMs)}</span>
         <span className={hud.fps < 50 ? 'fps-low' : ''}>{Math.round(hud.fps)} FPS</span>
       </div>
-      <div className="control-hint">WASD 移动 · 左键射击 · R 换弹 · Q/滚轮切枪 · Space 闪避 · 右键/E 超频 · Esc 暂停</div>
+      <div className="control-hint">WASD 移动 · 左键射击 · R 换弹 · Q/滚轮切枪 · Space 闪避 · 右键超频 · Esc 暂停</div>
     </div>
   );
 }

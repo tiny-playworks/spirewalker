@@ -2,9 +2,11 @@ import { ALL_ITEMS, CORES, ITEM_BY_ID, MUZZLES, RELICS, WEAPONS } from './conten
 import { createRandom, hashSeed } from './random';
 import type {
   BuildTag,
+  ChestTier,
   CombatModifiers,
   ItemDefinition,
   ItemKind,
+  LootDrop,
   Rarity,
   RewardCategory,
   RewardItem,
@@ -26,6 +28,13 @@ const ELITE_WEIGHTS: Record<Rarity, number> = {
   legendary: 0.05,
 };
 
+const BOSS_WEIGHTS: Record<Rarity, number> = {
+  common: 0.1,
+  rare: 0.4,
+  epic: 0.35,
+  legendary: 0.15,
+};
+
 const SHOP_WEIGHTS: Record<Rarity, number> = {
   common: 0.52,
   rare: 0.34,
@@ -38,6 +47,7 @@ const ITEM_POOLS: Record<ItemKind, ItemDefinition[]> = {
   muzzle: MUZZLES,
   core: CORES,
   relic: RELICS,
+  arcana: [],
 };
 
 export function generateRouteChoices(seed: number, roomIndex: number, eliteAvailable = true): RouteOption[] {
@@ -90,7 +100,57 @@ export function generateRewardOffers(args: {
     uid: `${args.category}-${definition.id}-${args.roomIndex}-${args.reroll ?? 0}-${index}`,
     kind: args.category,
     definitionId: definition.id,
-    rarity: rollRarity(random.next(), args.elite ? ELITE_WEIGHTS : NORMAL_WEIGHTS, args.modifiers, args.elite),
+    rarity: rollChestRarity(random.next(), args.elite ? 'elite' : 'normal', args.modifiers),
+  }));
+}
+
+export function generateChestDrops(args: {
+  seed: number;
+  roomIndex: number;
+  category: RewardCategory;
+  elite: boolean;
+  currentTags: BuildTag[];
+  modifiers: CombatModifiers;
+}): LootDrop[] {
+  const random = createRandom(hashSeed(args.seed, 'chest-count', args.roomIndex, args.category));
+  const count = 1 + Number(random.next() < (args.elite ? 0.5 : 0.35));
+  const positions = count === 1
+    ? [{ x: 640, y: 390 }]
+    : [{ x: 520, y: 405 }, { x: 760, y: 405 }];
+
+  if (args.category === 'gold') {
+    const total = 52 + args.roomIndex * 12 + (args.elite ? 28 : 0);
+    return positions.map((position, index) => ({
+      id: `gold-${args.roomIndex}-${index}`,
+      item: null,
+      gold: index === positions.length - 1 ? total - Math.floor(total / count) * index : Math.floor(total / count),
+      worldX: position.x,
+      worldY: position.y,
+      resolved: false,
+      resolution: null,
+    }));
+  }
+
+  const category = args.category === 'elite'
+    ? rollEliteRewardCategory(args.seed, args.roomIndex)
+    : args.category;
+  const items = generateRewardOffers({
+    seed: args.seed,
+    roomIndex: args.roomIndex,
+    category,
+    elite: args.elite,
+    count,
+    currentTags: args.currentTags,
+    modifiers: args.modifiers,
+  });
+  return items.map((item, index) => ({
+    id: `drop-${item.uid}`,
+    item,
+    gold: 0,
+    worldX: positions[index]?.x ?? 640,
+    worldY: positions[index]?.y ?? 405,
+    resolved: false,
+    resolution: null,
   }));
 }
 
@@ -148,6 +208,11 @@ export function getDismantleValue(item: RewardItem, ratio: number): number {
 
 export function rarityClass(rarity: Rarity): string {
   return `rarity-${rarity}`;
+}
+
+export function rollChestRarity(roll: number, tier: ChestTier, modifiers: CombatModifiers): Rarity {
+  const weights = tier === 'boss' ? BOSS_WEIGHTS : tier === 'elite' ? ELITE_WEIGHTS : NORMAL_WEIGHTS;
+  return rollRarity(roll, weights, modifiers, tier === 'elite');
 }
 
 function rollRarity(

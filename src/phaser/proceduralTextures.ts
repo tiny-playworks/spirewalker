@@ -1,18 +1,18 @@
 import Phaser from 'phaser';
 
 export function createProceduralTextures(scene: Phaser.Scene): void {
-  createChaser(scene);
-  createRanged(scene);
-  createCharger(scene);
-  createBoss(scene);
-  createProjectile(scene, 'projectile-arc', 0x29d9cc, 0xeafffb, 18);
-  createProjectile(scene, 'projectile-blast', 0xff9147, 0xfff2ca, 24);
-  createProjectile(scene, 'projectile-frost', 0x8be8ff, 0xffffff, 18);
-  createProjectile(scene, 'projectile-enemy', 0xff5e72, 0xffd5c7, 20);
-  createWeapon(scene, 'weapon-arc', 0x25c9c2, 0xffcf66, 76, 22);
-  createWeapon(scene, 'weapon-blast', 0xff8b46, 0xffcf66, 88, 30);
-  createWeapon(scene, 'weapon-frost', 0x83ddff, 0xf7ffff, 92, 20);
-  createShadow(scene);
+  if (!scene.textures.exists('enemy-chaser')) createChaser(scene);
+  if (!scene.textures.exists('enemy-ranged')) createRanged(scene);
+  if (!scene.textures.exists('enemy-charger')) createCharger(scene);
+  if (!scene.textures.exists('enemy-boss')) createBoss(scene);
+  if (!scene.textures.exists('projectile-arc')) createProjectile(scene, 'projectile-arc', 0x29d9cc, 0xeafffb, 18);
+  if (!scene.textures.exists('projectile-blast')) createProjectile(scene, 'projectile-blast', 0xff9147, 0xfff2ca, 24);
+  if (!scene.textures.exists('projectile-frost')) createProjectile(scene, 'projectile-frost', 0x8be8ff, 0xffffff, 18);
+  if (!scene.textures.exists('projectile-enemy')) createProjectile(scene, 'projectile-enemy', 0xff5e72, 0xffd5c7, 20);
+  if (!scene.textures.exists('weapon-arc')) createWeapon(scene, 'weapon-arc', 0x25c9c2, 0xffcf66, 76, 22);
+  if (!scene.textures.exists('weapon-blast')) createWeapon(scene, 'weapon-blast', 0xff8b46, 0xffcf66, 88, 30);
+  if (!scene.textures.exists('weapon-frost')) createWeapon(scene, 'weapon-frost', 0x83ddff, 0xf7ffff, 92, 20);
+  if (!scene.textures.exists('entity-shadow')) createShadow(scene);
 }
 
 export function drawArena(scene: Phaser.Scene): void {

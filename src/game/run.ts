@@ -14,6 +14,7 @@ import type {
 export interface EquipTarget {
   weaponSlot?: 0 | 1;
   relicSlot?: number;
+  arcanaSlot?: number;
 }
 
 export function createRun(profile: ProfileV2, seed: number): RunStateV2 {
@@ -23,17 +24,14 @@ export function createRun(profile: ProfileV2, seed: number): RunStateV2 {
   const starterSecondary = createItem('weapon', 'starter-handcannon', 'common', `starter-secondary-${seed}`);
 
   return {
-    version: 2,
+    version: 3,
     seed,
-    screen: 'route',
+    phase: 'route',
     roomIndex: 0,
     currentRoute: null,
     routeChoices: generateRouteChoices(seed, 0),
-    rewardCategory: null,
-    rewardOffers: [],
-    shopOffers: [],
-    shopRerollCount: 0,
-    shopFreeRerollUsed: false,
+    chest: null,
+    selectedLootId: null,
     chestRerollUsed: false,
     fourChoiceUsed: false,
     hp: maxHp,
@@ -41,7 +39,10 @@ export function createRun(profile: ProfileV2, seed: number): RunStateV2 {
     shield: modifiers.startingShield,
     gold: 65 + modifiers.startingGold,
     weapons: [emptyWeapon(starterPrimary), emptyWeapon(starterSecondary)],
+    activeWeapon: 0,
     relics: [],
+    arcana: [],
+    temporaryEffects: [],
     report: {
       roomsCleared: 0,
       elitesDefeated: 0,
@@ -78,6 +79,7 @@ export function createEncounterConfig(
     maxHp: run.maxHp,
     shield: run.shield + relicStartingShield(run.relics),
     weapons: structuredClone(run.weapons),
+    activeWeapon: run.activeWeapon,
     relics: structuredClone(run.relics),
     combatModifiers: modifiers,
     characterTalents: getCharacterCombatTalents(profile),
@@ -99,7 +101,7 @@ export function equipReward(
 
   if (item.kind === 'weapon') {
     replaced = next.weapons[weaponSlot].weapon;
-    next.weapons[weaponSlot] = emptyWeapon(item);
+    next.weapons[weaponSlot].weapon = item;
   } else if (item.kind === 'muzzle') {
     replaced = next.weapons[weaponSlot].muzzle;
     next.weapons[weaponSlot].muzzle = item;
@@ -107,11 +109,18 @@ export function equipReward(
     replaced = next.weapons[weaponSlot].core;
     next.weapons[weaponSlot].core = item;
   } else if (item.kind === 'relic') {
-    if (next.relics.length < 6) next.relics.push(item);
+    if (next.relics.length < 8) next.relics.push(item);
     else {
       const relicSlot = target.relicSlot ?? 0;
       replaced = next.relics[relicSlot] ?? null;
       next.relics[relicSlot] = item;
+    }
+  } else if (item.kind === 'arcana') {
+    if (next.arcana.length < 5) next.arcana.push(item);
+    else {
+      const arcanaSlot = target.arcanaSlot ?? 0;
+      replaced = next.arcana[arcanaSlot] ?? null;
+      next.arcana[arcanaSlot] = item;
     }
   }
 
@@ -126,6 +135,7 @@ export function currentBuildTags(run: RunStateV2): BuildTag[] {
   const items = [
     ...run.weapons.flatMap((slot) => [slot.weapon, slot.muzzle, slot.core]),
     ...run.relics,
+    ...run.arcana,
   ].filter((item): item is RewardItem => Boolean(item));
   return items.map((item) => getItemDefinition(item).tag);
 }

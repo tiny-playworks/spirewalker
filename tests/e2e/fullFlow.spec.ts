@@ -1,56 +1,80 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-test('桌面端完整纵切片：路线、战斗、宝箱、商店、Boss、双经验与续局', async ({ page }) => {
+test('G2 游戏化核心体验：工坊、实体门、战斗、宝箱、逐件处理与暂停界面', async ({ page }) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.addInitScript(() => {
-    if (sessionStorage.getItem('sljt_e2e_initialized')) return;
     localStorage.clear();
     localStorage.setItem('sljt_profile', JSON.stringify({ version: 1, legacy: true }));
-    sessionStorage.setItem('sljt_e2e_initialized', '1');
   });
   await page.goto('/?e2e=1');
 
   await expect(page.getByRole('heading', { name: '辉芯工坊' })).toBeVisible();
-  await page.getByTestId('new-run').click();
+  await page.getByTestId('enter-workshop').click();
+  await expect(page.getByTestId('game-canvas')).toBeVisible();
+  await expect(page.locator('canvas')).toHaveCount(1);
+  await page.locator('canvas').evaluate((canvas) => { canvas.dataset.runtime = 'persistent'; });
+  await expect(page.getByTestId('interaction-prompt')).toContainText('启动远征门');
 
-  for (let room = 0; room < 3; room += 1) {
-    await expect(page.locator('.route-screen')).toBeVisible();
-    await expect(page.locator('.route-card')).toHaveCount(2);
-    await page.locator('.route-card:not(.route-gold)').first().click();
-    await expect(page.getByTestId('combat-canvas')).toBeVisible();
-    await expect(page.locator('.combat-meta')).toContainText('FPS', { timeout: 15_000 });
+  await page.keyboard.press('e');
+  await expect(page.locator('[data-phase="route"]')).toBeVisible();
+  await expect(page.locator('.route-card, .reward-grid, .shop-grid')).toHaveCount(0);
+  await enterLeftDoor(page);
 
-    if (room === 0) {
-      await page.reload();
-      await expect(page.getByRole('button', { name: '继续上次试炼' })).toBeVisible();
-      await page.getByRole('button', { name: '继续上次试炼' }).click();
-      await expect(page.getByTestId('combat-canvas')).toBeVisible();
-    }
+  await expect(page.locator('[data-phase="combat"]')).toBeVisible();
+  await expect(page.locator('.combat-meta')).toContainText('FPS', { timeout: 15_000 });
+  const primaryBefore = await page.locator('.weapon-slot.active strong').textContent();
+  await page.keyboard.press('q');
+  await expect.poll(async () => page.locator('.weapon-slot.active strong').textContent()).not.toBe(primaryBefore);
 
-    await expect(page.locator('.reward-screen')).toBeVisible({ timeout: 20_000 });
-    await expect(page.locator('.reward-grid .item-card')).toHaveCount(3);
-    await page.locator('.reward-grid .item-card .card-button').first().click();
-  }
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.pause-rail')).toBeVisible();
+  const elapsedBefore = await page.locator('.combat-hud').getAttribute('data-elapsed-ms');
+  await page.waitForTimeout(900);
+  expect(await page.locator('.combat-hud').getAttribute('data-elapsed-ms')).toBe(elapsedBefore);
+  await page.getByRole('button', { name: /装备/ }).click();
+  await expect(page.locator('.weapon-system')).toHaveCount(2);
+  await expect(page.locator('.slot-section').nth(0).locator('.equipment-slot')).toHaveCount(8);
+  await expect(page.locator('.slot-section').nth(1).locator('.equipment-slot')).toHaveCount(5);
+  await expect(page.locator('.equipment-lock')).toContainText('战斗中仅可查看');
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.stats-panel')).toBeVisible();
+  await expect(page.locator('.stats-panel')).toContainText('持续 DPS');
+  await page.keyboard.press('Escape');
 
-  await expect(page.locator('.shop-screen')).toBeVisible();
-  await expect(page.locator('.shop-offer')).toHaveCount(5);
-  await page.getByTestId('start-boss').click();
-  await expect(page.locator('.boss-hud')).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator('.settlement-screen.victory')).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('.xp-columns')).toContainText('账号经验');
-  await expect(page.locator('.xp-columns')).toContainText('角色经验');
+  await expect(page.locator('[data-phase="chest"]')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('interaction-prompt')).toContainText('打开宝箱');
+  await page.keyboard.press('e');
+  await expect(page.locator('[data-phase="loot"]')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByTestId('interaction-prompt')).toContainText('检查');
+  await page.keyboard.press('e');
+  await expect(page.getByTestId('loot-inspector')).toBeVisible();
+  await expect(page.getByTestId('loot-inspector')).toContainText(/伤害|弹丸|元素回路|生效方式/);
+  await page.getByRole('button', { name: '装到主武器' }).click();
 
+  await expect(page.locator('[data-phase="route"]')).toBeVisible();
+  await expect(page.locator('canvas[data-runtime="persistent"]')).toHaveCount(1);
   const storage = await page.evaluate(() => ({
     profile: localStorage.getItem('sljt_v2_profile'),
     run: localStorage.getItem('sljt_v2_run'),
     legacy: localStorage.getItem('sljt_profile'),
   }));
   expect(storage.profile).toContain('"version":2');
-  expect(storage.run).toContain('"settlementApplied":true');
+  expect(storage.run).toContain('"version":3');
+  expect(storage.run).toContain('"roomIndex":1');
   expect(storage.legacy).toContain('"legacy":true');
-
-  await page.getByTestId('retry-run').click();
-  await expect(page.locator('.route-screen')).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
+
+async function enterLeftDoor(page: Page): Promise<void> {
+  await hold(page, 'w', 850);
+  await hold(page, 'a', 500);
+  await expect(page.getByTestId('interaction-prompt')).toContainText('进入');
+  await page.keyboard.press('e');
+}
+
+async function hold(page: Page, key: string, durationMs: number): Promise<void> {
+  await page.keyboard.down(key);
+  await page.waitForTimeout(durationMs);
+  await page.keyboard.up(key);
+}

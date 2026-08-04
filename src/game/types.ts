@@ -2,11 +2,22 @@ export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
 export type BuildTag = 'arc' | 'blast' | 'frost' | 'neutral';
 
-export type ItemKind = 'weapon' | 'muzzle' | 'core' | 'relic';
+export type ItemKind = 'weapon' | 'muzzle' | 'core' | 'relic' | 'arcana';
 
 export type RewardCategory = ItemKind | 'gold' | 'elite';
 
-export type RunScreen = 'route' | 'combat' | 'reward' | 'shop' | 'settlement';
+export type GameMode = 'title' | 'workshop' | 'run' | 'settlement';
+
+export type RunPhase = 'route' | 'combat' | 'chest' | 'loot' | 'prototype-complete';
+
+export type WorldOverlay =
+  | 'none'
+  | 'pause'
+  | 'character'
+  | 'equipment'
+  | 'stats'
+  | 'codex'
+  | 'settings';
 
 export interface BaseItemDefinition {
   id: string;
@@ -52,7 +63,12 @@ export interface RelicDefinition extends BaseItemDefinition {
   modifiers: Partial<CombatModifiers>;
 }
 
-export type ItemDefinition = WeaponDefinition | MuzzleDefinition | CoreDefinition | RelicDefinition;
+export interface ArcanaDefinition extends BaseItemDefinition {
+  kind: 'arcana';
+  rule: string;
+}
+
+export type ItemDefinition = WeaponDefinition | MuzzleDefinition | CoreDefinition | RelicDefinition | ArcanaDefinition;
 
 export interface RewardItem {
   uid: string;
@@ -80,6 +96,28 @@ export interface ShopOffer {
   sold: boolean;
 }
 
+export type ChestTier = 'normal' | 'elite' | 'boss';
+
+export type ChestAnimationStage = 'landed' | 'unlocking' | 'opening' | 'opened';
+
+export interface LootDrop {
+  id: string;
+  item: RewardItem | null;
+  gold: number;
+  worldX: number;
+  worldY: number;
+  resolved: boolean;
+  resolution: 'equipped' | 'dismantled' | 'collected' | null;
+}
+
+export interface ChestState {
+  id: string;
+  tier: ChestTier;
+  stage: ChestAnimationStage;
+  drops: LootDrop[];
+  rerolled: boolean;
+}
+
 export interface RunReport {
   roomsCleared: number;
   elitesDefeated: number;
@@ -92,17 +130,14 @@ export interface RunReport {
 }
 
 export interface RunStateV2 {
-  version: 2;
+  version: 3;
   seed: number;
-  screen: RunScreen;
+  phase: RunPhase;
   roomIndex: number;
   currentRoute: RouteOption | null;
   routeChoices: RouteOption[];
-  rewardCategory: ItemKind | null;
-  rewardOffers: RewardItem[];
-  shopOffers: ShopOffer[];
-  shopRerollCount: number;
-  shopFreeRerollUsed: boolean;
+  chest: ChestState | null;
+  selectedLootId: string | null;
   chestRerollUsed: boolean;
   fourChoiceUsed: boolean;
   hp: number;
@@ -110,7 +145,10 @@ export interface RunStateV2 {
   shield: number;
   gold: number;
   weapons: [EquippedWeapon, EquippedWeapon];
+  activeWeapon: 0 | 1;
   relics: RewardItem[];
+  arcana: RewardItem[];
+  temporaryEffects: Array<{ id: string; name: string; remainingMs: number }>;
   report: RunReport;
   startedAt: number;
   outcome: 'victory' | 'defeat' | null;
@@ -194,6 +232,7 @@ export interface EncounterConfig {
   maxHp: number;
   shield: number;
   weapons: [EquippedWeapon, EquippedWeapon];
+  activeWeapon: 0 | 1;
   relics: RewardItem[];
   combatModifiers: CombatModifiers;
   characterTalents: CharacterCombatTalents;
@@ -240,12 +279,61 @@ export interface CombatResult {
   damageTaken: number;
   combatScore: number;
   lethalGuardAvailable: boolean;
+  activeWeapon: 0 | 1;
 }
 
 export interface CombatBridge {
   onHud(snapshot: CombatHudSnapshot): void;
   onEvent(event: CombatEvent): void;
   onResult(result: CombatResult): void;
+}
+
+export interface WorldBridge {
+  onInteraction(prompt: WorldInteraction | null): void;
+  onRouteSelected(routeId: string): void;
+  onStartRun(): void;
+  onReturnToWorkshop(): void;
+  onChestOpened(): void;
+  onLootSelected(dropId: string): void;
+  onWeaponSwapped(weaponIndex: 0 | 1): void;
+  onOverlayRequested(overlay: Exclude<WorldOverlay, 'none'>): void;
+  onMetaPanelRequested(panel: 'global-tree' | 'character-tree'): void;
+}
+
+export interface WorldInteraction {
+  kind: 'station' | 'route' | 'chest' | 'loot' | 'exit';
+  id: string;
+  label: string;
+  hint: string;
+}
+
+export interface DerivedWeaponStats {
+  name: string;
+  tag: BuildTag;
+  damage: number;
+  fireRate: number;
+  magazine: number;
+  reloadMs: number;
+  sustainedDps: number;
+  projectileSpeed: number;
+  projectileCount: number;
+  pierce: number;
+  bounces: number;
+  explosionRadius: number;
+  element: BuildTag;
+}
+
+export interface DerivedStats {
+  maxHp: number;
+  startingShield: number;
+  moveSpeed: number;
+  dashCooldownMs: number;
+  critChance: number;
+  critMultiplier: number;
+  overclockCooldownMs: number;
+  deflectionCooldownMs: number;
+  dismantleRatio: number;
+  weapons: [DerivedWeaponStats, DerivedWeaponStats];
 }
 
 export type CombatEvent =

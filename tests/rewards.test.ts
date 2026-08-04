@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@rstest/core';
-import { ITEM_BY_ID, WEAPONS, MUZZLES, CORES, RELICS } from '@/game/content';
+import { WEAPONS, MUZZLES, CORES, RELICS } from '@/game/content';
 import { createDefaultProfile, getCombatModifiers } from '@/game/progression';
-import { generateRewardOffers, generateRouteChoices } from '@/game/rewards';
+import { generateChestDrops, generateRouteChoices, rollChestRarity } from '@/game/rewards';
 import type { BuildTag } from '@/game/types';
 
 describe('V2 路线与奖励', () => {
@@ -37,22 +37,32 @@ describe('V2 路线与奖励', () => {
     }
   });
 
-  test('宝箱三选一同时保留当前路线、横向替换与转向空间', () => {
+  test('普通宝箱固定种子生成 1–2 件可全部处理的地面掉落', () => {
     const args = {
       seed: 2_026_080_3,
       roomIndex: 1,
       category: 'core' as const,
       elite: false,
-      count: 3,
       currentTags: ['arc', 'arc'] as BuildTag[],
       modifiers: getCombatModifiers(createDefaultProfile()),
     };
-    const offers = generateRewardOffers(args);
-    expect(offers).toEqual(generateRewardOffers(args));
-    expect(offers).toHaveLength(3);
-    expect(new Set(offers.map((item) => item.definitionId)).size).toBe(3);
-    const tags = offers.map((item) => ITEM_BY_ID.get(item.definitionId)?.tag);
-    expect(tags).toContain('arc');
-    expect(tags.some((tag) => tag !== 'arc' && tag !== 'neutral')).toBe(true);
+    const drops = generateChestDrops(args);
+    expect(drops).toEqual(generateChestDrops(args));
+    expect(drops.length).toBeGreaterThanOrEqual(1);
+    expect(drops.length).toBeLessThanOrEqual(2);
+    expect(drops.every((drop) => !drop.resolved && drop.item?.kind === 'core')).toBe(true);
+  });
+
+  test('三档宝箱品质边界符合普通、精英与 Boss 权重', () => {
+    const modifiers = getCombatModifiers(createDefaultProfile());
+    expect(rollChestRarity(0.005, 'normal', modifiers)).toBe('legendary');
+    expect(rollChestRarity(0.05, 'normal', modifiers)).toBe('epic');
+    expect(rollChestRarity(0.2, 'normal', modifiers)).toBe('rare');
+    expect(rollChestRarity(0.8, 'normal', modifiers)).toBe('common');
+    expect(rollChestRarity(0.04, 'elite', modifiers)).toBe('legendary');
+    expect(rollChestRarity(0.2, 'elite', modifiers)).toBe('epic');
+    expect(rollChestRarity(0.6, 'elite', modifiers)).toBe('rare');
+    expect(rollChestRarity(0.12, 'boss', modifiers)).toBe('legendary');
+    expect(rollChestRarity(0.3, 'boss', modifiers)).toBe('epic');
   });
 });

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ITEM_BY_ID } from '@/game/content';
 import { CombatSimulation, type CombatFx, type EnemyRenderState, type ProjectileRenderState } from '@/game/combat/CombatSimulation';
 import type { CombatInput } from '@/game/input';
-import type { CombatBridge, CombatEvent, EncounterConfig } from '@/game/types';
+import type { CombatBridge, CombatEvent, EncounterConfig, WorldOverlay } from '@/game/types';
 import { SynthAudio } from './SynthAudio';
 import { createProceduralTextures, drawArena } from './proceduralTextures';
 
@@ -12,6 +12,7 @@ export interface CombatSceneOptions {
   masterVolume: number;
   reducedMotion: boolean;
   showDamageNumbers: boolean;
+  onOverlayRequested(overlay: Exclude<WorldOverlay, 'none'>): void;
 }
 
 export class CombatScene extends Phaser.Scene {
@@ -33,9 +34,8 @@ export class CombatScene extends Phaser.Scene {
   private readonly activeEnemyIds = new Set<number>();
   private readonly activeProjectileIds = new Set<number>();
   private bars: Phaser.GameObjects.Graphics | null = null;
-  private pauseLabel: Phaser.GameObjects.Text | null = null;
   private audio: SynthAudio | null = null;
-  private keys: Record<'up' | 'down' | 'left' | 'right' | 'reload' | 'swap' | 'dodge' | 'ability' | 'pause', Phaser.Input.Keyboard.Key> | null = null;
+  private keys: Record<'up' | 'down' | 'left' | 'right' | 'reload' | 'swap' | 'dodge', Phaser.Input.Keyboard.Key> | null = null;
   private swapQueued = false;
   private paused = false;
   private resultSent = false;
@@ -51,14 +51,38 @@ export class CombatScene extends Phaser.Scene {
     return this;
   }
 
+  setExternalPaused(paused: boolean): void {
+    if (!this.sys?.isActive()) {
+      this.paused = paused;
+      return;
+    }
+    this.setPaused(paused);
+  }
+
   preload(): void {
     for (let index = 0; index < 8; index += 1) {
-      this.load.image(`artificer-dir-${index}`, assetUrl(`characters/artificer/directions/${String(index + 1).padStart(2, '0')}.png`));
+      const key = `artificer-dir-${index}`;
+      if (!this.textures.exists(key)) {
+        this.load.image(key, assetUrl(`characters/artificer/directions/${String(index + 1).padStart(2, '0')}.png`));
+      }
     }
   }
 
   create(): void {
     if (!this.options) throw new Error('CombatScene must be configured before boot');
+    this.enemyViews.clear();
+    this.enemyShadows.clear();
+    this.projectileViews.clear();
+    this.enemyViewPool.length = 0;
+    this.enemyShadowPool.length = 0;
+    this.projectileViewPool.length = 0;
+    this.circleFxPool.length = 0;
+    this.lineFxPool.length = 0;
+    this.damageTextPool.length = 0;
+    this.resultSent = false;
+    this.paused = false;
+    this.swapQueued = false;
+    this.lastHudAt = 0;
     createProceduralTextures(this);
     this.prepareDirectionTexture();
     drawArena(this);
@@ -69,15 +93,6 @@ export class CombatScene extends Phaser.Scene {
     this.weaponSprite = this.add.image(680, 570, 'weapon-arc').setOrigin(0.18, 0.5).setDepth(13);
     if (this.options.config.stressTest) this.stressProjectileBatch = this.add.graphics().setDepth(18);
     this.bars = this.add.graphics().setDepth(30);
-    this.pauseLabel = this.add.text(640, 360, '暂停\n按 ESC 继续', {
-      fontFamily: '"Arial Rounded MT Bold", "Microsoft YaHei", sans-serif',
-      fontSize: '34px',
-      color: '#fff8dc',
-      align: 'center',
-      backgroundColor: '#124f55e8',
-      padding: { x: 34, y: 24 },
-    }).setOrigin(0.5).setDepth(100).setVisible(false);
-
     const keyboard = this.input.keyboard;
     if (!keyboard) throw new Error('Keyboard input is required');
     this.keys = {
@@ -88,8 +103,6 @@ export class CombatScene extends Phaser.Scene {
       reload: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R),
       swap: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q),
       dodge: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
-      ability: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E),
-      pause: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC),
     };
     this.input.on('wheel', this.queueSwap, this);
     this.input.on('pointerdown', this.unlockAudio, this);
@@ -100,7 +113,6 @@ export class CombatScene extends Phaser.Scene {
 
   update(time: number, delta: number): void {
     if (!this.simulation || !this.options || !this.keys) return;
-    if (Phaser.Input.Keyboard.JustDown(this.keys.pause)) this.setPaused(!this.paused);
     if (!this.paused) {
       this.simulation.step(delta, this.readInput());
       this.syncPlayer();
@@ -146,7 +158,7 @@ export class CombatScene extends Phaser.Scene {
       reloadPressed: Phaser.Input.Keyboard.JustDown(this.keys.reload),
       swapPressed: Phaser.Input.Keyboard.JustDown(this.keys.swap) || this.consumeSwapQueue(),
       dodgePressed: Phaser.Input.Keyboard.JustDown(this.keys.dodge),
-      abilityPressed: Phaser.Input.Keyboard.JustDown(this.keys.ability) || pointer.rightButtonDown(),
+      abilityPressed: pointer.rightButtonDown(),
     };
     return input;
   }
@@ -410,12 +422,14 @@ export class CombatScene extends Phaser.Scene {
   }
 
   private pauseFromBlur(): void {
-    this.setPaused(true);
+    this.options?.onOverlayRequested('pause');
   }
 
   private setPaused(paused: boolean): void {
     this.paused = paused;
-    this.pauseLabel?.setVisible(paused);
+    this.time.paused = paused;
+    if (paused) this.tweens.pauseAll();
+    else this.tweens.resumeAll();
   }
 
   private dispose(): void {

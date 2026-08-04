@@ -9,43 +9,44 @@ import {
   resetGlobalTalents,
   selectCharacterTalent,
 } from './progression';
-import {
-  generateRewardOffers,
-  generateRouteChoices,
-  generateShopOffers,
-  rollEliteRewardCategory,
-} from './rewards';
+import { generateChestDrops, generateRouteChoices, getDismantleValue } from './rewards';
 import { createRun, currentBuildTags, equipReward, healAfterRoom, type EquipTarget } from './run';
 import type {
   CombatResult,
+  GameMode,
   ProfileV2,
   RewardItem,
-  RouteOption,
   RunStateV2,
   SettingsV2,
   SettlementBreakdown,
+  WorldOverlay,
 } from './types';
 
-type MenuPanel = 'none' | 'global-tree' | 'character-tree' | 'settings';
+export type MenuPanel = 'none' | 'global-tree' | 'character-tree' | 'settings';
 
 interface GameStore {
   profile: ProfileV2;
   run: RunStateV2 | null;
   savedRunAvailable: boolean;
   settings: SettingsV2;
+  gameMode: GameMode;
+  overlay: WorldOverlay;
   menuPanel: MenuPanel;
   lastSettlement: SettlementBreakdown | null;
+  enterWorkshop(): void;
   startRun(seed?: number): void;
   continueRun(): void;
-  chooseRoute(route: RouteOption): void;
-  finishCombat(result: CombatResult, boss: boolean): void;
-  claimReward(item: RewardItem, target: EquipTarget): void;
-  rerollReward(): void;
-  buyShopItem(offerId: string, target: EquipTarget): void;
-  rerollShop(): void;
-  healAtShop(): void;
-  startBoss(): void;
-  returnToMenu(): void;
+  chooseRoute(routeId: string): void;
+  finishCombat(result: CombatResult): void;
+  openChest(): void;
+  selectLoot(dropId: string | null): void;
+  setActiveWeapon(weaponIndex: 0 | 1): void;
+  resolveLoot(dropId: string, resolution: 'equip' | 'dismantle', target?: EquipTarget): void;
+  dismantleEquipped(target: { kind: 'muzzle' | 'core' | 'relic' | 'arcana'; weaponSlot?: 0 | 1; slot?: number }): void;
+  abandonRun(): void;
+  returnToWorkshop(): void;
+  returnToTitle(): void;
+  setOverlay(overlay: WorldOverlay): void;
   setMenuPanel(panel: MenuPanel): void;
   buyGlobalTalent(talentId: string): void;
   resetGlobalTree(): void;
@@ -64,169 +65,163 @@ export const useGameStore = create<GameStore>((set, get) => ({
   run: null,
   savedRunAvailable: Boolean(initialRun),
   settings: initialSettings,
+  gameMode: 'title',
+  overlay: 'none',
   menuPanel: 'none',
   lastSettlement: null,
+
+  enterWorkshop() {
+    set({ gameMode: 'workshop', run: null, overlay: 'none', menuPanel: 'none', lastSettlement: null });
+  },
 
   startRun(seed = Date.now() & 0xffff_ffff) {
     const profile = { ...get().profile, runsStarted: get().profile.runsStarted + 1 };
     const run = createRun(profile, seed);
     localStorageSaveAdapter.saveProfile(profile);
     localStorageSaveAdapter.saveRun(run);
-    set({ profile, run, savedRunAvailable: true, menuPanel: 'none', lastSettlement: null });
+    set({ profile, run, gameMode: 'run', savedRunAvailable: true, overlay: 'none', menuPanel: 'none', lastSettlement: null });
   },
 
   continueRun() {
     const run = localStorageSaveAdapter.loadRun();
-    if (run) set({ run, savedRunAvailable: true, menuPanel: 'none' });
+    if (run) set({ run, gameMode: 'run', savedRunAvailable: true, overlay: 'none', menuPanel: 'none' });
   },
 
-  chooseRoute(route) {
+  chooseRoute(routeId) {
     const run = get().run;
-    if (!run || run.screen !== 'route') return;
-    persistRun(set, { ...run, currentRoute: route, screen: 'combat' });
+    if (!run || run.phase !== 'route') return;
+    const route = run.routeChoices.find((entry) => entry.id === routeId);
+    if (!route) return;
+    persistRun(set, { ...run, currentRoute: route, phase: 'combat', chest: null, selectedLootId: null });
   },
 
-  finishCombat(result, boss) {
+  finishCombat(result) {
     const { run, profile } = get();
-    if (!run || run.screen !== 'combat') return;
-    const modifiers = getCombatModifiers(profile, run.relics);
+    if (!run || run.phase !== 'combat') return;
     const next = structuredClone(run);
     next.hp = Math.max(0, result.hp);
     next.shield = Math.max(0, result.shield);
     next.lethalGuardAvailable = result.lethalGuardAvailable;
+    next.activeWeapon = result.activeWeapon;
     next.report.activeCombatMs += result.durationMs;
     next.report.damageTaken += result.damageTaken;
     next.report.combatScore += result.combatScore;
 
     if (!result.won) {
-      settle(set, get, { ...next, screen: 'settlement', outcome: 'defeat' });
-      return;
-    }
-
-    if (boss) {
-      next.report.bossReached = true;
-      next.report.bossDefeated = true;
-      next.outcome = 'victory';
-      settle(set, get, { ...next, screen: 'settlement' });
+      settle(set, get, { ...next, outcome: 'defeat' });
       return;
     }
 
     next.report.roomsCleared += 1;
     if (next.currentRoute?.elite) next.report.elitesDefeated += 1;
+    const modifiers = getCombatModifiers(profile, next.relics);
     const healed = healAfterRoom(next, modifiers);
-
-    if (healed.currentRoute?.category === 'gold') {
-      healed.gold += 60 + healed.roomIndex * 10;
-      healed.report.rewardsTaken += 1;
-      persistRun(set, advanceAfterReward(healed, profile));
-      return;
-    }
-
-    const category = healed.currentRoute?.elite
-      ? rollEliteRewardCategory(healed.seed, healed.roomIndex)
-      : healed.currentRoute?.category;
-    if (!category || category === 'elite') return;
-    const useFourChoices = profile.globalTalents.includes('fortune-four') && !healed.fourChoiceUsed;
-    healed.rewardCategory = category;
-    healed.rewardOffers = generateRewardOffers({
-      seed: healed.seed,
-      roomIndex: healed.roomIndex,
-      category,
-      elite: healed.currentRoute?.elite ?? false,
-      count: useFourChoices ? 4 : 3,
-      currentTags: currentBuildTags(healed),
-      modifiers,
-    });
-    healed.fourChoiceUsed ||= useFourChoices;
-    healed.screen = 'reward';
+    const category = healed.currentRoute?.category ?? 'gold';
+    healed.chest = {
+      id: `chest-${healed.seed}-${healed.roomIndex}`,
+      tier: healed.currentRoute?.elite ? 'elite' : 'normal',
+      stage: 'landed',
+      rerolled: false,
+      drops: generateChestDrops({
+        seed: healed.seed,
+        roomIndex: healed.roomIndex,
+        category,
+        elite: healed.currentRoute?.elite ?? false,
+        currentTags: currentBuildTags(healed),
+        modifiers,
+      }),
+    };
+    healed.phase = 'chest';
+    healed.selectedLootId = null;
     persistRun(set, healed);
   },
 
-  claimReward(item, target) {
-    const { run, profile } = get();
-    if (!run || run.screen !== 'reward') return;
-    const modifiers = getCombatModifiers(profile, run.relics);
-    const equipped = equipReward(run, item, target, modifiers);
-    persistRun(set, advanceAfterReward(equipped, profile));
-  },
-
-  rerollReward() {
-    const { run, profile } = get();
-    if (!run || run.screen !== 'reward' || !run.rewardCategory) return;
-    if (!profile.globalTalents.includes('fortune-reroll') || run.chestRerollUsed) return;
-    const modifiers = getCombatModifiers(profile, run.relics);
-    const next = {
-      ...run,
-      chestRerollUsed: true,
-      rewardOffers: generateRewardOffers({
-        seed: run.seed,
-        roomIndex: run.roomIndex,
-        category: run.rewardCategory,
-        elite: run.currentRoute?.elite ?? false,
-        count: run.rewardOffers.length,
-        currentTags: currentBuildTags(run),
-        modifiers,
-        reroll: 1,
-      }),
-    };
-    persistRun(set, next);
-  },
-
-  buyShopItem(offerId, target) {
-    const { run, profile } = get();
-    if (!run || run.screen !== 'shop') return;
-    const offer = run.shopOffers.find((entry) => entry.id === offerId);
-    if (!offer || offer.sold || run.gold < offer.price) return;
-    const modifiers = getCombatModifiers(profile, run.relics);
-    const equipped = equipReward(run, offer.item, target, modifiers);
-    equipped.gold -= offer.price;
-    equipped.shopOffers = equipped.shopOffers.map((entry) => (
-      entry.id === offerId ? { ...entry, sold: true } : entry
-    ));
-    persistRun(set, equipped);
-  },
-
-  rerollShop() {
-    const { run, profile } = get();
-    if (!run || run.screen !== 'shop') return;
-    const free = profile.globalTalents.includes('workshop-reroll') && !run.shopFreeRerollUsed;
-    const price = free ? 0 : 20 + run.shopRerollCount * 5;
-    if (run.gold < price) return;
-    const modifiers = getCombatModifiers(profile, run.relics);
-    const reroll = run.shopRerollCount + 1;
-    const next = {
-      ...run,
-      gold: run.gold - price,
-      shopRerollCount: reroll,
-      shopFreeRerollUsed: run.shopFreeRerollUsed || free,
-      shopOffers: generateShopOffers({
-        seed: run.seed,
-        reroll,
-        extraSlot: profile.globalTalents.includes('workshop-slot'),
-        modifiers,
-      }),
-    };
-    persistRun(set, next);
-  },
-
-  healAtShop() {
-    const { run, profile } = get();
-    if (!run || run.screen !== 'shop' || run.hp >= run.maxHp) return;
-    const modifiers = getCombatModifiers(profile, run.relics);
-    const price = Math.max(1, Math.round(25 * (1 - modifiers.shopDiscount)));
-    if (run.gold < price) return;
-    persistRun(set, { ...run, gold: run.gold - price, hp: Math.min(run.maxHp, run.hp + 30) });
-  },
-
-  startBoss() {
+  openChest() {
     const run = get().run;
-    if (!run || run.screen !== 'shop') return;
-    persistRun(set, { ...run, screen: 'combat', currentRoute: null, report: { ...run.report, bossReached: true } });
+    if (!run || run.phase !== 'chest' || !run.chest) return;
+    persistRun(set, {
+      ...run,
+      phase: 'loot',
+      chest: { ...run.chest, stage: 'opened' },
+    });
   },
 
-  returnToMenu() {
+  selectLoot(dropId) {
+    const run = get().run;
+    if (!run || run.phase !== 'loot') return;
+    if (dropId && !run.chest?.drops.some((drop) => drop.id === dropId && !drop.resolved)) return;
+    persistRun(set, { ...run, selectedLootId: dropId });
+  },
+
+  setActiveWeapon(activeWeapon) {
+    const run = get().run;
+    if (!run || run.phase === 'combat' || run.activeWeapon === activeWeapon) return;
+    persistRun(set, { ...run, activeWeapon });
+  },
+
+  resolveLoot(dropId, resolution, target = {}) {
+    const { run, profile } = get();
+    if (!run || run.phase !== 'loot' || !run.chest) return;
+    const drop = run.chest.drops.find((entry) => entry.id === dropId);
+    if (!drop || drop.resolved) return;
+    const modifiers = getCombatModifiers(profile, run.relics);
+    let next = structuredClone(run);
+
+    if (drop.item) {
+      if (resolution === 'equip') next = equipReward(next, drop.item, target, modifiers);
+      else {
+        next.gold += getDismantleValue(drop.item, modifiers.dismantleRatio);
+        next.report.rewardsTaken += 1;
+      }
+    } else {
+      next.gold += drop.gold;
+      next.report.rewardsTaken += 1;
+    }
+
+    const resolvedDrop = next.chest?.drops.find((entry) => entry.id === dropId);
+    if (!resolvedDrop || !next.chest) return;
+    resolvedDrop.resolved = true;
+    resolvedDrop.resolution = drop.item ? (resolution === 'equip' ? 'equipped' : 'dismantled') : 'collected';
+    next.selectedLootId = null;
+
+    if (next.chest.drops.every((entry) => entry.resolved)) next = advanceAfterLoot(next);
+    persistRun(set, next);
+  },
+
+  dismantleEquipped(target) {
+    const { run, profile } = get();
+    if (!run || run.phase === 'combat') return;
+    const next = structuredClone(run);
+    let item: RewardItem | null = null;
+    if (target.kind === 'muzzle' || target.kind === 'core') {
+      const weaponSlot = target.weaponSlot ?? 0;
+      item = next.weapons[weaponSlot][target.kind];
+      next.weapons[weaponSlot][target.kind] = null;
+    } else if (target.kind === 'relic') item = next.relics.splice(target.slot ?? 0, 1)[0] ?? null;
+    else item = next.arcana.splice(target.slot ?? 0, 1)[0] ?? null;
+    if (!item) return;
+    const modifiers = getCombatModifiers(profile, run.relics);
+    next.gold += getDismantleValue(item, modifiers.dismantleRatio);
+    persistRun(set, next);
+  },
+
+  abandonRun() {
+    const run = get().run;
+    if (!run) return;
+    settle(set, get, { ...run, outcome: 'defeat' });
+  },
+
+  returnToWorkshop() {
     localStorageSaveAdapter.saveRun(null);
-    set({ run: null, savedRunAvailable: false, lastSettlement: null, menuPanel: 'none' });
+    set({ run: null, gameMode: 'workshop', savedRunAvailable: false, overlay: 'none', lastSettlement: null });
+  },
+
+  returnToTitle() {
+    set({ gameMode: 'title', run: null, overlay: 'none', menuPanel: 'none', lastSettlement: null });
+  },
+
+  setOverlay(overlay) {
+    set({ overlay });
   },
 
   setMenuPanel(menuPanel) {
@@ -275,23 +270,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 }));
 
-function advanceAfterReward(run: RunStateV2, profile: ProfileV2): RunStateV2 {
+function advanceAfterLoot(run: RunStateV2): RunStateV2 {
   const next = structuredClone(run);
   next.roomIndex += 1;
   next.currentRoute = null;
-  next.rewardCategory = null;
-  next.rewardOffers = [];
+  next.chest = null;
+  next.selectedLootId = null;
   if (next.roomIndex >= 3) {
-    const modifiers = getCombatModifiers(profile, next.relics);
-    next.screen = 'shop';
-    next.shopOffers = generateShopOffers({
-      seed: next.seed,
-      reroll: next.shopRerollCount,
-      extraSlot: profile.globalTalents.includes('workshop-slot'),
-      modifiers,
-    });
+    next.phase = 'prototype-complete';
+    next.routeChoices = [];
   } else {
-    next.screen = 'route';
+    next.phase = 'route';
     next.routeChoices = generateRouteChoices(next.seed, next.roomIndex, next.report.elitesDefeated === 0);
   }
   return next;
@@ -303,9 +292,7 @@ function settle(
   run: RunStateV2,
 ): void {
   const breakdown = calculateSettlement(run.report);
-  const profileBefore = get().profile;
-  const profile = grantSettlementXp(profileBefore, breakdown);
-  if (run.outcome === 'victory') profile.victories += 1;
+  const profile = grantSettlementXp(get().profile, breakdown);
   const settledRun = {
     ...run,
     accountXpEarned: breakdown.total,
@@ -314,10 +301,10 @@ function settle(
   };
   localStorageSaveAdapter.saveProfile(profile);
   localStorageSaveAdapter.saveRun(settledRun);
-  set({ profile, run: settledRun, lastSettlement: breakdown });
+  set({ profile, run: settledRun, gameMode: 'settlement', overlay: 'none', lastSettlement: breakdown });
 }
 
 function persistRun(set: (partial: Partial<GameStore>) => void, run: RunStateV2): void {
   localStorageSaveAdapter.saveRun(run);
-  set({ run, savedRunAvailable: true });
+  set({ run, gameMode: 'run', savedRunAvailable: true });
 }

@@ -3,8 +3,15 @@ import { expect, test } from '@playwright/test';
 test('压力房保持 50 敌人、500 弹丸并记录稳定帧率', async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/?e2e=1&stress=1');
-  await page.getByTestId('new-run').click();
-  await page.locator('.route-card:not(.route-gold)').first().click();
+  await page.getByTestId('enter-workshop').click();
+  await page.keyboard.press('e');
+  await page.keyboard.down('w');
+  await page.waitForTimeout(850);
+  await page.keyboard.up('w');
+  await page.keyboard.down('a');
+  await page.waitForTimeout(500);
+  await page.keyboard.up('a');
+  await page.keyboard.press('e');
   await expect(page.locator('.combat-meta')).toContainText('敌人 50', { timeout: 15_000 });
   await expect(page.locator('.combat-hud')).toHaveAttribute('data-projectiles', '500');
 

@@ -27,19 +27,19 @@ describe('V2 双武器与装备替换', () => {
     expect(run.weapons[1].core?.definitionId).toBe('core-chill');
   });
 
-  test('秘宝上限为六件，第七件必须替换并自动拆解旧件', () => {
+  test('秘宝上限为八件，第九件必须替换并自动拆解旧件', () => {
     const profile = createDefaultProfile();
     const modifiers = getCombatModifiers(profile);
     let run = createRun(profile, 9);
-    for (let index = 0; index < 6; index += 1) {
+    for (let index = 0; index < 8; index += 1) {
       run = equipReward(run, reward('relic', RELICS[index]!.id, `relic-${index}`), {}, modifiers);
     }
-    expect(run.relics).toHaveLength(6);
+    expect(run.relics).toHaveLength(8);
     const replaced = run.relics[2]!;
     const goldBefore = run.gold;
-    const incoming = reward('relic', RELICS[6]!.id, 'relic-6', 'rare');
+    const incoming = reward('relic', RELICS[8]!.id, 'relic-8', 'rare');
     run = equipReward(run, incoming, { relicSlot: 2 }, modifiers);
-    expect(run.relics).toHaveLength(6);
+    expect(run.relics).toHaveLength(8);
     expect(run.relics[2]).toEqual(incoming);
     expect(run.gold).toBe(goldBefore + getDismantleValue(replaced, 0.25));
   });
