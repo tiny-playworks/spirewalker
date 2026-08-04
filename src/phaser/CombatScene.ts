@@ -25,6 +25,7 @@ export class CombatScene extends Phaser.Scene {
   private enemyShadows = new Map<number, Phaser.GameObjects.Image>();
   private projectileViews = new Map<number, Phaser.GameObjects.Image>();
   private stressProjectileBatch: Phaser.GameObjects.Graphics | null = null;
+  private stressFxBatch: Phaser.GameObjects.Image | null = null;
   private readonly enemyViewPool: Phaser.GameObjects.Image[] = [];
   private readonly enemyShadowPool: Phaser.GameObjects.Image[] = [];
   private readonly projectileViewPool: Phaser.GameObjects.Image[] = [];
@@ -81,8 +82,11 @@ export class CombatScene extends Phaser.Scene {
     this.damageTextPool.length = 0;
     this.resultSent = false;
     this.paused = false;
+    this.time.paused = false;
     this.swapQueued = false;
     this.lastHudAt = 0;
+    this.stressProjectileBatch = null;
+    this.stressFxBatch = null;
     createProceduralTextures(this);
     this.prepareDirectionTexture();
     drawArena(this);
@@ -91,7 +95,11 @@ export class CombatScene extends Phaser.Scene {
     this.playerShadow = this.add.image(640, 580, 'entity-shadow').setDisplaySize(92, 28).setDepth(5);
     this.playerSprite = this.add.image(640, 570, 'artificer-dir-4').setDisplaySize(116, 116).setDepth(11);
     this.weaponSprite = this.add.image(680, 570, 'weapon-arc').setOrigin(0.18, 0.5).setDepth(13);
-    if (this.options.config.stressTest) this.stressProjectileBatch = this.add.graphics().setDepth(18);
+    if (this.options.config.stressTest) {
+      this.stressProjectileBatch = this.add.graphics().setDepth(18);
+      this.prepareStressFxTexture();
+      this.stressFxBatch = this.add.image(640, 360, 'stress-fx-layer').setDepth(17);
+    }
     this.bars = this.add.graphics().setDepth(30);
     const keyboard = this.input.keyboard;
     if (!keyboard) throw new Error('Keyboard input is required');
@@ -118,6 +126,7 @@ export class CombatScene extends Phaser.Scene {
       this.syncPlayer();
       this.syncEnemies();
       this.syncProjectiles();
+      if (this.stressFxBatch) this.animateStressFx(time, this.stressFxBatch);
       this.renderBars();
       for (const event of this.simulation.drainEvents()) this.handleCombatEvent(event);
       for (const fx of this.simulation.drainFx()) this.renderFx(fx);
@@ -261,6 +270,34 @@ export class CombatScene extends Phaser.Scene {
         graphics.fillRect(projectile.x - size / 2, projectile.y - size / 2, size, size);
       }
     }
+  }
+
+  private prepareStressFxTexture(): void {
+    if (this.textures.exists('stress-fx-layer')) return;
+    const texture = this.textures.createCanvas('stress-fx-layer', 1_280, 720);
+    if (!texture) return;
+    const context = texture.getContext();
+    for (let index = 0; index < 150; index += 1) {
+      const x = 54 + (index * 83) % 1_172;
+      const y = 70 + (index * 47) % 570;
+      const pulse = 5 + index % 4;
+      const color = index % 3 === 0 ? '73, 224, 210' : index % 3 === 1 ? '255, 162, 77' : '165, 235, 255';
+      context.beginPath();
+      context.arc(x, y, pulse * 2.2, 0, Math.PI * 2);
+      context.fillStyle = `rgba(${color}, 0.16)`;
+      context.fill();
+      context.beginPath();
+      context.arc(x, y, pulse, 0, Math.PI * 2);
+      context.strokeStyle = `rgba(${color}, 0.38)`;
+      context.lineWidth = 1;
+      context.stroke();
+    }
+    texture.refresh();
+  }
+
+  private animateStressFx(time: number, graphics: Phaser.GameObjects.Image): void {
+    // 150 个特效的几何只生成一次；每帧只改变整批透明度，避免重复重建顶点数据。
+    graphics.setAlpha(0.78 + Math.sin(time * 0.003) * 0.18);
   }
 
   private renderBars(): void {

@@ -11,6 +11,7 @@ export function CombatHud({ hud, boss }: { hud: CombatHudSnapshot | null; boss: 
       className="combat-hud"
       aria-live="polite"
       data-projectiles={hud.projectilesActive}
+      data-effects={hud.effectsActive}
       data-elapsed-ms={Math.round(hud.elapsedMs)}
       style={{ '--hud-scale': hudScale } as CSSProperties}
     >

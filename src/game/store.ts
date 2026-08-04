@@ -39,6 +39,7 @@ interface GameStore {
   chooseRoute(routeId: string): void;
   finishCombat(result: CombatResult): void;
   openChest(): void;
+  rerollChest(): void;
   selectLoot(dropId: string | null): void;
   setActiveWeapon(weaponIndex: 0 | 1): void;
   resolveLoot(dropId: string, resolution: 'equip' | 'dismantle', target?: EquipTarget): void;
@@ -117,11 +118,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const modifiers = getCombatModifiers(profile, next.relics);
     const healed = healAfterRoom(next, modifiers);
     const category = healed.currentRoute?.category ?? 'gold';
+    const extraDrop = profile.globalTalents.includes('fortune-four') && !healed.extraDropUsed;
     healed.chest = {
       id: `chest-${healed.seed}-${healed.roomIndex}`,
       tier: healed.currentRoute?.elite ? 'elite' : 'normal',
       stage: 'landed',
       rerolled: false,
+      extraDrop,
       drops: generateChestDrops({
         seed: healed.seed,
         roomIndex: healed.roomIndex,
@@ -129,8 +132,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         elite: healed.currentRoute?.elite ?? false,
         currentTags: currentBuildTags(healed),
         modifiers,
+        extraDrop,
       }),
     };
+    healed.extraDropUsed ||= extraDrop;
     healed.phase = 'chest';
     healed.selectedLootId = null;
     persistRun(set, healed);
@@ -143,6 +148,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ...run,
       phase: 'loot',
       chest: { ...run.chest, stage: 'opened' },
+    });
+  },
+
+  rerollChest() {
+    const { run, profile } = get();
+    if (!run || run.phase !== 'loot' || !run.chest || run.chestRerollUsed) return;
+    if (!profile.globalTalents.includes('fortune-reroll') || run.chest.drops.some((drop) => drop.resolved)) return;
+    const modifiers = getCombatModifiers(profile, run.relics);
+    const category = run.currentRoute?.category ?? 'gold';
+    persistRun(set, {
+      ...run,
+      phase: 'chest',
+      chestRerollUsed: true,
+      selectedLootId: null,
+      chest: {
+        ...run.chest,
+        id: `${run.chest.id}-reroll`,
+        stage: 'landed',
+        rerolled: true,
+        drops: generateChestDrops({
+          seed: run.seed,
+          roomIndex: run.roomIndex,
+          category,
+          elite: run.currentRoute?.elite ?? false,
+          currentTags: currentBuildTags(run),
+          modifiers,
+          extraDrop: run.chest.extraDrop,
+          reroll: 1,
+        }),
+      },
     });
   },
 

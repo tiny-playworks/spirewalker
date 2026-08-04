@@ -116,6 +116,7 @@ export interface ChestState {
   stage: ChestAnimationStage;
   drops: LootDrop[];
   rerolled: boolean;
+  extraDrop: boolean;
 }
 
 export interface RunReport {
@@ -139,7 +140,7 @@ export interface RunStateV2 {
   chest: ChestState | null;
   selectedLootId: string | null;
   chestRerollUsed: boolean;
-  fourChoiceUsed: boolean;
+  extraDropUsed: boolean;
   hp: number;
   maxHp: number;
   shield: number;
@@ -264,6 +265,7 @@ export interface CombatHudSnapshot {
   dashCooldownMs: number;
   enemiesRemaining: number;
   projectilesActive: number;
+  effectsActive: number;
   elapsedMs: number;
   bossHp: number | null;
   bossMaxHp: number | null;

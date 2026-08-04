@@ -33,7 +33,7 @@ export function createRun(profile: ProfileV2, seed: number): RunStateV2 {
     chest: null,
     selectedLootId: null,
     chestRerollUsed: false,
-    fourChoiceUsed: false,
+    extraDropUsed: false,
     hp: maxHp,
     maxHp,
     shield: modifiers.startingShield,

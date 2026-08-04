@@ -16,7 +16,7 @@ test('G2 游戏化核心体验：工坊、实体门、战斗、宝箱、逐件�
   await page.locator('canvas').evaluate((canvas) => { canvas.dataset.runtime = 'persistent'; });
   await expect(page.getByTestId('interaction-prompt')).toContainText('启动远征门');
 
-  await page.keyboard.press('e');
+  await tap(page, 'e');
   await expect(page.locator('[data-phase="route"]')).toBeVisible();
   await expect(page.locator('.route-card, .reward-grid, .shop-grid')).toHaveCount(0);
   await enterLeftDoor(page);
@@ -44,13 +44,22 @@ test('G2 游戏化核心体验：工坊、实体门、战斗、宝箱、逐件�
 
   await expect(page.locator('[data-phase="chest"]')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId('interaction-prompt')).toContainText('打开宝箱');
-  await page.keyboard.press('e');
+  await tap(page, 'e');
   await expect(page.locator('[data-phase="loot"]')).toBeVisible({ timeout: 5_000 });
+  await hold(page, 's', 300);
+  await hold(page, 'a', 220);
   await expect(page.getByTestId('interaction-prompt')).toContainText('检查');
-  await page.keyboard.press('e');
+  await tap(page, 'e');
   await expect(page.getByTestId('loot-inspector')).toBeVisible();
   await expect(page.getByTestId('loot-inspector')).toContainText(/伤害|弹丸|元素回路|生效方式/);
   await page.getByRole('button', { name: '装到主武器' }).click();
+
+  await expect(page.locator('[data-phase="loot"]')).toBeVisible();
+  await hold(page, 'd', 700);
+  await expect(page.getByTestId('interaction-prompt')).toContainText('检查');
+  await tap(page, 'e');
+  await expect(page.getByTestId('loot-inspector')).toBeVisible();
+  await page.getByRole('button', { name: /分解/ }).click();
 
   await expect(page.locator('[data-phase="route"]')).toBeVisible();
   await expect(page.locator('canvas[data-runtime="persistent"]')).toHaveCount(1);
@@ -70,11 +79,17 @@ async function enterLeftDoor(page: Page): Promise<void> {
   await hold(page, 'w', 850);
   await hold(page, 'a', 500);
   await expect(page.getByTestId('interaction-prompt')).toContainText('进入');
-  await page.keyboard.press('e');
+  await tap(page, 'e');
 }
 
 async function hold(page: Page, key: string, durationMs: number): Promise<void> {
   await page.keyboard.down(key);
   await page.waitForTimeout(durationMs);
+  await page.keyboard.up(key);
+}
+
+async function tap(page: Page, key: string): Promise<void> {
+  await page.keyboard.down(key);
+  await page.waitForTimeout(80);
   await page.keyboard.up(key);
 }

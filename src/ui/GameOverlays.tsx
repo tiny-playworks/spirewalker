@@ -7,7 +7,16 @@ import { useGameStore } from '@/game/store';
 import type { CombatHudSnapshot, LootDrop, RewardItem, RunStateV2, WorldOverlay } from '@/game/types';
 
 export function WorldHud({ run }: { run: RunStateV2 | null }) {
+  const profile = useGameStore((state) => state.profile);
+  const rerollChest = useGameStore((state) => state.rerollChest);
   const objective = !run ? '在工坊中选择交互台' : phaseObjective(run);
+  const canReroll = Boolean(
+    run?.phase === 'loot'
+    && run.chest
+    && !run.chestRerollUsed
+    && run.chest.drops.every((drop) => !drop.resolved)
+    && profile.globalTalents.includes('fortune-reroll'),
+  );
   return (
     <div className="world-hud" data-testid="world-hud">
       <div className="world-objective"><span>{run ? `试炼房间 ${Math.min(3, run.roomIndex + 1)} / 3` : '辉芯工坊'}</span><strong>{objective}</strong></div>
@@ -20,6 +29,7 @@ export function WorldHud({ run }: { run: RunStateV2 | null }) {
       ) : null}
       <div className="world-shortcuts"><kbd>Esc</kbd>暂停 <kbd>C</kbd>人物 <kbd>I</kbd>装备 <kbd>Tab</kbd>属性</div>
       {run ? <div className="world-weapon-switch">{run.weapons.map((slot, index) => <span className={run.activeWeapon === index ? 'active' : ''} key={slot.weapon.uid}><kbd>{index === 0 ? '主' : '副'}</kbd>{ITEM_BY_ID.get(slot.weapon.definitionId)?.name}</span>)}<small>Q / 滚轮切换</small></div> : null}
+      {canReroll ? <button className="chest-reroll-control" onClick={rerollChest}>免费重开宝箱</button> : null}
     </div>
   );
 }

@@ -220,5 +220,5 @@ export function GameHost() {
 }
 
 function e2eSeed(): number | undefined {
-  return new URLSearchParams(window.location.search).has('e2e') ? 20_260_803 : undefined;
+  return new URLSearchParams(window.location.search).has('e2e') ? 20_260_808 : undefined;
 }

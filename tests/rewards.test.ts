@@ -51,6 +51,8 @@ describe('V2 路线与奖励', () => {
     expect(drops.length).toBeGreaterThanOrEqual(1);
     expect(drops.length).toBeLessThanOrEqual(2);
     expect(drops.every((drop) => !drop.resolved && drop.item?.kind === 'core')).toBe(true);
+    expect(generateChestDrops({ ...args, extraDrop: true })).toHaveLength(drops.length + 1);
+    expect(generateChestDrops({ ...args, reroll: 1 })).not.toEqual(drops);
   });
 
   test('三档宝箱品质边界符合普通、精英与 Boss 权重', () => {

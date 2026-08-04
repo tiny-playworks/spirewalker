@@ -199,7 +199,7 @@ export const GLOBAL_TALENTS: GlobalTalentDefinition[] = [
   { id: 'fortune-rare', branch: 'fortune', tier: 1, cost: 1, name: '蓝光嗅觉', description: '稀有及以上权重 +2%。' },
   { id: 'fortune-reroll', branch: 'fortune', tier: 2, cost: 2, name: '再开一次', description: '每局可免费刷新一个宝箱。' },
   { id: 'fortune-elite', branch: 'fortune', tier: 3, cost: 3, name: '强敌馈赠', description: '精英宝箱史诗权重 +5%。' },
-  { id: 'fortune-four', branch: 'fortune', tier: 4, cost: 4, name: '宽口宝箱', description: '每局一个宝箱升级为四选一。' },
+  { id: 'fortune-four', branch: 'fortune', tier: 4, cost: 4, name: '宽口宝箱', description: '每局一个普通或精英宝箱额外掉落 1 件。' },
   { id: 'fortune-legendary', branch: 'fortune', tier: 5, cost: 5, name: '金色火花', description: '传奇权重 +1%。' },
 ];
 

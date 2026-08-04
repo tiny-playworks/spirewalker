@@ -224,6 +224,7 @@ export class CombatSimulation {
       dashCooldownMs: this.player.dashCooldownMs,
       enemiesRemaining: this.enemies.length,
       projectilesActive: this.projectiles.length,
+      effectsActive: this.config.stressTest ? 150 : 0,
       elapsedMs: this.elapsedMs,
       bossHp: boss?.hp ?? null,
       bossMaxHp: boss?.maxHp ?? null,
@@ -606,6 +607,8 @@ export class CombatSimulation {
     enemy.x += dx / distance * speed * desired * dt;
     enemy.y += dy / distance * speed * desired * dt;
     enemy.rotation = Math.atan2(dy, dx);
+    // 压力夹具必须稳定保持 500 枚弹丸，避免远程怪继续增殖弹幕后测到另一种负载。
+    if (this.config.stressTest) return;
     if (enemy.attackTimerMs <= 0) {
       this.spawnEnemyProjectile(enemy.x, enemy.y, enemy.rotation, enemy.elite ? 11 : 8, enemy.elite ? 360 : 310);
       enemy.attackTimerMs = enemy.elite ? 1_100 : 1_500;

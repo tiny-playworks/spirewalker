@@ -111,12 +111,16 @@ export function generateChestDrops(args: {
   elite: boolean;
   currentTags: BuildTag[];
   modifiers: CombatModifiers;
+  extraDrop?: boolean;
+  reroll?: number;
 }): LootDrop[] {
-  const random = createRandom(hashSeed(args.seed, 'chest-count', args.roomIndex, args.category));
-  const count = 1 + Number(random.next() < (args.elite ? 0.5 : 0.35));
+  const random = createRandom(hashSeed(args.seed, 'chest-count', args.roomIndex, args.category, args.reroll ?? 0));
+  const count = 1 + Number(random.next() < (args.elite ? 0.5 : 0.35)) + Number(args.extraDrop ?? false);
   const positions = count === 1
     ? [{ x: 640, y: 390 }]
-    : [{ x: 520, y: 405 }, { x: 760, y: 405 }];
+    : count === 2
+      ? [{ x: 520, y: 405 }, { x: 760, y: 405 }]
+      : [{ x: 465, y: 415 }, { x: 640, y: 385 }, { x: 815, y: 415 }];
 
   if (args.category === 'gold') {
     const total = 52 + args.roomIndex * 12 + (args.elite ? 28 : 0);
@@ -142,6 +146,7 @@ export function generateChestDrops(args: {
     count,
     currentTags: args.currentTags,
     modifiers: args.modifiers,
+    reroll: args.reroll,
   });
   return items.map((item, index) => ({
     id: `drop-${item.uid}`,

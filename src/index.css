@@ -1858,6 +1858,24 @@ button:disabled {
   opacity: 0.64;
 }
 
+.chest-reroll-control {
+  position: absolute;
+  left: 50%;
+  bottom: 105px;
+  z-index: 2;
+  padding: 9px 15px;
+  border: 2px solid #1b6a6c;
+  border-radius: 7px;
+  color: #175c60;
+  background: #fff3b9;
+  box-shadow: 0 5px 15px rgba(18, 72, 75, 0.18);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 900;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
 .world-weapon-switch span.active {
   border-color: #ffe079;
   color: #fffbe5;
@@ -2169,7 +2187,8 @@ kbd {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(1120px, 90vw);
+  width: min(1360px, 90vw);
+  height: min(900px, 88vh);
   min-height: 0;
   padding: 22px 28px 62px;
   border: 3px solid rgba(255, 255, 255, 0.76);
@@ -2517,6 +2536,55 @@ kbd {
   .character-portrait img { width: 160px; height: 160px; }
   .equipment-panel { gap: 8px; }
   .equipment-slot { min-height: 58px; }
+}
+
+@media (min-width: 2200px) {
+  .world-objective,
+  .world-resources,
+  .world-shortcuts,
+  .world-weapon-switch {
+    transform: scale(1.24);
+  }
+
+  .world-objective,
+  .world-weapon-switch { transform-origin: left top; }
+  .world-resources,
+  .world-shortcuts { transform-origin: right top; }
+  .world-shortcuts { transform-origin: right bottom; }
+  .world-weapon-switch { transform-origin: left bottom; }
+
+  .interaction-prompt {
+    transform: translateX(-50%) scale(1.22);
+    transform-origin: center bottom;
+  }
+
+  .loot-inspector {
+    top: 112px;
+    right: 32px;
+    bottom: 112px;
+    width: 410px;
+    padding: 31px 28px 24px;
+  }
+
+  .loot-inspector h2 { font-size: 31px; }
+  .loot-inspector > p { font-size: 14px; }
+  .inspector-eyebrow { font-size: 12px; }
+  .data-stat, .inspector-numbers, .inspector-actions > button { font-size: 12px; }
+
+  .game-data-panel {
+    padding: 30px 38px 74px;
+  }
+
+  .overlay-header h2 { font-size: 34px; }
+  .overlay-header span { font-size: 12px; }
+  .equipment-lock { font-size: 12px; }
+  .weapon-system > header, .slot-section > header { font-size: 13px; }
+  .equipment-slot small, .equipment-slot span { font-size: 9px; }
+  .equipment-slot b { font-size: 11px; }
+  .equipment-slot i { font-size: 22px; }
+  .data-stat { font-size: 12px; }
+  .weapon-stat-columns h3 { font-size: 21px; }
+  .overlay-tabs button { font-size: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

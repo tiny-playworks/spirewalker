@@ -88,6 +88,7 @@ export class WorldScene extends Phaser.Scene {
     this.interactions.length = 0;
     this.currentInteraction = null;
     this.chestOpening = false;
+    this.time.paused = this.externalPaused;
     createProceduralTextures(this);
     createWorldTextures(this);
     this.createPlayer();
@@ -114,6 +115,7 @@ export class WorldScene extends Phaser.Scene {
     this.input.on('wheel', this.queueSwap, this);
     this.game.events.on(Phaser.Core.Events.BLUR, this.pauseFromBlur, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.dispose, this);
+    if (this.externalPaused) this.tweens.pauseAll();
   }
 
   update(_time: number, delta: number): void {
@@ -407,19 +409,41 @@ function createWorldTextures(scene: Phaser.Scene): void {
     graphics.generateTexture('chest-open', 180, 130);
     graphics.destroy();
   }
-  const lootTextures: Array<[string, number, string]> = [
-    ['loot-weapon', 0x28c6bd, '⌁'], ['loot-muzzle', 0xf0b84e, '➤'], ['loot-core', 0x84dff1, '◈'],
-    ['loot-relic', 0xc367ca, '✦'], ['loot-arcana', 0xff8465, '♢'], ['loot-gold', 0xf1bd4e, '◆'],
+  const lootTextures: Array<[string, number]> = [
+    ['loot-weapon', 0x28c6bd], ['loot-muzzle', 0xf0b84e], ['loot-core', 0x84dff1],
+    ['loot-relic', 0xc367ca], ['loot-arcana', 0xff8465], ['loot-gold', 0xf1bd4e],
   ];
-  for (const [key, color, symbol] of lootTextures) {
+  for (const [key, color] of lootTextures) {
     if (scene.textures.exists(key)) continue;
     const graphics = scene.add.graphics();
     graphics.lineStyle(5, 0x254f52, 1).fillStyle(color, 1).fillCircle(40, 40, 31).strokeCircle(40, 40, 31);
     graphics.fillStyle(0xffffff, 0.45).fillCircle(30, 29, 8);
+    graphics.lineStyle(4, 0xfff8d8, 1).fillStyle(0xfff8d8, 1);
+    if (key === 'loot-weapon') {
+      graphics.fillRoundedRect(19, 32, 43, 13, 6).strokeRoundedRect(19, 32, 43, 13, 6);
+      graphics.fillRect(54, 35, 13, 7);
+      graphics.fillTriangle(31, 44, 45, 44, 37, 60);
+    } else if (key === 'loot-muzzle') {
+      graphics.fillTriangle(19, 23, 63, 40, 19, 57);
+      graphics.fillStyle(color, 1).fillTriangle(29, 31, 49, 40, 29, 49);
+    } else if (key === 'loot-core' || key === 'loot-gold') {
+      graphics.fillTriangle(40, 15, 64, 40, 40, 66);
+      graphics.fillTriangle(40, 15, 16, 40, 40, 66);
+      graphics.fillStyle(color, 1).fillCircle(40, 40, key === 'loot-core' ? 8 : 5);
+    } else if (key === 'loot-relic') {
+      graphics.fillCircle(40, 40, 17);
+      graphics.fillTriangle(40, 13, 47, 31, 33, 31);
+      graphics.fillTriangle(40, 67, 47, 49, 33, 49);
+      graphics.fillTriangle(13, 40, 31, 33, 31, 47);
+      graphics.fillTriangle(67, 40, 49, 33, 49, 47);
+      graphics.fillStyle(color, 1).fillCircle(40, 40, 7);
+    } else {
+      graphics.fillRoundedRect(23, 15, 34, 50, 5).strokeRoundedRect(23, 15, 34, 50, 5);
+      graphics.fillStyle(color, 1).fillTriangle(40, 24, 49, 40, 40, 56);
+      graphics.fillTriangle(40, 24, 31, 40, 40, 56);
+    }
     graphics.generateTexture(key, 80, 80);
     graphics.destroy();
-    // 符号由世界名称承担，纹理本身保持清晰色块，便于后续直接替换正式图标。
-    void symbol;
   }
 }
 

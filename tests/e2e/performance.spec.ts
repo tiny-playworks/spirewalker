@@ -4,16 +4,20 @@ test('压力房保持 50 敌人、500 弹丸并记录稳定帧率', async ({ pag
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/?e2e=1&stress=1');
   await page.getByTestId('enter-workshop').click();
+  await expect(page.getByTestId('interaction-prompt')).toContainText('启动远征门');
   await page.keyboard.press('e');
+  await expect(page.locator('[data-phase="route"]')).toBeVisible();
   await page.keyboard.down('w');
   await page.waitForTimeout(850);
   await page.keyboard.up('w');
   await page.keyboard.down('a');
   await page.waitForTimeout(500);
   await page.keyboard.up('a');
+  await expect(page.getByTestId('interaction-prompt')).toContainText('进入');
   await page.keyboard.press('e');
   await expect(page.locator('.combat-meta')).toContainText('敌人 50', { timeout: 15_000 });
   await expect(page.locator('.combat-hud')).toHaveAttribute('data-projectiles', '500');
+  await expect(page.locator('.combat-hud')).toHaveAttribute('data-effects', '150');
 
   // 排除 WebGL 首次纹理上传和 Phaser 帧率平滑器的启动窗口，只统计稳态。
   await page.waitForTimeout(3_000);
@@ -47,6 +51,10 @@ test('压力房保持 50 敌人、500 弹丸并记录稳定帧率', async ({ pag
     body: Buffer.from(JSON.stringify({ renderer, hudSamples: samples, hudAverage: average, rafAverage })),
     contentType: 'application/json',
   });
+  await expect(page.locator('.combat-meta')).toContainText('敌人 50');
+  await expect(page.locator('.combat-hud')).toHaveAttribute('data-projectiles', '500');
+  await expect(page.locator('.combat-hud')).toHaveAttribute('data-effects', '150');
   expect(samples.length).toBeGreaterThanOrEqual(10);
+  expect(average, `HUD samples: ${samples.join(', ')}; RAF ${rafAverage.toFixed(2)}`).toBeGreaterThanOrEqual(58);
   expect(rafAverage, `WebGL renderer: ${renderer}`).toBeGreaterThanOrEqual(58);
 });

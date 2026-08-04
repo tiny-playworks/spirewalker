@@ -32,7 +32,14 @@ export const localStorageSaveAdapter: SaveAdapter = {
   loadRun() {
     const value = readJson<RunStateV2>(RUN_KEY);
     // G1 的房间、宝箱与地面掉落状态无法由旧的卡片流程安全恢复。
-    return value?.version === 3 ? { ...value, activeWeapon: value.activeWeapon ?? 0 } : null;
+    return value?.version === 3 ? {
+      ...value,
+      activeWeapon: value.activeWeapon ?? 0,
+      extraDropUsed: value.extraDropUsed ?? false,
+      arcana: value.arcana ?? [],
+      temporaryEffects: value.temporaryEffects ?? [],
+      chest: value.chest ? { ...value.chest, extraDrop: value.chest.extraDrop ?? false } : null,
+    } : null;
   },
   saveRun(run) {
     try {
