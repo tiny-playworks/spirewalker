@@ -31,6 +31,13 @@ export function CombatHud({ hud, boss }: { hud: CombatHudSnapshot | null; boss: 
         </div>
       ) : null}
 
+      {hud.eliteObjective ? (
+        <div className={`elite-objective ${hud.eliteObjective.completed ? 'completed' : hud.eliteObjective.failed ? 'failed' : ''}`} data-testid="elite-objective">
+          <span>精英目标</span>
+          <b>{eliteObjectiveText(hud.eliteObjective)}</b>
+        </div>
+      ) : null}
+
       <div className="hud-status">
         <StatusOrb label="偏转" value={hud.deflectionCharges > 0 ? `${hud.deflectionCharges} 层` : seconds(hud.deflectionCooldownMs)} ready={hud.deflectionCharges > 0} />
         <StatusOrb label="超频" value={hud.overclockRemainingMs > 0 ? `持续 ${seconds(hud.overclockRemainingMs)}` : hud.overclockCooldownMs > 0 ? seconds(hud.overclockCooldownMs) : '就绪'} ready={hud.overclockCooldownMs <= 0 || hud.overclockRemainingMs > 0} />
@@ -58,6 +65,15 @@ export function CombatHud({ hud, boss }: { hud: CombatHudSnapshot | null; boss: 
       <div className="control-hint">WASD 移动 · 左键射击 · R 换弹 · Q/滚轮切枪 · Space 闪避 · 右键超频 · Esc 暂停</div>
     </div>
   );
+}
+
+function eliteObjectiveText(objective: CombatHudSnapshot['eliteObjective']): string {
+  if (!objective) return '';
+  if (objective.completed) return '完成 · 宝箱额外 +1 件';
+  if (objective.failed) return '失败 · 仍可获得基础精英奖励';
+  if (objective.type === 'speed') return `90 秒内清场 · 剩余 ${Math.max(0, 90 - Math.floor(objective.elapsedMs / 1_000))} 秒`;
+  if (objective.type === 'low-damage') return `承伤不超过 20% · 当前 ${Math.ceil(objective.damageTaken)}`;
+  return `摧毁过载装置 ${objective.overloadsDestroyed} / ${objective.overloadsTotal} · ${Math.max(0, 12 - Math.floor(objective.elapsedMs / 1_000))} 秒`;
 }
 
 function useHudScale(): number {

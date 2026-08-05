@@ -53,15 +53,26 @@ function SettlementScreen() {
   const startRun = useGameStore((state) => state.startRun);
   if (!run) return null;
   const breakdown = lastSettlement ?? calculateSettlement(run.report);
+  const victory = run.outcome === 'victory';
+  const loadoutNames = [
+    ...run.weapons.flatMap((slot) => [slot.weapon, slot.muzzle, slot.core]),
+    ...run.relics,
+    ...run.arcana,
+  ].filter(Boolean).map((item) => ITEM_BY_ID.get(item!.definitionId)?.name ?? '未知装备');
   return (
-    <section className="settlement-screen defeat">
+    <section className={`settlement-screen ${victory ? 'victory' : 'defeat'}`}>
       <div className="settlement-art" style={{ backgroundImage: `url(${keyArtUrl()})` }} />
       <div className="settlement-panel">
-        <span className="eyebrow">工匠已撤回</span>
-        <h1>这局没有白打</h1>
-        <p>局内装备已经消散，但已经取得的账号经验和角色经验都带回了工坊。</p>
+        <span className="eyebrow">{victory ? '本章完成' : '工匠已撤回'}</span>
+        <h1>{victory ? '熔炉守卫已停机' : '这局没有白打'}</h1>
+        <p>{victory ? 'Boss 战利品已经处理完毕；最终构筑、图鉴发现与双经验完成结算。' : '局内装备已经消散，但已经取得的账号经验和角色经验都带回了工坊。'}</p>
         <div className="xp-columns"><div><span>账号经验</span><strong>+{breakdown.total}</strong><small>当前可用 {profile.accountAvailablePoints} 点</small></div><div><span>角色经验</span><strong>+{breakdown.characterTotal}</strong><small>当前可用 {profile.characters.artificer.availablePoints} 点</small></div></div>
-        <div className="settlement-breakdown"><span>房间 <b>{breakdown.roomXp}</b></span><span>精英 <b>{breakdown.eliteXp}</b></span><span>收获 <b>{breakdown.rewardXp}</b></span><span>战斗 <b>{breakdown.combatXp}</b></span><span>效率 <b>{breakdown.efficiencyXp}</b></span></div>
+        <div className="settlement-breakdown"><span>房间 <b>{breakdown.roomXp}</b></span><span>精英 <b>{breakdown.eliteXp}</b></span><span>Boss <b>{breakdown.bossReachXp + breakdown.bossVictoryXp}</b></span><span>收获 <b>{breakdown.rewardXp}</b></span><span>战斗 <b>{breakdown.combatXp}</b></span><span>效率 <b>{breakdown.efficiencyXp}</b></span></div>
+        <div className="settlement-run-summary">
+          <p><b>最终构筑</b>{loadoutNames.join(' · ')}</p>
+          <p><b>本局掉落 {run.lootHistory.length}</b>{run.lootHistory.map((drop) => drop.item ? ITEM_BY_ID.get(drop.item.definitionId)?.name : `${drop.gold} 金币`).join(' · ')}</p>
+          <p><b>新图鉴 {run.newlyDiscoveredItemIds.length}</b>{run.newlyDiscoveredItemIds.map((id) => ITEM_BY_ID.get(id)?.name ?? id).join(' · ') || '无'}</p>
+        </div>
         <div className="settlement-actions"><button className="primary-button" onClick={() => startRun()} data-testid="retry-run">再开一局</button><button className="secondary-button" onClick={returnToWorkshop}>返回工坊</button></div>
       </div>
     </section>
@@ -71,3 +82,4 @@ function SettlementScreen() {
 function keyArtUrl(): string {
   return new URL('assets/v2/art/workshop-key-art.webp', document.baseURI).href;
 }
+import { ITEM_BY_ID } from '@/game/content';

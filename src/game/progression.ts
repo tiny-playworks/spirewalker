@@ -64,6 +64,7 @@ export function createDefaultProfile(): ProfileV2 {
     },
     runsStarted: 0,
     victories: 0,
+    discoveredItemIds: ['starter-repeater', 'starter-handcannon'],
   };
 }
 

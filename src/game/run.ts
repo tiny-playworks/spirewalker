@@ -1,11 +1,13 @@
 import { ITEM_BY_ID } from './content';
 import { getCharacterCombatTalents, getCombatModifiers } from './progression';
+import { createRandom, hashSeed } from './random';
 import { generateRouteChoices, getDismantleValue, getItemDefinition } from './rewards';
 import type {
   BuildTag,
   CombatModifiers,
   EncounterConfig,
   EquippedWeapon,
+  EliteObjectiveState,
   ProfileV2,
   RewardItem,
   RunStateV2,
@@ -34,6 +36,11 @@ export function createRun(profile: ProfileV2, seed: number): RunStateV2 {
     selectedLootId: null,
     chestRerollUsed: false,
     extraDropUsed: false,
+    eliteObjective: null,
+    shop: null,
+    selectedShopOfferId: null,
+    lootHistory: [],
+    newlyDiscoveredItemIds: [],
     hp: maxHp,
     maxHp,
     shield: modifiers.startingShield,
@@ -81,6 +88,8 @@ export function createEncounterConfig(
     weapons: structuredClone(run.weapons),
     activeWeapon: run.activeWeapon,
     relics: structuredClone(run.relics),
+    arcana: structuredClone(run.arcana),
+    eliteObjective: run.eliteObjective ? structuredClone(run.eliteObjective) : null,
     combatModifiers: modifiers,
     characterTalents: getCharacterCombatTalents(profile),
     lethalGuardAvailable: run.lethalGuardAvailable,
@@ -94,6 +103,7 @@ export function equipReward(
   item: RewardItem,
   target: EquipTarget,
   modifiers: CombatModifiers,
+  countReward = true,
 ): RunStateV2 {
   const next = structuredClone(run);
   const weaponSlot = target.weaponSlot ?? 0;
@@ -127,8 +137,22 @@ export function equipReward(
   if (replaced && !replaced.uid.startsWith('starter-')) {
     next.gold += getDismantleValue(replaced, modifiers.dismantleRatio);
   }
-  next.report.rewardsTaken += 1;
+  if (countReward) next.report.rewardsTaken += 1;
   return next;
+}
+
+export function createEliteObjective(seed: number, roomIndex: number): EliteObjectiveState {
+  const type = createRandom(hashSeed(seed, 'elite-objective', roomIndex))
+    .pick(['speed', 'low-damage', 'overloads'] as const);
+  return {
+    type,
+    elapsedMs: 0,
+    damageTaken: 0,
+    overloadsDestroyed: 0,
+    overloadsTotal: type === 'overloads' ? 3 : 0,
+    completed: false,
+    failed: false,
+  };
 }
 
 export function currentBuildTags(run: RunStateV2): BuildTag[] {

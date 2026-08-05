@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: SettingsV2 = {
   masterVolume: 0.65,
   reducedMotion: false,
   showDamageNumbers: true,
+  resumeWorkshop: false,
 };
 
 export interface SaveAdapter {
@@ -24,7 +25,10 @@ export interface SaveAdapter {
 export const localStorageSaveAdapter: SaveAdapter = {
   loadProfile() {
     const value = readJson<ProfileV2>(PROFILE_KEY);
-    return value?.version === 2 ? value : createDefaultProfile();
+    return value?.version === 2 ? {
+      ...value,
+      discoveredItemIds: value.discoveredItemIds ?? ['starter-repeater', 'starter-handcannon'],
+    } : createDefaultProfile();
   },
   saveProfile(profile) {
     writeJson(PROFILE_KEY, profile);
@@ -36,6 +40,11 @@ export const localStorageSaveAdapter: SaveAdapter = {
       ...value,
       activeWeapon: value.activeWeapon ?? 0,
       extraDropUsed: value.extraDropUsed ?? false,
+      eliteObjective: value.eliteObjective ?? null,
+      shop: value.shop ?? null,
+      selectedShopOfferId: value.selectedShopOfferId ?? null,
+      lootHistory: value.lootHistory ?? [],
+      newlyDiscoveredItemIds: value.newlyDiscoveredItemIds ?? [],
       arcana: value.arcana ?? [],
       temporaryEffects: value.temporaryEffects ?? [],
       chest: value.chest ? { ...value.chest, extraDrop: value.chest.extraDrop ?? false } : null,

@@ -2,11 +2,14 @@ import Phaser from 'phaser';
 import { ITEM_BY_ID, RARITY_LABELS } from '@/game/content';
 import type { LootDrop, RunStateV2, WorldBridge, WorldInteraction, WorldOverlay } from '@/game/types';
 import { createProceduralTextures } from './proceduralTextures';
+import { SynthAudio, type SynthCue } from './SynthAudio';
 
 interface WorldSceneOptions {
   bridge: WorldBridge;
   run: RunStateV2 | null;
   reducedMotion: boolean;
+  audio: SynthAudio;
+  onReady(): void;
 }
 
 interface InteractionTarget extends WorldInteraction {
@@ -33,10 +36,13 @@ export class WorldScene extends Phaser.Scene {
   private externalPaused = false;
   private chestOpening = false;
   private renderSignature = '';
+  private renderedPhase = '';
   private revealedChestId: string | null = null;
   private direction = 4;
+  private walkElapsed = 0;
   private activeWeapon: 0 | 1 = 0;
   private swapQueued = false;
+  private audio: SynthAudio | null = null;
 
   constructor() {
     super('WorldScene');
@@ -49,15 +55,24 @@ export class WorldScene extends Phaser.Scene {
   }
 
   sync(run: RunStateV2 | null, reducedMotion: boolean): void {
+    this.playShopStateCue(this.run, run);
     this.run = run;
     this.activeWeapon = run?.activeWeapon ?? this.activeWeapon;
     if (this.options) {
       this.options.run = run;
       this.options.reducedMotion = reducedMotion;
     }
+    const sceneActive = this.sys?.isActive() ?? false;
+    const queuedAssets = sceneActive ? this.queueRunItemArt(run) : false;
+    if (queuedAssets) {
+      this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+        if (this.sys?.isActive()) this.renderWorld(false);
+      });
+      if (!this.load.isLoading()) this.load.start();
+    }
     const signature = worldSignature(run);
-    if (this.sys?.isActive() && signature !== this.renderSignature) this.renderWorld(false);
-    else if (this.sys?.isActive()) this.updateWeaponTexture();
+    if (sceneActive && signature !== this.renderSignature) this.renderWorld(false);
+    else if (sceneActive) this.updateWeaponTexture();
   }
 
   setExternalPaused(paused: boolean): void {
@@ -71,10 +86,24 @@ export class WorldScene extends Phaser.Scene {
 
   preload(): void {
     for (let index = 0; index < 8; index += 1) {
-      const key = `artificer-dir-${index}`;
+      const key = `artificer-walk-${index}`;
       if (!this.textures.exists(key)) {
-        this.load.image(key, assetUrl(`characters/artificer/directions/${String(index + 1).padStart(2, '0')}.png`));
+        this.load.spritesheet(key, assetUrl(`characters/artificer/walk-strips/${String(index + 1).padStart(2, '0')}.png`), {
+          frameWidth: 192, frameHeight: 192,
+        });
       }
+    }
+    this.queueRunItemArt(this.run);
+    const chestTiers = this.run?.phase === 'chest' || this.run?.phase === 'loot' ? [this.currentChestStyle()] : [];
+    for (const tier of chestTiers) {
+      for (const [state, frame] of [['closed', '01'], ['open', '02']] as const) {
+        const key = `chest-art-${tier}-${state}`;
+        if (!this.textures.exists(key)) this.load.image(key, assetUrl(`chests/${tier}/${frame}.png`));
+      }
+    }
+    for (const prop of ['gate-route', 'gate-boss', 'station-console', 'shop-pedestal'] as const) {
+      const key = `prop-${prop}`;
+      if (!this.textures.exists(key)) this.load.image(key, assetUrl(`props/${prop}.png`));
     }
   }
 
@@ -88,6 +117,7 @@ export class WorldScene extends Phaser.Scene {
     this.interactions.length = 0;
     this.currentInteraction = null;
     this.chestOpening = false;
+    this.audio = this.options.audio;
     this.time.paused = this.externalPaused;
     createProceduralTextures(this);
     createWorldTextures(this);
@@ -113,9 +143,11 @@ export class WorldScene extends Phaser.Scene {
       Phaser.Input.Keyboard.KeyCodes.Q,
     ]);
     this.input.on('wheel', this.queueSwap, this);
+    this.input.on('pointerdown', this.unlockAudio, this);
     this.game.events.on(Phaser.Core.Events.BLUR, this.pauseFromBlur, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.dispose, this);
     if (this.externalPaused) this.tweens.pauseAll();
+    this.options.onReady();
   }
 
   update(_time: number, delta: number): void {
@@ -125,6 +157,7 @@ export class WorldScene extends Phaser.Scene {
       this.activeWeapon = this.activeWeapon === 0 ? 1 : 0;
       this.updateWeaponTexture();
       this.options.bridge.onWeaponSwapped(this.activeWeapon);
+      void this.audio?.unlock().then(() => this.audio?.play('swap'));
     }
 
     let moveX = Number(this.keys.right.isDown) - Number(this.keys.left.isDown);
@@ -137,7 +170,12 @@ export class WorldScene extends Phaser.Scene {
       this.player.x = Phaser.Math.Clamp(this.player.x + moveX * speed * Math.min(delta, 34) / 1_000, 58, WORLD_WIDTH - 58);
       this.player.y = Phaser.Math.Clamp(this.player.y + moveY * speed * Math.min(delta, 34) / 1_000, 82, WORLD_HEIGHT - 58);
       this.direction = movementDirection(moveX, moveY);
-      this.player.setTexture(`artificer-dir-${this.direction}`);
+      this.walkElapsed += delta;
+      const frame = Math.floor(this.walkElapsed / 115) % 4;
+      this.player.setTexture(`artificer-walk-${this.direction}`, frame);
+    } else {
+      this.walkElapsed = 0;
+      this.player.setTexture(`artificer-walk-${this.direction}`, 0);
     }
     this.player.setDepth(20 + this.player.y * 0.001);
     this.playerShadow?.setPosition(this.player.x, this.player.y + 38);
@@ -157,13 +195,17 @@ export class WorldScene extends Phaser.Scene {
   private createPlayer(): void {
     const startY = new URLSearchParams(window.location.search).has('e2e') ? 290 : 570;
     this.playerShadow = this.add.image(640, startY + 38, 'entity-shadow').setDisplaySize(92, 28).setDepth(15).setAlpha(0.3);
-    this.player = this.add.image(640, startY, 'artificer-dir-4').setDisplaySize(116, 116).setDepth(21);
-    this.weapon = this.add.image(680, startY, 'weapon-arc').setOrigin(0.18, 0.5).setDepth(22);
+    this.player = this.add.image(640, startY, 'artificer-walk-4', 0).setDisplaySize(116, 116).setDepth(21);
     this.activeWeapon = this.run?.activeWeapon ?? 0;
+    const weaponId = this.run?.weapons[this.activeWeapon].weapon.definitionId ?? 'starter-repeater';
+    this.weapon = this.add.image(680, startY, `item-art-${weaponId}`)
+      .setDisplaySize(116, 116).setOrigin(0.18, 0.5).setDepth(22);
     this.updateWeaponTexture();
   }
 
   private renderWorld(resetPlayer: boolean): void {
+    const nextPhase = this.run?.phase ?? 'workshop';
+    const enteringRoom = this.renderedPhase !== nextPhase && (nextPhase === 'route' || nextPhase === 'shop');
     for (const object of this.worldObjects) object.destroy();
     this.worldObjects.length = 0;
     this.interactions.length = 0;
@@ -176,15 +218,14 @@ export class WorldScene extends Phaser.Scene {
     if (!this.run) this.drawWorkshop();
     else if (this.run.phase === 'route') this.drawRouteHall();
     else if (this.run.phase === 'chest' || this.run.phase === 'loot') this.drawChestRoom();
-    else if (this.run.phase === 'prototype-complete') this.drawPrototypeComplete();
+    else if (this.run.phase === 'shop') this.drawShop();
 
-    if (resetPlayer && this.player) {
-      this.player.setPosition(640, new URLSearchParams(window.location.search).has('e2e') ? 290 : 570);
+    if ((resetPlayer || enteringRoom) && this.player) {
+      const startY = resetPlayer && new URLSearchParams(window.location.search).has('e2e') ? 290 : 570;
+      this.player.setPosition(640, startY);
       this.playerShadow?.setPosition(this.player.x, this.player.y + 38);
-    } else if (this.run?.phase === 'route' && this.player) {
-      this.player.setPosition(640, 570);
-      this.playerShadow?.setPosition(640, 608);
     }
+    this.renderedPhase = nextPhase;
   }
 
   private drawBaseFloor(): void {
@@ -235,12 +276,20 @@ export class WorldScene extends Phaser.Scene {
 
   private drawChestRoom(): void {
     const opened = this.run?.phase === 'loot';
-    this.addWorldTitle(opened ? '战利品已落地' : '房间已清空', opened ? '靠近每件物品逐一检查、装备或分解' : '走到宝箱前亲手打开它');
+    const tier = this.run?.chest?.tier ?? 'normal';
+    const boss = tier === 'boss';
+    const chestStyle = this.currentChestStyle();
+    this.addWorldTitle(
+      opened ? (boss ? '守卫宝库已开启' : '战利品已落地') : (boss ? '失控熔炉守卫已击破' : '房间已清空'),
+      opened ? '靠近每件物品逐一检查、装备或分解' : '走到宝箱前亲手打开它',
+    );
     const halo = this.track(this.add.ellipse(640, 330, opened ? 330 : 230, opened ? 130 : 90, 0xffd568, opened ? 0.22 : 0.14).setDepth(2));
     if (!this.options?.reducedMotion) {
       this.tweens.add({ targets: halo, scaleX: 1.12, scaleY: 1.12, alpha: opened ? 0.1 : 0.06, yoyo: true, repeat: -1, duration: 900 });
     }
-    this.chest = this.track(this.add.image(640, 320, opened ? 'chest-open' : 'chest-closed').setDepth(12));
+    const texture = `chest-art-${chestStyle}-${opened ? 'open' : 'closed'}`;
+    this.chest = this.track(this.add.image(640, 320, this.textures.exists(texture) ? texture : opened ? 'chest-open' : 'chest-closed')
+      .setDisplaySize(boss ? 250 : 218, boss ? 250 : 218).setDepth(20.32));
     if (!opened) {
       this.interactions.push({ kind: 'chest', id: this.run?.chest?.id ?? 'chest', label: '打开宝箱', hint: '揭晓本房战利品', x: 640, y: 355, radius: 145 });
       return;
@@ -258,8 +307,10 @@ export class WorldScene extends Phaser.Scene {
     const rarity = drop.item?.rarity ?? 'common';
     const color = rarityColor(rarity);
     const beam = this.track(this.add.rectangle(drop.worldX, drop.worldY - 60, 24, 150, color, rarity === 'legendary' ? 0.42 : 0.27).setDepth(5));
-    const texture = drop.item ? `loot-${drop.item.kind}` : 'loot-gold';
-    const icon = this.track(this.add.image(drop.worldX, drop.worldY, texture).setDepth(13).setInteractive({ useHandCursor: true }));
+    const itemTexture = drop.item ? `item-art-${drop.item.definitionId}` : null;
+    const texture = itemTexture && this.textures.exists(itemTexture) ? itemTexture : drop.item ? `loot-${drop.item.kind}` : 'loot-gold';
+    const icon = this.track(this.add.image(drop.worldX, drop.worldY, texture).setDisplaySize(drop.item ? 88 : 76, drop.item ? 88 : 76)
+      .setDepth(21 + drop.worldY * 0.001).setInteractive({ useHandCursor: true }));
     icon.on('pointerover', () => this.options?.bridge.onLootSelected(drop.id));
     const name = drop.item ? ITEM_BY_ID.get(drop.item.definitionId)?.name ?? '未知物品' : `${drop.gold} 金币`;
     const quality = drop.item ? RARITY_LABELS[drop.item.rarity] : '当局资源';
@@ -267,13 +318,16 @@ export class WorldScene extends Phaser.Scene {
       ...textStyle(14, `#${color.toString(16).padStart(6, '0')}`), align: 'center', lineSpacing: 4,
     }).setOrigin(0.5, 0).setDepth(14));
     if (revealIndex >= 0) {
+      const settledScaleX = icon.scaleX;
+      const settledScaleY = icon.scaleY;
       beam.setAlpha(0);
-      icon.setAlpha(0).setScale(0.25).setY(drop.worldY - 42);
+      icon.setAlpha(0).setScale(settledScaleX * 0.25, settledScaleY * 0.25).setY(drop.worldY - 42);
       label.setAlpha(0);
       this.time.delayedCall(revealIndex * 180, () => {
         this.tweens.add({ targets: beam, alpha: rarity === 'legendary' ? 0.42 : 0.27, duration: 170 });
-        this.tweens.add({ targets: icon, alpha: 1, scale: 1, y: drop.worldY, duration: 290, ease: 'Back.Out' });
+        this.tweens.add({ targets: icon, alpha: 1, scaleX: settledScaleX, scaleY: settledScaleY, y: drop.worldY, duration: 290, ease: 'Back.Out' });
         this.tweens.add({ targets: label, alpha: 1, duration: 220, delay: 100 });
+        this.audio?.play(lootCue(rarity));
         if (!this.options?.reducedMotion) this.tweens.add({ targets: beam, alpha: 0.1, scaleY: 1.08, yoyo: true, repeat: -1, duration: 760, delay: 180 });
         if (rarity === 'legendary' && !this.options?.reducedMotion) this.cameras.main.shake(90, 0.0024);
       });
@@ -283,11 +337,40 @@ export class WorldScene extends Phaser.Scene {
     this.interactions.push({ kind: 'loot', id: drop.id, label: `检查 ${name}`, hint: '查看详细数值', x: drop.worldX, y: drop.worldY, radius: 105 });
   }
 
-  private drawPrototypeComplete(): void {
-    this.addWorldTitle('G2 核心体验完成', '三次战斗与实体开箱已经跑通；完整商店和 Boss 等待下一道试玩闸门');
-    this.drawGate(640, 200, '返回工坊', 0x2bbeb6, 0xf2c65f, '⌂');
-    this.interactions.push({ kind: 'exit', id: 'return-workshop', label: '返回工坊', hint: '结束本次 G2 试玩', x: 640, y: 285, radius: 175 });
-    this.track(this.add.text(640, 410, '请先判断：打完一房后，你是否还想立刻再开一个箱子？', textStyle(20, '#245f62')).setOrigin(0.5));
+  private drawShop(): void {
+    this.addWorldTitle('流动工坊商店', '走近货架检查商品；整备完成后从右侧熔炉门进入 Boss 房');
+    const offers = this.run?.shop?.offers ?? [];
+    offers.forEach((offer, index) => {
+      const column = index % 3;
+      const row = Math.floor(index / 3);
+      const x = 190 + column * 255;
+      const y = 245 + row * 205;
+      const definition = ITEM_BY_ID.get(offer.item.definitionId);
+      const color = rarityColor(offer.item.rarity);
+      this.track(this.add.ellipse(x, y - 8, 92, 58, color, offer.sold ? 0.04 : 0.16).setDepth(2));
+      this.track(this.add.image(x, y + 20, 'prop-shop-pedestal').setDisplaySize(126, 126).setDepth(3)
+        .setTint(offer.sold ? 0xaeb9af : 0xffffff).setAlpha(offer.sold ? 0.5 : 1));
+      const itemTexture = `item-art-${offer.item.definitionId}`;
+      const texture = this.textures.exists(itemTexture) ? itemTexture : `loot-${offer.item.kind}`;
+      const icon = this.track(this.add.image(x, y - 5, texture).setDisplaySize(68, 68).setDepth(5)
+        .setAlpha(offer.sold ? 0.3 : 1));
+      if (!offer.sold) icon.setInteractive({ useHandCursor: true }).on('pointerover', () => this.options?.bridge.onShopOfferSelected(offer.id));
+      this.track(this.add.text(x, y + 57, offer.sold ? '已售出' : `${definition?.name ?? '未知商品'} · ◆${offer.price}`,
+        textStyle(13, offer.sold ? '#829694' : '#225d61')).setOrigin(0.5).setDepth(5));
+      if (!offer.sold) this.interactions.push({
+        kind: 'shop-offer', id: offer.id, label: `检查 ${definition?.name ?? '商品'}`, hint: `售价 ${offer.price} 金币`, x, y, radius: 92,
+      });
+    });
+
+    const shop = this.run?.shop;
+    this.drawStation(930, 500, shop?.healPurchased ? '维护完成' : '生命维护', '♥', 0xff8267);
+    if (!shop?.healPurchased) this.interactions.push({ kind: 'shop-action', id: 'shop-heal', label: '恢复生命', hint: '花费 30 金币', x: 930, y: 525, radius: 105 });
+    this.drawStation(1_100, 500, shop?.rerollUsed ? '盘点完成' : '重新盘点', '↻', 0xc06bd0);
+    if (!shop?.rerollUsed) this.interactions.push({
+      kind: 'shop-action', id: 'shop-reroll', label: '刷新全部货架', hint: shop?.freeReroll ? '本次免费' : '花费 30 金币', x: 1_100, y: 525, radius: 105,
+    });
+    this.drawGate(1_015, 200, '熔炉守卫', 0xff7758, 0xffd260, '♜');
+    this.interactions.push({ kind: 'shop-action', id: 'start-boss', label: '挑战熔炉守卫', hint: '进入本章 Boss 战', x: 1_015, y: 280, radius: 150 });
   }
 
   private addWorldTitle(title: string, subtitle: string): void {
@@ -296,22 +379,19 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private drawGate(x: number, y: number, label: string, body: number, trim: number, symbol = '✦'): void {
-    const graphics = this.track(this.add.graphics().setDepth(3));
-    graphics.fillStyle(0x1b5659, 0.18).fillEllipse(x, y + 104, 220, 52);
-    graphics.lineStyle(8, 0x21585b, 1).fillStyle(body, 1).fillRoundedRect(x - 102, y - 80, 204, 188, 38).strokeRoundedRect(x - 102, y - 80, 204, 188, 38);
-    graphics.lineStyle(5, trim, 1).strokeRoundedRect(x - 82, y - 60, 164, 150, 28);
-    graphics.fillStyle(0xeffcf1, 0.86).fillRoundedRect(x - 70, y - 46, 140, 120, 22);
-    this.track(this.add.text(x, y - 4, symbol, textStyle(52, '#197f7c')).setOrigin(0.5).setDepth(4));
-    this.track(this.add.text(x, y + 122, label, textStyle(19, '#174f54')).setOrigin(0.5).setDepth(4));
+    const boss = label === '熔炉守卫';
+    this.track(this.add.image(x, y + 8, boss ? 'prop-gate-boss' : 'prop-gate-route')
+      .setDisplaySize(boss ? 276 : 250, boss ? 276 : 250).setDepth(3));
+    if (!boss) this.track(this.add.circle(x, y, 42, body, 0.2).setDepth(3.5));
+    this.track(this.add.text(x, y + (boss ? 6 : 0), symbol, textStyle(boss ? 38 : 44, `#${trim.toString(16).padStart(6, '0')}`))
+      .setOrigin(0.5).setDepth(4));
+    this.track(this.add.text(x, y + 142, label, textStyle(19, '#174f54')).setOrigin(0.5).setDepth(4));
   }
 
   private drawStation(x: number, y: number, label: string, symbol: string, color: number): void {
-    const graphics = this.track(this.add.graphics().setDepth(3));
-    graphics.fillStyle(0x174d50, 0.18).fillEllipse(x, y + 52, 150, 38);
-    graphics.lineStyle(5, 0x24575a, 1).fillStyle(0xfff7dc, 1).fillRoundedRect(x - 72, y - 46, 144, 94, 24).strokeRoundedRect(x - 72, y - 46, 144, 94, 24);
-    graphics.fillStyle(color, 1).fillCircle(x, y - 2, 29);
-    this.track(this.add.text(x, y - 2, symbol, textStyle(23, '#fffced')).setOrigin(0.5).setDepth(4));
-    this.track(this.add.text(x, y + 66, label, textStyle(16, '#1d5a5e')).setOrigin(0.5).setDepth(4));
+    this.track(this.add.image(x, y + 4, 'prop-station-console').setDisplaySize(142, 142).setDepth(3));
+    this.track(this.add.text(x, y - 10, symbol, textStyle(24, `#${color.toString(16).padStart(6, '0')}`)).setOrigin(0.5).setDepth(4));
+    this.track(this.add.text(x, y + 78, label, textStyle(16, '#1d5a5e')).setOrigin(0.5).setDepth(4));
   }
 
   private updateInteraction(): void {
@@ -330,23 +410,31 @@ export class WorldScene extends Phaser.Scene {
   private activateInteraction(target: InteractionTarget): void {
     if (!this.options) return;
     if (target.id === 'start-run') this.options.bridge.onStartRun();
-    else if (target.kind === 'exit') this.options.bridge.onReturnToWorkshop();
     else if (target.id === 'global-tree') this.options.bridge.onMetaPanelRequested('global-tree');
     else if (target.kind === 'route') this.options.bridge.onRouteSelected(target.id);
     else if (target.kind === 'chest') this.playChestOpening();
     else if (target.kind === 'loot') this.options.bridge.onLootSelected(target.id);
+    else if (target.kind === 'shop-offer') this.options.bridge.onShopOfferSelected(target.id);
+    else if (target.id === 'shop-heal') this.options.bridge.onShopAction('heal');
+    else if (target.id === 'shop-reroll') this.options.bridge.onShopAction('reroll');
+    else if (target.id === 'start-boss') {
+      void this.audio?.unlock().then(() => this.audio?.play('boss-intro'));
+      this.options.bridge.onShopAction('start-boss');
+    }
     else if (target.overlay) this.options.bridge.onOverlayRequested(target.overlay);
   }
 
   private playChestOpening(): void {
     if (!this.chest || this.chestOpening || !this.options) return;
     this.chestOpening = true;
+    void this.audio?.unlock().then(() => this.audio?.play('chest-unlock'));
     this.currentInteraction = null;
     this.options.bridge.onInteraction(null);
-    const duration = this.options.reducedMotion ? 320 : 1_150;
+    const duration = this.options.reducedMotion ? 320 : this.run?.chest?.tier === 'boss' ? 2_400 : 1_400;
     this.tweens.add({ targets: this.chest, y: this.chest.y - 24, scaleX: 1.08, scaleY: 1.08, yoyo: true, duration: duration * 0.24 });
     this.time.delayedCall(duration * 0.46, () => {
-      this.chest?.setTexture('chest-open');
+      const texture = `chest-art-${this.currentChestStyle()}-open`;
+      this.chest?.setTexture(this.textures.exists(texture) ? texture : 'chest-open');
       const burst = this.track(this.add.circle(640, 300, 28, 0xffdf72, 0.7).setDepth(10));
       this.tweens.add({ targets: burst, scale: 5.5, alpha: 0, duration: duration * 0.48 });
       if (!this.options?.reducedMotion) this.cameras.main.shake(95, 0.0025);
@@ -363,16 +451,52 @@ export class WorldScene extends Phaser.Scene {
 
   private dispose(): void {
     this.input.off('wheel', this.queueSwap, this);
+    this.input.off('pointerdown', this.unlockAudio, this);
     this.game.events.off(Phaser.Core.Events.BLUR, this.pauseFromBlur, this);
+    this.audio = null;
   }
 
   private updateWeaponTexture(): void {
     if (!this.weapon || !this.run) return;
     const slot = this.run.weapons[this.activeWeapon];
-    const weapon = ITEM_BY_ID.get(slot.weapon.definitionId);
-    const core = slot.core ? ITEM_BY_ID.get(slot.core.definitionId) : null;
-    const tag = weapon?.tag === 'neutral' ? core?.tag ?? 'arc' : weapon?.tag ?? 'arc';
-    this.weapon.setTexture(tag === 'blast' ? 'weapon-blast' : tag === 'frost' ? 'weapon-frost' : 'weapon-arc');
+    const key = `item-art-${slot.weapon.definitionId}`;
+    if (this.textures.exists(key)) this.weapon.setTexture(key);
+  }
+
+  private currentChestStyle(): 'normal' | 'elite' | 'gold' | 'boss' {
+    if (this.run?.chest?.tier === 'boss') return 'boss';
+    if (this.run?.chest?.tier === 'elite') return 'elite';
+    if (this.run?.currentRoute?.category === 'gold') return 'gold';
+    return 'normal';
+  }
+
+  private playShopStateCue(previous: RunStateV2 | null, next: RunStateV2 | null): void {
+    if (!this.sys?.isActive() || previous?.phase !== 'shop' || next?.phase !== 'shop') return;
+    const previousSold = previous.shop?.offers.filter((offer) => offer.sold).length ?? 0;
+    const nextSold = next.shop?.offers.filter((offer) => offer.sold).length ?? 0;
+    if (nextSold > previousSold) this.audio?.play('purchase');
+    else if (!previous.shop?.healPurchased && next.shop?.healPurchased) this.audio?.play('heal');
+    else if (!previous.shop?.rerollUsed && next.shop?.rerollUsed) this.audio?.play('reroll');
+  }
+
+  private queueRunItemArt(run: RunStateV2 | null): boolean {
+    const ids = new Set<string>(['starter-repeater', 'starter-handcannon']);
+    for (const weapon of run?.weapons ?? []) ids.add(weapon.weapon.definitionId);
+    for (const drop of run?.chest?.drops ?? []) if (drop.item) ids.add(drop.item.definitionId);
+    for (const offer of run?.shop?.offers ?? []) ids.add(offer.item.definitionId);
+    let queued = false;
+    for (const id of ids) {
+      const item = ITEM_BY_ID.get(id);
+      const key = `item-art-${id}`;
+      if (!item || this.textures.exists(key)) continue;
+      this.load.image(key, assetUrl(itemArtPath(item.kind, item.id)));
+      queued = true;
+    }
+    return queued;
+  }
+
+  private unlockAudio(): void {
+    void this.audio?.unlock();
   }
 
   private queueSwap(): void {
@@ -450,7 +574,8 @@ function createWorldTextures(scene: Phaser.Scene): void {
 function worldSignature(run: RunStateV2 | null): string {
   if (!run) return 'workshop';
   const drops = run.chest?.drops.map((drop) => `${drop.id}:${drop.resolved}`).join('|') ?? '';
-  return `${run.phase}:${run.roomIndex}:${run.currentRoute?.id ?? ''}:${run.chest?.stage ?? ''}:${drops}`;
+  const offers = run.shop?.offers.map((offer) => `${offer.id}:${offer.sold}`).join('|') ?? '';
+  return `${run.phase}:${run.roomIndex}:${run.currentRoute?.id ?? ''}:${run.chest?.stage ?? ''}:${drops}:${offers}:${run.shop?.rerollUsed ?? false}:${run.shop?.healPurchased ?? false}`;
 }
 
 function movementDirection(x: number, y: number): number {
@@ -476,6 +601,10 @@ function rarityColor(rarity: string): number {
   return 0x80b9a8;
 }
 
+function lootCue(rarity: 'common' | 'rare' | 'epic' | 'legendary'): SynthCue {
+  return `loot-${rarity}`;
+}
+
 function textStyle(size: number, color: string): Phaser.Types.GameObjects.Text.TextStyle {
   return {
     fontFamily: '"Arial Rounded MT Bold", "Microsoft YaHei", sans-serif',
@@ -489,4 +618,12 @@ function textStyle(size: number, color: string): Phaser.Types.GameObjects.Text.T
 
 function assetUrl(path: string): string {
   return new URL(`assets/v2/${path}`, document.baseURI).href;
+}
+
+function itemArtPath(kind: 'weapon' | 'muzzle' | 'core' | 'relic' | 'arcana', id: string): string {
+  if (kind === 'weapon') return `items/weapons/${id}.png`;
+  if (kind === 'muzzle') return `items/muzzles/${id}.png`;
+  if (kind === 'core') return `items/cores/${id}.png`;
+  if (kind === 'relic') return `items/relics/${id}.png`;
+  return `items/arcana/${id}.png`;
 }

@@ -1,16 +1,20 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { RunStateV2 } from '../../src/game/types';
 
 test('G2 游戏化核心体验：工坊、实体门、战斗、宝箱、逐件处理与暂停界面', async ({ page }) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  await page.addInitScript(() => {
+  await page.goto('/?e2e=1');
+  await page.evaluate(() => {
     localStorage.clear();
     localStorage.setItem('sljt_profile', JSON.stringify({ version: 1, legacy: true }));
   });
-  await page.goto('/?e2e=1');
+  await page.reload();
 
   await expect(page.getByRole('heading', { name: '辉芯工坊' })).toBeVisible();
   await page.getByTestId('enter-workshop').click();
+  await expect(page.getByTestId('game-canvas')).toBeVisible();
+  await page.reload();
   await expect(page.getByTestId('game-canvas')).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(1);
   await page.locator('canvas').evaluate((canvas) => { canvas.dataset.runtime = 'persistent'; });
@@ -46,18 +50,17 @@ test('G2 游戏化核心体验：工坊、实体门、战斗、宝箱、逐件�
   await expect(page.getByTestId('interaction-prompt')).toContainText('打开宝箱');
   await tap(page, 'e');
   await expect(page.locator('[data-phase="loot"]')).toBeVisible({ timeout: 5_000 });
-  await hold(page, 's', 300);
-  await hold(page, 'a', 220);
-  await expect(page.getByTestId('interaction-prompt')).toContainText('检查');
-  await tap(page, 'e');
+  const firstDrop = (await readRun(page)).chest?.drops.find((drop) => !drop.resolved);
+  if (!firstDrop) throw new Error('first loot missing');
+  await moveToWorld(page, firstDrop.worldX, firstDrop.worldY);
   await expect(page.getByTestId('loot-inspector')).toBeVisible();
   await expect(page.getByTestId('loot-inspector')).toContainText(/伤害|弹丸|元素回路|生效方式/);
   await page.getByRole('button', { name: '装到主武器' }).click();
 
   await expect(page.locator('[data-phase="loot"]')).toBeVisible();
-  await hold(page, 'd', 700);
-  await expect(page.getByTestId('interaction-prompt')).toContainText('检查');
-  await tap(page, 'e');
+  const secondDrop = (await readRun(page)).chest?.drops.find((drop) => !drop.resolved);
+  if (!secondDrop) throw new Error('second loot missing');
+  await moveToWorld(page, secondDrop.worldX, secondDrop.worldY);
   await expect(page.getByTestId('loot-inspector')).toBeVisible();
   await page.getByRole('button', { name: /分解/ }).click();
 
@@ -92,4 +95,14 @@ async function tap(page: Page, key: string): Promise<void> {
   await page.keyboard.down(key);
   await page.waitForTimeout(80);
   await page.keyboard.up(key);
+}
+
+async function moveToWorld(page: Page, worldX: number, worldY: number): Promise<void> {
+  const box = await page.locator('canvas').boundingBox();
+  if (!box) throw new Error('canvas missing');
+  await page.mouse.move(box.x + worldX / 1_280 * box.width, box.y + worldY / 720 * box.height);
+}
+
+async function readRun(page: Page): Promise<RunStateV2> {
+  return page.evaluate(() => JSON.parse(localStorage.getItem('sljt_v2_run') ?? '{}'));
 }

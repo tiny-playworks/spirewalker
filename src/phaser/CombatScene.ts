@@ -9,9 +9,10 @@ import { createProceduralTextures, drawArena } from './proceduralTextures';
 export interface CombatSceneOptions {
   config: EncounterConfig;
   bridge: CombatBridge;
-  masterVolume: number;
+  audio: SynthAudio;
   reducedMotion: boolean;
   showDamageNumbers: boolean;
+  onReady(): void;
   onOverlayRequested(overlay: Exclude<WorldOverlay, 'none'>): void;
 }
 
@@ -41,7 +42,7 @@ export class CombatScene extends Phaser.Scene {
   private paused = false;
   private resultSent = false;
   private lastHudAt = 0;
-  private cleanDirectionReady = false;
+  private walkElapsed = 0;
 
   constructor() {
     super('CombatScene');
@@ -58,14 +59,31 @@ export class CombatScene extends Phaser.Scene {
       return;
     }
     this.setPaused(paused);
+    if (this.simulation && this.options) {
+      this.options.bridge.onHud(this.simulation.getHudSnapshot(this.game.loop.actualFps, paused));
+    }
   }
 
   preload(): void {
     for (let index = 0; index < 8; index += 1) {
-      const key = `artificer-dir-${index}`;
+      const key = `artificer-walk-${index}`;
       if (!this.textures.exists(key)) {
-        this.load.image(key, assetUrl(`characters/artificer/directions/${String(index + 1).padStart(2, '0')}.png`));
+        this.load.spritesheet(key, assetUrl(`characters/artificer/walk-strips/${String(index + 1).padStart(2, '0')}.png`), {
+          frameWidth: 192, frameHeight: 192,
+        });
       }
+    }
+    for (const kind of ['chaser', 'ranged', 'charger', 'boss'] as const) {
+      const key = `enemy-art-${kind}`;
+      if (!this.textures.exists(key)) this.load.image(key, assetUrl(`enemies/${kind}.png`));
+    }
+    if (!this.textures.exists('prop-overload-device')) {
+      this.load.image('prop-overload-device', assetUrl('props/overload-device.png'));
+    }
+    for (const weapon of this.options?.config.weapons ?? []) {
+      const id = weapon.weapon.definitionId;
+      const key = `item-art-${id}`;
+      if (!this.textures.exists(key)) this.load.image(key, assetUrl(`items/weapons/${id}.png`));
     }
   }
 
@@ -88,13 +106,14 @@ export class CombatScene extends Phaser.Scene {
     this.stressProjectileBatch = null;
     this.stressFxBatch = null;
     createProceduralTextures(this);
-    this.prepareDirectionTexture();
     drawArena(this);
     this.simulation = new CombatSimulation(this.options.config);
-    this.audio = new SynthAudio(this.options.masterVolume);
+    this.audio = this.options.audio;
     this.playerShadow = this.add.image(640, 580, 'entity-shadow').setDisplaySize(92, 28).setDepth(5);
-    this.playerSprite = this.add.image(640, 570, 'artificer-dir-4').setDisplaySize(116, 116).setDepth(11);
-    this.weaponSprite = this.add.image(680, 570, 'weapon-arc').setOrigin(0.18, 0.5).setDepth(13);
+    this.playerSprite = this.add.image(640, 570, 'artificer-walk-4', 0).setDisplaySize(116, 116).setDepth(11);
+    const initialWeapon = this.options.config.weapons[this.options.config.activeWeapon].weapon.definitionId;
+    this.weaponSprite = this.add.image(680, 570, `item-art-${initialWeapon}`)
+      .setDisplaySize(116, 116).setOrigin(0.18, 0.5).setDepth(13);
     if (this.options.config.stressTest) {
       this.stressProjectileBatch = this.add.graphics().setDepth(18);
       this.prepareStressFxTexture();
@@ -117,13 +136,14 @@ export class CombatScene extends Phaser.Scene {
     this.game.events.on(Phaser.Core.Events.BLUR, this.pauseFromBlur, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.dispose, this);
     this.cameras.main.setRoundPixels(false);
+    this.options.onReady();
   }
 
   update(time: number, delta: number): void {
     if (!this.simulation || !this.options || !this.keys) return;
     if (!this.paused) {
       this.simulation.step(delta, this.readInput());
-      this.syncPlayer();
+      this.syncPlayer(delta);
       this.syncEnemies();
       this.syncProjectiles();
       if (this.stressFxBatch) this.animateStressFx(time, this.stressFxBatch);
@@ -172,13 +192,20 @@ export class CombatScene extends Phaser.Scene {
     return input;
   }
 
-  private syncPlayer(): void {
+  private syncPlayer(delta: number): void {
     if (!this.simulation || !this.playerSprite || !this.playerShadow || !this.weaponSprite) return;
     const player = this.simulation.player;
-    const directionTexture = player.direction === 1 && this.cleanDirectionReady
-      ? 'artificer-dir-1-clean'
-      : `artificer-dir-${player.direction}`;
-    this.playerSprite.setPosition(player.x, player.y).setTexture(directionTexture);
+    let directionTexture: string;
+    let directionFrame = 0;
+    if (player.moving) {
+      this.walkElapsed += delta;
+      directionFrame = Math.floor(this.walkElapsed / 105) % 4;
+      directionTexture = `artificer-walk-${player.direction}`;
+    } else {
+      this.walkElapsed = 0;
+      directionTexture = `artificer-walk-${player.direction}`;
+    }
+    this.playerSprite.setPosition(player.x, player.y).setTexture(directionTexture, directionFrame);
     this.playerSprite.setTint(player.hitFlash > 0 ? 0xffb6a8 : player.overclocked ? 0xffef9a : 0xffffff);
     this.playerSprite.setAlpha(player.invulnerable && Math.floor(performance.now() / 60) % 2 === 0 ? 0.58 : 1);
     this.playerSprite.setDepth(10 + player.y * 0.001);
@@ -186,10 +213,13 @@ export class CombatScene extends Phaser.Scene {
 
     const slot = this.options?.config.weapons[player.activeWeapon];
     const definition = slot ? ITEM_BY_ID.get(slot.weapon.definitionId) : null;
-    const tag = definition?.tag === 'blast' ? 'blast' : definition?.tag === 'frost' ? 'frost' : 'arc';
+    const fallbackTag = definition?.tag === 'blast' ? 'blast' : definition?.tag === 'frost' ? 'frost' : 'arc';
+    const weaponTexture = slot && this.textures.exists(`item-art-${slot.weapon.definitionId}`)
+      ? `item-art-${slot.weapon.definitionId}`
+      : `weapon-${fallbackTag}`;
     const distance = 23;
     this.weaponSprite
-      .setTexture(`weapon-${tag}`)
+      .setTexture(weaponTexture)
       .setPosition(player.x + Math.cos(player.rotation) * distance, player.y + Math.sin(player.rotation) * distance - 3)
       .setRotation(player.rotation)
       .setFlipY(Math.cos(player.rotation) < 0)
@@ -210,7 +240,7 @@ export class CombatScene extends Phaser.Scene {
         this.enemyViews.set(enemy.id, view);
         this.enemyShadows.set(enemy.id, shadow);
       }
-      const size = enemy.radius * (enemy.kind === 'boss' ? 2.55 : 2.65);
+      const size = enemy.radius * (enemy.kind === 'boss' ? 2.55 : enemy.kind === 'overload' ? 3.35 : 2.65);
       view.setTexture(enemyTexture(enemy)).setPosition(enemy.x, enemy.y).setDisplaySize(size, size)
         .setRotation(enemy.kind === 'charger' ? enemy.rotation : 0)
         .setDepth(9 + enemy.y * 0.001)
@@ -432,18 +462,6 @@ export class CombatScene extends Phaser.Scene {
     else if (event.type === 'damage-prevented') this.audio?.play('deflect');
   }
 
-  private prepareDirectionTexture(): void {
-    const source = this.textures.get('artificer-dir-1').getSourceImage() as CanvasImageSource;
-    const cleaned = this.textures.createCanvas('artificer-dir-1-clean', 192, 192);
-    if (!cleaned) return;
-    const context = cleaned.getContext();
-    context.clearRect(0, 0, 192, 192);
-    context.drawImage(source, 0, 0, 192, 192);
-    context.clearRect(20, 108, 24, 42);
-    cleaned.refresh();
-    this.cleanDirectionReady = true;
-  }
-
   private queueSwap(): void {
     this.swapQueued = true;
   }
@@ -473,7 +491,7 @@ export class CombatScene extends Phaser.Scene {
     this.input.off('wheel', this.queueSwap, this);
     this.input.off('pointerdown', this.unlockAudio, this);
     this.game.events.off(Phaser.Core.Events.BLUR, this.pauseFromBlur, this);
-    this.audio?.dispose();
+    this.audio = null;
   }
 }
 
@@ -482,7 +500,7 @@ function assetUrl(path: string): string {
 }
 
 function enemyTexture(enemy: EnemyRenderState): string {
-  return `enemy-${enemy.kind}`;
+  return enemy.kind === 'overload' ? 'prop-overload-device' : `enemy-art-${enemy.kind}`;
 }
 
 function projectileTexture(projectile: ProjectileRenderState): string {

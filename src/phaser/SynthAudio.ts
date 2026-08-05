@@ -1,4 +1,7 @@
-export type SynthCue = 'arc-shot' | 'blast-shot' | 'frost-shot' | 'hit' | 'crit' | 'swap' | 'reload' | 'ability' | 'deflect' | 'victory' | 'defeat';
+export type SynthCue =
+  | 'arc-shot' | 'blast-shot' | 'frost-shot' | 'hit' | 'crit' | 'swap' | 'reload' | 'ability' | 'deflect'
+  | 'chest-unlock' | 'loot-common' | 'loot-rare' | 'loot-epic' | 'loot-legendary'
+  | 'purchase' | 'reroll' | 'heal' | 'boss-intro' | 'victory' | 'defeat';
 
 export class SynthAudio {
   private context: AudioContext | null = null;
@@ -7,7 +10,14 @@ export class SynthAudio {
   private musicTimer: number | null = null;
   private musicStep = 0;
 
-  constructor(private readonly volume: number) {}
+  constructor(private volume: number) {}
+
+  setVolume(volume: number): void {
+    this.volume = volume;
+    if (this.context && this.master) {
+      this.master.gain.setTargetAtTime(volume * 0.24, this.context.currentTime, 0.02);
+    }
+  }
 
   async unlock(): Promise<void> {
     if (!this.context) {
@@ -27,18 +37,20 @@ export class SynthAudio {
     if (nowMs - (this.lastCue.get(cue) ?? 0) < minimumGap) return;
     this.lastCue.set(cue, nowMs);
 
-    const preset = cuePreset(cue);
-    const oscillator = this.context.createOscillator();
-    const gain = this.context.createGain();
-    oscillator.type = preset.wave;
-    oscillator.frequency.setValueAtTime(preset.frequency, this.context.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, preset.endFrequency), this.context.currentTime + preset.duration);
-    gain.gain.setValueAtTime(preset.gain, this.context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, this.context.currentTime + preset.duration);
-    oscillator.connect(gain);
-    gain.connect(this.master);
-    oscillator.start();
-    oscillator.stop(this.context.currentTime + preset.duration);
+    for (const preset of cuePresets(cue)) {
+      const start = this.context.currentTime + preset.delay;
+      const oscillator = this.context.createOscillator();
+      const gain = this.context.createGain();
+      oscillator.type = preset.wave;
+      oscillator.frequency.setValueAtTime(preset.frequency, start);
+      oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, preset.endFrequency), start + preset.duration);
+      gain.gain.setValueAtTime(preset.gain, start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + preset.duration);
+      oscillator.connect(gain);
+      gain.connect(this.master);
+      oscillator.start(start);
+      oscillator.stop(start + preset.duration);
+    }
   }
 
   dispose(): void {
@@ -73,24 +85,40 @@ export class SynthAudio {
   }
 }
 
-function cuePreset(cue: SynthCue): {
+interface TonePreset {
   frequency: number;
   endFrequency: number;
   duration: number;
   gain: number;
   wave: OscillatorType;
-} {
+  delay: number;
+}
+
+function tone(frequency: number, endFrequency: number, duration: number, gain: number, wave: OscillatorType, delay = 0): TonePreset {
+  return { frequency, endFrequency, duration, gain, wave, delay };
+}
+
+function cuePresets(cue: SynthCue): TonePreset[] {
   switch (cue) {
-    case 'arc-shot': return { frequency: 520, endFrequency: 760, duration: 0.07, gain: 0.12, wave: 'square' };
-    case 'blast-shot': return { frequency: 150, endFrequency: 58, duration: 0.18, gain: 0.22, wave: 'sawtooth' };
-    case 'frost-shot': return { frequency: 880, endFrequency: 420, duration: 0.12, gain: 0.11, wave: 'sine' };
-    case 'hit': return { frequency: 240, endFrequency: 130, duration: 0.06, gain: 0.08, wave: 'triangle' };
-    case 'crit': return { frequency: 760, endFrequency: 1_100, duration: 0.11, gain: 0.13, wave: 'square' };
-    case 'swap': return { frequency: 280, endFrequency: 560, duration: 0.09, gain: 0.1, wave: 'triangle' };
-    case 'reload': return { frequency: 190, endFrequency: 260, duration: 0.08, gain: 0.08, wave: 'square' };
-    case 'ability': return { frequency: 220, endFrequency: 720, duration: 0.32, gain: 0.16, wave: 'sawtooth' };
-    case 'deflect': return { frequency: 980, endFrequency: 520, duration: 0.28, gain: 0.14, wave: 'sine' };
-    case 'victory': return { frequency: 440, endFrequency: 880, duration: 0.55, gain: 0.15, wave: 'triangle' };
-    case 'defeat': return { frequency: 220, endFrequency: 80, duration: 0.65, gain: 0.16, wave: 'sine' };
+    case 'arc-shot': return [tone(520, 760, 0.07, 0.12, 'square')];
+    case 'blast-shot': return [tone(150, 58, 0.18, 0.22, 'sawtooth')];
+    case 'frost-shot': return [tone(880, 420, 0.12, 0.11, 'sine')];
+    case 'hit': return [tone(240, 130, 0.06, 0.08, 'triangle')];
+    case 'crit': return [tone(760, 1_100, 0.11, 0.13, 'square')];
+    case 'swap': return [tone(280, 560, 0.09, 0.1, 'triangle')];
+    case 'reload': return [tone(190, 260, 0.08, 0.08, 'square')];
+    case 'ability': return [tone(220, 720, 0.32, 0.16, 'sawtooth')];
+    case 'deflect': return [tone(980, 520, 0.28, 0.14, 'sine')];
+    case 'chest-unlock': return [tone(125, 72, 0.16, 0.15, 'square'), tone(360, 680, 0.26, 0.1, 'triangle', 0.08)];
+    case 'loot-common': return [tone(420, 520, 0.1, 0.07, 'sine')];
+    case 'loot-rare': return [tone(440, 660, 0.16, 0.09, 'triangle'), tone(660, 880, 0.15, 0.06, 'sine', 0.09)];
+    case 'loot-epic': return [tone(390, 780, 0.22, 0.1, 'triangle'), tone(590, 1_180, 0.26, 0.07, 'sine', 0.1)];
+    case 'loot-legendary': return [tone(330, 660, 0.32, 0.12, 'triangle'), tone(495, 990, 0.36, 0.09, 'sine', 0.1), tone(660, 1_320, 0.4, 0.07, 'sine', 0.2)];
+    case 'purchase': return [tone(540, 720, 0.11, 0.08, 'triangle'), tone(720, 900, 0.13, 0.06, 'sine', 0.07)];
+    case 'reroll': return [tone(720, 260, 0.18, 0.08, 'triangle'), tone(280, 620, 0.16, 0.06, 'sine', 0.13)];
+    case 'heal': return [tone(420, 840, 0.3, 0.09, 'sine'), tone(630, 1_050, 0.28, 0.06, 'sine', 0.08)];
+    case 'boss-intro': return [tone(105, 48, 0.55, 0.2, 'sawtooth'), tone(210, 84, 0.62, 0.12, 'square', 0.08)];
+    case 'victory': return [tone(440, 880, 0.55, 0.15, 'triangle'), tone(660, 1_320, 0.45, 0.08, 'sine', 0.16)];
+    case 'defeat': return [tone(220, 80, 0.65, 0.16, 'sine')];
   }
 }

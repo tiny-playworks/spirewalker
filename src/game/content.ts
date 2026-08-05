@@ -1,4 +1,5 @@
 import type {
+  ArcanaDefinition,
   CharacterTalentDefinition,
   CoreDefinition,
   GlobalTalentDefinition,
@@ -21,6 +22,13 @@ export const RARITY_MULTIPLIER: Record<Rarity, number> = {
   rare: 1.12,
   epic: 1.25,
   legendary: 1.38,
+};
+
+export const ARCANA_RARITY_MULTIPLIER: Record<Rarity, number> = {
+  common: 1,
+  rare: 1.2,
+  epic: 1.45,
+  legendary: 1.8,
 };
 
 // 起始双枪只负责建立快/慢两种射击节奏，不进入奖励池，也不预先绑定构筑路线。
@@ -181,7 +189,34 @@ export const RELICS: RelicDefinition[] = [
   },
 ];
 
-export const ALL_ITEMS: ItemDefinition[] = [...WEAPONS, ...MUZZLES, ...CORES, ...RELICS];
+export const ARCANA: ArcanaDefinition[] = [
+  {
+    id: 'arcana-sixth-circuit', kind: 'arcana', name: '六拍回路', tag: 'arc', basePrice: 64,
+    description: '每第 6 次电弧命中额外连锁两个目标。', rule: 'sixth-hit-chain',
+  },
+  {
+    id: 'arcana-switch-spark', kind: 'arcana', name: '换相火花', tag: 'arc', basePrice: 72,
+    description: '切枪后 3 秒内的首次电弧命中产生强化连锁，内置冷却 5 秒。', rule: 'swap-chain',
+  },
+  {
+    id: 'arcana-loaded-burst', kind: 'arcana', name: '满膛冲击', tag: 'blast', basePrice: 66,
+    description: '完成换弹后的第一发提高伤害与爆炸范围。', rule: 'reload-burst',
+  },
+  {
+    id: 'arcana-aftershock', kind: 'arcana', name: '余爆箴言', tag: 'blast', basePrice: 76,
+    description: '爆炸击杀会产生一次较弱的后续爆炸。', rule: 'explosion-aftershock',
+  },
+  {
+    id: 'arcana-shatter-return', kind: 'arcana', name: '碎晶回流', tag: 'frost', basePrice: 65,
+    description: '碎裂返还弹药并缩短闪避冷却。', rule: 'shatter-refund',
+  },
+  {
+    id: 'arcana-frozen-tide', kind: 'arcana', name: '凝霜潮汐', tag: 'frost', basePrice: 74,
+    description: '冻结目标时向周围释放减速寒潮。', rule: 'freeze-aura',
+  },
+];
+
+export const ALL_ITEMS: ItemDefinition[] = [...WEAPONS, ...MUZZLES, ...CORES, ...RELICS, ...ARCANA];
 
 export const ITEM_BY_ID = new Map([...STARTER_WEAPONS, ...ALL_ITEMS].map((item) => [item.id, item]));
 

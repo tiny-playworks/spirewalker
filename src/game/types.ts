@@ -8,7 +8,7 @@ export type RewardCategory = ItemKind | 'gold' | 'elite';
 
 export type GameMode = 'title' | 'workshop' | 'run' | 'settlement';
 
-export type RunPhase = 'route' | 'combat' | 'chest' | 'loot' | 'prototype-complete';
+export type RunPhase = 'route' | 'combat' | 'chest' | 'loot' | 'shop' | 'boss';
 
 export type WorldOverlay =
   | 'none'
@@ -96,6 +96,28 @@ export interface ShopOffer {
   sold: boolean;
 }
 
+export interface ShopState {
+  offers: ShopOffer[];
+  rerollCount: number;
+  rerollUsed: boolean;
+  freeReroll: boolean;
+  healPurchased: boolean;
+}
+
+export type ShopAction = 'heal' | 'reroll' | 'start-boss';
+
+export type EliteObjectiveType = 'speed' | 'low-damage' | 'overloads';
+
+export interface EliteObjectiveState {
+  type: EliteObjectiveType;
+  elapsedMs: number;
+  damageTaken: number;
+  overloadsDestroyed: number;
+  overloadsTotal: number;
+  completed: boolean;
+  failed: boolean;
+}
+
 export type ChestTier = 'normal' | 'elite' | 'boss';
 
 export type ChestAnimationStage = 'landed' | 'unlocking' | 'opening' | 'opened';
@@ -141,6 +163,11 @@ export interface RunStateV2 {
   selectedLootId: string | null;
   chestRerollUsed: boolean;
   extraDropUsed: boolean;
+  eliteObjective: EliteObjectiveState | null;
+  shop: ShopState | null;
+  selectedShopOfferId: string | null;
+  lootHistory: LootDrop[];
+  newlyDiscoveredItemIds: string[];
   hp: number;
   maxHp: number;
   shield: number;
@@ -175,6 +202,7 @@ export interface ProfileV2 {
   characters: Record<'artificer', CharacterProgress>;
   runsStarted: number;
   victories: number;
+  discoveredItemIds: string[];
 }
 
 export interface SettingsV2 {
@@ -182,6 +210,7 @@ export interface SettingsV2 {
   masterVolume: number;
   reducedMotion: boolean;
   showDamageNumbers: boolean;
+  resumeWorkshop: boolean;
 }
 
 export interface CombatModifiers {
@@ -235,6 +264,8 @@ export interface EncounterConfig {
   weapons: [EquippedWeapon, EquippedWeapon];
   activeWeapon: 0 | 1;
   relics: RewardItem[];
+  arcana: RewardItem[];
+  eliteObjective: EliteObjectiveState | null;
   combatModifiers: CombatModifiers;
   characterTalents: CharacterCombatTalents;
   lethalGuardAvailable: boolean;
@@ -266,6 +297,7 @@ export interface CombatHudSnapshot {
   enemiesRemaining: number;
   projectilesActive: number;
   effectsActive: number;
+  eliteObjective: EliteObjectiveState | null;
   elapsedMs: number;
   bossHp: number | null;
   bossMaxHp: number | null;
@@ -282,6 +314,7 @@ export interface CombatResult {
   combatScore: number;
   lethalGuardAvailable: boolean;
   activeWeapon: 0 | 1;
+  eliteObjective: EliteObjectiveState | null;
 }
 
 export interface CombatBridge {
@@ -297,16 +330,22 @@ export interface WorldBridge {
   onReturnToWorkshop(): void;
   onChestOpened(): void;
   onLootSelected(dropId: string): void;
+  onShopOfferSelected(offerId: string | null): void;
+  onShopAction(action: ShopAction): void;
   onWeaponSwapped(weaponIndex: 0 | 1): void;
   onOverlayRequested(overlay: Exclude<WorldOverlay, 'none'>): void;
   onMetaPanelRequested(panel: 'global-tree' | 'character-tree'): void;
 }
 
 export interface WorldInteraction {
-  kind: 'station' | 'route' | 'chest' | 'loot' | 'exit';
+  kind: 'station' | 'route' | 'chest' | 'loot' | 'shop-offer' | 'shop-action';
   id: string;
   label: string;
   hint: string;
+}
+
+export interface CharacterRewardModifiers {
+  extraArcanaDrops: number;
 }
 
 export interface DerivedWeaponStats {

@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "style": {
     "name": "高质Q版赛璐璐魔法工坊",
     "palette": ["#f8edcf", "#29c9c1", "#145f66", "#f4bd54", "#ff684f", "#c74ed8"],
@@ -32,7 +32,205 @@
       "model": "OpenAI built-in imagegen, model managed by tool",
       "promptSummary": "同一魔导工匠的8方向移动朝向，统一比例、服装、轮廓与光照，纯洋红色键控背景，无武器、无文字、无阴影",
       "generatedAt": "2026-08-03",
-      "modifications": ["magenta chroma key removed", "split into 8 frames", "normalized to 192x192 shared scale"],
+      "modifications": ["magenta chroma key removed", "split into 8 frames", "normalized to 192x192 shared scale", "removed a detached artifact from direction 02"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "artificer-walk-cycles",
+      "type": "directional-animation-frames",
+      "path": "characters/artificer/walk/{01..08}/{01..04}.png",
+      "runtimePath": "characters/artificer/walk-strips/{01..08}.png",
+      "directions": 8,
+      "framesPerDirection": 4,
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "anchor": "bottom-center",
+      "source": "OpenAI built-in image generation edits based on approved direction anchors plus local chroma-key removal and normalization",
+      "sourceArtifacts": {
+        "01": "exec-04e88fc0-ab40-40e7-946a-332b6f31bab0.png",
+        "02": "exec-09127c1c-3341-4798-88d9-f26f5230b4ab.png",
+        "03": "exec-ce6d8cd3-c143-4be8-bbe9-08e92f0c15ce.png",
+        "04": "exec-2133ed59-2ace-44e1-b34c-c340cf1903a6.png",
+        "05": "exec-7fc46481-b761-4203-bd03-f8eedebc3510.png",
+        "06": "exec-d2badf41-39d8-4b96-bdc2-c6339cf484c0.png",
+        "07": "exec-1da4c732-c694-4663-b7f6-3535c882fa45.png",
+        "08": "exec-3d2a28c3-85ad-4d40-abeb-c8d9c76567b6.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "以8个已批准朝向为首帧锚点，各生成接触、过渡、反向接触、反向过渡四帧步行循环，锁定身份、服装、机位与朝向",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "split into four frames per direction", "frame 01 locked to approved direction art", "all moving frames rescaled to the anchor character height and bottom-center baseline"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "forge-enemy-set",
+      "type": "enemy-sprites",
+      "path": "enemies/{chaser,ranged,charger,boss}.png",
+      "dimensions": { "chaser": "192x192", "ranged": "192x192", "charger": "192x192", "boss": "320x320" },
+      "source": "OpenAI built-in image generation plus local chroma-key removal and normalization",
+      "sourceArtifacts": {
+        "chaser": "exec-f4a89548-f6bc-4b75-a0dc-abffeb9dfe93.png",
+        "ranged": "exec-9b4d2d89-fe51-4f0f-a169-8eca46d52301.png",
+        "charger": "exec-8218b89b-edf7-4d76-bcab-3931e388c586.png",
+        "boss": "exec-9e9caa76-52a4-47bf-aefc-716d90eafe15.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "沿用v2.0工坊锚点生成追逐齿轮兽、无常驻瞄准线的晶体远程怪、珊瑚色冲锋炉兽与大型失控熔炉守卫，纯绿色键控背景",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "normalized to fixed transparent canvases", "ranged enemy regenerated without a baked-in telegraph"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "weapon-item-set",
+      "type": "inventory-item-sprites",
+      "path": "items/weapons/{id}.png",
+      "width": 256,
+      "height": 256,
+      "source": "OpenAI built-in image generation plus local chroma-key removal and normalization",
+      "sourceArtifacts": {
+        "starter-repeater": "exec-af279e2f-d83f-448c-a3dd-ab192c5c9771.png",
+        "starter-handcannon": "exec-29eab52a-c399-4f0a-a60e-eb664358b705.png",
+        "arc-needle": "exec-0731174e-c26f-4b84-808a-a8ae58a75606.png",
+        "arc-volley": "exec-3130df5c-4222-41d8-8352-432b06d491e2.png",
+        "blast-cannon": "exec-86369e23-0c9a-4601-b15a-b03ff32bfb68.png",
+        "blast-mortar": "exec-3221a8f8-7670-48da-82f6-c6a047ad5da6.png",
+        "frost-lance": "exec-05932982-3fcf-4e3d-a0de-50d36101027e.png",
+        "frost-repeater": "exec-7b319230-f6a1-4982-bf82-98a1b99c2869.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "8把独立手持魔导枪械，电弧、爆破、霜晶与中性起始枪拥有不同轮廓，明亮Q版赛璐璐，纯绿色键控背景",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "normalized to 256x256 transparent canvases", "blast mortar regenerated as a handheld shoulder weapon"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "muzzle-item-set",
+      "type": "inventory-item-sprites",
+      "path": "items/muzzles/{id}.png",
+      "width": 192,
+      "height": 192,
+      "source": "OpenAI built-in image generation plus local chroma-key removal and normalization",
+      "sourceArtifacts": {
+        "muzzle-ricochet": "exec-4846aac9-322e-4b62-a2d1-097bd0e9d99e.png",
+        "muzzle-fan": "exec-93f3e7bd-6f54-4e49-9827-8f1f61267d11.png",
+        "muzzle-bombard": "exec-58b0c638-496e-4f58-af79-2c7c90604403.png",
+        "muzzle-heavy": "exec-0cae8bff-fb54-4607-bf4b-b24bf776d147.png",
+        "muzzle-pierce": "exec-19ae41f7-2375-48b7-bb95-76670175fc0e.png",
+        "muzzle-prism": "exec-39310cf0-c461-4b14-8f15-90de89fcbef7.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "6个可拆卸枪头，以折射叉、三管分流、爆口、重压管、冰针与双棱镜直接表达弹道功能",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "normalized to 192x192 transparent canvases"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "core-item-set",
+      "type": "inventory-item-sprites",
+      "path": "items/cores/{id}.png",
+      "width": 192,
+      "height": 192,
+      "source": "OpenAI built-in image generation plus local chroma-key removal and normalization",
+      "sourceArtifacts": {
+        "core-chain": "exec-07fb84aa-0380-4c2f-9d9e-0083ea409620.png",
+        "core-capacitor": "exec-bedad46a-bbec-49ba-b96d-67d2fb420912.png",
+        "core-ember": "exec-da962876-1684-4275-af72-42d280d683c9.png",
+        "core-overpressure": "exec-aa219b0e-39b5-4bc2-82e5-e1ce90afddab.png",
+        "core-chill": "exec-af354b44-d352-4c86-b183-0dcb1da8c020.png",
+        "core-shatter": "exec-577c35ac-ea69-46d2-be99-e6db7d2cdadb.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "6个独立魔导核心，以线圈、电容、炉芯、超压球、低温晶体与碎晶共振环表达元素触发",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "normalized to 192x192 transparent canvases"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "relic-item-set",
+      "type": "inventory-item-sprites",
+      "path": "items/relics/{id}.png",
+      "width": 192,
+      "height": 192,
+      "source": "OpenAI built-in image generation plus local chroma-key removal and normalization",
+      "sourceArtifacts": {
+        "relic-static-feather": "exec-27dff7b0-94ad-4da3-8131-81896d4468fc.png",
+        "relic-blue-spark": "exec-b78e7aa6-7572-499b-a307-8ccff7df6ce9.png",
+        "relic-conductor": "exec-160ce741-ec83-433c-be66-2ba17dc9935f.png",
+        "relic-amber-dust": "exec-396e1b2a-fed2-4e05-95fe-e4abd9dc3109.png",
+        "relic-hot-loader": "exec-a0dbeb5b-2792-4a2c-9821-8a1fe98216bd.png",
+        "relic-pressure-gauge": "exec-a48b6f40-8d4f-4ada-aa3c-60ee6f8ac478.png",
+        "relic-snow-lens": "exec-72142af9-8d7b-4e0e-9a84-b684ddfe8257.png",
+        "relic-pale-runner": "exec-583ac8a3-24ec-4d6d-9f30-8073af729f22.png",
+        "relic-crystal-scope": "exec-6ec68b74-c3cb-4d29-8256-4b2c0c25944a.png",
+        "relic-pocket-shield": "exec-7fa97871-4b4b-4942-b2f7-e553b3208aee.png",
+        "relic-light-boots": "exec-19baf084-d3e2-4a46-b1a2-b38b4bec9c9f.png",
+        "relic-master-wrench": "exec-eb5a53ed-b926-47c9-824d-1c05fdc76d86.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "12件独立实体秘宝，按电弧、爆破、霜晶与通用组设计为羽片、徽章、导体、粉瓶、机械臂、压力表、目镜、靴、准镜、折叠盾与扳手",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "normalized to 192x192 transparent canvases"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "arcana-item-set",
+      "type": "inventory-item-sprites",
+      "path": "items/arcana/{id}.png",
+      "width": 192,
+      "height": 192,
+      "source": "OpenAI built-in image generation plus local chroma-key removal and normalization",
+      "sourceArtifacts": {
+        "arcana-sixth-circuit": "exec-fb5bad5c-1a85-455e-a805-d90d3afb4933.png",
+        "arcana-switch-spark": "exec-e41483db-ac88-4e64-a2c4-2b9521fc79a2.png",
+        "arcana-loaded-burst": "exec-e239c75a-d7f8-4b3d-a244-0755dcdbd5c7.png",
+        "arcana-aftershock": "exec-3f2e7561-6a76-472a-8b29-51b2f856e278.png",
+        "arcana-shatter-return": "exec-11780bb0-3208-4c31-9360-ba9366472085.png",
+        "arcana-frozen-tide": "exec-ac118bd9-b384-4abe-90ab-fee74e3823f8.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "6张无文字实体魔导牌片，以六节点回路、双枪换相、满膛爆发、二次余爆、碎晶回流与冰潮图案表达规则触发",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "normalized to 192x192 transparent canvases"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "chest-animation-set",
+      "type": "two-frame-prop-animations",
+      "path": "chests/{normal,elite,gold,boss}/{01,02}.png",
+      "frames": ["closed", "open"],
+      "dimensions": { "normal": "256x256", "elite": "256x256", "gold": "256x256", "boss": "320x320" },
+      "anchor": "bottom-center",
+      "source": "OpenAI built-in image generation plus local chroma-key removal and shared-strip normalization",
+      "sourceArtifacts": {
+        "normal": "exec-307abbc7-bb08-4a85-abec-22cd51a236f1.png",
+        "elite": "exec-8324a614-7717-4eb4-b648-45608c8638a4.png",
+        "gold": "exec-63f7fede-7771-424d-a028-9fa26753f711.png",
+        "boss": "exec-f20e3ad5-4441-4483-8b35-961801d38056.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "普通、精英、金币与Boss四种同机位双帧宝箱动画条，左侧关闭锁定、右侧开盖发光，箱体结构保持一致",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "split into two frames", "normalized with one shared scale per chest"],
+      "commercialReview": "required-before-release"
+    },
+    {
+      "id": "world-interaction-props",
+      "type": "world-prop-sprites",
+      "path": "props/{gate-route,gate-boss,station-console,shop-pedestal,overload-device}.png",
+      "dimensions": { "gate-route": "320x320", "gate-boss": "320x320", "station-console": "224x224", "shop-pedestal": "224x224", "overload-device": "192x192" },
+      "anchor": "bottom-center",
+      "source": "OpenAI built-in image generation plus local chroma-key removal and normalization",
+      "sourceArtifacts": {
+        "gate-route": "exec-25d03f53-9322-499d-8f1a-5bee269ad061.png",
+        "gate-boss": "exec-1ccacc28-f957-4f24-85bc-7b3a40f36f9d.png",
+        "station-console": "exec-177b3e21-6298-4fe1-9585-31cf05322f40.png",
+        "shop-pedestal": "exec-33458b62-3c7b-43d2-955b-b0d91d8b3696.png",
+        "overload-device": "exec-0ada6571-c891-4b26-8b55-eadb236aec11.png"
+      },
+      "model": "OpenAI built-in imagegen, model managed by tool",
+      "promptSummary": "可穿行路线门、熔炉Boss门、工坊圆形控制台、商店商品展台与精英过载装置，统一俯视角Q版赛璐璐材质",
+      "generatedAt": "2026-08-05",
+      "modifications": ["green chroma key removed", "normalized to fixed transparent canvases"],
       "commercialReview": "required-before-release"
     }
   ]

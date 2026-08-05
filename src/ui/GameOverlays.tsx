@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ITEM_BY_ID, RARITY_LABELS } from '@/game/content';
+import { ALL_ITEMS, ARCANA_RARITY_MULTIPLIER, ITEM_BY_ID, RARITY_LABELS, STARTER_WEAPONS } from '@/game/content';
 import { deriveStats } from '@/game/derivedStats';
 import { getCombatModifiers } from '@/game/progression';
 import { getDismantleValue } from '@/game/rewards';
 import { useGameStore } from '@/game/store';
-import type { CombatHudSnapshot, LootDrop, RewardItem, RunStateV2, WorldOverlay } from '@/game/types';
+import type { CombatHudSnapshot, LootDrop, RewardItem, RunStateV2, ShopOffer, WorldOverlay } from '@/game/types';
 
 export function WorldHud({ run }: { run: RunStateV2 | null }) {
   const profile = useGameStore((state) => state.profile);
@@ -28,7 +28,7 @@ export function WorldHud({ run }: { run: RunStateV2 | null }) {
         </div>
       ) : null}
       <div className="world-shortcuts"><kbd>Esc</kbd>暂停 <kbd>C</kbd>人物 <kbd>I</kbd>装备 <kbd>Tab</kbd>属性</div>
-      {run ? <div className="world-weapon-switch">{run.weapons.map((slot, index) => <span className={run.activeWeapon === index ? 'active' : ''} key={slot.weapon.uid}><kbd>{index === 0 ? '主' : '副'}</kbd>{ITEM_BY_ID.get(slot.weapon.definitionId)?.name}</span>)}<small>Q / 滚轮切换</small></div> : null}
+      {run ? <div className="world-weapon-switch">{run.weapons.map((slot, index) => <span className={run.activeWeapon === index ? 'active' : ''} key={slot.weapon.uid}><kbd>{index === 0 ? '主' : '副'}</kbd><img src={itemArtUrl(slot.weapon)} alt="" />{ITEM_BY_ID.get(slot.weapon.definitionId)?.name}</span>)}<small>Q / 滚轮切换</small></div> : null}
       {canReroll ? <button className="chest-reroll-control" onClick={rerollChest}>免费重开宝箱</button> : null}
     </div>
   );
@@ -44,11 +44,12 @@ export function LootInspector({ drop }: { drop: LootDrop }) {
   const definition = item ? ITEM_BY_ID.get(item.definitionId) : null;
   const modifiers = getCombatModifiers(profile, run.relics);
   const dismantle = item ? getDismantleValue(item, modifiers.dismantleRatio) : 0;
+  const duplicateArcana = Boolean(item?.kind === 'arcana' && run.arcana.some((entry) => entry.definitionId === item.definitionId));
   return (
     <aside className={`loot-inspector ${item ? `rarity-${item.rarity}` : 'rarity-common'}`} data-testid="loot-inspector">
       <button className="inspector-close" onClick={() => close(null)} aria-label="关闭物品详情">×</button>
       <span className="inspector-eyebrow">{item ? `${RARITY_LABELS[item.rarity]} · ${kindLabel(item.kind)}` : '当局资源'}</span>
-      <div className={`inspector-glyph glyph-${item?.kind ?? 'gold'}`}>{kindSymbol(item?.kind ?? 'gold')}</div>
+      {item ? <img className="inspector-item-art" src={itemArtUrl(item)} alt={definition?.name ?? ''} /> : <div className="inspector-glyph glyph-gold">{kindSymbol('gold')}</div>}
       <h2>{definition?.name ?? `${drop.gold} 金币`}</h2>
       <p>{definition?.description ?? '用于本局商店购买、治疗与刷新。离开本局后不会保留。'}</p>
       {item && definition ? <ItemNumbers item={item} /> : <div className="inspector-numbers"><span>收入</span><strong>+{drop.gold}</strong></div>}
@@ -64,11 +65,41 @@ export function LootInspector({ drop }: { drop: LootDrop }) {
         {item?.kind === 'relic' && run.relics.length >= 8 ? (
           <div className="replace-slot-row">{run.relics.map((relic, index) => <button key={relic.uid} onClick={() => resolve(drop.id, 'equip', { relicSlot: index })}>替换 {index + 1}</button>)}</div>
         ) : null}
-        {item?.kind === 'arcana' && run.arcana.length < 5 ? <button className="loot-primary" onClick={() => resolve(drop.id, 'equip')}>装入秘仪槽</button> : null}
-        {item?.kind === 'arcana' && run.arcana.length >= 5 ? (
+        {item?.kind === 'arcana' && duplicateArcana ? <p className="duplicate-arcana">同名秘仪牌已装备，只能分解新掉落。</p> : null}
+        {item?.kind === 'arcana' && !duplicateArcana && run.arcana.length < 5 ? <button className="loot-primary" onClick={() => resolve(drop.id, 'equip')}>装入秘仪槽</button> : null}
+        {item?.kind === 'arcana' && !duplicateArcana && run.arcana.length >= 5 ? (
           <div className="replace-slot-row">{run.arcana.map((arcana, index) => <button key={arcana.uid} onClick={() => resolve(drop.id, 'equip', { arcanaSlot: index })}>替换 {index + 1}</button>)}</div>
         ) : null}
         {item ? <button className="loot-dismantle" onClick={() => resolve(drop.id, 'dismantle')}>分解 · +{dismantle} 金币</button> : null}
+      </div>
+    </aside>
+  );
+}
+
+export function ShopInspector({ offer }: { offer: ShopOffer }) {
+  const run = useGameStore((state) => state.run);
+  const buy = useGameStore((state) => state.buyShopOffer);
+  const close = useGameStore((state) => state.selectShopOffer);
+  if (!run || run.phase !== 'shop') return null;
+  const item = offer.item;
+  const definition = ITEM_BY_ID.get(item.definitionId);
+  const affordable = run.gold >= offer.price;
+  return (
+    <aside className={`loot-inspector shop-inspector rarity-${item.rarity}`} data-testid="shop-inspector">
+      <button className="inspector-close" onClick={() => close(null)} aria-label="关闭商品详情">×</button>
+      <span className="inspector-eyebrow">商店 · {RARITY_LABELS[item.rarity]} · {kindLabel(item.kind)}</span>
+      <img className="inspector-item-art" src={itemArtUrl(item)} alt={definition?.name ?? ''} />
+      <h2>{definition?.name ?? '未知商品'}</h2>
+      <p>{definition?.description}</p>
+      <ItemNumbers item={item} />
+      <div className="shop-inspector-price"><span>售价</span><strong>◆ {offer.price}</strong><small>持有 {run.gold}</small></div>
+      <div className="inspector-actions">
+        {item.kind !== 'relic' && item.kind !== 'arcana' ? <>
+          <button className="loot-primary" disabled={!affordable} onClick={() => buy(offer.id, { weaponSlot: 0 })}>购买并装到主武器</button>
+          <button disabled={!affordable} onClick={() => buy(offer.id, { weaponSlot: 1 })}>购买并装到副武器</button>
+        </> : null}
+        {item.kind === 'relic' && run.relics.length < 8 ? <button className="loot-primary" disabled={!affordable} onClick={() => buy(offer.id)}>购买并装入秘宝槽</button> : null}
+        {item.kind === 'relic' && run.relics.length >= 8 ? <div className="replace-slot-row">{run.relics.map((relic, index) => <button disabled={!affordable} key={relic.uid} onClick={() => buy(offer.id, { relicSlot: index })}>替换 {index + 1}</button>)}</div> : null}
       </div>
     </aside>
   );
@@ -158,7 +189,7 @@ function CharacterPanel({ hud }: { hud: CombatHudSnapshot | null }) {
 function EquipmentPanel({ run }: { run: RunStateV2 | null }) {
   const dismantle = useGameStore((state) => state.dismantleEquipped);
   if (!run) return <EmptyRunPanel />;
-  const readOnly = run.phase === 'combat';
+  const readOnly = run.phase === 'combat' || run.phase === 'boss';
   return <div className="equipment-panel">
     <div className="equipment-lock">{readOnly ? '战斗中仅可查看；清场后可处理装备' : '当前为安全阶段，可从地面掉落中替换装备'}</div>
     <div className="weapon-systems">
@@ -195,7 +226,7 @@ function SlotSection({ title, hint, count, items, onDismantle }: { title: string
 function EquipmentSlot({ label, item, required = false, onDismantle }: { label: string; item: RewardItem | null; required?: boolean; onDismantle?(): void }) {
   const definition = item ? ITEM_BY_ID.get(item.definitionId) : null;
   return <div className={`equipment-slot ${item ? `rarity-${item.rarity}` : 'empty'}`} title={definition?.description}>
-    <small>{label}</small>{onDismantle ? <button className="slot-dismantle" onClick={onDismantle} title="分解此装备">×</button> : null}<i>{item ? kindSymbol(item.kind) : '+'}</i><b>{definition?.name ?? (required ? '必需槽位' : '空槽')}</b>{item ? <span>{RARITY_LABELS[item.rarity]}</span> : null}
+    <small>{label}</small>{onDismantle ? <button className="slot-dismantle" onClick={onDismantle} title="分解此装备">×</button> : null}{item ? <img className="equipment-item-art" src={itemArtUrl(item)} alt="" /> : <i>+</i>}<b>{definition?.name ?? (required ? '必需槽位' : '空槽')}</b>{item ? <span>{RARITY_LABELS[item.rarity]}</span> : null}
   </div>;
 }
 
@@ -229,7 +260,16 @@ function StatsPanel({ run }: { run: RunStateV2 | null }) {
 }
 
 function CodexPanel() {
-  return <div className="codex-panel"><div className="codex-silhouette">?</div><h3>图鉴柜已经接入</h3><p>G2 先提供游戏内入口和只读界面。已发现登记、未发现剪影与完整筛选会在 G3 随正式掉落池一起接入。</p></div>;
+  const profile = useGameStore((state) => state.profile);
+  const discovered = new Set(profile.discoveredItemIds);
+  const definitions = [...STARTER_WEAPONS, ...ALL_ITEMS];
+  return <div className="codex-grid" data-testid="codex-grid">{definitions.map((definition) => {
+    const known = discovered.has(definition.id);
+    return <article className={known ? `known tag-${definition.tag}` : 'unknown'} key={definition.id}>
+      <i>{known ? <img src={itemArtUrl({ kind: definition.kind, definitionId: definition.id })} alt="" /> : '?'}</i>
+      <div><span>{kindLabel(definition.kind)}</span><b>{known ? definition.name : '尚未发现'}</b><p>{known ? definition.description : '在战利品或商店中发现后登记。'}</p></div>
+    </article>;
+  })}</div>;
 }
 
 function ItemNumbers({ item }: { item: RewardItem }) {
@@ -238,7 +278,8 @@ function ItemNumbers({ item }: { item: RewardItem }) {
   if (definition.kind === 'weapon') return <div className="inspector-number-grid"><Stat label="伤害" value={definition.damage.toFixed(0)} /><Stat label="射速" value={definition.fireRate.toFixed(2)} /><Stat label="弹匣" value={`${definition.magazine}`} /><Stat label="换弹" value={`${(definition.reloadMs / 1_000).toFixed(2)} 秒`} /></div>;
   if (definition.kind === 'muzzle') return <div className="inspector-number-grid"><Stat label="弹丸" value={`${definition.projectileCount ?? 1}`} /><Stat label="穿透" value={`${definition.pierce ?? 0}`} /><Stat label="弹跳" value={`${definition.bounces ?? 0}`} /><Stat label="爆炸" value={`${definition.explosionRadius ?? 0}`} /></div>;
   if (definition.kind === 'core') return <div className="inspector-numbers"><span>元素回路</span><strong>{tagLabel(definition.tag)}</strong></div>;
-  return <div className="inspector-numbers"><span>生效方式</span><strong>{definition.kind === 'relic' ? '持续被动' : '条件触发'}</strong></div>;
+  if (definition.kind === 'arcana') return <div className="inspector-number-grid"><Stat label="生效方式" value="条件触发" /><Stat label="品质倍率" value={`×${ARCANA_RARITY_MULTIPLIER[item.rarity].toFixed(2)}`} /></div>;
+  return <div className="inspector-numbers"><span>生效方式</span><strong>持续被动</strong></div>;
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -254,7 +295,9 @@ function phaseObjective(run: RunStateV2): string {
   if (run.phase === 'combat') return '清理本房敌人';
   if (run.phase === 'chest') return '靠近落地宝箱并按 E';
   if (run.phase === 'loot') return '逐件处理所有落地物品';
-  return 'G2 核心体验已跑通';
+  if (run.phase === 'shop') return '走近商品检查，整备后挑战 Boss';
+  if (run.phase === 'boss') return '击败失控熔炉守卫';
+  return '继续本章';
 }
 
 function kindLabel(kind: RewardItem['kind']): string {
@@ -283,4 +326,13 @@ function tagLabel(tag: string): string {
 
 function assetUrl(path: string): string {
   return new URL(`assets/v2/${path}`, document.baseURI).href;
+}
+
+function itemArtUrl(item: Pick<RewardItem, 'kind' | 'definitionId'>): string {
+  const folder = item.kind === 'weapon' ? 'weapons'
+    : item.kind === 'muzzle' ? 'muzzles'
+      : item.kind === 'core' ? 'cores'
+        : item.kind === 'relic' ? 'relics'
+          : 'arcana';
+  return assetUrl(`items/${folder}/${item.definitionId}.png`);
 }

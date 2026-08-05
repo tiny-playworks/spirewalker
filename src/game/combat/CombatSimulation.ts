@@ -1,4 +1,4 @@
-import { CORES, ITEM_BY_ID, MUZZLES } from '../content';
+import { ARCANA_RARITY_MULTIPLIER, CORES, ITEM_BY_ID, MUZZLES } from '../content';
 import { deriveWeaponStats } from '../derivedStats';
 import type { CombatInput } from '../input';
 import { createRandom, hashSeed, type RandomSource } from '../random';
@@ -7,6 +7,7 @@ import type {
   CombatHudSnapshot,
   CombatResult,
   CoreDefinition,
+  EliteObjectiveState,
   EncounterConfig,
   EquippedWeapon,
   MuzzleDefinition,
@@ -16,14 +17,17 @@ import type {
 const WORLD_WIDTH = 1_280;
 const WORLD_HEIGHT = 720;
 const PLAYER_RADIUS = 24;
+const NORMAL_ENEMY_HP_SCALE = 1.65;
+const BOSS_HP = 9_600;
 
-export type EnemyKind = 'chaser' | 'ranged' | 'charger' | 'boss';
+export type EnemyKind = 'chaser' | 'ranged' | 'charger' | 'overload' | 'boss';
 
 export interface PlayerRenderState {
   x: number;
   y: number;
   rotation: number;
   direction: number;
+  moving: boolean;
   dodging: boolean;
   invulnerable: boolean;
   overclocked: boolean;
@@ -89,6 +93,7 @@ interface EnemyState extends EnemyRenderState {
   burnRemainingMs: number;
   burnTickMs: number;
   bossPhaseTwoSpawned: boolean;
+  bossPattern: 0 | 1 | 2;
 }
 
 interface ProjectileState extends ProjectileRenderState {
@@ -143,16 +148,23 @@ export class CombatSimulation {
   private finishDelayMs = 0;
   private lastMoveX = 0;
   private lastMoveY = -1;
+  private eliteObjective: EliteObjectiveState | null;
+  private arcHitCount = 0;
+  private swapArcanaWindowMs = 0;
+  private swapArcanaCooldownMs = 0;
+  private readonly reloadEmpowered: [boolean, boolean] = [false, false];
 
   constructor(config: EncounterConfig) {
     this.config = config;
     this.random = createRandom(hashSeed(config.seed, config.id));
+    this.eliteObjective = config.eliteObjective ? structuredClone(config.eliteObjective) : null;
     const maxCharges = config.characterTalents.deflectionCharges;
     this.player = {
       x: WORLD_WIDTH / 2,
       y: WORLD_HEIGHT - 145,
       rotation: -Math.PI / 2,
       direction: 0,
+      moving: false,
       dodging: false,
       invulnerable: false,
       overclocked: false,
@@ -178,7 +190,10 @@ export class CombatSimulation {
 
     if (config.stressTest) this.spawnStressTest();
     else if (config.boss) this.spawnBoss();
-    else this.spawnWave();
+    else {
+      this.spawnWave();
+      if (this.eliteObjective?.type === 'overloads') this.spawnOverloadDevices();
+    }
   }
 
   step(deltaMs: number, input: CombatInput): void {
@@ -186,6 +201,7 @@ export class CombatSimulation {
     const safeDelta = Math.min(34, Math.max(0, deltaMs));
     const dt = safeDelta / 1_000;
     this.elapsedMs += safeDelta;
+    this.updateEliteObjective(safeDelta);
     this.updateTimers(safeDelta);
     this.updatePlayer(dt, safeDelta, input);
     this.updateEnemies(dt, safeDelta);
@@ -225,6 +241,7 @@ export class CombatSimulation {
       enemiesRemaining: this.enemies.length,
       projectilesActive: this.projectiles.length,
       effectsActive: this.config.stressTest ? 150 : 0,
+      eliteObjective: this.eliteObjective ? structuredClone(this.eliteObjective) : null,
       elapsedMs: this.elapsedMs,
       bossHp: boss?.hp ?? null,
       bossMaxHp: boss?.maxHp ?? null,
@@ -242,6 +259,8 @@ export class CombatSimulation {
     if (player.overclockRemainingMs <= 0) player.overclockStrength = 1;
     player.overclockCooldownMs = Math.max(0, player.overclockCooldownMs - deltaMs);
     player.switchDamageRemainingMs = Math.max(0, player.switchDamageRemainingMs - deltaMs);
+    this.swapArcanaWindowMs = Math.max(0, this.swapArcanaWindowMs - deltaMs);
+    this.swapArcanaCooldownMs = Math.max(0, this.swapArcanaCooldownMs - deltaMs);
     player.hitFlash = Math.max(0, player.hitFlash - deltaMs);
     player.dodging = player.dodgeRemainingMs > 0;
     player.invulnerable = player.dodging || player.damageInvulnerabilityMs > 0;
@@ -259,15 +278,17 @@ export class CombatSimulation {
       }
     }
 
-    for (const weapon of player.weapons) {
+    for (let index = 0; index < player.weapons.length; index += 1) {
+      const weapon = player.weapons[index as 0 | 1];
       weapon.fireCooldownMs = Math.max(0, weapon.fireCooldownMs - deltaMs);
       if (!weapon.reloading) continue;
       weapon.reloadRemainingMs -= deltaMs * this.reloadSpeedMultiplier();
       if (weapon.reloadRemainingMs <= 0) {
-        const definition = this.weaponDefinition(this.config.weapons[player.weapons.indexOf(weapon) as 0 | 1]);
+        const definition = this.weaponDefinition(this.config.weapons[index as 0 | 1]);
         weapon.ammo = definition.magazine;
         weapon.reloading = false;
         weapon.reloadRemainingMs = 0;
+        if (this.arcanaScale('arcana-loaded-burst') > 0) this.reloadEmpowered[index as 0 | 1] = true;
       }
     }
   }
@@ -275,7 +296,7 @@ export class CombatSimulation {
   private updatePlayer(dt: number, _deltaMs: number, input: CombatInput): void {
     const player = this.player;
     player.rotation = Math.atan2(input.aimY - player.y, input.aimX - player.x);
-    player.direction = angleToDirection(player.rotation);
+    const aimDirection = angleToDirection(player.rotation);
 
     let moveX = input.moveX;
     let moveY = input.moveY;
@@ -300,6 +321,11 @@ export class CombatSimulation {
       player.invulnerable = true;
       this.fx.push({ type: 'dash', x: player.x, y: player.y, color: 0x39d7cf });
     }
+
+    player.moving = magnitude > 0 || player.dodgeRemainingMs > 0;
+    if (player.dodgeRemainingMs > 0) player.direction = angleToDirection(Math.atan2(player.dodgeVy, player.dodgeVx));
+    else if (magnitude > 0) player.direction = angleToDirection(Math.atan2(moveY, moveX));
+    else player.direction = aimDirection;
 
     const overclockMove = player.overclocked
       ? this.overclockValue(1.15 + this.config.characterTalents.overclockMoveBonus)
@@ -332,6 +358,7 @@ export class CombatSimulation {
       enemy.telegraph = enemy.state === 'telegraph' ? clamp(enemy.stateTimerMs / 700, 0, 1) : 0;
       this.updateBurn(enemy, deltaMs);
       if (enemy.hp <= 0 || enemy.freezeRemainingMs > 0) continue;
+      if (enemy.kind === 'overload') continue;
 
       if (enemy.kind === 'boss') this.updateBoss(enemy, dt);
       else if (enemy.kind === 'ranged') this.updateRanged(enemy, dt);
@@ -382,6 +409,7 @@ export class CombatSimulation {
           this.explode(projectile.x, projectile.y, projectile.explosionRadius, damage * 0.55, enemy.id, toCombatTag(projectile.tag), projectile.legendary);
         }
         this.applyCoreEffect(enemy, projectile, damage);
+        this.applyArcanaOnHit(enemy, projectile, damage);
         projectile.pierce -= 1;
         if (projectile.pierce < 0) {
           projectile.remainingMs = 0;
@@ -426,10 +454,20 @@ export class CombatSimulation {
     const count = muzzle?.projectileCount ?? 1;
     const spread = ((muzzle?.spreadDeg ?? 0) * Math.PI) / 180;
     const startAngle = baseAngle - spread * (count - 1) / 2;
+    const reloadArcanaScale = this.reloadEmpowered[weaponIndex] ? this.arcanaScale('arcana-loaded-burst') : 0;
     for (let index = 0; index < count; index += 1) {
       const angle = startAngle + spread * index;
-      this.spawnPlayerProjectile(slot, weapon, muzzle, core, angle);
+      this.spawnPlayerProjectile(
+        slot,
+        weapon,
+        muzzle,
+        core,
+        angle,
+        1 + reloadArcanaScale * 0.35,
+        1 + reloadArcanaScale * 0.45,
+      );
     }
+    if (reloadArcanaScale > 0) this.reloadEmpowered[weaponIndex] = false;
     this.events.push({ type: 'shot-fired', weaponIndex });
     this.fx.push({ type: 'muzzle', x: player.x + Math.cos(baseAngle) * 42, y: player.y + Math.sin(baseAngle) * 42, color: tagColor(toCombatTag(weapon.tag)) });
     if (runtime.ammo <= 0) this.startReload(weaponIndex);
@@ -441,13 +479,15 @@ export class CombatSimulation {
     muzzle: MuzzleDefinition | null,
     core: CoreDefinition | null,
     angle: number,
+    arcanaDamageMultiplier = 1,
+    arcanaRadiusMultiplier = 1,
   ): void {
     const derived = deriveWeaponStats(slot, this.config.combatModifiers);
     const speed = derived.projectileSpeed;
     const switchBonus = this.player.switchDamageRemainingMs > 0
       ? 1 + this.config.characterTalents.overclockSwitchDamageBonus
       : 1;
-    const damage = derived.damage * switchBonus;
+    const damage = derived.damage * switchBonus * arcanaDamageMultiplier;
     const projectileTag = toCombatTag(weapon.tag === 'neutral' ? core?.tag ?? 'arc' : weapon.tag);
     const legendaryRelic = this.config.relics.some((item) => {
       if (item.rarity !== 'legendary') return false;
@@ -461,7 +501,7 @@ export class CombatSimulation {
       rotation: angle, radius: weapon.projectileRadius * (muzzle?.id === 'muzzle-heavy' ? 1.45 : 1),
       tag: projectileTag,
       damage, remainingMs: 1_600, pierce: muzzle?.pierce ?? 0, bounces: muzzle?.bounces ?? 0,
-      explosionRadius: derived.explosionRadius,
+      explosionRadius: derived.explosionRadius * arcanaRadiusMultiplier,
       core, legendary, hitIds: new Set(),
     });
   }
@@ -483,12 +523,39 @@ export class CombatSimulation {
       if (enemy.freezeHits >= (core.freezeHits ?? 99)) {
         enemy.freezeHits = 0;
         enemy.freezeRemainingMs = projectile.legendary ? 1_650 : 1_150;
+        const auraScale = this.arcanaScale('arcana-frozen-tide');
+        if (auraScale > 0) {
+          const radius = 155 + auraScale * 35;
+          for (const nearby of this.enemies) {
+            if (nearby.id === enemy.id || nearby.hp <= 0) continue;
+            if (Math.hypot(nearby.x - enemy.x, nearby.y - enemy.y) > radius) continue;
+            nearby.slowRatio = Math.max(nearby.slowRatio, Math.min(0.55, 0.18 * auraScale));
+            nearby.slowRemainingMs = Math.max(nearby.slowRemainingMs, 1_600);
+          }
+          this.fx.push({ type: 'shatter', x: enemy.x, y: enemy.y, color: 0xa9f2ff, radius });
+        }
       }
+    }
+  }
+
+  private applyArcanaOnHit(enemy: EnemyState, projectile: ProjectileState, baseDamage: number): void {
+    if (projectile.tag !== 'arc') return;
+    const sixthScale = this.arcanaScale('arcana-sixth-circuit');
+    if (sixthScale > 0) {
+      this.arcHitCount += 1;
+      if (this.arcHitCount % 6 === 0) this.chainFrom(enemy, 2, baseDamage * 0.38 * sixthScale, false);
+    }
+    const swapScale = this.arcanaScale('arcana-switch-spark');
+    if (swapScale > 0 && this.swapArcanaWindowMs > 0) {
+      this.swapArcanaWindowMs = 0;
+      this.swapArcanaCooldownMs = 5_000;
+      this.chainFrom(enemy, 2, baseDamage * 0.62 * swapScale, false);
     }
   }
 
   private damageEnemy(enemy: EnemyState, damage: number, critical: boolean, projectile?: ProjectileState): void {
     if (enemy.hp <= 0) return;
+    const wasFrozen = enemy.freezeRemainingMs > 0;
     enemy.hp -= damage;
     enemy.hitFlash = 90;
     this.events.push({ type: 'hit', damage, critical });
@@ -496,8 +563,19 @@ export class CombatSimulation {
     if (enemy.hp > 0) return;
     this.events.push({ type: 'enemy-defeated', enemyType: enemy.kind });
     this.fx.push({ type: 'death', x: enemy.x, y: enemy.y, color: enemyColor(enemy.kind), radius: enemy.radius * 1.5 });
-    if (projectile?.tag === 'frost' && projectile.legendary && enemy.freezeRemainingMs > 0) {
+    if (enemy.kind === 'overload' && this.eliteObjective?.type === 'overloads' && !this.eliteObjective.failed) {
+      this.eliteObjective.overloadsDestroyed += 1;
+      if (this.eliteObjective.overloadsDestroyed >= this.eliteObjective.overloadsTotal) this.eliteObjective.completed = true;
+    }
+    if (projectile?.tag === 'frost' && projectile.legendary && wasFrozen) {
       this.spawnShards(enemy.x, enemy.y, projectile.damage * 0.45);
+    }
+    const shatterScale = projectile?.tag === 'frost' && wasFrozen ? this.arcanaScale('arcana-shatter-return') : 0;
+    if (shatterScale > 0) {
+      const runtime = this.player.weapons[this.player.activeWeapon];
+      const weapon = this.weaponDefinition(this.config.weapons[this.player.activeWeapon]);
+      runtime.ammo = Math.min(weapon.magazine, runtime.ammo + Math.max(1, Math.round(shatterScale)));
+      this.player.dashCooldownMs = Math.max(0, this.player.dashCooldownMs - 800 * shatterScale);
     }
     if (projectile?.tag === 'blast' && projectile.legendary) {
       this.explode(enemy.x, enemy.y, 120, projectile.damage * 0.7, enemy.id, 'blast', true);
@@ -536,6 +614,10 @@ export class CombatSimulation {
     }
     if (amount > 0) player.hp -= amount;
     this.damageTaken += original;
+    if (this.eliteObjective?.type === 'low-damage') {
+      this.eliteObjective.damageTaken = this.damageTaken;
+      if (this.damageTaken > this.player.maxHp * 0.2) this.eliteObjective.failed = true;
+    }
     player.damageInvulnerabilityMs = 520;
     player.hitFlash = 140;
     if (player.hp <= 0 && this.config.lethalGuardAvailable) {
@@ -570,6 +652,9 @@ export class CombatSimulation {
   private swapWeapon(): void {
     const player = this.player;
     player.activeWeapon = player.activeWeapon === 0 ? 1 : 0;
+    if (this.arcanaScale('arcana-switch-spark') > 0 && this.swapArcanaCooldownMs <= 0) {
+      this.swapArcanaWindowMs = 3_000;
+    }
     if (player.overclocked && !player.switchBonusUsed && this.config.characterTalents.overclockSwitchDamageMs > 0) {
       player.switchDamageRemainingMs = this.config.characterTalents.overclockSwitchDamageMs;
       player.switchBonusUsed = true;
@@ -657,28 +742,51 @@ export class CombatSimulation {
       this.spawnEnemy('chaser', 290, 180, true);
       this.spawnEnemy('charger', WORLD_WIDTH - 290, 180, true);
       this.fx.push({ type: 'explosion', x: enemy.x, y: enemy.y, color: 0xff7a46, radius: 180 });
+      enemy.state = 'move';
+      enemy.attackTimerMs = 1_200;
+      return;
     }
+
+    if (enemy.state === 'telegraph') {
+      if (enemy.stateTimerMs > 0) return;
+      this.fireBossPattern(enemy, enemy.bossPattern, phaseTwo);
+      enemy.state = 'move';
+      enemy.attackTimerMs = phaseTwo ? 1_450 : 1_800;
+      return;
+    }
+
     if (enemy.attackTimerMs > 0) return;
-    const pattern = Math.floor(this.elapsedMs / 1_000) % 3;
+    enemy.bossPattern = ((enemy.bossPattern + 1) % 3) as 0 | 1 | 2;
+    enemy.state = 'telegraph';
+    enemy.stateTimerMs = phaseTwo ? 550 : 700;
+    if (enemy.bossPattern === 1) {
+      this.fx.push({ type: 'warning', x: enemy.x, y: enemy.y, x2: this.player.x, y2: this.player.y, color: 0xff5f5f });
+    } else {
+      this.fx.push({
+        type: 'warning', x: enemy.x, y: enemy.y,
+        color: enemy.bossPattern === 0 ? 0xff8b58 : 0xd95fff,
+        radius: enemy.bossPattern === 0 ? 150 : 105,
+      });
+    }
+  }
+
+  private fireBossPattern(enemy: EnemyState, pattern: 0 | 1 | 2, phaseTwo: boolean): void {
     if (pattern === 0) {
       const count = phaseTwo ? 20 : 14;
       for (let index = 0; index < count; index += 1) {
-        this.spawnEnemyProjectile(enemy.x, enemy.y, Math.PI * 2 * index / count, phaseTwo ? 12 : 10, phaseTwo ? 285 : 245);
+        this.spawnEnemyProjectile(enemy.x, enemy.y, Math.PI * 2 * index / count, phaseTwo ? 7 : 5, phaseTwo ? 285 : 245);
       }
-      this.fx.push({ type: 'warning', x: enemy.x, y: enemy.y, color: 0xff8b58, radius: 120 });
     } else if (pattern === 1) {
       const base = Math.atan2(this.player.y - enemy.y, this.player.x - enemy.x);
       for (let index = -2; index <= 2; index += 1) {
-        this.spawnEnemyProjectile(enemy.x, enemy.y, base + index * 0.12, phaseTwo ? 14 : 11, phaseTwo ? 390 : 340);
+        this.spawnEnemyProjectile(enemy.x, enemy.y, base + index * 0.12, phaseTwo ? 9 : 7, phaseTwo ? 390 : 340);
       }
-      this.fx.push({ type: 'warning', x: enemy.x, y: enemy.y, x2: this.player.x, y2: this.player.y, color: 0xff5f5f });
     } else {
       for (let index = 0; index < (phaseTwo ? 8 : 5); index += 1) {
         const angle = this.random.next() * Math.PI * 2;
-        this.spawnEnemyProjectile(enemy.x, enemy.y, angle, 9, 190);
+        this.spawnEnemyProjectile(enemy.x, enemy.y, angle, phaseTwo ? 6 : 5, 190);
       }
     }
-    enemy.attackTimerMs = phaseTwo ? 900 : 1_350;
   }
 
   private moveTowardPlayer(enemy: EnemyState, dt: number, baseSpeed: number): void {
@@ -730,6 +838,7 @@ export class CombatSimulation {
     excludedId: number,
     tag: 'arc' | 'blast' | 'frost',
     legendary: boolean,
+    allowAftershock = true,
   ): void {
     this.fx.push({ type: 'explosion', x, y, color: tagColor(tag), radius });
     for (const enemy of this.enemies) {
@@ -738,6 +847,12 @@ export class CombatSimulation {
         this.damageEnemy(enemy, damage, false);
         if (legendary && tag === 'blast' && enemy.hp <= 0) {
           this.explode(enemy.x, enemy.y, radius * 0.8, damage * 0.65, enemy.id, tag, true);
+        }
+        const aftershockScale = tag === 'blast' && allowAftershock && enemy.hp <= 0
+          ? this.arcanaScale('arcana-aftershock')
+          : 0;
+        if (aftershockScale > 0) {
+          this.explode(enemy.x, enemy.y, radius * 0.72, damage * 0.34 * aftershockScale, enemy.id, tag, false, false);
         }
       }
     }
@@ -781,8 +896,15 @@ export class CombatSimulation {
   }
 
   private spawnBoss(): void {
-    const hp = this.config.debugFast ? 180 : 2_100;
+    const hp = this.config.debugFast ? 180 : BOSS_HP;
     this.enemies.push(this.makeEnemy('boss', WORLD_WIDTH / 2, 170, true, hp));
+  }
+
+  private spawnOverloadDevices(): void {
+    const hp = this.config.debugFast ? 8 : 72;
+    for (const [x, y] of [[360, 220], [640, 150], [920, 220]] as const) {
+      this.enemies.push(this.makeEnemy('overload', x, y, true, hp));
+    }
   }
 
   private spawnStressTest(): void {
@@ -803,22 +925,23 @@ export class CombatSimulation {
   }
 
   private spawnEnemy(kind: EnemyKind, x: number, y: number, elite: boolean): void {
-    const hpByKind: Record<EnemyKind, number> = { chaser: 54, ranged: 46, charger: 82, boss: 2_100 };
+    const hpByKind: Record<EnemyKind, number> = { chaser: 54, ranged: 46, charger: 82, overload: 72, boss: BOSS_HP };
     const roomScale = 1 + this.config.roomIndex * 0.18;
     const eliteScale = elite ? 1.65 : 1;
+    const pacingScale = elite ? 1 : NORMAL_ENEMY_HP_SCALE;
     const debugScale = this.config.debugFast ? 0.15 : 1;
-    this.enemies.push(this.makeEnemy(kind, x, y, elite, hpByKind[kind] * roomScale * eliteScale * debugScale));
+    this.enemies.push(this.makeEnemy(kind, x, y, elite, hpByKind[kind] * roomScale * eliteScale * pacingScale * debugScale));
   }
 
   private makeEnemy(kind: EnemyKind, x: number, y: number, elite: boolean, hp: number): EnemyState {
-    const radius: Record<EnemyKind, number> = { chaser: 27, ranged: 24, charger: 33, boss: 82 };
-    const speed: Record<EnemyKind, number> = { chaser: 116, ranged: 88, charger: 138, boss: 60 };
+    const radius: Record<EnemyKind, number> = { chaser: 27, ranged: 24, charger: 33, overload: 31, boss: 82 };
+    const speed: Record<EnemyKind, number> = { chaser: 116, ranged: 88, charger: 138, overload: 0, boss: 60 };
     return {
       id: this.nextEntityId++, kind, x, y, rotation: 0, radius: radius[kind], hp, maxHp: hp,
       frozen: false, elite, telegraph: 0, hitFlash: 0, speed: speed[kind], contactCooldownMs: 0,
       attackTimerMs: this.random.int(500, 1_200), stateTimerMs: 0, state: 'move', chargeVx: 0,
       chargeVy: 0, slowRatio: 0, slowRemainingMs: 0, freezeHits: 0, freezeRemainingMs: 0,
-      burnDamage: 0, burnRemainingMs: 0, burnTickMs: 400, bossPhaseTwoSpawned: false,
+      burnDamage: 0, burnRemainingMs: 0, burnTickMs: 400, bossPhaseTwoSpawned: false, bossPattern: 2,
     };
   }
 
@@ -861,8 +984,22 @@ export class CombatSimulation {
     if (this.finishDelayMs >= 800) this.finish(true);
   }
 
+  private updateEliteObjective(deltaMs: number): void {
+    if (!this.eliteObjective) return;
+    this.eliteObjective.elapsedMs += deltaMs;
+    this.eliteObjective.damageTaken = this.damageTaken;
+    if (this.eliteObjective.type === 'speed' && this.eliteObjective.elapsedMs > 90_000) this.eliteObjective.failed = true;
+    if (this.eliteObjective.type === 'overloads' && this.eliteObjective.elapsedMs > 12_000 && !this.eliteObjective.completed) {
+      this.eliteObjective.failed = true;
+    }
+  }
+
   private finish(won: boolean): void {
     this.finished = true;
+    if (this.eliteObjective && won && !this.eliteObjective.failed) {
+      if (this.eliteObjective.type === 'speed' && this.elapsedMs <= 90_000) this.eliteObjective.completed = true;
+      if (this.eliteObjective.type === 'low-damage' && this.damageTaken <= this.player.maxHp * 0.2) this.eliteObjective.completed = true;
+    } else if (this.eliteObjective && !won) this.eliteObjective.failed = true;
     const score = won ? Math.max(0, Math.round(15 - this.damageTaken / Math.max(1, this.player.maxHp) * 15)) : 0;
     this.result = {
       won,
@@ -873,7 +1010,13 @@ export class CombatSimulation {
       combatScore: score,
       lethalGuardAvailable: this.config.lethalGuardAvailable,
       activeWeapon: this.player.activeWeapon,
+      eliteObjective: this.eliteObjective ? structuredClone(this.eliteObjective) : null,
     };
+  }
+
+  private arcanaScale(definitionId: string): number {
+    const item = this.config.arcana.find((entry) => entry.definitionId === definitionId);
+    return item ? ARCANA_RARITY_MULTIPLIER[item.rarity] : 0;
   }
 
   private createWeaponRuntime(slot: EquippedWeapon): WeaponRuntime {
@@ -933,6 +1076,7 @@ function toCombatTag(tag: string): 'arc' | 'blast' | 'frost' {
 function enemyColor(kind: EnemyKind): number {
   if (kind === 'ranged') return 0xd559ef;
   if (kind === 'charger') return 0xff654f;
+  if (kind === 'overload') return 0xffb84f;
   if (kind === 'boss') return 0xff8d46;
   return 0xb07a4a;
 }

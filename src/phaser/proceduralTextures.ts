@@ -4,6 +4,7 @@ export function createProceduralTextures(scene: Phaser.Scene): void {
   if (!scene.textures.exists('enemy-chaser')) createChaser(scene);
   if (!scene.textures.exists('enemy-ranged')) createRanged(scene);
   if (!scene.textures.exists('enemy-charger')) createCharger(scene);
+  if (!scene.textures.exists('enemy-overload')) createOverload(scene);
   if (!scene.textures.exists('enemy-boss')) createBoss(scene);
   if (!scene.textures.exists('projectile-arc')) createProjectile(scene, 'projectile-arc', 0x29d9cc, 0xeafffb, 18);
   if (!scene.textures.exists('projectile-blast')) createProjectile(scene, 'projectile-blast', 0xff9147, 0xfff2ca, 24);
@@ -108,6 +109,19 @@ function createCharger(scene: Phaser.Scene): void {
   graphics.fillCircle(30, 77, 12);
   graphics.fillCircle(78, 77, 12);
   graphics.generateTexture('enemy-charger', 112, 104);
+  graphics.destroy();
+}
+
+function createOverload(scene: Phaser.Scene): void {
+  const graphics = scene.add.graphics();
+  graphics.fillStyle(0x8c5b2d, 0.2).fillEllipse(48, 73, 76, 28);
+  graphics.lineStyle(5, 0x654022, 1).fillStyle(0xf0ad42, 1).fillRoundedRect(20, 28, 56, 48, 15)
+    .strokeRoundedRect(20, 28, 56, 48, 15);
+  graphics.fillStyle(0xffe577, 1).fillCircle(48, 50, 15);
+  graphics.fillStyle(0xff7651, 1).fillCircle(48, 50, 7);
+  graphics.lineStyle(4, 0x2a7776, 1).lineBetween(48, 28, 48, 10);
+  graphics.fillStyle(0x43d1c4, 1).fillCircle(48, 9, 6);
+  graphics.generateTexture('enemy-overload', 96, 92);
   graphics.destroy();
 }
 

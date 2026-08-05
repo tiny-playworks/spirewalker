@@ -1,4 +1,4 @@
-import { ALL_ITEMS, CORES, ITEM_BY_ID, MUZZLES, RELICS, WEAPONS } from './content';
+import { ALL_ITEMS, ARCANA, CORES, ITEM_BY_ID, MUZZLES, RELICS, WEAPONS } from './content';
 import { createRandom, hashSeed } from './random';
 import type {
   BuildTag,
@@ -47,13 +47,13 @@ const ITEM_POOLS: Record<ItemKind, ItemDefinition[]> = {
   muzzle: MUZZLES,
   core: CORES,
   relic: RELICS,
-  arcana: [],
+  arcana: ARCANA,
 };
 
 export function generateRouteChoices(seed: number, roomIndex: number, eliteAvailable = true): RouteOption[] {
   const random = createRandom(hashSeed(seed, 'route', roomIndex));
-  const regular: RewardCategory[] = ['weapon', 'muzzle', 'core', 'relic', 'gold'];
-  const first = random.pick(regular);
+  const regular: RewardCategory[] = ['weapon', 'muzzle', 'core', 'relic', 'gold', ...(roomIndex > 0 ? ['arcana' as const] : [])];
+  const first = roomIndex === 1 ? 'arcana' : random.pick(regular);
   let second: RewardCategory;
 
   if (roomIndex > 0 && eliteAvailable && random.next() < 0.34) {
@@ -79,9 +79,11 @@ export function generateRewardOffers(args: {
   currentTags: BuildTag[];
   modifiers: CombatModifiers;
   reroll?: number;
+  excludedDefinitionIds?: string[];
 }): RewardItem[] {
   const random = createRandom(hashSeed(args.seed, 'reward', args.roomIndex, args.category, args.reroll ?? 0));
-  const pool = ITEM_POOLS[args.category];
+  const excluded = new Set(args.excludedDefinitionIds ?? []);
+  const pool = ITEM_POOLS[args.category].filter((item) => !excluded.has(item.id));
   const selected: ItemDefinition[] = [];
 
   const preferredTag = dominantTag(args.currentTags);
@@ -112,15 +114,14 @@ export function generateChestDrops(args: {
   currentTags: BuildTag[];
   modifiers: CombatModifiers;
   extraDrop?: boolean;
+  objectiveBonus?: boolean;
   reroll?: number;
+  excludedDefinitionIds?: string[];
 }): LootDrop[] {
   const random = createRandom(hashSeed(args.seed, 'chest-count', args.roomIndex, args.category, args.reroll ?? 0));
-  const count = 1 + Number(random.next() < (args.elite ? 0.5 : 0.35)) + Number(args.extraDrop ?? false);
-  const positions = count === 1
-    ? [{ x: 640, y: 390 }]
-    : count === 2
-      ? [{ x: 520, y: 405 }, { x: 760, y: 405 }]
-      : [{ x: 465, y: 415 }, { x: 640, y: 385 }, { x: 815, y: 415 }];
+  const count = 1 + Number(random.next() < (args.elite ? 0.5 : 0.35))
+    + Number(args.objectiveBonus ?? false) + Number(args.extraDrop ?? false);
+  const positions = dropPositions(count);
 
   if (args.category === 'gold') {
     const total = 52 + args.roomIndex * 12 + (args.elite ? 28 : 0);
@@ -147,6 +148,7 @@ export function generateChestDrops(args: {
     currentTags: args.currentTags,
     modifiers: args.modifiers,
     reroll: args.reroll,
+    excludedDefinitionIds: args.category === 'arcana' || category === 'arcana' ? args.excludedDefinitionIds : undefined,
   });
   return items.map((item, index) => ({
     id: `drop-${item.uid}`,
@@ -157,6 +159,46 @@ export function generateChestDrops(args: {
     resolved: false,
     resolution: null,
   }));
+}
+
+export function generateBossDrops(args: {
+  seed: number;
+  modifiers: CombatModifiers;
+  excludedArcanaIds?: string[];
+}): LootDrop[] {
+  const random = createRandom(hashSeed(args.seed, 'boss-drops'));
+  const kinds: ItemKind[] = ['weapon', 'muzzle', 'core', 'relic', 'arcana'];
+  const positions = dropPositions(6);
+  const drops = kinds.map((kind, index): LootDrop => {
+    const excluded = kind === 'arcana' ? new Set(args.excludedArcanaIds ?? []) : new Set<string>();
+    const pool = ITEM_POOLS[kind].filter((definition) => !excluded.has(definition.id));
+    const definition = random.pick(pool);
+    const item: RewardItem = {
+      uid: `boss-${kind}-${index}-${definition.id}`,
+      kind,
+      definitionId: definition.id,
+      rarity: rollChestRarity(random.next(), 'boss', args.modifiers),
+    };
+    return {
+      id: `drop-${item.uid}`,
+      item,
+      gold: 0,
+      worldX: positions[index]?.x ?? 640,
+      worldY: positions[index]?.y ?? 405,
+      resolved: false,
+      resolution: null,
+    };
+  });
+  drops.push({
+    id: `boss-gold-${args.seed}`,
+    item: null,
+    gold: 120,
+    worldX: positions[5]?.x ?? 640,
+    worldY: positions[5]?.y ?? 405,
+    resolved: false,
+    resolution: null,
+  });
+  return drops;
 }
 
 export function generateShopOffers(args: {
@@ -188,7 +230,7 @@ export function generateShopOffers(args: {
 }
 
 export function rollEliteRewardCategory(seed: number, roomIndex: number): ItemKind {
-  return createRandom(hashSeed(seed, 'elite-category', roomIndex)).pick(['weapon', 'muzzle', 'core', 'relic']);
+  return createRandom(hashSeed(seed, 'elite-category', roomIndex)).pick(['weapon', 'muzzle', 'core', 'relic', 'arcana']);
 }
 
 export function getItemDefinition(item: RewardItem): ItemDefinition {
@@ -252,6 +294,17 @@ function dominantTag(tags: BuildTag[]): BuildTag {
 function pushUnique(target: ItemDefinition[], item: ItemDefinition | undefined): void {
   if (!item || target.some((entry) => entry.id === item.id)) return;
   target.push(item);
+}
+
+function dropPositions(count: number): Array<{ x: number; y: number }> {
+  if (count === 1) return [{ x: 640, y: 485 }];
+  if (count === 2) return [{ x: 485, y: 470 }, { x: 795, y: 470 }];
+  if (count === 3) return [{ x: 435, y: 435 }, { x: 640, y: 505 }, { x: 845, y: 435 }];
+  if (count === 4) return [{ x: 395, y: 405 }, { x: 545, y: 500 }, { x: 735, y: 500 }, { x: 885, y: 405 }];
+  return Array.from({ length: count }, (_, index) => ({
+    x: 350 + index * (580 / Math.max(1, count - 1)),
+    y: 340 + Math.sin(Math.PI * index / Math.max(1, count - 1)) * 185,
+  }));
 }
 
 export function allItemDefinitions(): ItemDefinition[] {
